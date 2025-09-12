@@ -70,8 +70,3 @@ export class SQLEntriesAdapter implements EntriesAdapter {
     this.entries = [];
   }
 }
-
-// small factory so tests don’t new-up directly (matches real init later)
-export function createSqliteEntriesAdapter(db: unknown, clock: Clock) {
-  return new SQLEntriesAdapter(db, clock);
-}
