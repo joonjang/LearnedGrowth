@@ -6,6 +6,13 @@ An offline-first journaling app (ABCDE method from *Learned Optimism*) with clou
 
 ## Development Journal
 
+### 2025-09-23
+- Add comprehensive tests for `entriesAdapter` (CRUD + timestamps + dirtySince)
+- Implement `entriesAdapter.sqlite` against Expo SQLite (named params, COALESCE, soft delete)
+- Run SQLite tests via `expo-sqlite-mock` (Jest transform allowlist + setup)
+- Refactor tests to use backend factories (memory + sqlite)
+- ✅ Unit + integration tests passing
+
 ### 2025-09-11
 - Defined `Entry` model and `EntriesAdapter` interface.
 - Added stub in-memory implementation (`SQLEntriesAdapter`) for contract testing.
@@ -22,6 +29,8 @@ An offline-first journaling app (ABCDE method from *Learned Optimism*) with clou
 ---
 
 ## Next Steps
-- Add more contract tests (update, getById, double-remove).
-- Transition stub to real SQLite implementation.
-- Wire store → adapter → UI list view.
+- UI: simple list + detail editor (add/edit/delete) wired to adapter.
+- State: wire adapter into a provider; keep Zustand store IO-free (call adapter in actions).
+- Sync: sketch interface (listDirty(), markSynced(ids)) for future Supabase sync.
+- Error UX: surface DB failures (toast) and optimistic updates with rollback.
+- E2E: add a basic on-device test (or manual checklist) to confirm DB works outside Jest.
