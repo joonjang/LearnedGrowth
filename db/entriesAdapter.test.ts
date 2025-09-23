@@ -1,195 +1,240 @@
 import { SQLEntriesAdapter } from "@/db/entriesAdapter.sqlite";
 import { Entry } from "@/models/entry";
 import { TestClock } from "@/test-utils/testClock";
+import { Directory, File, Paths } from "expo-file-system";
+import { createDb } from "./entries";
 
-describe("entries database adapter tests", () => {
-   let db: SQLEntriesAdapter;
-   let clock: TestClock;
-   let entry: Entry;
+// -- factories --
 
-   beforeEach(() => {
-      clock = new TestClock();
-      db = new SQLEntriesAdapter(null, clock);
-      entry = {
-         id: "123",
-         adversity: "Test adversity",
-         belief: "Test belief",
-         createdAt: clock.nowIso(),
-         updatedAt: clock.nowIso(),
-         dirtySince: null,
-         isDeleted: false,
-         accountId: null,
-      };
-   });
+async function makeMemory() {
+   const clock = new TestClock();
+   const adapter = new SQLEntriesAdapter(null, clock);
+   return { name: "memory", adapter, clock, cleanup: async () => {} };
+}
 
-   describe("CREATE", () => {
-      it("adds and retrieves entries", async () => {
-         await db.add(entry);
-         const all = await db.getAll();
-         expect(all).toHaveLength(1);
-         expect(all[0].adversity).toBe("Test adversity");
-      });
+async function makeSqlite() {
+   const clock = new TestClock();
+   const dbName = `test-${Math.random().toString(36).slice(2)}.db`;
+   const db = await createDb(dbName);
+   const adapter = new SQLEntriesAdapter(db, clock);
+   const cleanup = () => {
+      try {
+         // Databases live under <document>/SQLite
+         const sqliteDir = new Directory(Paths.document, "SQLite");
+         const dbFile = new File(sqliteDir, dbName);
 
-      it("add does not mutate caller's object", async () => {
-         const input = { ...entry };
-         await db.add(input);
-         input.belief = "mutated";
-         const stored = await db.getById("123");
-         expect(stored!.belief).toBe("Test belief");
-      });
+         if (dbFile.exists) dbFile.delete(); // sync, throws on error
+      } catch (e) {
+         console.warn("cleanup failed", e);
+      }
+   };
+   return { name: "sqlite", adapter, clock, cleanup };
+}
 
-      it("dirty stays null on add", async () => {
-         await db.add(entry);
-         expect((await db.getById("123"))!.dirtySince).toBeNull();
-      });
+describe.each([
+   ["memory", makeMemory],
+   ["sqlite", makeSqlite],
+])("%s backend", (_name, make) => {
+   describe("entries database adapter tests", () => {
+      let db: SQLEntriesAdapter;
+      let clock: TestClock;
+      let entry: Entry;
+      let cleanup: () => Promise<void> | void;
 
-      it("duplicate id on add", async () => {
-         await db.add(entry);
-         await expect(db.add(entry)).rejects.toThrow(/duplicate|exists/i);
-      });
-   });
+      beforeEach(async () => {
+         const ctx = await make();
+         clock = ctx.clock;
+         db = ctx.adapter;
+         cleanup = ctx.cleanup;
 
-   describe("READ", () => {
-      it("getById returns null when missing", async () => {
-         expect(await db.getById("missing")).toBeNull();
-      });
+         // reset state
+         await db.clear();
 
-      it("getAll ordering is by updatedAt DESC", async () => {
-         const a = { ...entry, id: "a" };
-         await db.add(a);
-         clock.advanceMs(1000);
-         const b = {
-            ...entry,
-            id: "b",
+         entry = {
+            id: "123",
+            adversity: "Test adversity",
+            belief: "Test belief",
             createdAt: clock.nowIso(),
             updatedAt: clock.nowIso(),
+            dirtySince: null,
+            isDeleted: false,
+            accountId: null,
          };
-         await db.add(b);
-         const all = await db.getAll();
-         expect(all.map((e) => e.id)).toEqual(["b", "a"]);
       });
 
-      it("getAll returns copies (no external mutation)", async () => {
-         await db.add(entry);
-         const [e] = await db.getAll();
-         e.belief = "mutated";
-         const again = await db.getAll();
-         expect(again[0].belief).not.toBe("mutated");
+      afterEach(async () => {
+         await cleanup?.();
       });
 
-      it("text data robustness", async () => {
-         await db.add({
-            ...entry,
-            id: "u",
-            adversity: "仕事🙂",
-            belief: "café",
+      describe("CREATE", () => {
+         it("adds and retrieves entries", async () => {
+            await db.add(entry);
+            const all = await db.getAll();
+            expect(all).toHaveLength(1);
+            expect(all[0].adversity).toBe("Test adversity");
          });
-         const got = await db.getById("u");
-         expect(got!.adversity).toBe("仕事🙂");
-      });
-   });
 
-   describe("UPDATE", () => {
-      it("update missing id", async () => {
-         await expect(db.update("nope", { belief: "Z" })).rejects.toThrow(
-            /not found/i
-         );
-      });
+         it("add does not mutate caller's object", async () => {
+            const input = { ...entry };
+            await db.add(input);
+            input.belief = "mutated";
+            const stored = await db.getById("123");
+            expect(stored!.belief).toBe("Test belief");
+         });
 
-      it("createdAt never changes on update", async () => {
-         await db.add(entry);
-         const created = (await db.getById("123"))!.createdAt;
-         clock.advanceMs(1000);
-         const updated = await db.update("123", { belief: "Z" });
-         expect(updated.createdAt).toBe(created);
-      });
+         it("dirty stays null on add", async () => {
+            await db.add(entry);
+            expect((await db.getById("123"))!.dirtySince).toBeNull();
+         });
 
-      it("updates should bump updatedAt", async () => {
-         const initial = clock.nowIso();
-
-         // add entry at start time
-         const before = await db.add(entry);
-
-         // advance the clock
-         clock.advanceMs(60_000); // +1 min
-
-         // update entry
-         const updated = await db.update("123", { belief: "Z" });
-
-         // prove time changed
-         expect(before.updatedAt).toBe(initial);
-         expect(updated.createdAt).toBe(initial);
-         expect(updated.updatedAt).toBe(clock.nowIso());
-         expect(updated.belief).toBe("Z");
-         expect(updated.dirtySince).toBe(clock.nowIso());
+         it("duplicate id on add", async () => {
+            await db.add(entry);
+            await expect(db.add(entry)).rejects.toThrow();
+         });
       });
 
-      it("second update keeps original dirtySince", async () => {
-         await db.add(entry);
+      describe("READ", () => {
+         it("getById returns null when missing", async () => {
+            expect(await db.getById("missing")).toBeNull();
+         });
 
-         clock.advanceMs(1000);
-         const u1 = await db.update("123", { belief: "B2" });
-         const firstDirty = u1.dirtySince;
+         it("getAll ordering is by updatedAt DESC", async () => {
+            const a = { ...entry, id: "a" };
+            await db.add(a);
+            clock.advanceMs(1000);
+            const b = {
+               ...entry,
+               id: "b",
+               createdAt: clock.nowIso(),
+               updatedAt: clock.nowIso(),
+            };
+            await db.add(b);
+            const all = await db.getAll();
+            expect(all.map((e) => e.id)).toEqual(["b", "a"]);
+         });
 
-         clock.advanceMs(1000);
-         const u2 = await db.update("123", { belief: "B3" });
-         expect(u2.dirtySince).toBe(firstDirty); // unchanged
-         expect(u2.updatedAt).toBe(clock.nowIso()); // bumped
+         it("getAll returns copies (no external mutation)", async () => {
+            await db.add(entry);
+            const [e] = await db.getAll();
+            e.belief = "mutated";
+            const again = await db.getAll();
+            expect(again[0].belief).not.toBe("mutated");
+         });
+
+         it("text data robustness", async () => {
+            await db.add({
+               ...entry,
+               id: "u",
+               adversity: "仕事🙂",
+               belief: "café",
+            });
+            const got = await db.getById("u");
+            expect(got!.adversity).toBe("仕事🙂");
+         });
       });
 
-      it("update doesnt unset fields when patch omits them", async () => {
-         await db.add(entry);
-         clock.advanceMs(1000);
-         const updated = await db.update("123", {}); // empty patch
-         expect(updated.belief).toBe(entry.belief);
+      describe("UPDATE", () => {
+         it("update missing id", async () => {
+            await expect(db.update("nope", { belief: "Z" })).rejects.toThrow(
+               /not found/i
+            );
+         });
+
+         it("createdAt never changes on update", async () => {
+            await db.add(entry);
+            const created = (await db.getById("123"))!.createdAt;
+            clock.advanceMs(1000);
+            const updated = await db.update("123", { belief: "Z" });
+            expect(updated.createdAt).toBe(created);
+         });
+
+         it("updates should bump updatedAt", async () => {
+            const initial = clock.nowIso();
+
+            // add entry at start time
+            const before = await db.add(entry);
+
+            // advance the clock
+            clock.advanceMs(60_000); // +1 min
+
+            // update entry
+            const updated = await db.update("123", { belief: "Z" });
+
+            // prove time changed
+            expect(before.updatedAt).toBe(initial);
+            expect(updated.createdAt).toBe(initial);
+            expect(updated.updatedAt).toBe(clock.nowIso());
+            expect(updated.belief).toBe("Z");
+            expect(updated.dirtySince).toBe(clock.nowIso());
+         });
+
+         it("second update keeps original dirtySince", async () => {
+            await db.add(entry);
+
+            clock.advanceMs(1000);
+            const u1 = await db.update("123", { belief: "B2" });
+            const firstDirty = u1.dirtySince;
+
+            clock.advanceMs(1000);
+            const u2 = await db.update("123", { belief: "B3" });
+            expect(u2.dirtySince).toBe(firstDirty); // unchanged
+            expect(u2.updatedAt).toBe(clock.nowIso()); // bumped
+         });
+
+         it("update doesnt unset fields when patch omits them", async () => {
+            await db.add(entry);
+            clock.advanceMs(1000);
+            const updated = await db.update("123", {}); // empty patch
+            expect(updated.belief).toBe(entry.belief);
+         });
       });
-   });
 
-   describe("DELETE", () => {
-      it("clear removes all rows", async () => {
-         await db.add(entry);
-         await db.clear();
-         expect((await db.getAll()).length).toBe(0);
-      });
-      it("remove is idempotent", async () => {
-         await db.add(entry);
-         await db.remove("123");
-         await expect(db.remove("123")).resolves.toBeUndefined();
-      });
+      describe("DELETE", () => {
+         it("clear removes all rows", async () => {
+            await db.add(entry);
+            await db.clear();
+            expect((await db.getAll()).length).toBe(0);
+         });
+         it("remove is idempotent", async () => {
+            await db.add(entry);
+            await db.remove("123");
+            await expect(db.remove("123")).resolves.toBeUndefined();
+         });
 
-      it("remove keeps createdAt stable", async () => {
-         await db.add(entry);
-         const created = (await db.getById("123"))!.createdAt;
-         clock.advanceMs(1000);
-         await db.remove("123");
-         expect((await db.getById("123"))!.createdAt).toBe(created);
-      });
+         it("remove keeps createdAt stable", async () => {
+            await db.add(entry);
+            const created = (await db.getById("123"))!.createdAt;
+            clock.advanceMs(1000);
+            await db.remove("123");
+            expect((await db.getById("123"))!.createdAt).toBe(created);
+         });
 
-      it("marks entry as deleted and sets dirtySince", async () => {
-         await db.add(entry);
+         it("marks entry as deleted and sets dirtySince", async () => {
+            await db.add(entry);
 
-         const before = await db.getById("123");
+            const before = await db.getById("123");
 
-         clock.advanceMs(60_000); // 👈 prove a new time
-         await db.remove("123");
+            clock.advanceMs(60_000); // 👈 prove a new time
+            await db.remove("123");
 
-         const after = await db.getById("123");
-         expect(after?.isDeleted).toBe(true);
-         expect(before?.dirtySince).toBeNull();
-         expect(after?.dirtySince).toBe(clock.nowIso());
-         expect(after?.updatedAt).toBe(clock.nowIso());
-         expect(after?.updatedAt).not.toBe(before?.updatedAt);
-      });
+            const after = await db.getById("123");
+            expect(after?.isDeleted).toBe(true);
+            expect(before?.dirtySince).toBeNull();
+            expect(after?.dirtySince).toBe(clock.nowIso());
+            expect(after?.updatedAt).toBe(clock.nowIso());
+            expect(after?.updatedAt).not.toBe(before?.updatedAt);
+         });
 
-      it("second remove still idempotent and keep first dirtySince", async () => {
-         await db.add(entry);
-         clock.advanceMs(1000);
-         await db.remove("123");
-         const first = await db.getById("123");
-         clock.advanceMs(1000);
-         await db.remove("123");
-         const second = await db.getById("123");
-         expect(second!.dirtySince).toBe(first!.dirtySince); // unchanged
+         it("second remove still idempotent and keep first dirtySince", async () => {
+            await db.add(entry);
+            clock.advanceMs(1000);
+            await db.remove("123");
+            const first = await db.getById("123");
+            clock.advanceMs(1000);
+            await db.remove("123");
+            const second = await db.getById("123");
+            expect(second!.dirtySince).toBe(first!.dirtySince); // unchanged
+         });
       });
    });
 });
