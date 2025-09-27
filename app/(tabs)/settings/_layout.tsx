@@ -1,4 +1,4 @@
-import { ThemedStack } from "@/providers/Navigation";
+import { ThemedStack } from "@/theme/Navigation";
 
 export default function SettingsLayout(){
     return (

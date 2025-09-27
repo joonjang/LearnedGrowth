@@ -1,4 +1,4 @@
-import { ThemedStack } from "@/providers/Navigation";
+import { ThemedStack } from "@/theme/Navigation";
 import { Stack } from "expo-router";
 export default function EntriesStack() {
   return (
