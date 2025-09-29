@@ -6,6 +6,17 @@ An offline-first journaling app (ABCDE method from *Learned Optimism*) with clou
 
 ## Development Journal
 
+### 2025-09-28
+- Added base UI screens under (tabs): entries, feeds, settings, dev
+- Created AdapterProvider (React Context) for database access
+- Created EntriesService to wrap adapter with business logic
+- Wrote service-level tests for:
+  - list
+  - create
+  - update
+  - remove
+
+
 ### 2025-09-23
 - Add comprehensive tests for `entriesAdapter` (CRUD + timestamps + dirtySince)
 - Implement `entriesAdapter.sqlite` against Expo SQLite (named params, COALESCE, soft delete)
@@ -29,8 +40,7 @@ An offline-first journaling app (ABCDE method from *Learned Optimism*) with clou
 ---
 
 ## Next Steps
-- UI: simple list + detail editor (add/edit/delete) wired to adapter.
-- State: wire adapter into a provider; keep Zustand store IO-free (call adapter in actions).
-- Sync: sketch interface (listDirty(), markSynced(ids)) for future Supabase sync.
-- Error UX: surface DB failures (toast) and optimistic updates with rollback.
-- E2E: add a basic on-device test (or manual checklist) to confirm DB works outside Jest.
+- UI: simple list + detail editor (add/edit/delete) wired to adapter
+- State: keep Zustand store IO-free (call adapter in actions)
+- Error UX: surface DB failures (toast) and optimistic updates with rollback
+- E2E: verify DB works outside Jest with on-device test or manual checklist
