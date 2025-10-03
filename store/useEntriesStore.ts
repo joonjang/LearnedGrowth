@@ -17,62 +17,54 @@ export function createEntriesStore(service: EntriesService, clock: Clock ) {
 
     // --- actions (stubs) ---
     async hydrate() {
-      set({ isHydrating: true });
+     
       try {
-        const entries = await service.listEntries();
-        const byId: Record<string, Entry> = {};
-        const allIds: string[] = [];
-        for (const e of entries) {
-          byId[e.id] = e;
-          allIds.push(e.id);
-        }
-        set({
-          byId,
-          allIds,
-          lastHydratedAt: clock.nowIso(),
-          isHydrating: false,
-        });
+
       } catch (err: any) {
-        set({ errors: { global: err.message ?? String(err) }, isHydrating: false });
+          console.log(err)
       }
     },
 
     async refresh() {
-      // often just an alias to hydrate
-      return get().hydrate();
+      try {
+
+      } catch (err: any) {
+          console.log(err)
+      }
     },
 
     async create(draft: Entry) {
-      const created = await service.createEntry(draft);
-      set((s) => ({
-        byId: { ...s.byId, [created.id]: created },
-        allIds: [created.id, ...s.allIds],
-      }));
-      return created;
+      try {
+        
+      } catch (err: any) {
+          console.log(err)
+      }
+      return {} as any;
     },
 
     async update(id: string, patch: Partial<Entry>) {
-      const updated = await service.updateEntry(id, patch);
-      set((s) => ({
-        byId: { ...s.byId, [id]: updated },
-      }));
-      return updated;
+      try {
+        
+      } catch (err: any) {
+          console.log(err)
+      }
+      return {} as any;
     },
 
     async remove(id: string) {
-      await service.removeEntry(id);
-      set((s) => {
-        const next = { ...s.byId };
-        delete next[id];
-        return {
-          byId: next,
-          allIds: s.allIds.filter((x) => x !== id),
-        };
-      });
+      try {
+        
+      } catch (err: any) {
+          console.log(err)
+      }
     },
 
     clearErrors() {
-      set({ errors: {} });
+      try {
+        
+      } catch (err: any) {
+          console.log(err)
+      }
     }
   }));
 }
