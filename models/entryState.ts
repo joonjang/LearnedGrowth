@@ -24,5 +24,4 @@ export interface EntriesState {
    update(id: string, patch: Partial<Entry>): Promise<Entry>;
    remove(id: string): Promise<void>;
    clearErrors(): void;
-   __testClear(): void;
 }

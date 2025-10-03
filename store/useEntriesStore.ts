@@ -73,18 +73,7 @@ export function createEntriesStore(service: EntriesService, clock: Clock ) {
 
     clearErrors() {
       set({ errors: {} });
-    },
-
-    __testClear() {
-      set({
-        byId: {},
-        allIds: [],
-        pending: {},
-        errors: {},
-        isHydrating: false,
-        lastHydratedAt: null,
-      });
-    },
+    }
   }));
 }
 
