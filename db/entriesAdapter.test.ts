@@ -1,35 +1,7 @@
 import { SQLEntriesAdapter } from '@/db/entriesAdapter.sqlite';
 import { Entry } from '@/models/entry';
+import { makeMemory, makeSqlite } from '@/test-utils/adapterFactor';
 import { TestClock } from '@/test-utils/testClock';
-import { Directory, File, Paths } from 'expo-file-system';
-import { createDb } from './entries';
-
-// -- factories --
-
-async function makeMemory() {
-   const clock = new TestClock();
-   const adapter = new SQLEntriesAdapter(null, clock);
-   return { name: 'memory', adapter, clock, cleanup: async () => {} };
-}
-
-async function makeSqlite() {
-   const clock = new TestClock();
-   const dbName = `test-${Math.random().toString(36).slice(2)}.db`;
-   const db = await createDb(dbName);
-   const adapter = new SQLEntriesAdapter(db, clock);
-   const cleanup = () => {
-      try {
-         // Databases live under <document>/SQLite
-         const sqliteDir = new Directory(Paths.document, 'SQLite');
-         const dbFile = new File(sqliteDir, dbName);
-
-         if (dbFile.exists) dbFile.delete(); // sync, throws on error
-      } catch (e) {
-         console.warn('cleanup failed', e);
-      }
-   };
-   return { name: 'sqlite', adapter, clock, cleanup };
-}
 
 describe.each([
    ['memory', makeMemory],

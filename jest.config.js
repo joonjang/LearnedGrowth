@@ -10,6 +10,7 @@ module.exports = {
       + "|expo-modules-core|@expo/.*|@react-native/.*)/)"
   ],
   moduleNameMapper: { "^@/(.*)$": "<rootDir>/$1" },
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],  // 👈 use a local setup file
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts","<rootDir>/test-utils/mockUuid.ts"],  // 👈 use a local setup file
   testTimeout: 10000,
+  
 };

@@ -6,6 +6,16 @@ An offline-first journaling app (ABCDE method from *Learned Optimism*) with clou
 
 ## Development Journal
 
+### 2025-10-02
+- Added comprehensive tests for useEntriesStore
+  - Created supporting test utilities (builders, makeEntriesServiceMock, TestClock, etc.)
+  - Verified optimistic updates, rollback on failure, concurrency guards, and error handling
+  - Covered hydrate, refresh, create, update, remove, and clearErrors behaviors
+- Testing pipeline structured as:
+  - useEntriesStore.test.ts — unit tests with mocked service, validating consumer-facing state & actions
+  - entriesService.test.ts — unit tests for service layer, ensuring business logic correctness
+  - entriesAdapter.test.ts — integration tests for adapter layer, ensuring DB contract compliance
+
 ### 2025-09-28
 - Added base UI screens under (tabs): entries, feeds, settings, dev
 - Created AdapterProvider (React Context) for database access
@@ -15,7 +25,6 @@ An offline-first journaling app (ABCDE method from *Learned Optimism*) with clou
   - create
   - update
   - remove
-
 
 ### 2025-09-23
 - Add comprehensive tests for `entriesAdapter` (CRUD + timestamps + dirtySince)
@@ -40,7 +49,5 @@ An offline-first journaling app (ABCDE method from *Learned Optimism*) with clou
 ---
 
 ## Next Steps
-- UI: simple list + detail editor (add/edit/delete) wired to adapter
-- State: keep Zustand store IO-free (call adapter in actions)
-- Error UX: surface DB failures (toast) and optimistic updates with rollback
-- E2E: verify DB works outside Jest with on-device test or manual checklist
+- Build initial UI (list + detail editor with add/edit/delete) wired through the store
+- Finalize useEntriesStore implementation to satisfy test contracts

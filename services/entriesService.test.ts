@@ -1,49 +1,20 @@
 import { SQLEntriesAdapter } from "@/db/entriesAdapter.sqlite";
-import { Entry } from "@/models/entry";
+import { makeMemory } from "@/test-utils/adapterFactor";
+import { baseEntry } from "@/test-utils/builders";
 import { TestClock } from "@/test-utils/testClock";
 import {
-    createEntry,
-    listEntries,
-    removeEntry,
-    updateEntry,
+  createEntry,
+  listEntries,
+  removeEntry,
+  updateEntry,
 } from "./entriesService";
 
-// Incrementing UUID mock with built-in reset (no out-of-scope vars)
-jest.mock("uuid", () => {
-  let counter = 0;
-  return {
-    v4: jest.fn(() => `mockUUID-${counter++}`),
-    __reset: () => {
-      counter = 0;
-    },
-  };
-});
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const uuid = require("uuid") as any;
-
-// ——— factory (memory backend only for this service-level test) ———
-async function makeMemory() {
-  const clock = new TestClock();
-  const adapter = new SQLEntriesAdapter(null, clock);
-  return { adapter, clock, cleanup: async () => {} };
-}
+const uuid = jest.requireMock("uuid") as any;
 
 describe("entries service tests", () => {
   let db: SQLEntriesAdapter;
   let clock: TestClock;
   let cleanup: () => Promise<void> | void;
-
-  // base payload used by createEntry (service should override id/timestamps)
-  const base: Omit<Entry, "id" | "createdAt" | "updatedAt"> = {
-    adversity: "Test adversity",
-    belief: "Test belief",
-    consequence: undefined,
-    dispute: undefined,
-    energy: undefined,
-    dirtySince: null,
-    isDeleted: false,
-    accountId: null,
-  } as const;
 
   beforeEach(async () => {
     const ctx = await makeMemory();
@@ -66,7 +37,7 @@ describe("entries service tests", () => {
     });
 
     it("returns one item after a single create", async () => {
-      await createEntry(db, base, clock);
+      await createEntry(db, baseEntry, clock);
       const entries = await listEntries(db);
       expect(entries).toHaveLength(1);
       expect(entries[0].id).toBe("mockUUID-0");
@@ -74,11 +45,11 @@ describe("entries service tests", () => {
 
     it("returns multiple items sorted by updatedAt DESC", async () => {
       // create 3 entries with advancing clock to ensure ordering
-      await createEntry(db, base, clock); // id mocked-0, time T0
+      await createEntry(db, baseEntry, clock); // id mocked-0, time T0
       clock.advanceMs(1000);
-      await createEntry(db, base, clock); // id mocked-1, time T1
+      await createEntry(db, baseEntry, clock); // id mocked-1, time T1
       clock.advanceMs(1000);
-      await createEntry(db, base, clock); // id mocked-2, time T2
+      await createEntry(db, baseEntry, clock); // id mocked-2, time T2
 
       const entries = await listEntries(db);
       expect(entries.map((e) => e.id)).toEqual([
@@ -93,7 +64,7 @@ describe("entries service tests", () => {
   describe("create", () => {
     it("assigns incremental UUIDs and sets timestamps", async () => {
       const t0 = clock.nowIso();
-      await createEntry(db, base, clock);
+      await createEntry(db, baseEntry, clock);
       const all1 = await db.getAll();
       expect(all1).toHaveLength(1);
       expect(all1[0].id).toBe("mockUUID-0");
@@ -101,14 +72,14 @@ describe("entries service tests", () => {
       expect(all1[0].updatedAt).toBe(t0);
 
       clock.advanceMs(500);
-      await createEntry(db, base, clock);
+      await createEntry(db, baseEntry, clock);
       const all2 = await db.getAll();
       expect(all2).toHaveLength(2);
       expect(all2.find((e) => e.id === "mockUUID-1")).toBeTruthy();
     });
 
     it("does not mutate the caller’s payload", async () => {
-      const payload = { ...base };
+      const payload = { ...baseEntry };
       await createEntry(db, payload, clock);
       // payload still has no id/timestamps
       expect((payload as any).id).toBeUndefined();
@@ -127,7 +98,7 @@ describe("entries service tests", () => {
 
     it("updates fields, bumps updatedAt, sets dirtySince once", async () => {
       // create
-      const created = await createEntry(db, base, clock);
+      const created = await createEntry(db, baseEntry, clock);
       const id = created.id;
 
       // first update
@@ -148,7 +119,7 @@ describe("entries service tests", () => {
     });
 
     it("empty patch keeps values but still counts as an update (bumps updatedAt, sets dirtySince on first change)", async () => {
-      const created = await createEntry(db, base, clock);
+      const created = await createEntry(db, baseEntry, clock);
       const id = created.id;
 
       clock.advanceMs(1000);
@@ -163,7 +134,7 @@ describe("entries service tests", () => {
   // -------------------- REMOVE --------------------
   describe("remove", () => {
     it("soft-deletes and is idempotent", async () => {
-      const { id } = await createEntry(db, base, clock);
+      const { id } = await createEntry(db, baseEntry, clock);
 
       // first remove
       clock.advanceMs(1000);

@@ -1,9 +1,9 @@
 import { Clock } from '@/lib/clock';
 import { EntriesAdapter } from '@/models/entriesAdapter';
-import { Entry } from '@/models/entry';
+import { Entry, NewEntry } from '@/models/entry';
 import { v4 as uuidv4 } from 'uuid';
 
-type NewEntry = Pick<Entry, 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy' | 'accountId'>
+
 
 export function listEntries(adapter: EntriesAdapter): Promise<Entry[]> {
     return adapter.getAll()

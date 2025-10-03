@@ -45,3 +45,6 @@ app-example
 
 #db
 *.db
+
+.vscode
+.cursor

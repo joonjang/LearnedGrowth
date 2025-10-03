@@ -11,3 +11,8 @@ export interface Entry {
    dirtySince?: string | null;
    isDeleted: boolean;
 }
+
+export type NewEntry = Pick<
+   Entry,
+   'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy' | 'accountId'
+>;
