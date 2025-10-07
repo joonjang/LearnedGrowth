@@ -6,6 +6,19 @@ An offline-first journaling app (ABCDE method from *Learned Optimism*) with clou
 
 ## Development Journal
 
+### 2025-10-06
+- Implemented: useEntriesStore to satisfy the entire test suite
+  - Added actions: hydrate, refresh, create, update, remove, clearErrors
+  - Integrated dependency-injected EntriesService and Clock
+  - Ensured deterministic ordering by sorting updatedAt in descending order
+  - Added helpers for pending operations, error handling, and request ID stale-guarding
+- Verified: all optimistic, rollback, and concurrency tests pass
+- What I learned:
+  - Optimistic updates: apply changes immediately, then commit or rollback after async resolution
+  - Stale guarding: use request IDs and in-flight tracking to avoid overwriting fresh data
+  - Zustand pattern: always use set() and get() instead of this for state updates
+  - Immutable updates: required for reliable UI re-renders and predictable tests
+
 ### 2025-10-02
 - Added comprehensive tests for useEntriesStore
   - Created supporting test utilities (builders, makeEntriesServiceMock, TestClock, etc.)
@@ -50,4 +63,3 @@ An offline-first journaling app (ABCDE method from *Learned Optimism*) with clou
 
 ## Next Steps
 - Build initial UI (list + detail editor with add/edit/delete) wired through the store
-- Finalize useEntriesStore implementation to satisfy test contracts

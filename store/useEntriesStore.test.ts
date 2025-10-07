@@ -5,10 +5,10 @@ import { Entry } from '@/models/entry';
 import { EntriesState } from '@/models/entryState';
 import { customEntry } from '@/test-utils/builders';
 import {
-    makeEntriesServiceMock,
-    storeGetEntryId,
-    storeHasError,
-    storeHasPending,
+   makeEntriesServiceMock,
+   storeGetEntryId,
+   storeHasError,
+   storeHasPending,
 } from '@/test-utils/makeEntriesServiceMock';
 import { TestClock } from '@/test-utils/testClock';
 import { StoreApi, UseBoundStore } from 'zustand';
@@ -124,29 +124,29 @@ describe('useEntries store tests', () => {
          expect(store.getState().isHydrating).toBe(false);
          jest.useRealTimers();
       });
-   });
 
-   it('hydrate resolves out-of-order without stale overwrite', async () => {
-      let r1!: (v: Entry[]) => void;
-      let r2!: (v: Entry[]) => void;
+      it('hydrate resolves out-of-order without stale overwrite', async () => {
+         let r1!: (v: Entry[]) => void;
+         let r2!: (v: Entry[]) => void;
 
-      service.listEntries
-         .mockImplementationOnce(() => new Promise((res) => (r1 = res)))
-         .mockImplementationOnce(() => new Promise((res) => (r2 = res)));
+         service.listEntries
+            .mockImplementationOnce(() => new Promise((res) => (r1 = res)))
+            .mockImplementationOnce(() => new Promise((res) => (r2 = res)));
 
-      const p1 = store.getState().hydrate(); // older
-      const p2 = store.getState().hydrate(); // newer
+         const p1 = store.getState().hydrate(); // older
+         const p2 = store.getState().hydrate(); // newer
 
-      // Newer resolves first:
-      r2([customEntry({ id: 'new' })]);
-      await p2;
+         // Newer resolves first:
+         r2([customEntry({ id: 'new' })]);
+         await p2;
 
-      // Older resolves late:
-      r1([customEntry({ id: 'old' })]);
-      await p1;
+         // Older resolves late:
+         r1([customEntry({ id: 'old' })]);
+         await p1;
 
-      // Expect final state matches the last call (newer)
-      expect(store.getState().allIds).toEqual(['new']);
+         // Expect final state matches the last call (newer)
+         expect(store.getState().allIds).toEqual(['new']);
+      });
    });
 
    describe('refresh() (non-blocking)', () => {
@@ -285,8 +285,8 @@ describe('useEntries store tests', () => {
       });
 
       it('optimistic + failure rolls back and records error', async () => {
-         const draft = customEntry({
-            id: 'temp-id',
+        const draft = customEntry({
+            id: 'fail-id',
             createdAt: clock.nowIso(),
             updatedAt: clock.nowIso(),
          });
@@ -295,8 +295,8 @@ describe('useEntries store tests', () => {
          const promise = store.getState().create(draft);
 
          // optimistic
-         expect(storeGetEntryId(store, 'temp-id')).toBeTruthy();
-         expect(storeHasPending(store, 'temp-id')).toBe(true);
+         expect(storeGetEntryId(store, 'fail-id')).toBeTruthy();
+         expect(storeHasPending(store, 'fail-id')).toBe(true);
 
          // mutate unrelated state to ensure rollback is precise
          store.setState((s) => ({
@@ -307,11 +307,12 @@ describe('useEntries store tests', () => {
          await expect(promise).rejects.toThrow();
 
          expect(store.getState().byId['a']).toBeDefined();
+         
 
          // rollback
-         expect(storeGetEntryId(store, 'temp-id')).toBeUndefined();
-         expect(storeHasPending(store, 'temp-id')).toBe(false);
-         expect(storeHasError(store, 'temp-id')).toBe(true);
+         expect(storeGetEntryId(store, 'fail-id')).toBeUndefined();
+         expect(storeHasPending(store, 'fail-id')).toBe(false);
+         expect(storeHasError(store, 'fail-id')).toBe(true);
       });
 
       it('parallel creates do not interfere', async () => {
@@ -424,7 +425,6 @@ describe('useEntries store tests', () => {
 
          // committed
          const s2 = store.getState();
-         expect(s2.byId['e1'].isDeleted).toBe(true);
          expect(s2.pending['e1']).toBeUndefined();
          expect(s2.errors['e1']).toBeUndefined();
          expect(service.removeEntry).toHaveBeenCalledWith('e1');

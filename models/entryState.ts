@@ -1,7 +1,9 @@
 import { Entry } from './entry';
 
-type PendingOp = {
-   op: 'create' | 'update' | 'remove';
+export type PendKind = 'create' | 'update' | 'remove';
+
+export type PendingOp = {
+   op: PendKind;
    submittedAt: string; // ISO time (use your Clock)
    payload?: Partial<Entry>; // for replay/debug
 };
@@ -16,6 +18,7 @@ export interface EntriesState {
    errors: Record<string | 'global', string>;
    isHydrating: boolean;
    lastHydratedAt: string | null;
+   hydrateRequestId: number;
 
    // Actions
    hydrate(): Promise<void>;
