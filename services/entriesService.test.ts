@@ -1,5 +1,5 @@
 import { SQLEntriesAdapter } from "@/db/entriesAdapter.sqlite";
-import { makeMemory } from "@/test-utils/adapterFactor";
+import { makeMemory } from "@/test-utils/adapterFactory";
 import { baseEntry } from "@/test-utils/builders";
 import { TestClock } from "@/test-utils/testClock";
 import {
@@ -8,8 +8,9 @@ import {
   removeEntry,
   updateEntry,
 } from "./entriesService";
+import * as Crypto from 'expo-crypto';
 
-const uuid = jest.requireMock("uuid") as any;
+const uuid = Crypto as any;
 
 describe("entries service tests", () => {
   let db: SQLEntriesAdapter;

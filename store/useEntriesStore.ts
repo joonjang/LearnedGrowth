@@ -1,8 +1,10 @@
-import { create } from 'zustand';
+import { create, StoreApi, UseBoundStore } from 'zustand';
 import { Clock } from '@/lib/clock';
 import { EntriesService } from '@/models/entriesService';
 import { Entry } from '@/models/entry';
 import { EntriesState, PendingOp, PendKind } from '@/models/entryState';
+
+export type EntriesStore = UseBoundStore<StoreApi<EntriesState>>;
 
 // ---------- pure helpers (no state) ----------
 function normalizeEntries(list: Entry[]) {
@@ -26,7 +28,7 @@ function sortByUpdatedDesc(list: Entry[]) {
 }
 
 // ---------- store ----------
-export function createEntriesStore(service: EntriesService, clock: Clock) {
+export function createEntriesStore(service: EntriesService, clock: Clock): EntriesStore {
    return create<EntriesState>()((set, get) => {
       // --- helpers that USE set/get ---
       function putError(id: string | 'global', e: any) {

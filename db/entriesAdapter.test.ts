@@ -1,6 +1,6 @@
 import { SQLEntriesAdapter } from '@/db/entriesAdapter.sqlite';
 import { Entry } from '@/models/entry';
-import { makeMemory, makeSqlite } from '@/test-utils/adapterFactor';
+import { makeMemory, makeSqlite } from '@/test-utils/adapterFactory';
 import { TestClock } from '@/test-utils/testClock';
 
 describe.each([

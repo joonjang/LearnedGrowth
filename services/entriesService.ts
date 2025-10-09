@@ -1,9 +1,7 @@
 import { Clock } from '@/lib/clock';
 import { EntriesAdapter } from '@/models/entriesAdapter';
 import { Entry, NewEntry } from '@/models/entry';
-import { v4 as uuidv4 } from 'uuid';
-
-
+import * as Crypto from 'expo-crypto';
 
 export function listEntries(adapter: EntriesAdapter): Promise<Entry[]> {
     return adapter.getAll()
@@ -17,7 +15,7 @@ export function createEntry(
     const now = clock.nowIso();
     const entry: Entry = {
         ...data,
-        id: uuidv4(),
+        id: Crypto.randomUUID(),
         createdAt: now,
         updatedAt: now,
         dirtySince: null,
