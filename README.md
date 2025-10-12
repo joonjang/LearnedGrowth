@@ -6,6 +6,9 @@ An offline-first journaling app (ABCDE method from *Learned Optimism*) with clou
 
 ## Development Journal
 
+### 2025
+ - Entry items now uniformly sorted based off timestamp created_at
+
 ### 2025-10-06
 - Implemented: useEntriesStore to satisfy the entire test suite
   - Added actions: hydrate, refresh, create, update, remove, clearErrors

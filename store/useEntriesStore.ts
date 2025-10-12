@@ -106,11 +106,21 @@ export function createEntriesStore(
       function isStale(reqId: number) {
          return get().hydrateRequestId !== reqId;
       }
-      function setByUpdate(insert: Entry) {
+      function setByUpdated(insert: Entry) {
          set((s) => {
             const nextById = { ...s.byId, [insert.id]: insert };
             const { byId, allIds } = normalizeEntries(
                sortByUpdatedDesc(
+                  filterNotDeleted(Object.values(nextById)))
+            );
+            return { byId, allIds };
+         });
+      }
+      function setByCreated(insert: Entry) {
+         set((s) => {
+            const nextById = { ...s.byId, [insert.id]: insert };
+            const { byId, allIds } = normalizeEntries(
+               sortByCreatedDesc(
                   filterNotDeleted(Object.values(nextById)))
             );
             return { byId, allIds };
@@ -186,14 +196,14 @@ export function createEntriesStore(
 
          async create(draft: Entry) {
             // optimistic insert
-            setByUpdate(draft);
+            setByCreated(draft);
             setPending(draft.id, 'create', draft);
 
             try {
                const saved = await service.createEntry(draft);
                // success: drop temp id, clear pending/error, then insert saved
                removeId(draft.id, { clearPending: true, clearError: true });
-               setByUpdate(saved);
+               setByCreated(saved);
                return saved;
             } catch (e: any) {
                // failure: rollback temp id, clear pending, record error
@@ -211,17 +221,15 @@ export function createEntriesStore(
             setPending(id, 'update', patch);
 
             // optimistic patch (sync)
-            setByUpdate({ ...old, ...patch });
-            // set((s) => ({ byId: { ...s.byId, [id]: { ...old, ...patch } } }));
+            setByCreated({ ...old, ...patch });
 
             try {
                const saved = await service.updateEntry(id, {
                   ...old,
                   ...patch,
                });
-
-               // set((s) => ({ byId: { ...s.byId, [id]: saved } }));
-               setByUpdate(saved);
+                  
+               setByCreated(saved);
                dropError(id);
                clearPending(id);
                return saved;
