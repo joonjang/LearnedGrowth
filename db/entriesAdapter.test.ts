@@ -70,7 +70,7 @@ describe.each([
             expect(await db.getById('missing')).toBeNull();
          });
 
-         it('getAll ordering is by updatedAt DESC', async () => {
+         it('getAll ordering is by createdAt DESC', async () => {
             const a = { ...entry, id: 'a' };
             await db.add(a);
             clock.advanceMs(1000);

@@ -49,7 +49,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
    async getAll(): Promise<Entry[]> {
       if (!this.db) {
          return this.entries!.filter((e) => !e.isDeleted)
-            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+            .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
             .map((e) => ({ ...e }));
       }
 
@@ -59,7 +59,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
               created_at, updated_at, account_id, dirty_since, is_deleted
             FROM entries
             WHERE is_deleted = 0
-            ORDER BY updated_at DESC
+            ORDER BY created_at DESC
           `);
 
          return rows.map((row) => this.fromRow(row));

@@ -27,7 +27,7 @@ describe('useEntries store tests', () => {
    });
 
    describe('hydrate()', () => {
-      it('loads entries, filters soft-deleted, sorts by updatedAt DESC, sets lastHydratedAt', async () => {
+      it('loads entries, filters soft-deleted, sorts by createdAt DESC, sets lastHydratedAt', async () => {
          const E1 = customEntry({
             id: 'e1',
             updatedAt: '2025-01-01T00:00:10.000Z',
@@ -55,7 +55,7 @@ describe('useEntries store tests', () => {
          expect(service.listEntries).toHaveBeenCalledTimes(1);
          expect(st.isHydrating).toBe(false);
          expect(st.lastHydratedAt).toBe(clock.nowIso());
-         // E2 filtered, E1 before E3 due to updatedAt DESC
+         // E2 filtered, E1 before E3 due to createdAt DESC
          expect(st.allIds).toEqual(['e1', 'e3']);
          expect(st.byId['e1']).toMatchObject({ id: 'e1', isDeleted: false });
          expect(st.byId['e3']).toMatchObject({ id: 'e3', isDeleted: false });
@@ -224,14 +224,14 @@ describe('useEntries store tests', () => {
          expect(st.isHydrating).toBe(false);
       });
 
-      it('preserves ordering rule (updatedAt DESC) after refresh', async () => {
+      it('preserves ordering rule (createdAt DESC) after refresh', async () => {
          const a = customEntry({
             id: 'a',
-            updatedAt: '2025-01-01T00:00:00.000Z',
+            createdAt: '2025-01-01T00:00:00.000Z',
          });
          const b = customEntry({
             id: 'b',
-            updatedAt: '2025-01-01T00:00:10.000Z',
+            createdAt: '2025-01-01T00:00:10.000Z',
          });
          service.listEntries.mockResolvedValueOnce([a, b]);
          await store.getState().hydrate();

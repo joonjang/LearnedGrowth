@@ -26,9 +26,21 @@ function sortByUpdatedDesc(list: Entry[]) {
       return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
    });
 }
+function sortByCreatedDesc(list: Entry[]) {
+   return [...list].sort((a, b) => {
+      const diff =
+         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (diff !== 0) return diff;
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+   });
+}
+
 
 // ---------- store ----------
-export function createEntriesStore(service: EntriesService, clock: Clock): EntriesStore {
+export function createEntriesStore(
+   service: EntriesService,
+   clock: Clock
+): EntriesStore {
    return create<EntriesState>()((set, get) => {
       // --- helpers that USE set/get ---
       function putError(id: string | 'global', e: any) {
@@ -94,6 +106,16 @@ export function createEntriesStore(service: EntriesService, clock: Clock): Entri
       function isStale(reqId: number) {
          return get().hydrateRequestId !== reqId;
       }
+      function setByUpdate(insert: Entry) {
+         set((s) => {
+            const nextById = { ...s.byId, [insert.id]: insert };
+            const { byId, allIds } = normalizeEntries(
+               sortByUpdatedDesc(
+                  filterNotDeleted(Object.values(nextById)))
+            );
+            return { byId, allIds };
+         });
+      }
 
       // --- store state + actions ---
       return {
@@ -116,7 +138,7 @@ export function createEntriesStore(service: EntriesService, clock: Clock): Entri
                if (isStale(reqId)) return;
 
                const filtered = filterNotDeleted(rows);
-               const ordered = sortByUpdatedDesc(filtered);
+               const ordered = sortByCreatedDesc(filtered);
                const { byId, allIds } = normalizeEntries(ordered);
 
                set({
@@ -149,7 +171,7 @@ export function createEntriesStore(service: EntriesService, clock: Clock): Entri
                      nextById[e.id] = e;
                }
 
-               const ordered = sortByUpdatedDesc(
+               const ordered = sortByCreatedDesc(
                   filterNotDeleted(Object.values(nextById))
                );
                const { byId, allIds } = normalizeEntries(ordered);
@@ -164,20 +186,14 @@ export function createEntriesStore(service: EntriesService, clock: Clock): Entri
 
          async create(draft: Entry) {
             // optimistic insert
-            set((s) => ({
-               byId: { ...s.byId, [draft.id]: draft },
-               allIds: [...s.allIds, draft.id],
-            }));
+            setByUpdate(draft);
             setPending(draft.id, 'create', draft);
 
             try {
                const saved = await service.createEntry(draft);
                // success: drop temp id, clear pending/error, then insert saved
                removeId(draft.id, { clearPending: true, clearError: true });
-               set((s) => ({
-                  byId: { ...s.byId, [saved.id]: saved },
-                  allIds: [...s.allIds, saved.id],
-               }));
+               setByUpdate(saved);
                return saved;
             } catch (e: any) {
                // failure: rollback temp id, clear pending, record error
@@ -195,7 +211,8 @@ export function createEntriesStore(service: EntriesService, clock: Clock): Entri
             setPending(id, 'update', patch);
 
             // optimistic patch (sync)
-            set((s) => ({ byId: { ...s.byId, [id]: { ...old, ...patch } } }));
+            setByUpdate({ ...old, ...patch });
+            // set((s) => ({ byId: { ...s.byId, [id]: { ...old, ...patch } } }));
 
             try {
                const saved = await service.updateEntry(id, {
@@ -203,7 +220,8 @@ export function createEntriesStore(service: EntriesService, clock: Clock): Entri
                   ...patch,
                });
 
-               set((s) => ({ byId: { ...s.byId, [id]: saved } }));
+               // set((s) => ({ byId: { ...s.byId, [id]: saved } }));
+               setByUpdate(saved);
                dropError(id);
                clearPending(id);
                return saved;

@@ -1,5 +1,5 @@
 // app/(tabs)/dev/index.tsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { View, Text, Button, FlatList, Pressable } from "react-native";
 import { useEntriesStore } from "@/providers/EntriesStoreProvider";
 import * as Crypto from "expo-crypto";
@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DevScreen() {
   const store = useEntriesStore();
+  const [count, setCount] = useState(0);
 
   // subscribe to slices separately (no object literals)
   const allIds = store((s) => s.allIds);
@@ -24,7 +25,7 @@ export default function DevScreen() {
     const now = new Date().toISOString();
     const draft = {
       id: Crypto.randomUUID(),
-      adversity: "test",
+      adversity: "test " + count ,
       belief: "belief",
       consequence: "",
       dispute: "",
@@ -35,6 +36,7 @@ export default function DevScreen() {
       dirtySince: null,
       isDeleted: false,
     };
+    setCount(count + 1);
     await store.getState().create(draft);
   }
   async function onUpdate(id: string) {
