@@ -275,3 +275,22 @@ export function createEntriesStore(
       };
    });
 }
+
+
+export const placeholderEntriesStore = create<EntriesState>(() => ({
+  byId: {},
+  allIds: [],
+  pending: {},
+  errors: {},
+  isHydrating: false,
+  lastHydratedAt: null,
+  hydrateRequestId: 0,
+
+  // no-ops (safe defaults)
+  async hydrate() {},
+  async refresh() {},
+  async create() { throw new Error("Entries store not ready"); },
+  async update() { throw new Error("Entries store not ready"); },
+  async remove() { throw new Error("Entries store not ready"); },
+  clearErrors() {}
+}));

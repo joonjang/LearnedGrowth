@@ -6,6 +6,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-10-25
+- Core abilities of entry creations, viewing, editing, and deleting established
+- Refactored EntriesStoreProvider for stable initialization
+- Added placeholderEntriesStore to prevent remounts and slide-in effects on startup
+
 ### 2025-10-24
 
 -  Entry items now uniformly sorted based off timestamp created_at
@@ -80,6 +85,5 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
--  Build initial entries list and detail editor with full add/edit/delete functionality wired through the store
--  Integrate navigation between the modal → detail page (/(tabs)/entries/[id])
+-  Make UI pretty
 -  Add lightweight form validation and user feedback

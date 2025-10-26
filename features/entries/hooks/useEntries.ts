@@ -52,6 +52,12 @@ export function useEntries() {
       [store]
    );
 
+   const getEntryById = useCallback(
+      function getId(id: string){
+         return store.getState().byId[id];
+      }, [store]
+   );
+
    const updateEntry = useCallback(
       async function onUpdate(id: string, patch: Partial<Entry>) {
          await store.getState().update(id, patch);
@@ -78,6 +84,7 @@ export function useEntries() {
       hydrate,
       refresh,
       createEntry,
+      getEntryById,
       updateEntry,
       deleteEntry,
       clearErrors,

@@ -4,12 +4,11 @@ import {
    useContext,
    useEffect,
    useMemo,
-   useRef,
 } from 'react';
 import { useEntriesAdapter } from './AdapterProvider';
 import { makeEntriesService } from '@/services/makeEntriesService';
 import { systemClock } from '@/lib/clock';
-import { createEntriesStore, EntriesStore } from '@/store/useEntriesStore';
+import { createEntriesStore, EntriesStore, placeholderEntriesStore } from '@/store/useEntriesStore';
 
 const EntriesStoreContext = createContext<EntriesStore | null>(null);
 
@@ -21,18 +20,19 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
       return makeEntriesService(adapter, systemClock);
    }, [adapter]);
 
-   const storeRef = useRef<EntriesStore | null>(null);
-   if (!storeRef.current && service) {
-      storeRef.current = createEntriesStore(service, systemClock);
-   }
+   const store = useMemo<EntriesStore>(() => {
+      if (!service) return placeholderEntriesStore;
+      return createEntriesStore(service, systemClock);
+   }, [service]);
 
    useEffect(() => {
-      if (!ready || !storeRef.current) return;
-      storeRef.current.getState().hydrate();
-   }, [ready]);
+      if (!ready || store === placeholderEntriesStore) return;
+      store.getState().hydrate();
+   }, [ready, store]);
+
 
    return (
-      <EntriesStoreContext.Provider value={storeRef.current}>
+      <EntriesStoreContext.Provider value={store}>
          {children}
       </EntriesStoreContext.Provider>
    );

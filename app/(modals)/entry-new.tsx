@@ -8,10 +8,10 @@ export default function NewEntryModal() {
   const [adversity, setAdversity] = useState("Adversity Input");
   const [belief, setBelief] = useState("Belief Input");
   const [aToB, setAToB] = useState(false);
-  const entries = useEntries();
+  const store = useEntries();
 
   function submit(){
-    entries.createEntry(adversity, belief);
+    store.createEntry(adversity, belief);
   }
 
   return (
