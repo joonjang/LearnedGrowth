@@ -1,6 +1,7 @@
 import { AdversityField } from "@/components/entries/AdversityField";
 import { BeliefField } from "@/components/entries/BeliefField";
 import { useEntries } from "@/features/entries/hooks/useEntries";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Button, Text, View } from "react-native";
 
@@ -12,6 +13,7 @@ export default function NewEntryModal() {
 
   function submit(){
     store.createEntry(adversity, belief);
+    router.back();
   }
 
   return (
