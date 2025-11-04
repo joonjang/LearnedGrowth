@@ -6,10 +6,19 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-11-03
+
+-  Implemented New Entry Modal
+   -  Added step-by-step input flow for Adversity, Belief, and Consequence fields
+   -  Integrated dynamic prompts sourced from JSON for contextual guidance
+   -  Added typewriter animation effect to make prompts feel more engaging and personal
+   -  Improved keyboard handling and responsive layout for a smoother mobile experience
+
 ### 2025-10-25
-- Core abilities of entry creations, viewing, editing, and deleting established
-- Refactored EntriesStoreProvider for stable initialization
-- Added placeholderEntriesStore to prevent remounts and slide-in effects on startup
+
+-  Core abilities of entry creations, viewing, editing, and deleting established
+-  Refactored EntriesStoreProvider for stable initialization
+-  Added placeholderEntriesStore to prevent remounts and slide-in effects on startup
 
 ### 2025-10-24
 
@@ -85,5 +94,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
--  Make UI pretty
--  Add lightweight form validation and user feedback
+-  Format new entry modal
+   -  Make it look nicer
+   -  Simplify the code
+-  Add lightweight form validation
+-  Make Entry viewer pretty

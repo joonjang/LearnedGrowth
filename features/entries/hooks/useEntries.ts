@@ -33,12 +33,12 @@ export function useEntries() {
    );
 
    const createEntry = useCallback(
-      async function onInsert(adversity: string, belief: string) {
+      async function onInsert(adversity: string, belief: string, consequence: string = '') {
          const draft = {
             id: 'new',
             adversity: adversity,
             belief: belief,
-            consequence: '',
+            consequence: consequence,
             dispute: '',
             energy: '',
             createdAt: '',
