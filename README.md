@@ -6,12 +6,19 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-11-06
+- InputField now dynamically adjusts to the soft keyboard (prompt text resizes to prevent clipping)
+- Refactored InputField styling for cleaner layout and keyboard-aware behavior
+- Integrated Lottie loading indicator asset to signal a prompt is loading
+- Implemented useDeferredReady hook to delay prompt animations until the modal is fully rendered
+
 ### 2025-11-03
 
 -  Implemented New Entry Modal
    -  Added step-by-step input flow for Adversity, Belief, and Consequence fields
    -  Integrated dynamic prompts sourced from JSON for contextual guidance
    -  Added typewriter animation effect to make prompts feel more engaging and personal
+      -  https://docs.benjamineruvieru.com/docs/react-native-type-animation/
    -  Improved keyboard handling and responsive layout for a smoother mobile experience
 
 ### 2025-10-25

@@ -1,4 +1,4 @@
-import { useEntries } from '@/features/entries/hooks/useEntries';
+import { useEntries } from '@/features/hooks/useEntries';
 import { Entry } from '@/models/entry';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';

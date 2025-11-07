@@ -1,4 +1,4 @@
-import { useEntries } from '@/features/entries/hooks/useEntries';
+import { useEntries } from '@/features/hooks/useEntries';
 import { Link, router } from 'expo-router';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

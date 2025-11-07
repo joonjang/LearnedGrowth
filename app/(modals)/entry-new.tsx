@@ -1,9 +1,11 @@
 import InputField from '@/components/entries/InputField';
-import { useEntries } from '@/features/entries/hooks/useEntries';
+import { useEntries } from '@/features/hooks/useEntries';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Text, View } from 'react-native';
+import { Button, Keyboard, KeyboardAvoidingView, Platform, Text, TouchableWithoutFeedback, View } from 'react-native';
 import rawAbcde from '@/assets/data/abcde.json';
+import { useHeaderHeight } from '@react-navigation/elements';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type EntryType = 'adversity' | 'belief' | 'consequence';
 
@@ -71,7 +73,21 @@ export default function NewEntryModal() {
       router.back();
    }
 
+    const headerHeight = useHeaderHeight();
+  const insets = useSafeAreaInsets();
+
+  const keyboardVerticalOffset =
+    Platform.OS === 'ios'
+      ? headerHeight // if modal has header
+      : 0;
+
    return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={keyboardVerticalOffset}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={{ padding: 20, flex: 1, gap: 16 }}>
          {/* Progress header */}
          <Text style={{ fontSize: 16 }}>
@@ -80,6 +96,7 @@ export default function NewEntryModal() {
 
          {/* Reuse your existing InputField */}
          <View style={{ flex: 1 }}>
+          
             <InputField
                key={curr.key}
                value={form[curr.key]}
@@ -89,6 +106,7 @@ export default function NewEntryModal() {
                visited={visited[curr.key]}
                setVisited={setVisited}
             />
+           
          </View>
 
          {/* Nav actions */}
@@ -113,5 +131,7 @@ export default function NewEntryModal() {
             </View>
          </View>
       </View>
+      </TouchableWithoutFeedback>
+       </KeyboardAvoidingView>
    );
 }

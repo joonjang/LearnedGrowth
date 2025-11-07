@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, Button, FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
-import { useEntries } from '@/features/entries/hooks/useEntries';
+import { useEntries } from '@/features/hooks/useEntries';
 
 export default function DevScreen() {
 
