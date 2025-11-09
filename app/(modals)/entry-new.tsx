@@ -1,137 +1,142 @@
 import InputField from '@/components/entries/InputField';
 import { useEntries } from '@/features/hooks/useEntries';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { Button, Keyboard, KeyboardAvoidingView, Platform, Text, TouchableWithoutFeedback, View } from 'react-native';
-import rawAbcde from '@/assets/data/abcde.json';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  Button,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TouchableWithoutFeedback,
+  View,
+  StyleSheet,
+} from 'react-native';
+// import rawAbcde from '@/assets/data/abcde.json';
+import rawAbcde from '@/assets/data/abcdeDev.json';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type EntryType = 'adversity' | 'belief' | 'consequence';
 
+const STEP_ORDER = ['adversity', 'belief', 'consequence'] as const;
+const STEP_LABEL: Record<EntryType, string> = {
+  adversity: 'Adversity',
+  belief: 'Belief',
+  consequence: 'Consequence',
+};
+
+function pickRandomPrompt(list?: string[]) {
+  if (!list?.length) return 'Empty JSON';
+  const i = Math.floor(Math.random() * list.length);
+  return list[i];
+}
+
 export default function NewEntryModal() {
-   const store = useEntries();
-   const [form, setForm] = useState<Record<EntryType, string>>({
-      adversity: '',
-      belief: '',
-      consequence: '',
-   });
+  const store = useEntries();
+  const headerHeight = useHeaderHeight();
 
-   const [visited, setVisited] = useState<Record<EntryType, boolean>>({
-      adversity: false,
-      belief: false,
-      consequence: false,
-   });
+  const [visited, setVisited] = useState<Set<EntryType>>(new Set());
+  const [form, setForm] = useState<Record<EntryType, string>>({
+    adversity: '',
+    belief: '',
+    consequence: '',
+  });
 
-   const steps: { key: EntryType; label: string }[] = useMemo(
-      () => [
-         { key: 'adversity', label: 'Adversity' },
-         { key: 'belief', label: 'Belief' },
-         { key: 'consequence', label: 'Consequence' },
-      ],
-      []
-   );
+  const prompts = useMemo<Record<EntryType, string>>(
+    () => ({
+      adversity: pickRandomPrompt(rawAbcde.adversity),
+      belief: pickRandomPrompt(rawAbcde.belief),
+      consequence: pickRandomPrompt(rawAbcde.consequence),
+    }),
+    []
+  );
 
-   const [prompts] = useState<Record<EntryType, string>>(() => {
-      const pick = (k: EntryType) => {
-         const list = rawAbcde[k] ?? [];
-         return list.length
-            ? list[Math.floor(Math.random() * list.length)]
-            : 'Empty JSON';
-      };
-      return {
-         adversity: pick('adversity'),
-         belief: pick('belief'),
-         consequence: pick('consequence'),
-      };
-   });
+  const [idx, setIdx] = useState(0);
+  const currKey = STEP_ORDER[idx] as EntryType;
 
-   const [idx, setIdx] = useState(0);
-   const curr = steps[idx];
+  const setField = useCallback(
+    (k: EntryType) => (v: string) => setForm((f) => ({ ...f, [k]: v })),
+    []
+  );
 
+  const canGoBack = idx > 0;
+  const isLast = idx === STEP_ORDER.length - 1;
+  const currentEmpty = !form[currKey]?.trim();
 
-   const setField =
-      (k: EntryType) =>
-      (v: string): void =>
-         setForm((f) => ({ ...f, [k]: v }));
+  function onNext() {
+    if (isLast) submit();
+    else setIdx((i) => i + 1);
+  }
 
-   const canGoBack = idx > 0;
-   const isLast = idx === steps.length - 1;
-   const currentEmpty = !form[curr.key]?.trim();
+  function onBack() {
+    if (canGoBack) setIdx((i) => i - 1);
+  }
 
-   function onNext() {
-     if(idx == 2) submit();
-     else setIdx((i) => i + 1);
-   }
+  const submit = useCallback(() => {
+    const { adversity, belief, consequence } = form;
+    store.createEntry(adversity, belief, consequence);
+    router.back();
+  }, [form, store]);
 
-   function onBack() {
-      if (canGoBack) setIdx((i) => i - 1);
-   }
-
-   function submit() {
-      store.createEntry(form.adversity, form.belief, form.consequence);
-      router.back();
-   }
-
-    const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
+  const keyboardVerticalOffset = Platform.OS === 'ios' ? headerHeight : 0;
 
-  const keyboardVerticalOffset =
-    Platform.OS === 'ios'
-      ? headerHeight // if modal has header
-      : 0;
-
-   return (
+  return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={keyboardVerticalOffset}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={{ padding: 20, flex: 1, gap: 16 }}>
-         {/* Progress header */}
-         <Text style={{ fontSize: 16 }}>
-            Step {idx + 1} of {steps.length} — {curr.label}
-         </Text>
+        <View className="page" style={styles.page}>
+          {/* Progress header */}
+          <Text style={styles.headerText}>
+            Step {idx + 1} of {STEP_ORDER.length} — {STEP_LABEL[currKey]}
+          </Text>
 
-         {/* Reuse your existing InputField */}
-         <View style={{ flex: 1 }}>
-          
+          <View style={styles.content}>
             <InputField
-               key={curr.key}
-               value={form[curr.key]}
-               setValue={setField(curr.key)}
-               entryType={curr.key}
-               prompt={prompts[curr.key]}
-               visited={visited[curr.key]}
-               setVisited={setVisited}
+              key={currKey}
+              value={form[currKey]}
+              setValue={setField(currKey)}
+              entryType={currKey}
+              prompt={prompts[currKey]}
+              visited={visited.has(currKey)}
+              setVisited={setVisited}
             />
-           
-         </View>
+          </View>
 
-         {/* Nav actions */}
-         <View
-            style={{
-              flex: 0.25,
-               flexDirection: 'row',
-               gap: 12,
-               justifyContent: 'space-between',
-            }}
-         >
-            <View style={{ flex: 1 }}>
-               <Button title="Back" onPress={onBack} disabled={!canGoBack} />
+          {/* Nav actions */}
+          <View style={[styles.actionsRow, { paddingBottom: insets.bottom + 12 }]}>
+            <View style={styles.actionCol}>
+              <Button title="Back" onPress={onBack} disabled={!canGoBack} />
             </View>
-            <View style={{ flex: 1 }}>
-               <Button
-                  title={isLast ? 'Finish' : 'Next'}
-                  onPress={onNext}
-                  disabled={currentEmpty}
-                  color={isLast ? 'green' : undefined}
-               />
+            <View style={styles.actionCol}>
+              <Button
+                title={isLast ? 'Finish' : 'Next'}
+                onPress={onNext}
+                disabled={currentEmpty}
+                color={isLast ? 'red' : undefined}
+              />
             </View>
-         </View>
-      </View>
+          </View>
+        </View>
       </TouchableWithoutFeedback>
-       </KeyboardAvoidingView>
-   );
+    </KeyboardAvoidingView>
+  );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  page: { padding: 20, flex: 1, gap: 16 },
+  headerText: { fontSize: 16 },
+  content: { flex: 1 },
+  actionsRow: {
+    flexDirection: 'row',
+    minHeight: 64,
+    maxHeight: 140,
+    alignItems: 'center',
+  },
+  actionCol: { flex: 1 },
+});

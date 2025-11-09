@@ -6,103 +6,98 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-11-08
+- Refactor `entry-new`
+  - Move component styles into a dedicated StyleSheet object
+  - Simplify traversal-key logic
+- Refactor `InputField`
+  - Make text entry size adapt to keyboard visibility
+  - Make prompt scale with screen size and center it
+  - Move component styles into a dedicated StyleSheet object
+- Implement `useKeyboardVisible` hook (cross-platform show/hide events)
+- Implement `useResponsiveFont` hook  (moderated, clamped width-based scaling)
+- Introduce `abcdeDev.json` (test fixtures)
+- Update `app.json` to handle Android keyboard resize
+
 ### 2025-11-06
-- InputField now dynamically adjusts to the soft keyboard (prompt text resizes to prevent clipping)
-- Refactored InputField styling for cleaner layout and keyboard-aware behavior
-- Integrated Lottie loading indicator asset to signal a prompt is loading
-- Implemented useDeferredReady hook to delay prompt animations until the modal is fully rendered
+- Make `InputField` adjust to the soft keyboard (prevent prompt clipping)
+- Refactor `InputField` layout and styling for keyboard-aware behavior
+- Integrate Lottie loading indicator for prompt loading state
+- Implement `useDeferredReady` to delay prompt animations until the modal is rendered
 
 ### 2025-11-03
-
--  Implemented New Entry Modal
-   -  Added step-by-step input flow for Adversity, Belief, and Consequence fields
-   -  Integrated dynamic prompts sourced from JSON for contextual guidance
-   -  Added typewriter animation effect to make prompts feel more engaging and personal
-      -  https://docs.benjamineruvieru.com/docs/react-native-type-animation/
-   -  Improved keyboard handling and responsive layout for a smoother mobile experience
+- Implement New Entry Modal
+  - Step-by-step input flow for Adversity, Belief, Consequence
+  - Dynamic prompts sourced from JSON for contextual guidance
+  - Typewriter animation for more engaging prompts  
+    - https://docs.benjamineruvieru.com/docs/react-native-type-animation/
+  - Improved keyboard handling and responsive layout
 
 ### 2025-10-25
-
--  Core abilities of entry creations, viewing, editing, and deleting established
--  Refactored EntriesStoreProvider for stable initialization
--  Added placeholderEntriesStore to prevent remounts and slide-in effects on startup
+- Establish core entry CRUD: create, view, edit, delete
+- Refactor `EntriesStoreProvider` for stable initialization
+- Add `placeholderEntriesStore` to prevent remounts/slide-in on startup
 
 ### 2025-10-24
-
--  Entry items now uniformly sorted based off timestamp created_at
--  Added a custom useEntries hook wrapping the Zustand store for simpler component integration
--  Implemented barebone entry input modal that nests input for:
--  Adversity input (core input)
--  Belief input (core input)
--  Modularized logic for better separation of concerns (store, hooks, UI fields)
--  What I learned:
--  The importance of encapsulating logic (store, hooks, UI) to keep code clean and scalable
+- Uniformly sort entry items by `created_at` timestamp
+- Add custom `useEntries` hook wrapping Zustand store
+- Implement barebones entry input modal nesting:
+  - Adversity input (core)
+  - Belief input (core)
+- Modularize logic for clearer separation of concerns (store, hooks, UI)
+- **What I learned:** Encapsulating logic (store, hooks, UI) keeps code clean and scalable
 
 ### 2025-10-06
-
--  Implemented: useEntriesStore to satisfy the entire test suite
-   -  Added actions: hydrate, refresh, create, update, remove, clearErrors
-   -  Integrated dependency-injected EntriesService and Clock
-   -  Ensured deterministic ordering by sorting updatedAt in descending order
-   -  Added helpers for pending operations, error handling, and request ID stale-guarding
--  Verified: all optimistic, rollback, and concurrency tests pass
--  What I learned:
-   -  Optimistic updates: apply changes immediately, then commit or rollback after async resolution
-   -  Stale guarding: use request IDs and in-flight tracking to avoid overwriting fresh data
-   -  Zustand pattern: always use set() and get() instead of this for state updates
-   -  Immutable updates: required for reliable UI re-renders and predictable tests
+- Implement `useEntriesStore` to satisfy the test suite
+  - Actions: `hydrate`, `refresh`, `create`, `update`, `remove`, `clearErrors`
+  - Dependency-inject `EntriesService` and `Clock`
+  - Deterministic ordering via `updatedAt` descending
+  - Helpers for pending ops, error handling, request-ID stale-guarding
+- Verify optimistic, rollback, and concurrency tests pass
+- **What I learned:**
+  - Optimistic updates: apply immediately; commit/rollback after async result
+  - Stale-guarding: request IDs and in-flight tracking prevent overwrites
+  - Zustand pattern: use `set()`/`get()` (not `this`) for updates
+  - Immutable updates: required for reliable re-renders and tests
 
 ### 2025-10-02
-
--  Added comprehensive tests for useEntriesStore
-   -  Created supporting test utilities (builders, makeEntriesServiceMock, TestClock, etc.)
-   -  Verified optimistic updates, rollback on failure, concurrency guards, and error handling
-   -  Covered hydrate, refresh, create, update, remove, and clearErrors behaviors
--  Testing pipeline structured as:
-   -  useEntriesStore.test.ts — unit tests with mocked service, validating consumer-facing state & actions
-   -  entriesService.test.ts — unit tests for service layer, ensuring business logic correctness
-   -  entriesAdapter.test.ts — integration tests for adapter layer, ensuring DB contract compliance
+- Add comprehensive tests for `useEntriesStore`
+  - Test utilities: builders, `makeEntriesServiceMock`, `TestClock`, etc.
+  - Cover optimistic updates, rollback on failure, concurrency guards, error handling
+  - Cover `hydrate`, `refresh`, `create`, `update`, `remove`, `clearErrors`
+- Testing layout:
+  - `useEntriesStore.test.ts` — unit tests (mocked service)
+  - `entriesService.test.ts` — service logic
+  - `entriesAdapter.test.ts` — adapter/DB contract integration
 
 ### 2025-09-28
-
--  Added base UI screens under (tabs): entries, feeds, settings, dev
--  Created AdapterProvider (React Context) for database access
--  Created EntriesService to wrap adapter with business logic
--  Wrote service-level tests for:
-   -  list
-   -  create
-   -  update
-   -  remove
+- Add base UI screens under `(tabs)`: entries, feeds, settings, dev
+- Create `AdapterProvider` (React Context) for DB access
+- Create `EntriesService` to wrap adapter business logic
+- Service tests for: list, create, update, remove
 
 ### 2025-09-23
-
--  Add comprehensive tests for `entriesAdapter` (CRUD + timestamps + dirtySince)
--  Implement `entriesAdapter.sqlite` against Expo SQLite (named params, COALESCE, soft delete)
--  Run SQLite tests via `expo-sqlite-mock` (Jest transform allowlist + setup)
--  Refactor tests to use backend factories (memory + sqlite)
--  ✅ Unit + integration tests passing
+- Add comprehensive tests for `entriesAdapter` (CRUD + timestamps + `dirtySince`)
+- Implement `entriesAdapter.sqlite` using Expo SQLite (named params, `COALESCE`, soft delete)
+- Run SQLite tests via `expo-sqlite-mock` (Jest transform allowlist + setup)
+- Refactor tests to use backend factories (memory + sqlite)
+- ✅ Unit + integration tests passing
 
 ### 2025-09-11
-
--  Defined `Entry` model and `EntriesAdapter` interface.
--  Added stub in-memory implementation (`SQLEntriesAdapter`) for contract testing.
--  Wrote first tests:
-   -  add & retrieve entries
-   -  mark as deleted
--  Learned: contract-based testing ensures I can later swap SQLite in without breaking tests.
+- Define `Entry` model and `EntriesAdapter` interface
+- Add stub in-memory implementation (`SQLEntriesAdapter`) for contract testing
+- First tests:
+  - add & retrieve entries
+  - mark as deleted
+- **Learned:** contract-based testing enables later SQLite swap without breakage
 
 ### 2025-09-10
-
--  Set up Expo + Jest + TS project structure.
--  Added initial folders (`db/`, `api/`, `store/`, `services/`).
--  Established goal: write tests first, then implement features.
+- Set up Expo + Jest + TypeScript project structure
+- Add initial folders: `db/`, `api/`, `store/`, `services/`
+- Establish goal: write tests first, then implement features
 
 ---
 
 ## Next Steps
-
--  Format new entry modal
-   -  Make it look nicer
-   -  Simplify the code
--  Add lightweight form validation
--  Make Entry viewer pretty
+- Add lightweight form validation
+- Polish Entry viewer UI
