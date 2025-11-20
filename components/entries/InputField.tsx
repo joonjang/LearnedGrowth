@@ -9,11 +9,11 @@ import {
    Platform,
 } from 'react-native';
 import { TypeAnimation } from 'react-native-type-animation';
-import { EntryType } from '@/app/(modals)/entry-new';
 import { useDeferredReady } from '@/features/hooks/useDeferredReady';
 import ThreeDotsLoader from '../ThreeDotLoader';
 import { useResponsiveFont } from '@/features/hooks/useResponsiveFont';
 import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
+import { EntryType } from '@/models/entryType';
 
 type Props = {
    value: string;

@@ -18,7 +18,6 @@ import { useHeaderHeight } from '@react-navigation/elements';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EntryType } from '@/models/entryType';
 
-
 const STEP_ORDER = ['adversity', 'belief', 'consequence'] as const;
 const STEP_LABEL: Record<EntryType, string> = {
   adversity: 'Adversity',

@@ -6,6 +6,18 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-11-19
+- Went on a wild goose chase because the app kept crashing when some sort of state change happened
+  - Turned out it was an issue from `app.json` where the `"reactCompiler": true` was causing a React to think there was a mismatch in the hook when there in fact was NOT
+  - Setting it false solved it
+- Refactored the dev screen during the goose chase process
+- Archived some old files just in case
+- Helpful command inputs:
+    `rm -rf .expo .expo-shared node_modules/.cache metro-cache
+    watchman watch-del-all # if watchman installed
+    npm install
+    npx expo start -c`
+
 ### 2025-11-08
 - Refactor `entry-new`
   - Move component styles into a dedicated StyleSheet object

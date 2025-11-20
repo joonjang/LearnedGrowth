@@ -12,11 +12,12 @@ export default function RootLayout() {
                <AdapterGuard>
                   <Stack screenOptions={{ headerShown: false }}>
                      <Stack.Screen name="(tabs)" />
-                     <Stack.Screen name="(modals)/entry-new"
-                     options={{
-                        presentation: "modal",
-                        // headerShown: true
-                     }} />
+                     <Stack.Screen
+                        name="(modals)/entry-new"
+                        options={{
+                           presentation: 'modal',
+                        }}
+                     />
                   </Stack>
                </AdapterGuard>
             </SafeAreaProvider>

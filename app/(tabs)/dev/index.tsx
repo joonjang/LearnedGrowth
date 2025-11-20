@@ -1,92 +1,68 @@
-// app/(tabs)/dev/index.tsx
 import React, { useState } from 'react';
-import { View, Text, Button, FlatList, Pressable } from 'react-native';
+import { Button, FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link } from 'expo-router';
 import { useEntries } from '@/features/hooks/useEntries';
 
+// Minimal DB playground for useEntries
 export default function DevScreen() {
+   const [count, setCount] = useState(1);
+   const {
+      rows,
+      isHydrating,
+      pending,
+      errors,
+      hydrate,
+      refresh,
+      createEntry,
+      updateEntry,
+      deleteEntry,
+      clearErrors,
+   } = useEntries();
 
-   const [count, setCount] = useState(0);
-   const { rows, isHydrating, pending, errors, hydrate, refresh, createEntry, updateEntry, deleteEntry, clearErrors } = useEntries();
+   async function handleCreate() {
+      const suffix = String(count);
+      await createEntry(`adv-${suffix}`, `belief-${suffix}`);
+      setCount(count + 1);
+   }
 
    return (
       <SafeAreaView style={{ flex: 1, padding: 12 }}>
-         <View style={{ flexDirection: 'row' }}>
-            <Button
-               title={isHydrating ? 'Hydrating...' : 'Hydrate'}
-               onPress={hydrate}
-            />
+         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+            <Button title={isHydrating ? 'Hydrating…' : 'Hydrate'} onPress={hydrate} />
             <Button title="Refresh" onPress={refresh} />
-            <Button title="Insert" onPress={()=>{
-               createEntry('adversity - ' + count, 'belief - ' + count);
-               setCount(count + 1);
-            }} />
-            <Button
-               title="Clear Errors"
-               onPress={clearErrors}
-            />
+            <Button title="New" onPress={handleCreate} />
+            <Button title="Clear Errors" onPress={clearErrors} />
          </View>
 
-         <Link
-            href={'/(modals)/entry-new'}
-            style={{
-               borderWidth: 2,
-               backgroundColor: 'lightgreen',
-               paddingHorizontal: 8,
-               paddingVertical: 4,
-               borderRadius: 6,
-               marginRight: 8,
-            }}
-         >
-            Open modal
-         </Link>
-
          {'global' in errors && errors['global'] ? (
-            <Text>Global error: {String(errors['global'])}</Text>
+            <Text style={{ color: 'red', marginBottom: 8 }}>
+               Global error: {String(errors['global'])}
+            </Text>
          ) : null}
 
          <FlatList
             data={rows}
-            keyExtractor={(e) => e.id}
-            renderItem={({ item: e }) => (
-               <View style={{ paddingVertical: 8, borderBottomWidth: 1 }}>
-                  <Text>{e.adversity}</Text>
-                  <Text>{e.belief}</Text>
-                  <Text>{e.updatedAt}</Text>
-                  {pending[e.id] ? (
-                     <Text>pending: {pending[e.id].op}</Text>
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ gap: 10, paddingBottom: 24 }}
+            renderItem={({ item }) => (
+               <View style={{ borderWidth: 1, borderRadius: 8, padding: 10, gap: 4 }}>
+                  <Text style={{ fontWeight: '600' }}>{item.adversity}</Text>
+                  <Text>{item.belief}</Text>
+                  <Text style={{ color: '#555' }}>{item.updatedAt || 'timestamp?'}</Text>
+                  {pending[item.id] ? (
+                     <Text style={{ color: '#d97706' }}>pending: {pending[item.id].op}</Text>
                   ) : null}
-                  {errors[e.id] ? (
-                     <Text>error: {String(errors[e.id])}</Text>
+                  {errors[item.id] ? (
+                     <Text style={{ color: 'red' }}>error: {String(errors[item.id])}</Text>
                   ) : null}
-                  <View style={{ flexDirection: 'row' }}>
-                     <Pressable
-                        onPress={() => updateEntry(e.id, {belief: 'UPDATE ' + count})}
-                        style={{
-                           borderWidth: 1,
-                           borderColor: 'blue',
-                           paddingHorizontal: 8,
-                           paddingVertical: 4,
-                           borderRadius: 6,
-                           marginRight: 8,
-                        }}
-                     >
-                        <Text>Update</Text>
-                     </Pressable>
-                     <Pressable
-                        onPress={() => deleteEntry(e.id)}
-                        style={{
-                           borderWidth: 1,
-                           borderColor: 'red',
-                           paddingHorizontal: 8,
-                           paddingVertical: 4,
-                           borderRadius: 6,
-                           marginRight: 8,
-                        }}
-                     >
-                        <Text> Delete</Text>
-                     </Pressable>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                     <Button
+                        title="Update"
+                        onPress={() =>
+                           updateEntry(item.id, { belief: `${item.belief} (updated)` })
+                        }
+                     />
+                     <Button color="red" title="Delete" onPress={() => deleteEntry(item.id)} />
                   </View>
                </View>
             )}
