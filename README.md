@@ -6,6 +6,12 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-11-25
+- Color code following materialUI design pattern
+- Refreshed the entries list to render structured cards with adversity/belief/consequence and a dispute call-to-action 
+- Introduced an entry detail view routed under `/entries/[id]` with proper stack layout for nested screens 
+- Removed legacy entry screens and old archive variants 
+
 ### 2025-11-19
 - Went on a wild goose chase because the app kept crashing when some sort of state change happened
   - Turned out it was an issue from `app.json` where the `"reactCompiler": true` was causing a React to think there was a mismatch in the hook when there in fact was NOT
@@ -112,4 +118,5 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 - Add lightweight form validation
-- Polish Entry viewer UI
+- Polish Entry detail view
+- Implement Entry dispute and energy input flow

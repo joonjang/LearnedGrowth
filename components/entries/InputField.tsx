@@ -13,15 +13,15 @@ import { useDeferredReady } from '@/features/hooks/useDeferredReady';
 import ThreeDotsLoader from '../ThreeDotLoader';
 import { useResponsiveFont } from '@/features/hooks/useResponsiveFont';
 import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
-import { EntryType } from '@/models/entryType';
+import { NewInputEntryType } from '@/models/newInputEntryType';
 
 type Props = {
    value: string;
    setValue: (text: string) => void;
-   entryType: EntryType;
+   entryType: NewInputEntryType;
    prompt: string;
    visited: boolean;
-   setVisited: React.Dispatch<React.SetStateAction<Set<EntryType>>>;
+   setVisited: React.Dispatch<React.SetStateAction<Set<NewInputEntryType>>>;
 };
 
 export default function InputField({

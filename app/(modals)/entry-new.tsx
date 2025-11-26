@@ -12,15 +12,15 @@ import {
   View,
   StyleSheet,
 } from 'react-native';
-// import rawAbcde from '@/assets/data/abcde.json';
-import rawAbcde from '@/assets/data/abcdeDev.json';
+import rawAbcde from '@/assets/data/abcde.json';
+// import rawAbcde from '@/assets/data/abcdeDev.json';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { EntryType } from '@/models/entryType';
+import { NewInputEntryType } from '@/models/newInputEntryType';
 
 
 const STEP_ORDER = ['adversity', 'belief', 'consequence'] as const;
-const STEP_LABEL: Record<EntryType, string> = {
+const STEP_LABEL: Record<NewInputEntryType, string> = {
   adversity: 'Adversity',
   belief: 'Belief',
   consequence: 'Consequence',
@@ -36,14 +36,14 @@ export default function NewEntryModal() {
   const store = useEntries();
   const headerHeight = useHeaderHeight();
 
-  const [visited, setVisited] = useState<Set<EntryType>>(new Set());
-  const [form, setForm] = useState<Record<EntryType, string>>({
+  const [visited, setVisited] = useState<Set<NewInputEntryType>>(new Set());
+  const [form, setForm] = useState<Record<NewInputEntryType, string>>({
     adversity: '',
     belief: '',
     consequence: '',
   });
 
-  const prompts = useMemo<Record<EntryType, string>>(
+  const prompts = useMemo<Record<NewInputEntryType, string>>(
     () => ({
       adversity: pickRandomPrompt(rawAbcde.adversity),
       belief: pickRandomPrompt(rawAbcde.belief),
@@ -53,10 +53,10 @@ export default function NewEntryModal() {
   );
 
   const [idx, setIdx] = useState(0);
-  const currKey = STEP_ORDER[idx] as EntryType;
+  const currKey = STEP_ORDER[idx] as NewInputEntryType;
 
   const setField = useCallback(
-    (k: EntryType) => (v: string) => setForm((f) => ({ ...f, [k]: v })),
+    (k: NewInputEntryType) => (v: string) => setForm((f) => ({ ...f, [k]: v })),
     []
   );
 
