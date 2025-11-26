@@ -34,7 +34,7 @@ export default function EntryCard({entry}: Prop){
                 <Text style={styles.label}>
                     Consequence
                 </Text>
-                <Text>
+                <Text style={styles.text}>
                     {entry.consequence}
                 </Text>
             </View>
@@ -45,7 +45,7 @@ export default function EntryCard({entry}: Prop){
                 <Text style={styles.label}>
                     Dispute
                 </Text>
-                <Text>
+                <Text style={styles.text}>
                     {entry.dispute}
                 </Text>
             </View>
@@ -54,7 +54,7 @@ export default function EntryCard({entry}: Prop){
                 <Text style={styles.label}>
                     Energy
                 </Text>
-                <Text>
+                <Text style={styles.text}>
                     {entry.energy}
                 </Text>
             </View>

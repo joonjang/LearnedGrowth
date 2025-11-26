@@ -6,6 +6,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-11-26
+- Implemented a rough UI implementation for `dispute.tsx`
+
 ### 2025-11-25
 - Color code following materialUI design pattern
 - Refreshed the entries list to render structured cards with adversity/belief/consequence and a dispute call-to-action 
@@ -119,4 +122,4 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ## Next Steps
 - Add lightweight form validation
 - Polish Entry detail view
-- Implement Entry dispute and energy input flow
+- Polish Entry dispute and energy input flow

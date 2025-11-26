@@ -1,76 +1,67 @@
 {
-  "adversity": [
-    "What happened in plain facts without opinions?",
-    "Where were you and who else was involved?",
-    "What led up to this moment step by step?",
-    "What did you observe with your senses?",
-    "What did not happen that you expected?",
-    "What part of this event is within your control?",
-    "What specific trigger set this off?",
-    "If a camera recorded this, what would it show?"
-  ],
-  "belief": [
-    "What did you immediately tell yourself about this event?",
-    "What meaning did you assign to what happened?",
-    "What rule or story about yourself or others did this confirm for you?",
-    "What prediction did you make right after it happened?",
-    "What assumption are you making about causes and motives?",
-    "If this belief had a headline, what would it say?",
-    "What label did you apply to yourself or someone else?",
-    "What are you taking as proof that may only be interpretation?"
-  ],
-  "consequence": [
-    "What emotions did you feel and how intense were they from 0 to 10?",
-    "What actions did you take because of the belief?",
-    "What actions did you avoid because of the belief?",
-    "How did this belief affect your body sensations or energy?",
-    "How did it influence your tone or words with others?",
-    "What short term result came from acting on this belief?",
-    "What long term effect might follow if this belief continues?",
-    "How did this belief impact your goals today?"
-  ],
-  "dispute": {
-    "evidence": [
-      "What objective facts contradict or weaken this belief?",
-      "What data points are missing that you would need to be certain?",
-      "What did you do well that this belief ignores?",
-      "What prior situations turned out better than this belief predicts?",
-      "What would a neutral observer note about accuracy here?",
-      "What is the strongest counterexample from your past?"
-    ],
-    "alternatives": [
-      "What are three other explanations that fit the facts?",
-      "If the cause were specific and temporary, how would you phrase it?",
-      "What factors outside you could explain part of this?",
-      "What skills or habits could change this next time?",
-      "What simpler explanation might be true here?",
-      "What would you say to a friend in the same situation?"
-    ],
-    "implications": [
-      "If the belief were partly true, what is the most likely outcome?",
-      "What is the realistic worst case and how would you cope?",
-      "What is the best case and what would help reach it?",
-      "What small action reduces the downside today?",
-      "In one week, how important will this be on a scale of 0 to 10?",
-      "What contingency plan would make this manageable?"
-    ],
-    "usefulness": [
-      "How helpful is this belief for your goals today?",
-      "What belief would lead to better action right now?",
-      "If you keep this belief, what do you gain and what do you lose?",
-      "What mindset shift would make you more effective in the next hour?",
-      "What version of this belief is both honest and motivating?",
-      "What action does a more useful belief point you toward?"
-    ]
-  },
-  "energy": [
-    "After disputing, what emotion is present now and how strong is it from 0 to 10?",
-    "What is the next tiny step you feel ready to take?",
-    "What thought now feels truer and more helpful?",
-    "What commitment will you make for the next 24 hours?",
-    "What physical cue tells you your energy has shifted?",
-    "What support or resource will you use to keep momentum?",
-    "What will you do if the old belief returns?",
-    "How will you measure progress from this new stance?"
-  ]
+   "adversity": [
+      "What happened in plain facts without opinions?",
+      "Where were you and who else was involved?",
+      "What led up to this moment step by step?",
+      "What did you observe with your senses?",
+      "What did not happen that you expected?",
+      "What part of this event is within your control?",
+      "What specific trigger set this off?",
+      "If a camera recorded this, what would it show?"
+   ],
+   "belief": [
+      "What did you immediately tell yourself about this event?",
+      "What meaning did you assign to what happened?",
+      "What rule or story about yourself or others did this confirm for you?",
+      "What prediction did you make right after it happened?",
+      "What assumption are you making about causes and motives?",
+      "If this belief had a headline, what would it say?",
+      "What label did you apply to yourself or someone else?",
+      "What are you taking as proof that may only be interpretation?"
+   ],
+   "consequence": [
+      "What emotions did you feel and how intense were they from 0 to 10?",
+      "What actions did you take because of the belief?",
+      "What actions did you avoid because of the belief?",
+      "How did this belief affect your body sensations or energy?",
+      "How did it influence your tone or words with others?",
+      "What short term result came from acting on this belief?",
+      "What long term effect might follow if this belief continues?",
+      "How did this belief impact your goals today?"
+   ],
+   "dispute": {
+      "evidence": [
+         "What objective facts contradict or weaken this belief?",
+         "Are you confusing a possibility with a certainty?",
+         "What did you do well that this belief ignores?",
+         "Are you considering all the facts, or just the negative ones?",
+         "What is the strongest counterexample from your past?"
+      ],
+      "alternatives": [
+         "What are three other explanations that fit the facts?",
+         "If the cause were specific and temporary, how would you phrase it?",
+         "What factors outside you could explain part of this?",
+         "What skills or habits could change this next time?",
+         "What simpler explanation might be true here?",
+         "What would you say to a friend in the same situation?"
+      ],
+      "usefulness": [
+         "How helpful is this belief for your goals today?",
+         "What belief would lead to better action right now?",
+         "If you keep this belief, what do you gain and what do you lose?",
+         "What mindset shift would make you more effective in the next hour?",
+         "What version of this belief is both honest and motivating?",
+         "What action does a more useful belief point you toward?"
+      ]
+   },
+   "energy": [
+      "After disputing, what emotion is present now and how strong is it from 0 to 10?",
+      "What is the next tiny step you feel ready to take?",
+      "What thought now feels truer and more helpful?",
+      "What commitment will you make for the next 24 hours?",
+      "What physical cue tells you your energy has shifted?",
+      "What support or resource will you use to keep momentum?",
+      "What will you do if the old belief returns?",
+      "How will you measure progress from this new stance?"
+   ]
 }

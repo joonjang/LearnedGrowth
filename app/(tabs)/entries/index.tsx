@@ -1,4 +1,5 @@
 import EntryCard from '@/components/entries/EntryCard';
+import { getDateParts, getTimeLabel } from '@/lib/date';
 import { useEntries } from '@/features/hooks/useEntries';
 import { Entry } from '@/models/entry';
 import { Link, router } from 'expo-router';
@@ -80,67 +81,7 @@ function buildSections(rows: Entry[]): EntrySection[] {
    return sections;
 }
 
-function getDateParts(entry: Entry): { dateKey: string; dateLabel: string } {
-   const raw = entry.createdAt;
-   const d = new Date(raw);
 
-   if (Number.isNaN(d.getTime())) {
-      return { dateKey: 'invalid', dateLabel: '' };
-   }
-
-   // dateKey: "YYYY-MM-DD"
-   const y = d.getFullYear();
-   const m = d.getMonth() + 1;
-   const day = d.getDate();
-   const dateKey = `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(
-      2,
-      '0'
-   )}`;
-
-   const now = new Date();
-   const todayKey = toKey(now);
-
-   const yesterday = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - 1
-   );
-   const yesterdayKey = toKey(yesterday);
-
-   let dateLabel: string;
-   if (dateKey === todayKey) {
-      dateLabel = 'Today';
-   } else if (dateKey === yesterdayKey) {
-      dateLabel = 'Yesterday';
-   } else {
-      dateLabel = d.toLocaleDateString('en-US', {
-         month: 'short',
-         day: 'numeric',
-      }); // e.g. "Jan 10"
-   }
-
-   return { dateKey, dateLabel };
-}
-
-function toKey(d: Date): string {
-   const y = d.getFullYear();
-   const m = d.getMonth() + 1;
-   const day = d.getDate();
-   return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-}
-
-function getTimeLabel(entry: Entry): string {
-   const raw = entry.createdAt;
-   if (!raw) return '';
-
-   const d = new Date(raw);
-   if (Number.isNaN(d.getTime())) return '';
-
-   return d.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-   });
-}
 
 const styles = StyleSheet.create({
    container: {
