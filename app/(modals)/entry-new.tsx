@@ -101,7 +101,7 @@ export default function NewEntryModal() {
 
                <View style={styles.content}>
                   <InputField
-                     key={currKey}
+                    //  key={currKey}
                      value={form[currKey]}
                      setValue={setField(currKey)}
                      entryType={currKey}

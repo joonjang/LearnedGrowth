@@ -1,11 +1,5 @@
 import { useRef, useMemo } from 'react';
-import {
-   Pressable,
-   TextInput,
-   Text,
-   View,
-   StyleSheet,
-} from 'react-native';
+import { Pressable, TextInput, Text, View, StyleSheet } from 'react-native';
 import { TypeAnimation } from 'react-native-type-animation';
 import { useDeferredReady } from '@/features/hooks/useDeferredReady';
 import ThreeDotsLoader from '../ThreeDotLoader';
@@ -60,7 +54,9 @@ export default function InputField<T extends string>({
    const inputBoxDims = useMemo(() => {
       const baseMin = promptSize === 'compact' ? 140 : 160;
       const baseMax = promptSize === 'compact' ? 280 : 320;
-      const minHeight = isKeyboardVisible ? Math.max(100, baseMin - 40) : baseMin;
+      const minHeight = isKeyboardVisible
+         ? Math.max(100, baseMin - 40)
+         : baseMin;
 
       return { minHeight, maxHeight: baseMax };
    }, [promptSize, isKeyboardVisible]);
@@ -97,10 +93,11 @@ export default function InputField<T extends string>({
                </Text>
             ) : readyToAnimate ? (
                <TypeAnimation
+                  key={entryType}
                   sequence={sequence}
                   cursor={false}
                   typeSpeed={50}
-                  style={promptTextStyle} 
+                  style={promptTextStyle}
                />
             ) : (
                <ThreeDotsLoader />
@@ -108,9 +105,7 @@ export default function InputField<T extends string>({
          </View>
 
          {/* BOTTOM — input lane anchored to bottom */}
-         <View
-            style={[styles.bottomHalf, styles.bottomStick]}
-         >
+         <View style={[styles.bottomHalf, styles.bottomStick]}>
             <Pressable
                onPress={() => inputRef.current?.focus()}
                style={[styles.inputBox, inputBoxDims]}

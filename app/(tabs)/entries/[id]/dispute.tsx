@@ -244,7 +244,6 @@ export default function DisputeScreen() {
          <KeyboardAvoidingView
             style={styles.root}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={0}
          >
             <View style={styles.page}>
                {/* HEADER */}
@@ -256,17 +255,10 @@ export default function DisputeScreen() {
                <ScrollView
                   ref={scrollRef}
                   style={styles.scroll}
-                  contentContainerStyle={[
-                     styles.scrollContent,
-                    //  {
-                    //     paddingBottom: isKeyboardVisible
-                    //        ? insets.bottom + 8
-                    //        : insets.bottom + 16,
-                    //  },
-                  ]}
+                  contentContainerStyle={[styles.scrollContent]}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
-                  onScrollBeginDrag={Keyboard.dismiss}
+                //   onScrollBeginDrag={Keyboard.dismiss}
                   onScroll={handleScroll}
                   scrollEventThrottle={16}
                   onContentSizeChange={() => {
@@ -306,15 +298,15 @@ export default function DisputeScreen() {
                         </Text>
                      ) : readyToAnimate ? (
                         <TypeAnimation
-                            key={currKey} 
+                           key={currKey}
                            sequence={promptSequence}
                            cursor={false}
                            typeSpeed={50}
                            style={promptTextStyle}
                         />
                      ) : (
-                        <View style={{ padding: 48, flex: 1}}>
-                        <ThreeDotsLoader />
+                        <View style={{ padding: 48, flex: 1 }}>
+                           <ThreeDotsLoader />
                         </View>
                      )}
                   </View>
@@ -345,12 +337,7 @@ export default function DisputeScreen() {
                </View>
 
                {/* BUTTONS (CUSTOM, CENTERED LABELS) */}
-               <View
-                  style={[
-                     styles.actionsRow,
-
-                  ]}
-               >
+               <View style={[styles.actionsRow]}>
                   <View style={styles.actionCol}>
                      <Button
                         title={!canGoBack ? 'Close' : 'Back'}
@@ -365,7 +352,7 @@ export default function DisputeScreen() {
                         disabled={currentEmpty}
                         color={isLast ? 'red' : undefined}
                      />
-                  </View> 
+                  </View>
                </View>
             </View>
          </KeyboardAvoidingView>
@@ -392,7 +379,7 @@ const styles = StyleSheet.create({
       flexGrow: 1,
       justifyContent: 'space-between', // top context, bottom interaction block
       gap: 16,
-      paddingBottom: 24
+      paddingBottom: 24,
    },
 
    // Top context

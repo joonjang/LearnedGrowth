@@ -1,7 +1,14 @@
 import { formatDate } from '@/lib/date';
 import { useEntries } from '@/features/hooks/useEntries';
 import { router, useLocalSearchParams } from 'expo-router';
-import { StyleSheet, View, Text, Pressable } from 'react-native';
+import {
+   StyleSheet,
+   View,
+   Text,
+   Pressable,
+   Button,
+   ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function EntryDetailScreen() {
@@ -9,6 +16,12 @@ export default function EntryDetailScreen() {
    const entryId = Array.isArray(id) ? id[0] : id;
    const store = useEntries();
    const entry = store.getEntryById(entryId);
+
+   // DEBUG
+
+   function clearDisputeEnergy() {
+      store.updateEntry(entryId, { ...entry, dispute: '', energy: '' });
+   }
 
    const formattedDate = formatDate(entry.createdAt);
 
@@ -31,7 +44,7 @@ export default function EntryDetailScreen() {
                <Text>Back</Text>
             </Pressable>
             <View style={styles.titleMeta}>
-                {/* TODO: change time to the time stamp of when this was made, same format as the entries timestamp format */}
+               {/* TODO: change time to the time stamp of when this was made, same format as the entries timestamp format */}
                <Text style={styles.title}>[TIME]</Text>
                <Text style={styles.dot}> · </Text>
                <Text style={styles.date}>{formattedDate}</Text>
@@ -39,39 +52,44 @@ export default function EntryDetailScreen() {
          </View>
          <View style={styles.divider} />
 
-         <View style={styles.section}>
-            <Text style={styles.label}>Adversity</Text>
-            <Text style={styles.subLabel}>What happened?</Text>
-            <Text style={styles.text}>{entry.adversity}</Text>
-         </View>
+         <ScrollView>
+            <View style={styles.section}>
+               <Text style={styles.label}>Adversity</Text>
+               <Text style={styles.subLabel}>What happened?</Text>
+               <Text style={styles.text}>{entry.adversity}</Text>
+            </View>
 
-         <View style={styles.section}>
-            <Text style={styles.label}>Belief</Text>
-            <Text style={styles.subLabel}>What were you telling yourself?</Text>
-            <Text style={styles.text}>{entry.belief}</Text>
-         </View>
+            <View style={styles.section}>
+               <Text style={styles.label}>Belief</Text>
+               <Text style={styles.subLabel}>
+                  What were you telling yourself?
+               </Text>
+               <Text style={styles.text}>{entry.belief}</Text>
+            </View>
 
-         <View style={styles.section}>
-            <Text style={styles.label}>Consequence</Text>
-            <Text style={styles.subLabel}>How did you feel and act?</Text>
-            <Text style={styles.text}>{entry.consequence}</Text>
-         </View>
+            <View style={styles.section}>
+               <Text style={styles.label}>Consequence</Text>
+               <Text style={styles.subLabel}>How did you feel and act?</Text>
+               <Text style={styles.text}>{entry.consequence}</Text>
+            </View>
 
-         <View style={styles.section}>
-            <Text style={styles.label}>Dispute</Text>
-            <Text style={styles.subLabel}>
-               Evidence. Alternatives. Usefulness.
-            </Text>
-            <Text style={styles.text}>{entry.dispute}</Text>
-         </View>
+            <View style={styles.section}>
+               <Text style={styles.label}>Dispute</Text>
+               <Text style={styles.subLabel}>
+                  Evidence. Alternatives. Usefulness.
+               </Text>
+               <Text style={styles.text}>{entry.dispute}</Text>
+            </View>
 
-         <View style={styles.section}>
-            <Text style={styles.label}>Energy</Text>
-            <Text style={styles.subLabel}>
-               How you feel after the disputation.
-            </Text>
-            <Text style={styles.text}>{entry.energy}</Text>
-         </View>
+            <View style={styles.section}>
+               <Text style={styles.label}>Energy</Text>
+               <Text style={styles.subLabel}>
+                  How you feel after the disputation.
+               </Text>
+               <Text style={styles.text}>{entry.energy}</Text>
+            </View>
+         </ScrollView>
+         <Button onPress={clearDisputeEnergy} title="Clear" />
       </SafeAreaView>
    );
 }
