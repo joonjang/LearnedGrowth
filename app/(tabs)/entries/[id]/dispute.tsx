@@ -1,26 +1,45 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+   useCallback,
+   useEffect,
+   useMemo,
+   useRef,
+   useState,
+} from 'react';
 import {
    View,
    Text,
-   Button,
    KeyboardAvoidingView,
    Platform,
-   TouchableWithoutFeedback,
    Keyboard,
    StyleSheet,
+   Pressable,
+   TextInput,
+   ScrollView,
+   Button,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+   SafeAreaView,
+   useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
-import InputField from '@/components/entries/InputField';
 import rawAbcde from '@/assets/data/abcde.json';
 import { useEntries } from '@/features/hooks/useEntries';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { Entry } from '@/models/entry';
 import type { AbcdeJson } from '@/models/abcdeJson';
 import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
+import { TypeAnimation } from 'react-native-type-animation';
+import { useDeferredReady } from '@/features/hooks/useDeferredReady';
+import ThreeDotsLoader from '@/components/ThreeDotLoader';
+import { useResponsiveFont } from '@/features/hooks/useResponsiveFont';
 
-const STEP_ORDER = ['evidence', 'alternatives', 'usefulness', 'energy'] as const;
+const STEP_ORDER = [
+   'evidence',
+   'alternatives',
+   'usefulness',
+   'energy',
+] as const;
 const STEP_LABEL: Record<NewInputDisputeType, string> = {
    evidence: 'Evidence',
    alternatives: 'Alternatives',
@@ -70,9 +89,7 @@ export default function DisputeScreen() {
    useEffect(() => {
       if (!entry) return;
       setForm((prev) => {
-         const hasUserInput = Object.values(prev).some(
-            (val) => !!val.trim()
-         );
+         const hasUserInput = Object.values(prev).some((val) => !!val.trim());
          if (hasUserInput) return prev;
 
          return {
@@ -99,7 +116,14 @@ export default function DisputeScreen() {
    const canGoBack = idx > 0;
    const isLast = idx === STEP_ORDER.length - 1;
    const currentEmpty = !form[currKey]?.trim();
+
    const isKeyboardVisible = useKeyboardVisible();
+   const promptSize: 'default' | 'compact' = 'compact';
+   const inputRef = useRef<TextInput>(null);
+   const scrollRef = useRef<ScrollView>(null);
+   const readyToAnimate = useDeferredReady(1200);
+   const { scaleFont } = useResponsiveFont();
+   const insets = useSafeAreaInsets();
 
    const setField = useCallback(
       (k: NewInputDisputeType) => (v: string) =>
@@ -110,8 +134,52 @@ export default function DisputeScreen() {
       []
    );
 
-   const insets = useSafeAreaInsets();
-   const keyboardVerticalOffset = 0;
+   const { baseFont, minFont } = useMemo(() => {
+      if (promptSize === 'compact') {
+         return {
+            baseFont: scaleFont(30, { min: 22, max: 40, factor: 0.35 }),
+            minFont: scaleFont(24, { min: 20, max: 32, factor: 0.35 }),
+         };
+      }
+      return {
+         baseFont: scaleFont(38, { min: 26, max: 48, factor: 0.4 }),
+         minFont: scaleFont(30, { min: 22, max: 40, factor: 0.4 }),
+      };
+   }, [promptSize, scaleFont]);
+
+   const promptTextStyle = useMemo(
+      () => ({
+         ...styles.promptText,
+         fontSize: isKeyboardVisible ? minFont : baseFont,
+      }),
+      [isKeyboardVisible, minFont, baseFont]
+   );
+
+   const inputBoxDims = useMemo(() => {
+      const baseMin = promptSize === 'compact' ? 140 : 160;
+      const baseMax = promptSize === 'compact' ? 280 : 320;
+      const minHeight = isKeyboardVisible
+         ? Math.max(100, baseMin - 40)
+         : baseMin;
+
+      return { minHeight, maxHeight: baseMax };
+   }, [promptSize, isKeyboardVisible]);
+
+   const promptSequence = useMemo(
+      () => [
+         { text: prompts[currKey] },
+         {
+            action: () =>
+               setVisited((prev) => {
+                  if (prev.has(currKey)) return prev;
+                  const next = new Set(prev);
+                  next.add(currKey);
+                  return next;
+               }),
+         },
+      ],
+      [prompts, currKey, setVisited]
+   );
 
    const submit = useCallback(async () => {
       if (!entry) return;
@@ -138,11 +206,20 @@ export default function DisputeScreen() {
       if (canGoBack) setIdx((i) => i - 1);
    }
 
+   useEffect(() => {
+      const sub = Keyboard.addListener('keyboardDidShow', () => {
+         requestAnimationFrame(() => {
+            scrollRef.current?.scrollToEnd({ animated: true });
+         });
+      });
+
+      return () => sub.remove();
+   }, []);
+
    if (!entry) {
       return (
          <SafeAreaView style={styles.centered}>
             <Text>Entry not found.</Text>
-            <Button title="Back" onPress={() => router.back()} />
          </SafeAreaView>
       );
    }
@@ -152,26 +229,37 @@ export default function DisputeScreen() {
          <KeyboardAvoidingView
             style={styles.root}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={keyboardVerticalOffset}
+            keyboardVerticalOffset={0}
          >
-            <TouchableWithoutFeedback
-               onPress={Keyboard.dismiss}
-               accessible={false}
-            >
-               <View
-                  style={[
-                     styles.page,
-                     isKeyboardVisible && styles.pageKeyboardOpen,
-                  ]}
-               >
-                  <Text style={styles.headerText}>
-                     Step {idx + 1} of {STEP_ORDER.length} — {STEP_LABEL[currKey]}
-                  </Text>
+            <View style={styles.page}>
+               {/* HEADER */}
+               <Text style={styles.headerText}>
+                  Step {idx + 1} of {STEP_ORDER.length} — {STEP_LABEL[currKey]}
+               </Text>
 
+               {/* EVERYTHING ELSE SCROLLS AS ONE LAYOUT (TOP CONTEXT, BOTTOM INTERACTION) */}
+               <ScrollView
+                  ref={scrollRef}
+                  style={styles.scroll}
+                  contentContainerStyle={[
+                     styles.scrollContent,
+                     {
+                        paddingBottom: isKeyboardVisible
+                           ? insets.bottom + 8
+                           : insets.bottom + 16,
+                     },
+                  ]}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                  onScrollBeginDrag={Keyboard.dismiss}
+               >
+                  {/* TOP: CONTEXT BOX */}
                   <View style={styles.contextBox}>
                      <View style={styles.contextRow}>
                         <Text style={styles.contextLabel}>Adversity</Text>
-                        <Text style={styles.contextText}>{entry.adversity}</Text>
+                        <Text style={styles.contextText}>
+                           {entry.adversity}
+                        </Text>
                      </View>
                      <View style={styles.contextDivider} />
                      <View style={styles.contextRow}>
@@ -180,45 +268,82 @@ export default function DisputeScreen() {
                      </View>
                   </View>
 
-                  <View style={styles.content}>
-                     <InputField
-                        key={currKey}
-                        value={form[currKey]}
-                        setValue={setField(currKey)}
-                        entryType={currKey}
-                        prompt={prompts[currKey]}
-                        visited={visited.has(currKey)}
-                        setVisited={setVisited}
-                        promptSize="compact"
-                     />
-                  </View>
+                  {/* BOTTOM GROUP: PROMPT + INPUT + BUTTONS (NO GAP BETWEEN PROMPT & INPUT) */}
+                  <View style={styles.bottomGroup}>
+                     {/* PROMPT */}
+                     <View style={styles.promptContainer}>
+                        {visited.has(currKey) ? (
+                           <Text
+                              style={promptTextStyle}
+                              numberOfLines={6}
+                              adjustsFontSizeToFit
+                              minimumFontScale={0.85}
+                              allowFontScaling
+                           >
+                              {prompts[currKey]}
+                           </Text>
+                        ) : readyToAnimate ? (
+                           <TypeAnimation
+                              sequence={promptSequence}
+                              cursor={false}
+                              typeSpeed={50}
+                              style={promptTextStyle}
+                           />
+                        ) : (
+                           <ThreeDotsLoader />
+                        )}
+                     </View>
 
-                  <View
-                     style={[
-                        styles.actionsRow,
-                        {
-                           paddingBottom: isKeyboardVisible ? 0 : 12,
-                        },
-                     ]}
-                  >
-                     <View style={styles.actionCol}>
-                        <Button
-                           title="Back"
-                           onPress={onBack}
-                           disabled={!canGoBack}
-                        />
+                     {/* INPUT */}
+                     <View style={styles.inputContainer}>
+                        <Pressable
+                           onPress={() => inputRef.current?.focus()}
+                           style={[styles.inputBox, inputBoxDims]}
+                        >
+                           <TextInput
+                              ref={inputRef}
+                              placeholder="Enter here"
+                              value={form[currKey]}
+                              onChangeText={setField(currKey)}
+                              style={styles.inputText}
+                              multiline
+                              scrollEnabled={false} // let ScrollView scroll vertically
+                              textAlignVertical="top"
+                              onFocus={() => {
+                                 scrollRef.current?.scrollToEnd({
+                                    animated: true,
+                                 });
+                              }}
+                           />
+                        </Pressable>
                      </View>
-                     <View style={styles.actionCol}>
-                        <Button
-                           title={isLast ? 'Save' : 'Next'}
-                           onPress={onNext}
-                           disabled={currentEmpty}
-                           color={isLast ? 'red' : undefined}
-                        />
+
+                     {/* BUTTONS (CUSTOM, CENTERED LABELS) */}
+                     <View
+                        style={[
+                           styles.actionsRow,
+                           { paddingBottom: insets.bottom + 12 },
+                        ]}
+                     >
+                        <View style={styles.actionCol}>
+                           <Button
+                              title="Back"
+                              onPress={onBack}
+                              disabled={!canGoBack}
+                           />
+                        </View>
+                        <View style={styles.actionCol}>
+                           <Button
+                              title={isLast ? 'Finish' : 'Next'}
+                              onPress={onNext}
+                              disabled={currentEmpty}
+                              color={isLast ? 'red' : undefined}
+                           />
+                        </View>
                      </View>
                   </View>
-               </View>
-            </TouchableWithoutFeedback>
+               </ScrollView>
+            </View>
          </KeyboardAvoidingView>
       </SafeAreaView>
    );
@@ -227,32 +352,25 @@ export default function DisputeScreen() {
 const styles = StyleSheet.create({
    safeArea: { flex: 1, backgroundColor: '#fff' },
    root: { flex: 1 },
+
    page: {
+      flex: 1,
       paddingHorizontal: 20,
       paddingTop: 20,
-      paddingBottom: 20,
-      flex: 1,
+      paddingBottom: 12,
       gap: 10,
    },
-   pageKeyboardOpen: {
-      paddingBottom: 0,
-   },
+
    headerText: { fontSize: 16 },
-   content: { flex: 1,},
-   actionsRow: {
-      flexDirection: 'row',
-      minHeight: 52,
-      maxHeight: 140,
-      alignItems: 'center',
+
+   scroll: { flex: 1 },
+   scrollContent: {
+      flexGrow: 1,
+      justifyContent: 'space-between', // top context, bottom interaction block
+      gap: 16,
    },
-   actionCol: { flex: 1 },
-   centered: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: 8,
-      
-   },
+
+   // Top context
    contextBox: {
       backgroundColor: '#F3F4F6',
       padding: 12,
@@ -274,5 +392,61 @@ const styles = StyleSheet.create({
       height: 1,
       backgroundColor: '#E5E7EB',
       marginVertical: 2,
+   },
+
+   // promptContainer: {
+   //    paddingHorizontal: 16,
+   // },
+
+   promptText: {
+      fontWeight: '600',
+      flexShrink: 1,
+      padding: 16,
+      paddingBottom: 24
+   },
+
+   inputContainer: {
+      paddingHorizontal: 16,
+   },
+
+   inputBox: {
+      borderRadius: 10,
+      backgroundColor: '#e3e3e3ff',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      overflow: 'hidden',
+   },
+
+   inputText: {
+      fontSize: 18,
+      lineHeight: 24,
+      color: '#111',
+      includeFontPadding: false as any,
+   },
+
+   // Actions
+   actionsRow: {
+      flexDirection: 'row',
+      gap: 12,
+      paddingHorizontal: 16,
+   },
+   actionButton: {
+      flex: 1,
+   },
+   actionCol: { flex: 1 },
+   actionButtonDanger: {
+      backgroundColor: '#DC2626',
+   },
+
+   actionButtonText: {
+      fontSize: 16,
+      textAlign: 'center',
+   },
+
+   centered: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 8,
    },
 });
