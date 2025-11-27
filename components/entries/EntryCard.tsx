@@ -23,10 +23,10 @@ export default function EntryCard({entry}: Prop){
                 <Text style={styles.label}>
                     Belief
                 </Text>
-                <View style={styles.beliefBox}>
-                <Text style={styles.beliefText}>
-                    {entry.belief}
-                </Text>
+                <View style={[styles.accentBoxBase, styles.beliefBox]}>
+                    <Text style={styles.beliefText}>
+                        {entry.belief}
+                    </Text>
                 </View>
             </View>
 
@@ -45,9 +45,11 @@ export default function EntryCard({entry}: Prop){
                 <Text style={styles.label}>
                     Dispute
                 </Text>
-                <Text style={styles.text}>
-                    {entry.dispute}
-                </Text>
+                <View style={[styles.accentBoxBase, styles.disputeBox]}>
+                    <Text style={styles.disputeText}>
+                        {entry.dispute}
+                    </Text>
+                </View>
             </View>
 
             <View style={styles.section}>
@@ -88,20 +90,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#111827',
   },
-  beliefBox: {
-    marginHorizontal: -16,       
+  accentBoxBase: {
+    marginHorizontal: -16,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: '#FFE4E6',
-    borderWidth: 1,
-  borderColor: '#FDA4AF',
-
+  },
+  beliefBox: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#F43F5E',
   },
   beliefText: {
     fontSize: 14,
     fontWeight: '500',
-    // fontStyle: 'italic',
-
     color: '#9F1239',
+  },
+  disputeBox: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#22C55E',
+  },
+  disputeText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#065F46',
   },
 });

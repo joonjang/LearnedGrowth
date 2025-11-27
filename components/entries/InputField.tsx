@@ -109,10 +109,7 @@ export default function InputField<T extends string>({
 
          {/* BOTTOM — input lane anchored to bottom */}
          <View
-            style={[
-               styles.bottomHalf,
-               isKeyboardVisible ? styles.bottomStick : styles.bottomCenter,
-            ]}
+            style={[styles.bottomHalf, styles.bottomStick]}
          >
             <Pressable
                onPress={() => inputRef.current?.focus()}

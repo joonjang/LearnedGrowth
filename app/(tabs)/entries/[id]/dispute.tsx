@@ -213,7 +213,7 @@ export default function DisputeScreen() {
                            title={isLast ? 'Save' : 'Next'}
                            onPress={onNext}
                            disabled={currentEmpty}
-                           color={isLast ? '#2563EB' : undefined}
+                           color={isLast ? 'red' : undefined}
                         />
                      </View>
                   </View>
@@ -232,16 +232,16 @@ const styles = StyleSheet.create({
       paddingTop: 20,
       paddingBottom: 20,
       flex: 1,
-      gap: 16,
+      gap: 10,
    },
    pageKeyboardOpen: {
       paddingBottom: 0,
    },
    headerText: { fontSize: 16 },
-   content: { flex: 1, minHeight: 0 },
+   content: { flex: 1,},
    actionsRow: {
       flexDirection: 'row',
-      minHeight: 64,
+      minHeight: 52,
       maxHeight: 140,
       alignItems: 'center',
    },
@@ -251,6 +251,7 @@ const styles = StyleSheet.create({
       justifyContent: 'center',
       alignItems: 'center',
       gap: 8,
+      
    },
    contextBox: {
       backgroundColor: '#F3F4F6',
