@@ -347,7 +347,7 @@ export default function DisputeScreen() {
                <View
                   style={[
                      styles.actionsRow,
-                    //  { paddingBottom: insets.bottom + 12 },
+
                   ]}
                >
                   <View style={styles.actionCol}>
