@@ -306,6 +306,7 @@ export default function DisputeScreen() {
                         </Text>
                      ) : readyToAnimate ? (
                         <TypeAnimation
+                            key={currKey} 
                            sequence={promptSequence}
                            cursor={false}
                            typeSpeed={50}
