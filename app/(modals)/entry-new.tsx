@@ -1,4 +1,4 @@
-import InputField from '@/components/entries/InputField';
+import InputField from '@/components/newEntry/InputField';
 import { useEntries } from '@/features/hooks/useEntries';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';

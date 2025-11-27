@@ -125,20 +125,6 @@ export default function DisputeScreen() {
    const { scaleFont } = useResponsiveFont();
    const insets = useSafeAreaInsets();
 
-   const stickToBottom = useRef(true);
-
-   const scrollToBottom = useCallback(
-      (animated = true) => scrollRef.current?.scrollToEnd({ animated }),
-      []
-   );
-
-   const handleScroll = useCallback((e) => {
-      const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
-      const gap =
-         contentSize.height - (contentOffset.y + layoutMeasurement.height);
-      stickToBottom.current = gap < 12; // consider “at bottom” if within 12px
-   }, []);
-
    const setField = useCallback(
       (k: NewInputDisputeType) => (v: string) =>
          setForm((f) => ({
@@ -217,7 +203,6 @@ export default function DisputeScreen() {
    }
 
    function onBack() {
-      if (!canGoBack) router.back();
       if (canGoBack) setIdx((i) => i - 1);
    }
 
@@ -258,22 +243,15 @@ export default function DisputeScreen() {
                   style={styles.scroll}
                   contentContainerStyle={[
                      styles.scrollContent,
-                    //  {
-                    //     paddingBottom: isKeyboardVisible
-                    //        ? insets.bottom + 8
-                    //        : insets.bottom + 16,
-                    //  },
+                     {
+                        paddingBottom: isKeyboardVisible
+                           ? insets.bottom + 8
+                           : insets.bottom + 16,
+                     },
                   ]}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
                   onScrollBeginDrag={Keyboard.dismiss}
-                  onScroll={handleScroll}
-                  scrollEventThrottle={16}
-                  onContentSizeChange={() => {
-                     if (stickToBottom.current) {
-                        requestAnimationFrame(() => scrollToBottom(true));
-                     }
-                  }}
                >
                   {/* TOP: CONTEXT BOX */}
                   <View style={styles.contextBox}>
@@ -291,81 +269,80 @@ export default function DisputeScreen() {
                   </View>
 
                   {/* BOTTOM GROUP: PROMPT + INPUT + BUTTONS (NO GAP BETWEEN PROMPT & INPUT) */}
+                  <View style={styles.bottomGroup}>
+                     {/* PROMPT */}
+                     <View style={styles.promptContainer}>
+                        {visited.has(currKey) ? (
+                           <Text
+                              style={promptTextStyle}
+                              numberOfLines={6}
+                              adjustsFontSizeToFit
+                              minimumFontScale={0.85}
+                              allowFontScaling
+                           >
+                              {prompts[currKey]}
+                           </Text>
+                        ) : readyToAnimate ? (
+                           <TypeAnimation
+                              sequence={promptSequence}
+                              cursor={false}
+                              typeSpeed={50}
+                              style={promptTextStyle}
+                           />
+                        ) : (
+                           <ThreeDotsLoader />
+                        )}
+                     </View>
 
-                  {/* PROMPT */}
-                  <View>
-                     {visited.has(currKey) ? (
-                        <Text
-                           style={promptTextStyle}
-                           numberOfLines={6}
-                           adjustsFontSizeToFit
-                           minimumFontScale={0.85}
-                           allowFontScaling
+                     {/* INPUT */}
+                     <View style={styles.inputContainer}>
+                        <Pressable
+                           onPress={() => inputRef.current?.focus()}
+                           style={[styles.inputBox, inputBoxDims]}
                         >
-                           {prompts[currKey]}
-                        </Text>
-                     ) : readyToAnimate ? (
-                        <TypeAnimation
-                           sequence={promptSequence}
-                           cursor={false}
-                           typeSpeed={50}
-                           style={promptTextStyle}
-                        />
-                     ) : (
-                        <View style={{ padding: 48, flex: 1}}>
-                        <ThreeDotsLoader />
+                           <TextInput
+                              ref={inputRef}
+                              placeholder="Enter here"
+                              value={form[currKey]}
+                              onChangeText={setField(currKey)}
+                              style={styles.inputText}
+                              multiline
+                              scrollEnabled={false} // let ScrollView scroll vertically
+                              textAlignVertical="top"
+                              onFocus={() => {
+                                 scrollRef.current?.scrollToEnd({
+                                    animated: true,
+                                 });
+                              }}
+                           />
+                        </Pressable>
+                     </View>
+
+                     {/* BUTTONS (CUSTOM, CENTERED LABELS) */}
+                     <View
+                        style={[
+                           styles.actionsRow,
+                           { paddingBottom: insets.bottom + 12 },
+                        ]}
+                     >
+                        <View style={styles.actionCol}>
+                           <Button
+                              title="Back"
+                              onPress={onBack}
+                              disabled={!canGoBack}
+                           />
                         </View>
-                     )}
+                        <View style={styles.actionCol}>
+                           <Button
+                              title={isLast ? 'Finish' : 'Next'}
+                              onPress={onNext}
+                              disabled={currentEmpty}
+                              color={isLast ? 'red' : undefined}
+                           />
+                        </View>
+                     </View>
                   </View>
                </ScrollView>
-
-               {/* INPUT */}
-               <View style={styles.inputContainer}>
-                  <Pressable
-                     onPress={() => inputRef.current?.focus()}
-                     style={[styles.inputBox, inputBoxDims]}
-                  >
-                     <TextInput
-                        ref={inputRef}
-                        placeholder="Enter here"
-                        value={form[currKey]}
-                        onChangeText={setField(currKey)}
-                        style={styles.inputText}
-                        multiline
-                        scrollEnabled={false} // let ScrollView scroll vertically
-                        textAlignVertical="top"
-                        onFocus={() => {
-                           scrollRef.current?.scrollToEnd({
-                              animated: true,
-                           });
-                        }}
-                     />
-                  </Pressable>
-               </View>
-
-               {/* BUTTONS (CUSTOM, CENTERED LABELS) */}
-               <View
-                  style={[
-                     styles.actionsRow,
-                    //  { paddingBottom: insets.bottom + 12 },
-                  ]}
-               >
-                  <View style={styles.actionCol}>
-                     <Button
-                        title={!canGoBack ? 'Close' : 'Back'}
-                        onPress={onBack}
-                        color={!canGoBack ? 'red' : undefined}
-                     />
-                  </View>
-                  <View style={styles.actionCol}>
-                     <Button
-                        title={isLast ? 'Finish' : 'Next'}
-                        onPress={onNext}
-                        disabled={currentEmpty}
-                        color={isLast ? 'red' : undefined}
-                     />
-                  </View> 
-               </View>
             </View>
          </KeyboardAvoidingView>
       </SafeAreaView>
@@ -391,7 +368,6 @@ const styles = StyleSheet.create({
       flexGrow: 1,
       justifyContent: 'space-between', // top context, bottom interaction block
       gap: 16,
-      paddingBottom: 24
    },
 
    // Top context
@@ -426,7 +402,7 @@ const styles = StyleSheet.create({
       fontWeight: '600',
       flexShrink: 1,
       padding: 16,
-      paddingBottom: 24,
+      paddingBottom: 24
    },
 
    inputContainer: {
