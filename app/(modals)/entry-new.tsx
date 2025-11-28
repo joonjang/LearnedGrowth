@@ -1,13 +1,15 @@
 import InputField from '@/components/newEntry/InputField';
+import StepperButton from '@/components/newEntry/StepperButton';
+import StepperHeader from '@/components/newEntry/StepperHeader';
 import { useEntries } from '@/features/hooks/useEntries';
+import { usePrompts } from '@/features/hooks/usePrompts';
+import { useVisitedSet } from '@/features/hooks/useVisitedSet';
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
-   Button,
    Keyboard,
    KeyboardAvoidingView,
    Platform,
-   Text,
    TouchableWithoutFeedback,
    View,
    StyleSheet,
@@ -25,31 +27,24 @@ const STEP_LABEL: Record<NewInputEntryType, string> = {
    consequence: 'Consequence',
 };
 
-function pickRandomPrompt(list?: string[]) {
-   if (!list?.length) return 'Empty JSON';
-   const i = Math.floor(Math.random() * list.length);
-   return list[i];
-}
-
 export default function NewEntryModal() {
    const store = useEntries();
    const headerHeight = useHeaderHeight();
+   const insets = useSafeAreaInsets();
+   const { visited, hasVisited, markVisited } =
+      useVisitedSet<NewInputEntryType>();
 
-   const [visited, setVisited] = useState<Set<NewInputEntryType>>(new Set());
    const [form, setForm] = useState<Record<NewInputEntryType, string>>({
       adversity: '',
       belief: '',
       consequence: '',
    });
 
-   const prompts = useMemo<Record<NewInputEntryType, string>>(
-      () => ({
-         adversity: pickRandomPrompt(rawAbcde.adversity),
-         belief: pickRandomPrompt(rawAbcde.belief),
-         consequence: pickRandomPrompt(rawAbcde.consequence),
-      }),
+   const promptListGetter = useCallback(
+      (key: NewInputEntryType) => rawAbcde[key],
       []
    );
+   const prompts = usePrompts(STEP_ORDER, promptListGetter);
 
    const [idx, setIdx] = useState(0);
    const currKey = STEP_ORDER[idx] as NewInputEntryType;
@@ -80,7 +75,6 @@ export default function NewEntryModal() {
       router.back();
    }, [form, store]);
 
-   const insets = useSafeAreaInsets();
    const keyboardVerticalOffset = Platform.OS === 'ios' ? headerHeight : 0;
 
    return (
@@ -94,46 +88,32 @@ export default function NewEntryModal() {
             accessible={false}
          >
             <View className="page" style={styles.page}>
-               {/* Progress header */}
-               <Text style={styles.headerText}>
-                  Step {idx + 1} of {STEP_ORDER.length} — {STEP_LABEL[currKey]}
-               </Text>
+               <StepperHeader
+                  step={idx + 1}
+                  total={STEP_ORDER.length}
+                  label={STEP_LABEL[currKey]}
+               />
 
                <View style={styles.content}>
                   <InputField
-                    //  key={currKey}
                      value={form[currKey]}
                      setValue={setField(currKey)}
                      entryType={currKey}
                      prompt={prompts[currKey]}
-                     visited={visited.has(currKey)}
-                     setVisited={setVisited}
+                     visited={hasVisited(currKey)}
+                     markVisited={markVisited}
+                     scrollEnabled
                   />
                </View>
 
-               {/* Nav actions */}
-               <View
-                  style={[
-                     styles.actionsRow,
-                     { paddingBottom: insets.bottom + 12 },
-                  ]}
-               >
-                  <View style={styles.actionCol}>
-                     <Button
-                        title={!canGoBack ? 'Close' : 'Back'}
-                        onPress={onBack}
-                        color={!canGoBack ? 'red' : undefined}
-                     />
-                  </View>
-                  <View style={styles.actionCol}>
-                     <Button
-                        title={isLast ? 'Finish' : 'Next'}
-                        onPress={onNext}
-                        disabled={currentEmpty}
-                        color={isLast ? 'red' : undefined}
-                     />
-                  </View>
-               </View>
+               <StepperButton
+                  canGoBack={canGoBack}
+                  isLast={isLast}
+                  onBack={onBack}
+                  onNext={onNext}
+                  disableNext={currentEmpty}
+                  style={{ paddingBottom: insets.bottom + 12 }}
+               />
             </View>
          </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -143,13 +123,5 @@ export default function NewEntryModal() {
 const styles = StyleSheet.create({
    root: { flex: 1 },
    page: { padding: 20, flex: 1, gap: 16 },
-   headerText: { fontSize: 16 },
    content: { flex: 1 },
-   actionsRow: {
-      flexDirection: 'row',
-      minHeight: 64,
-      maxHeight: 140,
-      alignItems: 'center',
-   },
-   actionCol: { flex: 1 },
 });
