@@ -1,20 +1,47 @@
-import { Link } from "expo-router";
-import { View, Text, Pressable } from "react-native";
+import { Link } from 'expo-router';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 
 type Prop = {
-    id: string
-}
+  id: string;
+};
 
-export default function CTA({id} : Prop){
-    return (
-        <Pressable>
-        <View style={{backgroundColor: 'orange'}}>
-            <Link href={`/(tabs)/entries/${id}/dispute`} style={{textAlign:'center'}}>
+export default function CTA({ id }: Prop) {
+  return (
+    <View>
+      <View style={styles.divider} />
 
-                Call To Action
-
-            </Link>
-        </View>
+      <Link
+        href={`/(tabs)/entries/${id}/dispute`}
+        asChild
+      >
+        <Pressable style={styles.button}>
+          <Text style={styles.buttonText}>
+            ✨ Challenge this belief
+          </Text>
         </Pressable>
-    );
+      </Link>
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  divider: {
+    height: 0.5,
+    backgroundColor: '#9E9E9E',
+    marginVertical: 8,
+  },
+  button: {
+    marginTop: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: '#16A085', // primary blue, tweak as you like
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+});

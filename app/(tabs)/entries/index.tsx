@@ -50,11 +50,13 @@ export default function EntriesScreen() {
             }}
          />
 
-         <View style={styles.newButtonWrapper}>
-            <Link href={'/(modals)/entry-new'} style={styles.newButton}>
-               New
-            </Link>
-         </View>
+        <View style={styles.newButtonWrapper}>
+  <Link href={'/(modals)/entry-new'} asChild>
+    <Pressable style={styles.newButton} accessibilityLabel="Create new entry">
+      <Text style={styles.newButtonText}>+</Text>
+    </Pressable>
+  </Link>
+</View>
       </SafeAreaView>
    );
 }
@@ -104,18 +106,24 @@ const styles = StyleSheet.create({
       paddingLeft: 8
       
    },
-   newButtonWrapper: {
-      position: 'absolute',
-      right: 16,
-      bottom: 24,
-   },
-   newButton: {
-      borderWidth: 1,
-      borderColor: '#16A34A',
-      backgroundColor: '#4ADE80',
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 999,
-      fontWeight: '600',
-   },
+    newButtonWrapper: {
+    position: 'absolute',
+    right: 24,
+    bottom: 18,
+  },
+  newButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F39C12',
+    alignItems: 'center',
+    justifyContent: 'center',
+
+  },
+  newButtonText: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    lineHeight: 30,
+  },
 });

@@ -9,6 +9,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2025-11-27
 - Got dispute.tsx working and look as desied 
 - Refactored the entry input to abstract away redundant code
+  - Introduced Keyboard Controller for the keyboard logic (`https://kirillzyusko.github.io/react-native-keyboard-controller/docs/installation`)
 
 ### 2025-11-27
 - Got the dispute.tsx working as desired
