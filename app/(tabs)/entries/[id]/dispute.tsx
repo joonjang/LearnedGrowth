@@ -11,20 +11,12 @@ import type { AbcdeJson } from '@/models/abcdeJson';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-   KeyboardAvoidingView,
-   Keyboard,
-   Platform,
-   ScrollView,
-   StyleSheet,
-   Text,
-   TextInput,
-   View,
-} from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
    SafeAreaView,
    useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView, KeyboardEvents } from 'react-native-keyboard-controller';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
 import InputBox from '@/components/newEntry/InputBox';
 
@@ -104,10 +96,9 @@ export default function DisputeScreen() {
    const isLast = idx === STEP_ORDER.length - 1;
    const currentEmpty = !form[currKey]?.trim();
 
-   const scrollRef = useRef<ScrollView>(null);
-   const inputRef = useRef<TextInput>(null);
+   const scrollRef = useRef<any>(null);
    const stickToBottom = useRef(true);
-   const insets = useSafeAreaInsets();
+   const inputRef = useRef<TextInput>(null);
    const { promptTextStyle, inputBoxDims, promptMaxHeight } =
       usePromptLayout('compact');
 
@@ -147,11 +138,22 @@ export default function DisputeScreen() {
    }
 
    const scrollToBottom = useCallback(
-      (animated = true) => scrollRef.current?.scrollToEnd({ animated }),
+      (animated = true) => {
+         const ref = scrollRef.current as any;
+         if (!ref) return;
+
+         if (typeof ref.scrollToEnd === 'function') {
+            ref.scrollToEnd({ animated });
+            return;
+         }
+         if (typeof ref.scrollTo === 'function') {
+            ref.scrollTo({ y: Number.MAX_SAFE_INTEGER, animated });
+         }
+      },
       []
    );
 
-   const handleScroll = useCallback((e) => {
+   const handleScroll = useCallback((e: any) => {
       const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
       const gap =
          contentSize.height - (contentOffset.y + layoutMeasurement.height);
@@ -159,14 +161,25 @@ export default function DisputeScreen() {
    }, []);
 
    useEffect(() => {
-      const sub = Keyboard.addListener('keyboardDidShow', () => {
-         requestAnimationFrame(() => {
-            scrollRef.current?.scrollToEnd({ animated: true });
-         });
-      });
+      requestAnimationFrame(() => scrollToBottom(false));
+   }, [scrollToBottom]);
 
-      return () => sub.remove();
-   }, []);
+   useEffect(() => {
+      const handleShow = () =>
+         requestAnimationFrame(() => scrollToBottom(true));
+      const willShowSub = KeyboardEvents.addListener(
+         'keyboardWillShow',
+         handleShow
+      );
+      const didShowSub = KeyboardEvents.addListener(
+         'keyboardDidShow',
+         handleShow
+      );
+      return () => {
+         willShowSub.remove();
+         didShowSub.remove();
+      };
+   }, [scrollToBottom]);
 
    if (!entry) {
       return (
@@ -188,7 +201,7 @@ export default function DisputeScreen() {
                   style={styles.scroll}
                   contentContainerStyle={[
                      styles.scrollContent,
-                     { paddingBottom: insets.bottom + 12 },
+                     { paddingBottom: 12 },
                   ]}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
@@ -220,22 +233,19 @@ export default function DisputeScreen() {
                      maxHeight={promptMaxHeight}
                      scrollEnabled
                      numberOfLines={6}
+                     containerStyle={styles.promptContainer}
                   />
                </ScrollView>
-
                <View style={styles.inputWrapper}>
                   <InputBox
                      ref={inputRef}
                      value={form[currKey]}
                      onChangeText={setField(currKey)}
                      dims={inputBoxDims}
-                     scrollEnabled={false}
-                     onFocus={() =>
-                        scrollRef.current?.scrollToEnd({ animated: true })
-                     }
+                     scrollEnabled
+                     onFocus={() => scrollToBottom(true)}
                   />
                </View>
-
                <StepperButton
                   canGoBack={canGoBack}
                   isLast={isLast}
@@ -262,7 +272,12 @@ const styles = StyleSheet.create({
    scroll: { flex: 1 },
    scrollContent: {
       flexGrow: 1,
+      justifyContent: 'space-between',
       gap: 16,
+   },
+   promptContainer: {
+      flexGrow: 1,
+      justifyContent: 'space-evenly',
    },
 
    contextBox: { marginHorizontal: 16 },

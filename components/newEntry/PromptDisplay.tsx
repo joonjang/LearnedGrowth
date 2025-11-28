@@ -115,6 +115,7 @@ const styles = StyleSheet.create({
       paddingHorizontal: 16,
       alignSelf: 'stretch',
       width: '100%',
+      paddingBottom: 16
    },
    promptText: {
       fontWeight: '600',

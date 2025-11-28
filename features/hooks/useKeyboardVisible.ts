@@ -1,19 +1,35 @@
-import { useState, useEffect } from "react";
-import { Platform, Keyboard } from "react-native";
+import { useEffect, useState } from 'react';
+import {
+   KeyboardController,
+   KeyboardEvents,
+} from 'react-native-keyboard-controller';
 
 export function useKeyboardVisible() {
-  const [visible, setVisible] = useState(false);
+   const [visible, setVisible] = useState(
+      () => KeyboardController.isVisible?.() ?? false
+   );
 
-  useEffect(() => {
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const showSub = Keyboard.addListener(showEvent, () => setVisible(true));
-    const hideSub = Keyboard.addListener(hideEvent, () => setVisible(false));
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
+   useEffect(() => {
+      const showSub = KeyboardEvents.addListener('keyboardWillShow', () =>
+         setVisible(true)
+      );
+      const didShowSub = KeyboardEvents.addListener('keyboardDidShow', () =>
+         setVisible(true)
+      );
+      const willHideSub = KeyboardEvents.addListener('keyboardWillHide', () =>
+         setVisible(false)
+      );
+      const hideSub = KeyboardEvents.addListener('keyboardDidHide', () =>
+         setVisible(false)
+      );
 
-  return visible;
+      return () => {
+         showSub.remove();
+         didShowSub.remove();
+         willHideSub.remove();
+         hideSub.remove();
+      };
+   }, []);
+
+   return visible;
 }

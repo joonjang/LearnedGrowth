@@ -7,6 +7,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ## Development Journal
 
 ### 2025-11-27
+- Got dispute.tsx working and look as desied 
+- Refactored the entry input to abstract away redundant code
+
+### 2025-11-27
 - Got the dispute.tsx working as desired
   - Time to refactor and make the code cleaner
 

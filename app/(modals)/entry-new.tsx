@@ -7,18 +7,21 @@ import { useVisitedSet } from '@/features/hooks/useVisitedSet';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-   Keyboard,
-   KeyboardAvoidingView,
    Platform,
    TouchableWithoutFeedback,
    View,
    StyleSheet,
+   Keyboard,
 } from 'react-native';
 import rawAbcde from '@/assets/data/abcde.json';
 // import rawAbcde from '@/assets/data/abcdeDev.json';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NewInputEntryType } from '@/models/newInputEntryType';
+import {
+   KeyboardAvoidingView,
+   KeyboardController,
+} from 'react-native-keyboard-controller';
 
 const STEP_ORDER = ['adversity', 'belief', 'consequence'] as const;
 const STEP_LABEL: Record<NewInputEntryType, string> = {
@@ -69,6 +72,14 @@ export default function NewEntryModal() {
       if (canGoBack) setIdx((i) => i - 1);
    }
 
+   const dismissKeyboard = useCallback(async () => {
+      try {
+         await KeyboardController.dismiss();
+      } catch (e) {
+         Keyboard.dismiss();
+      }
+   }, []);
+
    const submit = useCallback(() => {
       const { adversity, belief, consequence } = form;
       store.createEntry(adversity, belief, consequence);
@@ -84,7 +95,7 @@ export default function NewEntryModal() {
          keyboardVerticalOffset={keyboardVerticalOffset}
       >
          <TouchableWithoutFeedback
-            onPress={Keyboard.dismiss}
+            onPress={dismissKeyboard}
             accessible={false}
          >
             <View className="page" style={styles.page}>
