@@ -133,4 +133,3 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ## Next Steps
 - Add lightweight form validation
 - Polish Entry detail view
-- Polish Entry dispute and energy input flow
