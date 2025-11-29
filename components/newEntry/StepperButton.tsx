@@ -1,28 +1,78 @@
-import { Button, StyleSheet, View, ViewStyle } from 'react-native';
+import React, { Dispatch, SetStateAction, useCallback, useMemo } from 'react';
+import {
+   Alert,
+   Button,
+   Keyboard,
+   StyleSheet,
+   View,
+   ViewStyle,
+} from 'react-native';
 
 type Props = {
-   canGoBack: boolean;
-   isLast: boolean;
-   onBack: () => void;
-   onNext: () => void;
+   idx: number;
+   totalSteps: number;
+   setIdx: Dispatch<SetStateAction<number>>;
+   onSubmit: () => void;
+   onExit: () => void;
+   hasUnsavedChanges?: boolean;
+   confirmExitTitle?: string;
+   confirmExitMessage?: string;
    disableNext?: boolean;
    style?: ViewStyle;
 };
 
 export default function StepperButton({
-   canGoBack,
-   isLast,
-   onBack,
-   onNext,
+   idx,
+   totalSteps,
+   setIdx,
+   onSubmit,
+   onExit,
+   hasUnsavedChanges = false,
+   
    disableNext,
    style,
 }: Props) {
+   const isLast = useMemo(() => idx === totalSteps - 1, [idx, totalSteps]);
+   const canGoBack = useMemo(() => idx > 0, [idx]);
+
+   const confirmExitTitle = 'Discard changes?';
+   const confirmExitMessage = 'You have unsaved changes. Close without saving?';
+   
+   const handleExit = useCallback(() => {
+      if (!hasUnsavedChanges) {
+         onExit();
+         return;
+      }
+
+      Keyboard.dismiss();
+      Alert.alert(confirmExitTitle, confirmExitMessage, [
+         { text: 'Cancel', style: 'cancel' },
+         { text: 'Discard', style: 'destructive', onPress: () => onExit() },
+      ]);
+   }, [confirmExitMessage, confirmExitTitle, hasUnsavedChanges, onExit]);
+
+   const handleBack = useCallback(() => {
+      if (!canGoBack) {
+         handleExit();
+         return;
+      }
+      setIdx((i) => Math.max(i - 1, 0));
+   }, [canGoBack, handleExit, setIdx]);
+
+   const handleNext = useCallback(() => {
+      if (isLast) {
+         onSubmit();
+         return;
+      }
+      setIdx((i) => Math.min(i + 1, totalSteps - 1));
+   }, [isLast, onSubmit, setIdx, totalSteps]);
+
    return (
       <View style={[styles.container, style]}>
          <View style={styles.actionCol}>
             <Button
                title={!canGoBack ? 'Close' : 'Back'}
-               onPress={onBack}
+               onPress={handleBack}
                color={!canGoBack ? 'red' : undefined}
             />
          </View>
@@ -30,7 +80,7 @@ export default function StepperButton({
          <View style={styles.actionCol}>
             <Button
                title={isLast ? 'Finish' : 'Next'}
-               onPress={onNext}
+               onPress={handleNext}
                disabled={disableNext}
                color={isLast ? 'red' : undefined}
             />

@@ -10,11 +10,10 @@ import { Entry } from '@/models/entry';
 import type { AbcdeJson } from '@/models/abcdeJson';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
    SafeAreaView,
-   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView, KeyboardEvents } from 'react-native-keyboard-controller';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
@@ -92,9 +91,36 @@ export default function DisputeScreen() {
    const prompts = usePrompts(STEP_ORDER, promptListGetter);
 
    const currKey = STEP_ORDER[idx];
-   const canGoBack = idx > 0;
-   const isLast = idx === STEP_ORDER.length - 1;
-   const currentEmpty = !form[currKey]?.trim();
+   const trimmedForm = useMemo(
+      () => ({
+         evidence: form.evidence.trim(),
+         alternatives: form.alternatives.trim(),
+         usefulness: form.usefulness.trim(),
+         energy: form.energy.trim(),
+      }),
+      [form]
+   );
+
+   const baseline = useMemo(
+      () => ({
+         evidence: (entry?.dispute ?? '').trim(),
+         alternatives: '',
+         usefulness: '',
+         energy: (entry?.energy ?? '').trim(),
+      }),
+      [entry]
+   );
+
+   const hasUnsavedChanges = useMemo(
+      () =>
+         trimmedForm.evidence !== baseline.evidence ||
+         trimmedForm.alternatives !== baseline.alternatives ||
+         trimmedForm.usefulness !== baseline.usefulness ||
+         trimmedForm.energy !== baseline.energy,
+      [baseline, trimmedForm]
+   );
+
+   const currentEmpty = !trimmedForm[currKey];
 
    const scrollRef = useRef<any>(null);
    const stickToBottom = useRef(true);
@@ -114,8 +140,8 @@ export default function DisputeScreen() {
    const submit = useCallback(async () => {
       if (!entry) return;
 
-      const dispute = buildDisputeText(form);
-      const nextEnergy = form.energy?.trim() ?? '';
+      const dispute = buildDisputeText(trimmedForm);
+      const nextEnergy = trimmedForm.energy;
 
       const patch: Partial<Entry> = {};
       if (dispute !== (entry.dispute ?? '')) patch.dispute = dispute;
@@ -125,17 +151,7 @@ export default function DisputeScreen() {
          await store.updateEntry(entry.id, patch);
       }
       router.back();
-   }, [entry, form, store]);
-
-   function onNext() {
-      if (isLast) submit();
-      else setIdx((i) => i + 1);
-   }
-
-   function onBack() {
-      if (!canGoBack) router.back();
-      if (canGoBack) setIdx((i) => i - 1);
-   }
+   }, [entry, store, trimmedForm]);
 
    const scrollToBottom = useCallback(
       (animated = true) => {
@@ -247,10 +263,12 @@ export default function DisputeScreen() {
                   />
                </View>
                <StepperButton
-                  canGoBack={canGoBack}
-                  isLast={isLast}
-                  onBack={onBack}
-                  onNext={onNext}
+                  idx={idx}
+                  totalSteps={STEP_ORDER.length}
+                  setIdx={setIdx}
+                  onSubmit={submit}
+                  onExit={() => router.back()}
+                  hasUnsavedChanges={hasUnsavedChanges}
                   disableNext={currentEmpty}
                />
             </View>

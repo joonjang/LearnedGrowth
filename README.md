@@ -6,6 +6,12 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-11-28
+- Replaced CTA and New Item button stub with a more presentable button
+- Made top inset have a dark linear gradient view (`https://docs.expo.dev/versions/latest/sdk/linear-gradient/`)
+- Abstracted entry-new.tsx and dispute.tsx button logic to StepperButton.tsx
+- Added alert to confirm input closing if there is text provided in the form
+
 ### 2025-11-27
 - Got dispute.tsx working and look as desied 
 - Refactored the entry input to abstract away redundant code
@@ -132,5 +138,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
-- Add lightweight form validation
-- Polish Entry detail view
+- Make Entry card swipeable and add option to reveal card edit functions on the top right of card
+- Make the card detail page presentable
+- Remove DEV page
+- Set up Supabase

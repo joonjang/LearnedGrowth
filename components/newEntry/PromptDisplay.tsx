@@ -53,7 +53,6 @@ export default function PromptDisplay({
       <View
          style={[
             styles.loaderBase,
-            scrollEnabled ? styles.loaderScroll : styles.loaderNoScroll,
          ]}
       >
          <ThreeDotsLoader />
@@ -132,11 +131,5 @@ const styles = StyleSheet.create({
    loaderBase: {
       alignItems: 'center',
       minHeight: 1,
-   },
-   loaderNoScroll: {
-      paddingBottom: 0,
-   },
-   loaderScroll: {
-      paddingBottom: 28,
-   },
+   }
 });

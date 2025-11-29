@@ -3,15 +3,15 @@ import { getDateParts, getTimeLabel } from '@/lib/date';
 import { useEntries } from '@/features/hooks/useEntries';
 import { Entry } from '@/models/entry';
 import { Link, router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
-   FlatList,
    Pressable,
    SectionList,
    StyleSheet,
    View,
    Text,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type EntrySection = {
    title: string; // e.g. "Today", "Yesterday", "Jan 10"
@@ -21,22 +21,39 @@ type EntrySection = {
 
 export default function EntriesScreen() {
    const store = useEntries();
+   const insets = useSafeAreaInsets();
 
    const sections = buildSections(store.rows);
 
    return (
-      <SafeAreaView style={styles.container}  edges={['top', 'left', 'right']}>
+      <View style={styles.container}>
+         <LinearGradient
+            colors={['rgba(107, 114, 128, 0.32)', 'rgba(107, 114, 128, 0)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={[styles.topGradient, { height: insets.top + 48 }]}
+            pointerEvents="none"
+         />
          <SectionList
             sections={sections}
             keyExtractor={(item) => item.id}
-            renderSectionHeader={({ section }) => <Text style={styles.sectionHeader}>{section.title}</Text>}
+            contentInset={{ top: insets.top }}
+            contentOffset={{ y: -insets.top, x: 0 }}
+            scrollIndicatorInsets={{ top: insets.top }}
+            renderSectionHeader={({ section }) => (
+               <View style={styles.sectionHeaderWrapper}>
+                  <View style={styles.sectionHeaderPill}>
+                     <Text style={styles.sectionHeader}>{section.title}</Text>
+                  </View>
+               </View>
+            )}
             renderItem={({ item, index, section }) => {
                const timeLabel = getTimeLabel(item);
 
                return (
-                  <Pressable
-                     onPress={() => router.push(`/(tabs)/entries/${item.id}`)}
-                  >
+                  // <Pressable
+                  //    onPress={() => router.push(`/(tabs)/entries/${item.id}`)}
+                  // >
                      <View style={styles.listContent}>
                         {/* TODO: replace this with fancier UI. */}
                         <Text style={styles.sectionHeaderText}>{timeLabel}</Text>
@@ -45,7 +62,7 @@ export default function EntriesScreen() {
                            <EntryCard entry={item} />
                         </View>
                      </View>
-                  </Pressable>
+                  // </Pressable>
                );
             }}
          />
@@ -57,7 +74,7 @@ export default function EntriesScreen() {
     </Pressable>
   </Link>
 </View>
-      </SafeAreaView>
+      </View>
    );
 }
 
@@ -95,8 +112,30 @@ const styles = StyleSheet.create({
       paddingTop: 16,
       paddingBottom: 40,
    },
+   topGradient: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 1,
+   },
+   sectionHeaderWrapper: {
+      paddingVertical: 12,
+      alignItems: 'center',
+   },
+   sectionHeaderPill: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: '#D1D5DB',
+      backgroundColor: 'rgba(219, 219, 219, 0.66)',
+   },
    sectionHeader: {
-      textAlign:'center'
+      textAlign: 'center',
+      fontSize: 14,
+      fontWeight: '700',
+      color: '#374151',
    },
    sectionHeaderText: {
       fontSize: 13,

@@ -5,13 +5,14 @@ import { useEntries } from '@/features/hooks/useEntries';
 import { usePrompts } from '@/features/hooks/usePrompts';
 import { useVisitedSet } from '@/features/hooks/useVisitedSet';
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
    Platform,
    TouchableWithoutFeedback,
    View,
    StyleSheet,
    Keyboard,
+   Alert,
 } from 'react-native';
 import rawAbcde from '@/assets/data/abcde.json';
 // import rawAbcde from '@/assets/data/abcdeDev.json';
@@ -58,19 +59,21 @@ export default function NewEntryModal() {
       []
    );
 
-   const canGoBack = idx > 0;
-   const isLast = idx === STEP_ORDER.length - 1;
-   const currentEmpty = !form[currKey]?.trim();
+   const trimmedForm = useMemo(
+      () => ({
+         adversity: form.adversity.trim(),
+         belief: form.belief.trim(),
+         consequence: form.consequence.trim(),
+      }),
+      [form]
+   );
 
-   function onNext() {
-      if (isLast) submit();
-      else setIdx((i) => i + 1);
-   }
+   const hasAnyContent = useMemo(
+      () => Object.values(trimmedForm).some(Boolean),
+      [trimmedForm]
+   );
 
-   function onBack() {
-      if (!canGoBack) router.back();
-      if (canGoBack) setIdx((i) => i - 1);
-   }
+   const currentEmpty = !trimmedForm[currKey];
 
    const dismissKeyboard = useCallback(async () => {
       try {
@@ -81,10 +84,16 @@ export default function NewEntryModal() {
    }, []);
 
    const submit = useCallback(() => {
-      const { adversity, belief, consequence } = form;
+      const { adversity, belief, consequence } = trimmedForm;
+
+      if (!adversity || !belief || !consequence) {
+         Alert.alert('Add required text', 'Please fill in all fields before saving.');
+         return;
+      }
+
       store.createEntry(adversity, belief, consequence);
       router.back();
-   }, [form, store]);
+   }, [ store, trimmedForm]);
 
    const keyboardVerticalOffset = Platform.OS === 'ios' ? headerHeight : 0;
 
@@ -118,10 +127,12 @@ export default function NewEntryModal() {
                </View>
 
                <StepperButton
-                  canGoBack={canGoBack}
-                  isLast={isLast}
-                  onBack={onBack}
-                  onNext={onNext}
+                  idx={idx}
+                  totalSteps={STEP_ORDER.length}
+                  setIdx={setIdx}
+                  onSubmit={submit}
+                  onExit={() => router.back()}
+                  hasUnsavedChanges={hasAnyContent}
                   disableNext={currentEmpty}
                   style={{ paddingBottom: insets.bottom + 12 }}
                />
