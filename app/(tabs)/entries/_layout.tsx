@@ -4,7 +4,20 @@ export default function EntriesStack() {
   return (
     <ThemedStack>
       <Stack.Screen name="index" options={{ title: "Entries" }} />
-      <Stack.Screen name="[id]" options={{ title: "Entry" }} />
+      <Stack.Screen
+        name="[id]/index"
+        options={{
+          title: "Entry",
+          animation: 'default',
+        }}
+      />
+      <Stack.Screen
+        name="[id]/dispute"
+        options={{
+          title: "Dispute",
+          animation: "fade_from_bottom",
+        }}
+      />
     </ThemedStack>
   );
 }

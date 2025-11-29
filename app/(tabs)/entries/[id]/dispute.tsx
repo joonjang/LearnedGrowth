@@ -12,12 +12,12 @@ import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import {
-   SafeAreaView,
-} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView, KeyboardEvents } from 'react-native-keyboard-controller';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
 import InputBox from '@/components/newEntry/InputBox';
+import TopFade from '@/components/TopFade';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STEP_ORDER = [
    'evidence',
@@ -55,6 +55,7 @@ export default function DisputeScreen() {
    const store = useEntries();
    const entry = entryId ? store.getEntryById(entryId) : undefined;
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
+   const insets = useSafeAreaInsets();
 
    const [idx, setIdx] = useState(0);
    const [form, setForm] = useState<Record<NewInputDisputeType, string>>({
@@ -206,18 +207,19 @@ export default function DisputeScreen() {
    }
 
    return (
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.safeArea}>
          <KeyboardAvoidingView
             style={styles.root}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
          >
-            <View style={styles.page}>
+            <View style={[styles.page]}>
+               <TopFade style={styles.topGradient} height={insets.top + 48} />
                <ScrollView
                   ref={scrollRef}
                   style={styles.scroll}
                   contentContainerStyle={[
                      styles.scrollContent,
-                     { paddingBottom: 12 },
+                     { paddingTop: insets.top + 12 },
                   ]}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
@@ -228,6 +230,7 @@ export default function DisputeScreen() {
                         requestAnimationFrame(() => scrollToBottom(true));
                      }
                   }}
+                  
                >
                   <StepperHeader
                      step={idx + 1}
@@ -273,7 +276,7 @@ export default function DisputeScreen() {
                />
             </View>
          </KeyboardAvoidingView>
-      </SafeAreaView>
+      </View>
    );
 }
 
@@ -283,10 +286,15 @@ const styles = StyleSheet.create({
 
    page: {
       flex: 1,
-      paddingTop: 20,
       paddingHorizontal: 20,
    },
-
+   topGradient: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 1,
+   },
    scroll: { flex: 1 },
    scrollContent: {
       flexGrow: 1,

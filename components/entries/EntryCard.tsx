@@ -1,116 +1,229 @@
-import { Entry } from "@/models/entry";
-import { Text, View, StyleSheet } from "react-native";
-import CTA from "./CTA";
+import { useCallback, useEffect, useRef } from 'react';
+import { Entry } from '@/models/entry';
+import { Text, View, StyleSheet, Pressable } from 'react-native';
+import CTA from './CTA';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useEntries } from '@/features/hooks/useEntries';
+
+export type MenuBounds = {
+   x: number;
+   y: number;
+   width: number;
+   height: number;
+};
 
 type Prop = {
-    entry: Entry
-}
+   entry: Entry;
+   isMenuOpen: boolean;
+   onToggleMenu: () => void;
+   onCloseMenu: () => void;
+   onMenuLayout?: (bounds: MenuBounds) => void;
+};
 
-export default function EntryCard({entry}: Prop){
+export default function EntryCard({
+   entry,
+   isMenuOpen,
+   onToggleMenu,
+   onCloseMenu,
+   onMenuLayout,
+}: Prop) {
+   const store = useEntries();
+   const menuRef = useRef<View | null>(null);
 
-    return(
-        <View style={styles.card}>
-            <View style={styles.section}>
-                <Text style={styles.label}>
-                    Adversity
-                </Text>
-                <Text style={styles.text}>
-                    {entry.adversity}
-                </Text>
+   const measureMenu = useCallback(() => {
+      if (!menuRef.current || !onMenuLayout) return;
+
+      menuRef.current.measureInWindow((x, y, width, height) => {
+         onMenuLayout({ x, y, width, height });
+      });
+   }, [onMenuLayout]);
+
+   useEffect(() => {
+      if (!isMenuOpen) return;
+
+      const id = requestAnimationFrame(measureMenu);
+      return () => cancelAnimationFrame(id);
+   }, [isMenuOpen, measureMenu]);
+
+   const handleEdit = () => {
+      onCloseMenu();
+      router.push(`/(tabs)/entries/${entry.id}`);
+   };
+
+   const handleDelete = () => {
+      onCloseMenu();
+      store.deleteEntry(entry.id);
+   };
+
+   return (
+      <View style={styles.card}>
+         <View style={styles.menuRow}>
+            <Pressable
+               accessibilityLabel="More options"
+               hitSlop={8}
+               style={styles.menuButton}
+               onPress={onToggleMenu}
+            >
+               <Ionicons name="ellipsis-horizontal" size={18} color="#6B7280" />
+            </Pressable>
+            {isMenuOpen && (
+               <View ref={menuRef} style={styles.menu} onLayout={measureMenu}>
+                  <Pressable style={styles.menuItem} onPress={handleEdit}>
+                     <Ionicons
+                        name="pencil-outline"
+                        size={16}
+                        color="#1F2937"
+                     />
+                     <Text style={styles.menuText}>Edit</Text>
+                  </Pressable>
+                  <Pressable style={styles.menuItem} onPress={handleDelete}>
+                     <Ionicons name="trash-outline" size={16} color="#B91C1C" />
+                     <Text style={[styles.menuText, styles.deleteText]}>
+                        Delete
+                     </Text>
+                  </Pressable>
+               </View>
+            )}
+         </View>
+
+         <View style={styles.section}>
+            <Text style={styles.label}>Adversity</Text>
+            <Text style={styles.text}>{entry.adversity}</Text>
+         </View>
+
+         <View style={styles.section}>
+            <Text style={styles.label}>Belief</Text>
+            <View style={[styles.accentBoxBase, styles.beliefBox]}>
+               <Text style={styles.beliefText}>{entry.belief}</Text>
             </View>
+         </View>
 
-            <View style={styles.section}>
-                <Text style={styles.label}>
-                    Belief
-                </Text>
-                <View style={[styles.accentBoxBase, styles.beliefBox]}>
-                    <Text style={styles.beliefText}>
-                        {entry.belief}
-                    </Text>
-                </View>
-            </View>
+         <View style={styles.section}>
+            <Text style={styles.label}>Consequence</Text>
+            <Text style={styles.text}>{entry.consequence}</Text>
+         </View>
 
-            <View style={styles.section}>
-                <Text style={styles.label}>
-                    Consequence
-                </Text>
-                <Text style={styles.text}>
-                    {entry.consequence}
-                </Text>
-            </View>
+         {!entry.dispute ? (
+            <CTA id={entry.id} />
+         ) : (
+            <>
+               <View style={styles.section}>
+                  <Text style={styles.label}>Dispute</Text>
+                  <View style={[styles.accentBoxBase, styles.disputeBox]}>
+                     <Text style={styles.disputeText}>{entry.dispute}</Text>
+                  </View>
+               </View>
 
-            {!entry.dispute ? <CTA id={entry.id} /> 
-            :<>
-            <View style={styles.section}>
-                <Text style={styles.label}>
-                    Dispute
-                </Text>
-                <View style={[styles.accentBoxBase, styles.disputeBox]}>
-                    <Text style={styles.disputeText}>
-                        {entry.dispute}
-                    </Text>
-                </View>
-            </View>
-
-            <View style={styles.section}>
-                <Text style={styles.label}>
-                    Energy
-                </Text>
-                <Text style={styles.text}>
-                    {entry.energy}
-                </Text>
-            </View>
+               <View style={styles.section}>
+                  <Text style={styles.label}>Energy</Text>
+                  <Text style={styles.text}>{entry.energy}</Text>
+               </View>
             </>
-            }
-        </View>
-    );
+         )}
+      </View>
+   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2
-  },
-  section: {
-    marginBottom: 8
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280', // gray-500-ish
-    marginBottom: 2,
-  },
-  text: {
-    fontSize: 14,
-    color: '#111827',
-  },
-  accentBoxBase: {
-    marginHorizontal: -16,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  beliefBox: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#F43F5E',
-  },
-  beliefText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#9F1239',
-  },
-  disputeBox: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#22C55E',
-  },
-  disputeText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#065F46',
-  },
+   card: {
+      paddingTop: 20,
+      paddingHorizontal: 16,
+      paddingBottom: 16,
+
+      borderRadius: 16,
+      backgroundColor: '#FFFFFF',
+
+      // iOS shadow: softer + less offset so corners don’t look heavy
+      shadowColor: '#000',
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 3 },
+
+      // Android
+      elevation: 3,
+   },
+   menuRow: {
+      position: 'absolute',
+      top: 8, // relative to card’s padding
+      right: 16, // uses card’s padding as the “inset”
+      flexDirection: 'row',
+      zIndex: 30,
+   },
+
+   menuButton: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+   },
+   menu: {
+      position: 'absolute',
+      top: 8,
+      right: 0,
+      backgroundColor: 'rgba(255, 255, 255, 1)',
+      borderRadius: 12,
+      paddingVertical: 6,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 6,
+      minWidth: 140,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: '#E5E7EB',
+      zIndex: 20,
+   },
+   menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+   },
+   menuText: {
+      fontSize: 14,
+      color: '#1F2937',
+      fontWeight: '500',
+   },
+   deleteText: {
+      color: '#B91C1C',
+   },
+   section: {
+      marginBottom: 8,
+   },
+   label: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#6B7280', // gray-500-ish
+      marginBottom: 2,
+   },
+   text: {
+      fontSize: 14,
+      color: '#111827',
+   },
+   accentBoxBase: {
+      marginHorizontal: -16,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+   },
+   beliefBox: {
+      borderLeftWidth: 4,
+      borderLeftColor: '#F43F5E',
+   },
+   beliefText: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: '#9F1239',
+   },
+   disputeBox: {
+      borderLeftWidth: 4,
+      borderLeftColor: '#22C55E',
+   },
+   disputeText: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: '#065F46',
+   },
 });

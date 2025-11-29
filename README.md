@@ -7,6 +7,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ## Development Journal
 
 ### 2025-11-28
+- Added entry card editing and deleting navigation 
+- Abstracted out linear gradient header view
+- Made dispute.tsx not a safe view and put down content inset
+
+### 2025-11-28
 - Replaced CTA and New Item button stub with a more presentable button
 - Made top inset have a dark linear gradient view (`https://docs.expo.dev/versions/latest/sdk/linear-gradient/`)
 - Abstracted entry-new.tsx and dispute.tsx button logic to StepperButton.tsx
@@ -138,7 +143,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
-- Make Entry card swipeable and add option to reveal card edit functions on the top right of card
 - Make the card detail page presentable
 - Remove DEV page
+- Set up ai component of app
 - Set up Supabase
