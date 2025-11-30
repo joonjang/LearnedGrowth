@@ -26,5 +26,6 @@ export interface EntriesState {
    create(draft: Entry): Promise<Entry>;
    update(id: string, patch: Partial<Entry>): Promise<Entry>;
    remove(id: string): Promise<void>;
+   restore(entry: Entry): Promise<Entry>;
    clearErrors(): void;
 }

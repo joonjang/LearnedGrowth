@@ -1,9 +1,10 @@
-import EntryCard, { type MenuBounds } from '@/components/entries/EntryCard';
+import EntryRow, { UndoRow } from '@/components/entries/EntryRow';
+import { type MenuBounds } from '@/components/entries/EntryCard';
 import { getDateParts, getTimeLabel } from '@/lib/date';
 import { useEntries } from '@/features/hooks/useEntries';
 import { Entry } from '@/models/entry';
 import { Link, router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
    Pressable,
    SectionList,
@@ -13,21 +14,30 @@ import {
    type GestureResponderEvent,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+
+type RowItem =
+   | { kind: 'entry'; entry: Entry }
+   | { kind: 'undo'; entry: Entry };
 
 type EntrySection = {
    title: string; // e.g. "Today", "Yesterday", "Jan 10"
    dateKey: string; // "YYYY-MM-DD"
-   data: Entry[];
+   data: RowItem[];
 };
+
+const UNDO_TIMEOUT_MS = 5500;
 
 export default function EntriesScreen() {
    const store = useEntries();
    const insets = useSafeAreaInsets();
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
    const [openMenuBounds, setOpenMenuBounds] = useState<MenuBounds | null>(null);
+   const [undoSlots, setUndoSlots] = useState<Entry[]>([]);
+   const activeSwipeable = useRef<SwipeableMethods | null>(null);
+   const undoTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+      new Map()
+   );
 
    const closeMenu = () => {
       if (openMenuEntryId !== null) {
@@ -67,7 +77,55 @@ export default function EntriesScreen() {
       return false;
    };
 
-   const sections = buildSections(store.rows);
+   const rowsWithUndo = buildRowsWithUndo(store.rows, undoSlots);
+   const sections = buildSections(rowsWithUndo);
+
+   const clearUndoTimer = (id: string) => {
+      const timer = undoTimers.current.get(id);
+      if (timer) {
+         clearTimeout(timer);
+         undoTimers.current.delete(id);
+      }
+   };
+
+   const requestDelete = (entry: Entry) => {
+      closeMenu();
+      setUndoSlots((prev) => [
+         ...prev.filter((e) => e.id !== entry.id),
+         entry,
+      ]);
+
+      clearUndoTimer(entry.id);
+      const timer = setTimeout(() => {
+         setUndoSlots((prev) => prev.filter((e) => e.id !== entry.id));
+         undoTimers.current.delete(entry.id);
+      }, UNDO_TIMEOUT_MS);
+      undoTimers.current.set(entry.id, timer);
+
+      store.deleteEntry(entry.id).catch((e) => {
+         clearUndoTimer(entry.id);
+         setUndoSlots((prev) => prev.filter((s) => s.id !== entry.id));
+         console.error('Failed to delete entry', e);
+      });
+   };
+
+   const handleUndo = async (entry: Entry) => {
+      setUndoSlots((prev) => prev.filter((e) => e.id !== entry.id));
+      clearUndoTimer(entry.id);
+      try {
+         await store.restoreEntry(entry);
+      } catch (e) {
+         console.error('Failed to undo delete', e);
+      }
+   };
+
+   useEffect(() => {
+      const timers = undoTimers.current;
+      return () => {
+         timers.forEach((timer) => clearTimeout(timer));
+         timers.clear();
+      };
+   }, []);
 
    return (
       <GestureHandlerRootView
@@ -76,11 +134,17 @@ export default function EntriesScreen() {
       >
          <SectionList
             sections={sections}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => `${item.kind}-${item.entry.id}`}
             contentInset={{ top: insets.top }}
             contentOffset={{ y: -insets.top, x: 0 }}
             scrollIndicatorInsets={{ top: insets.top }}
-            onScrollBeginDrag={closeMenu}
+            onScrollBeginDrag={() => {
+               closeMenu();
+               if (activeSwipeable.current) {
+                  activeSwipeable.current.close();
+                  activeSwipeable.current = null;
+               }
+            }}
             renderSectionHeader={({ section }) => (
                <View style={styles.sectionHeaderWrapper}>
                   <View style={styles.sectionHeaderPill}>
@@ -88,72 +152,44 @@ export default function EntriesScreen() {
                   </View>
                </View>
             )}
-            renderItem={({ item, index, section }) => {
-               const timeLabel = getTimeLabel(item);
-               let swipeableRef: Swipeable | null = null;
+            renderItem={({ item }) => {
+               const timeLabel = getTimeLabel(item.entry);
+
+               if (item.kind === 'undo') {
+                  return (
+                     <UndoRow
+                        entry={item.entry}
+                        timeLabel={timeLabel}
+                        onUndo={() => handleUndo(item.entry)}
+                        durationMs={UNDO_TIMEOUT_MS}
+                     />
+                  );
+               }
 
                const handleEdit = () => {
-                  swipeableRef?.close();
-                  router.push(`/(tabs)/entries/${item.id}`);
-               };
-
-               const handleDelete = () => {
-                  swipeableRef?.close();
-                  store.deleteEntry(item.id);
+                  router.push(`/(tabs)/entries/${item.entry.id}`);
                };
 
                return (
-                  <View style={styles.listContent}>
-                     <Swipeable
-                        ref={(ref) => {
-                           swipeableRef = ref;
-                        }}
-                        overshootRight={false}
-                        renderRightActions={() => (
-                           <View style={styles.actionsContainer}>
-                              <View style={styles.actionWrapper}>
-                                 <Pressable
-                                    accessibilityLabel="Edit entry"
-                                    style={[styles.actionButton, styles.editButton]}
-                                    onPress={handleEdit}
-                                 >
-                                    <Ionicons
-                                       name="pencil-outline"
-                                       size={22}
-                                       color="#FFFFFF"
-                                    />
-                                 </Pressable>
-                                 <Text style={styles.actionLabel}>Edit</Text>
-                              </View>
-                              <View style={styles.actionWrapper}>
-                                 <Pressable
-                                    accessibilityLabel="Delete entry"
-                                    style={[styles.actionButton, styles.deleteButton]}
-                                    onPress={handleDelete}
-                                 >
-                                    <Ionicons
-                                       name="trash-outline"
-                                       size={22}
-                                       color="#FFFFFF"
-                                    />
-                                 </Pressable>
-                                 <Text style={styles.actionLabel}>Delete</Text>
-                              </View>
-                           </View>
-                        )}
-                     >
-                        <View>
-                           <Text style={styles.sectionHeaderText}>{timeLabel}</Text>
-                           <EntryCard
-                              entry={item}
-                              isMenuOpen={openMenuEntryId === item.id}
-                              onToggleMenu={() => toggleMenu(item.id)}
-                              onCloseMenu={closeMenu}
-                              onMenuLayout={setOpenMenuBounds}
-                           />
-                        </View>
-                     </Swipeable>
-                  </View>
+                  <EntryRow
+                     entry={item.entry}
+                     timeLabel={timeLabel}
+                     isMenuOpen={openMenuEntryId === item.entry.id}
+                     onToggleMenu={() => toggleMenu(item.entry.id)}
+                     onCloseMenu={closeMenu}
+                     onMenuLayout={setOpenMenuBounds}
+                     onEdit={handleEdit}
+                     onDelete={() => requestDelete(item.entry)}
+                     onSwipeOpen={(ref) => {
+                        if (activeSwipeable.current && activeSwipeable.current !== ref) {
+                           activeSwipeable.current.close();
+                        }
+                        activeSwipeable.current = ref;
+                     }}
+                     onSwipeClose={() => {
+                        if (activeSwipeable.current) activeSwipeable.current = null;
+                     }}
+                  />
                );
             }}
          />
@@ -172,11 +208,28 @@ export default function EntriesScreen() {
    );
 }
 
-function buildSections(rows: Entry[]): EntrySection[] {
+function buildRowsWithUndo(rows: Entry[], undoSlots: Entry[]): RowItem[] {
+   const merged: RowItem[] = rows.map((entry) => ({ kind: 'entry', entry }));
+
+   for (const entry of undoSlots) {
+      if (!rows.find((r) => r.id === entry.id)) {
+         merged.push({ kind: 'undo', entry });
+      }
+   }
+
+   return merged.sort((a, b) => {
+      const aTime = new Date(a.entry.createdAt).getTime();
+      const bTime = new Date(b.entry.createdAt).getTime();
+      if (bTime !== aTime) return bTime - aTime;
+      return a.entry.id < b.entry.id ? -1 : a.entry.id > b.entry.id ? 1 : 0;
+   });
+}
+
+function buildSections(rows: RowItem[]): EntrySection[] {
    const sections: EntrySection[] = [];
 
    for (const entry of rows) {
-      const { dateKey, dateLabel } = getDateParts(entry);
+      const { dateKey, dateLabel } = getDateParts(entry.entry);
 
       const lastSection = sections[sections.length - 1];
 
@@ -194,17 +247,10 @@ function buildSections(rows: Entry[]): EntrySection[] {
    return sections;
 }
 
-
-
 const styles = StyleSheet.create({
    container: {
       flex: 1,
       backgroundColor: '#F9FAFB',
-   },
-   listContent: {
-      paddingHorizontal: 16,
-      paddingTop: 16,
-      paddingBottom: 40,
    },
    sectionHeaderWrapper: {
       paddingVertical: 12,
@@ -224,13 +270,6 @@ const styles = StyleSheet.create({
       fontWeight: '700',
       color: '#374151',
    },
-   sectionHeaderText: {
-      fontSize: 13,
-      fontWeight: '700',
-      color: '#6B7280',
-      paddingBottom: 8,
-      paddingLeft: 8,
-   },
    newButtonWrapper: {
       position: 'absolute',
       right: 24,
@@ -249,33 +288,5 @@ const styles = StyleSheet.create({
       fontWeight: '600',
       color: '#FFFFFF',
       lineHeight: 30,
-   },
-   actionsContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      height: '100%',
-      marginLeft: 12,
-   },
-   actionWrapper: {
-      alignItems: 'center',
-      marginLeft: 8,
-      gap: 4,
-   },
-   actionButton: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      alignItems: 'center',
-      justifyContent: 'center',
-   },
-   editButton: {
-      backgroundColor: '#2563EB',
-   },
-   deleteButton: {
-      backgroundColor: '#DC2626',
-   },
-   actionLabel: {
-      fontSize: 12,
-      color: '#6B7280',
    },
 });

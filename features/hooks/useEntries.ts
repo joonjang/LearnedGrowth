@@ -72,6 +72,13 @@ export function useEntries() {
       [store]
    );
 
+   const restoreEntry = useCallback(
+      async function onRestore(entry: Entry) {
+         await store.getState().restore(entry);
+      },
+      [store]
+   );
+
    const clearErrors = useCallback(() => {
       store.getState().clearErrors();
    }, [store]);
@@ -87,6 +94,7 @@ export function useEntries() {
       getEntryById,
       updateEntry,
       deleteEntry,
+      restoreEntry,
       clearErrors,
    };
 }

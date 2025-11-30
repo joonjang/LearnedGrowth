@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Entry } from '@/models/entry';
 import {
    Text,
@@ -9,13 +9,14 @@ import {
 import CTA from './CTA';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEntries } from '@/features/hooks/useEntries';
 import Animated, {
    useSharedValue,
    useAnimatedStyle,
    withTiming,
    Easing,
 } from 'react-native-reanimated';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export type MenuBounds = {
    x: number;
@@ -29,6 +30,7 @@ type Prop = {
    isMenuOpen: boolean;
    onToggleMenu: () => void;
    onCloseMenu: () => void;
+   onDelete: (entry: Entry) => void;
    onMenuLayout?: (bounds: MenuBounds) => void;
 };
 
@@ -37,33 +39,43 @@ export default function EntryCard({
    isMenuOpen,
    onToggleMenu,
    onCloseMenu,
+   onDelete,
    onMenuLayout,
 }: Prop) {
-   const store = useEntries();
    const menuRef = useRef<View | null>(null);
+   const [expanded, setExpanded] = useState(false);
 
    const menuScale = useSharedValue(0.7);
    const menuOpacity = useSharedValue(0);
    const menuWidth = useSharedValue(0);
    const menuHeight = useSharedValue(0);
+   const expandProgress = useSharedValue(0);
+
+   useEffect(() => {
+      expandProgress.value = withTiming(expanded ? 1 : 0, {
+         duration: 160,
+         easing: Easing.out(Easing.quad),
+      });
+   }, [expanded, expandProgress]);
 
    const menuStyle = useAnimatedStyle(() => {
       const width = menuWidth.value || 1;
-      const height = menuHeight.value || 1;
-      const pivotX = width / 2; // right of center
-      const pivotY = -height / 2; // above center
 
+      // anchor the scale near the top-right so it feels attached to the icon
       return {
          opacity: menuOpacity.value,
          transform: [
-            { translateX: pivotX },
-            { translateY: pivotY },
+            { translateX: width },
             { scale: menuScale.value },
-            { translateX: -pivotX },
-            { translateY: -pivotY },
+            { translateX: -width },
          ],
       };
    });
+
+   const cardAnimatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: 1 + expandProgress.value * 0.02 }],
+      shadowOpacity: 0.06 + expandProgress.value * 0.04,
+   }));
 
    useEffect(() => {
       if (isMenuOpen) {
@@ -113,11 +125,21 @@ export default function EntryCard({
 
    const handleDelete = () => {
       onCloseMenu();
-      store.deleteEntry(entry.id);
+      onDelete(entry);
    };
 
+   const toggleExpanded = useCallback(() => {
+      if (isMenuOpen) onCloseMenu();
+      setExpanded((prev) => !prev);
+   }, [isMenuOpen, onCloseMenu]);
+
    return (
-      <View style={styles.card}>
+      <AnimatedPressable
+         style={[styles.card, cardAnimatedStyle]}
+         accessibilityRole="button"
+         accessibilityLabel="View entry details"
+         onPress={toggleExpanded}
+      >
          <View style={styles.menuRow}>
             <Pressable
                accessibilityLabel="More options"
@@ -138,11 +160,21 @@ export default function EntryCard({
                   measureMenu();
                }}
             >
-               <Pressable style={styles.menuItem} onPress={handleEdit}>
+               <Pressable
+                  style={styles.menuItem}
+                  onPress={handleEdit}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit entry"
+               >
                   <Ionicons name="pencil-outline" size={16} color="#1F2937" />
                   <Text style={styles.menuText}>Edit</Text>
                </Pressable>
-               <Pressable style={styles.menuItem} onPress={handleDelete}>
+               <Pressable
+                  style={styles.menuItem}
+                  onPress={handleDelete}
+                  accessibilityRole="button"
+                  accessibilityLabel="Delete entry"
+               >
                   <Ionicons name="trash-outline" size={16} color="#B91C1C" />
                   <Text style={[styles.menuText, styles.deleteText]}>
                      Delete
@@ -153,19 +185,37 @@ export default function EntryCard({
 
          <View style={styles.section}>
             <Text style={styles.label}>Adversity</Text>
-            <Text style={styles.text}>{entry.adversity}</Text>
+            <Text
+               style={styles.text}
+               numberOfLines={expanded ? undefined : 4}
+               ellipsizeMode={expanded ? undefined : 'tail'}
+            >
+               {entry.adversity}
+            </Text>
          </View>
 
          <View style={styles.section}>
             <Text style={styles.label}>Belief</Text>
             <View style={[styles.accentBoxBase, styles.beliefBox]}>
-               <Text style={styles.beliefText}>{entry.belief}</Text>
+               <Text
+                  style={styles.beliefText}
+                  numberOfLines={expanded ? undefined : 4}
+                  ellipsizeMode={expanded ? undefined : 'tail'}
+               >
+                  {entry.belief}
+               </Text>
             </View>
          </View>
 
          <View style={styles.section}>
             <Text style={styles.label}>Consequence</Text>
-            <Text style={styles.text}>{entry.consequence}</Text>
+            <Text
+               style={styles.text}
+               numberOfLines={expanded ? undefined : 4}
+               ellipsizeMode={expanded ? undefined : 'tail'}
+            >
+               {entry.consequence}
+            </Text>
          </View>
 
          {!entry.dispute ? (
@@ -175,17 +225,29 @@ export default function EntryCard({
                <View style={styles.section}>
                   <Text style={styles.label}>Dispute</Text>
                   <View style={[styles.accentBoxBase, styles.disputeBox]}>
-                     <Text style={styles.disputeText}>{entry.dispute}</Text>
+                     <Text
+                        style={styles.disputeText}
+                        numberOfLines={expanded ? undefined : 5}
+                        ellipsizeMode={expanded ? undefined : 'tail'}
+                     >
+                        {entry.dispute}
+                     </Text>
                   </View>
                </View>
 
                <View style={styles.section}>
                   <Text style={styles.label}>Energy</Text>
-                  <Text style={styles.text}>{entry.energy}</Text>
+                  <Text
+                     style={styles.text}
+                     numberOfLines={expanded ? undefined : 2}
+                     ellipsizeMode={expanded ? undefined : 'tail'}
+                  >
+                     {entry.energy}
+                  </Text>
                </View>
             </>
          )}
-      </View>
+      </AnimatedPressable>
    );
 }
 
@@ -268,9 +330,10 @@ const styles = StyleSheet.create({
       color: '#111827',
    },
    accentBoxBase: {
-      marginHorizontal: -16,
-      paddingVertical: 8,
-      paddingHorizontal: 16,
+      marginHorizontal: -10,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 10,
    },
    beliefBox: {
       borderLeftWidth: 4,

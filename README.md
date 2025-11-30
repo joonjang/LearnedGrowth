@@ -6,6 +6,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-11-30
+- EntryCard now can do undo delete
+
 ### 2025-11-29
 - Abstracted out the FadeTop header for only one component render instead of recurring calls
 - Implemented entry [id] view
@@ -16,8 +19,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Added entry card editing and deleting navigation 
 - Abstracted out linear gradient header view
 - Made dispute.tsx not a safe view and put down content inset
-
-### 2025-11-28
 - Replaced CTA and New Item button stub with a more presentable button
 - Made top inset have a dark linear gradient view (`https://docs.expo.dev/versions/latest/sdk/linear-gradient/`)
 - Abstracted entry-new.tsx and dispute.tsx button logic to StepperButton.tsx
@@ -27,15 +28,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Got dispute.tsx working and look as desied 
 - Refactored the entry input to abstract away redundant code
   - Introduced Keyboard Controller for the keyboard logic (`https://kirillzyusko.github.io/react-native-keyboard-controller/docs/installation`)
-
-### 2025-11-27
 - Got the dispute.tsx working as desired
   - Time to refactor and make the code cleaner
 
 ### 2025-11-26
 - (WIP) Fixing AI slop for UI implementation for `dispute.tsx`
-
-### 2025-11-26
 - Implemented a rough UI implementation for `dispute.tsx`
 
 ### 2025-11-25

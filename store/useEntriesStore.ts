@@ -250,21 +250,85 @@ export function createEntriesStore(
             try {
                set((s) => ({
                   byId: { ...s.byId, [id]: { ...old, isDeleted: true } },
+                  allIds: s.allIds.filter((x) => x !== id),
                }));
                setPending(id, 'remove', { isDeleted: true });
                await service.removeEntry(id);
+               // if something else (like restore) changed the pending op, bail
+               if (get().pending[id]?.op !== 'remove') return;
+
+               const current = get().byId[id];
+               if (current && current.isDeleted) {
+                  set((s) => {
+                     const { [id]: _, ...byId } = s.byId;
+                     return { byId, allIds: s.allIds.filter((x) => x !== id) };
+                  });
+               }
+
                clearPending(id);
                dropError(id);
-               set((s) => {
-                  const { [id]: _, ...byId } = s.byId;
-                  return { byId, allIds: s.allIds.filter((x) => x !== id) };
-               });
             } catch (e: any) {
-               set((s) => ({
-                  byId: { ...s.byId, [id]: old },
-               }));
+               if (get().pending[id]?.op !== 'remove') {
+                  putError(id, e);
+                  throw e;
+               }
+               set((s) => {
+                  const next = { ...s.byId, [id]: old };
+                  const { byId, allIds } = normalizeEntries(
+                     sortByCreatedDesc(filterNotDeleted(Object.values(next)))
+                  );
+                  return { byId, allIds };
+               });
                clearPending(id);
                putError(id, e);
+               throw e;
+            }
+         },
+
+         async restore(entry: Entry) {
+            const previous = get().byId[entry.id];
+            const revived: Entry = {
+               ...entry,
+               isDeleted: false,
+            };
+
+            set((s) => {
+               const next = { ...s.byId, [entry.id]: revived };
+               const { byId, allIds } = normalizeEntries(
+                  sortByCreatedDesc(
+                     filterNotDeleted(Object.values(next))
+                  )
+               );
+               return { byId, allIds };
+            });
+
+            setPending(entry.id, 'update', { isDeleted: false });
+
+            try {
+               const saved = await service.updateEntry(entry.id, {
+                  isDeleted: false,
+               });
+
+               setByCreated(saved);
+               dropError(entry.id);
+               clearPending(entry.id);
+               return saved;
+            } catch (e: any) {
+               set((s) => {
+                  if (previous) {
+                     const next = { ...s.byId, [entry.id]: previous };
+                     const { byId, allIds } = normalizeEntries(
+                        sortByCreatedDesc(
+                           filterNotDeleted(Object.values(next))
+                        )
+                     );
+                     return { byId, allIds };
+                  }
+                  const { [entry.id]: _, ...byId } = s.byId;
+                  return { byId, allIds: s.allIds.filter((x) => x !== entry.id) };
+               });
+               clearPending(entry.id);
+               putError(entry.id, e);
                throw e;
             }
          },
@@ -292,5 +356,6 @@ export const placeholderEntriesStore = create<EntriesState>(() => ({
   async create() { throw new Error("Entries store not ready"); },
   async update() { throw new Error("Entries store not ready"); },
   async remove() { throw new Error("Entries store not ready"); },
+  async restore() { throw new Error("Entries store not ready"); },
   clearErrors() {}
-}));
+})); 
