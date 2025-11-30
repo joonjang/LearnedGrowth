@@ -34,7 +34,6 @@ export default function EntriesScreen() {
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
    const [openMenuBounds, setOpenMenuBounds] = useState<MenuBounds | null>(null);
    const [undoSlots, setUndoSlots] = useState<Entry[]>([]);
-   const activeSwipeable = useRef<SwipeableMethods | null>(null);
    const undoTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
       new Map()
    );
@@ -138,13 +137,7 @@ export default function EntriesScreen() {
             contentInset={{ top: insets.top }}
             contentOffset={{ y: -insets.top, x: 0 }}
             scrollIndicatorInsets={{ top: insets.top }}
-            onScrollBeginDrag={() => {
-               closeMenu();
-               if (activeSwipeable.current) {
-                  activeSwipeable.current.close();
-                  activeSwipeable.current = null;
-               }
-            }}
+            onScrollBeginDrag={closeMenu}
             renderSectionHeader={({ section }) => (
                <View style={styles.sectionHeaderWrapper}>
                   <View style={styles.sectionHeaderPill}>
@@ -180,15 +173,6 @@ export default function EntriesScreen() {
                      onMenuLayout={setOpenMenuBounds}
                      onEdit={handleEdit}
                      onDelete={() => requestDelete(item.entry)}
-                     onSwipeOpen={(ref) => {
-                        if (activeSwipeable.current && activeSwipeable.current !== ref) {
-                           activeSwipeable.current.close();
-                        }
-                        activeSwipeable.current = ref;
-                     }}
-                     onSwipeClose={() => {
-                        if (activeSwipeable.current) activeSwipeable.current = null;
-                     }}
                   />
                );
             }}

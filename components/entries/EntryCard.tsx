@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Entry } from '@/models/entry';
 import {
    Text,
    View,
    StyleSheet,
    Pressable,
+   type TextLayoutEvent,
 } from 'react-native';
 import CTA from './CTA';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,6 +35,7 @@ type Prop = {
    onMenuLayout?: (bounds: MenuBounds) => void;
 };
 
+
 export default function EntryCard({
    entry,
    isMenuOpen,
@@ -44,12 +46,14 @@ export default function EntryCard({
 }: Prop) {
    const menuRef = useRef<View | null>(null);
    const [expanded, setExpanded] = useState(false);
+   const [hasOverflow, setHasOverflow] = useState(false);
 
    const menuScale = useSharedValue(0.7);
    const menuOpacity = useSharedValue(0);
    const menuWidth = useSharedValue(0);
    const menuHeight = useSharedValue(0);
    const expandProgress = useSharedValue(0);
+   const pressProgress = useSharedValue(0);
 
    useEffect(() => {
       expandProgress.value = withTiming(expanded ? 1 : 0, {
@@ -73,8 +77,17 @@ export default function EntryCard({
    });
 
    const cardAnimatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: 1 + expandProgress.value * 0.02 }],
+      transform: [
+         {
+            scale:
+               1 +
+               pressProgress.value * 0.015,
+         },
+      ],
       shadowOpacity: 0.06 + expandProgress.value * 0.04,
+      borderColor: `rgba(17, 24, 39, ${
+         0.05 + pressProgress.value * 0.25
+      })`,
    }));
 
    useEffect(() => {
@@ -133,12 +146,55 @@ export default function EntryCard({
       setExpanded((prev) => !prev);
    }, [isMenuOpen, onCloseMenu]);
 
+   useEffect(() => {
+      setHasOverflow(false);
+   }, [entry.id]);
+
+   const heuristicExpandable = useMemo(() => {
+      const long = (value: string | undefined, limit: number) => {
+         if (!value) return false;
+         const trimmed = value.trim();
+         return trimmed.length > limit || trimmed.includes('\n');
+      };
+
+      return (
+         long(entry.adversity, 80) ||
+         long(entry.belief, 80) ||
+         long(entry.consequence, 80) ||
+         long(entry.dispute, 110) ||
+         long(entry.energy, 50)
+      );
+   }, [entry]);
+
+   const recordOverflow = useCallback(
+      (limit: number) =>
+         (e: TextLayoutEvent) => {
+            if (hasOverflow) return;
+            if (e.nativeEvent.lines.length >= limit) setHasOverflow(true);
+         },
+      [hasOverflow]
+   );
+
+   const isExpandable = hasOverflow || heuristicExpandable;
+
+   const expandHintView = (
+  <View style={styles.expandHint}>
+    <Text style={styles.expandText}>Tap to expand details</Text>
+  </View>
+);
+
    return (
       <AnimatedPressable
          style={[styles.card, cardAnimatedStyle]}
          accessibilityRole="button"
          accessibilityLabel="View entry details"
          onPress={toggleExpanded}
+         onPressIn={() => {
+            pressProgress.value = withTiming(1, { duration: 120 });
+         }}
+         onPressOut={() => {
+            pressProgress.value = withTiming(0, { duration: 140 });
+         }}
       >
          <View style={styles.menuRow}>
             <Pressable
@@ -185,13 +241,16 @@ export default function EntryCard({
 
          <View style={styles.section}>
             <Text style={styles.label}>Adversity</Text>
-            <Text
-               style={styles.text}
-               numberOfLines={expanded ? undefined : 4}
-               ellipsizeMode={expanded ? undefined : 'tail'}
-            >
-               {entry.adversity}
-            </Text>
+            <View style={styles.sectionCard}>
+               <Text
+                  style={styles.text}
+                  numberOfLines={expanded ? undefined : 4}
+                  ellipsizeMode={expanded ? undefined : 'tail'}
+                  onTextLayout={recordOverflow(4)}
+               >
+                  {entry.adversity}
+               </Text>
+            </View>
          </View>
 
          <View style={styles.section}>
@@ -201,6 +260,7 @@ export default function EntryCard({
                   style={styles.beliefText}
                   numberOfLines={expanded ? undefined : 4}
                   ellipsizeMode={expanded ? undefined : 'tail'}
+                  onTextLayout={recordOverflow(4)}
                >
                   {entry.belief}
                </Text>
@@ -209,14 +269,21 @@ export default function EntryCard({
 
          <View style={styles.section}>
             <Text style={styles.label}>Consequence</Text>
-            <Text
-               style={styles.text}
-               numberOfLines={expanded ? undefined : 4}
-               ellipsizeMode={expanded ? undefined : 'tail'}
-            >
-               {entry.consequence}
-            </Text>
+            <View style={styles.sectionCard}>
+               <Text
+                  style={styles.text}
+                  numberOfLines={expanded ? undefined : 4}
+                  ellipsizeMode={expanded ? undefined : 'tail'}
+                  onTextLayout={recordOverflow(4)}
+               >
+                  {entry.consequence}
+               </Text>
+            </View>
          </View>
+
+         {isExpandable && !expanded && !entry.dispute  && (
+            expandHintView
+         )}
 
          {!entry.dispute ? (
             <CTA id={entry.id} />
@@ -229,6 +296,7 @@ export default function EntryCard({
                         style={styles.disputeText}
                         numberOfLines={expanded ? undefined : 5}
                         ellipsizeMode={expanded ? undefined : 'tail'}
+                        onTextLayout={recordOverflow(5)}
                      >
                         {entry.dispute}
                      </Text>
@@ -237,37 +305,49 @@ export default function EntryCard({
 
                <View style={styles.section}>
                   <Text style={styles.label}>Energy</Text>
-                  <Text
-                     style={styles.text}
-                     numberOfLines={expanded ? undefined : 2}
-                     ellipsizeMode={expanded ? undefined : 'tail'}
-                  >
-                     {entry.energy}
-                  </Text>
+                  <View style={styles.sectionCard}>
+                     <Text
+                        style={styles.text}
+                        numberOfLines={expanded ? undefined : 2}
+                        ellipsizeMode={expanded ? undefined : 'tail'}
+                        onTextLayout={recordOverflow(2)}
+                     >
+                        {entry.energy}
+                     </Text>
+                  </View>
                </View>
+
+                               {isExpandable &&  !expanded &&  (
+            expandHintView
+         )}
             </>
          )}
+
+         
       </AnimatedPressable>
    );
 }
 
 const styles = StyleSheet.create({
    card: {
-      paddingTop: 20,
-      paddingHorizontal: 16,
-      paddingBottom: 16,
+      paddingTop: 22,
+      paddingHorizontal: 18,
+      paddingBottom: 18,
 
-      borderRadius: 16,
+      borderRadius: 18,
       backgroundColor: '#FFFFFF',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: '#E5E7EB',
+      overflow: 'hidden',
 
       // iOS shadow: softer + less offset so corners don’t look heavy
       shadowColor: '#000',
       shadowOpacity: 0.06,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 3 },
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
 
       // Android
-      elevation: 3,
+      elevation: 4,
    },
    menuRow: {
       position: 'absolute',
@@ -317,40 +397,67 @@ const styles = StyleSheet.create({
       color: '#B91C1C',
    },
    section: {
-      marginBottom: 8,
+      marginBottom: 12,
+      gap: 6,
    },
    label: {
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: '600',
-      color: '#6B7280', // gray-500-ish
-      marginBottom: 2,
+      letterSpacing: 0.4,
+      color: '#6B7280',
+      textTransform: 'uppercase',
    },
    text: {
-      fontSize: 14,
+      fontSize: 15,
+      lineHeight: 22,
       color: '#111827',
    },
-   accentBoxBase: {
-      marginHorizontal: -10,
-      paddingVertical: 10,
+   sectionCard: {
+      paddingVertical: 12,
       paddingHorizontal: 12,
-      borderRadius: 10,
+      borderRadius: 12,
+      backgroundColor: '#F9FAFB',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: '#E5E7EB',
+   },
+   accentBoxBase: {
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      borderWidth: StyleSheet.hairlineWidth,
    },
    beliefBox: {
-      borderLeftWidth: 4,
-      borderLeftColor: '#F43F5E',
+      backgroundColor: '#FEF2F2',
+      borderColor: '#FCA5A5',
    },
    beliefText: {
-      fontSize: 14,
-      fontWeight: '500',
+      fontSize: 15,
+      fontWeight: '600',
       color: '#9F1239',
    },
    disputeBox: {
-      borderLeftWidth: 4,
-      borderLeftColor: '#22C55E',
+      backgroundColor: '#ECFDF3',
+      borderColor: '#A7F3D0',
    },
    disputeText: {
-      fontSize: 14,
-      fontWeight: '500',
+      fontSize: 15,
+      fontWeight: '600',
       color: '#065F46',
+   },
+   expandHint: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      marginTop: 8,
+   },
+   expandText: {
+      fontSize: 12,
+      color: '#6B7280',
+      letterSpacing: 0.2,
+   },
+   chevron: {
+      justifyContent: 'center',
+      alignItems: 'center',
    },
 });
