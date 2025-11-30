@@ -35,8 +35,7 @@ export default function NewEntryModal() {
    const store = useEntries();
    const headerHeight = useHeaderHeight();
    const insets = useSafeAreaInsets();
-   const { visited, hasVisited, markVisited } =
-      useVisitedSet<NewInputEntryType>();
+   const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
 
    const [form, setForm] = useState<Record<NewInputEntryType, string>>({
       adversity: '',
@@ -78,7 +77,7 @@ export default function NewEntryModal() {
    const dismissKeyboard = useCallback(async () => {
       try {
          await KeyboardController.dismiss();
-      } catch (e) {
+      } catch {
          Keyboard.dismiss();
       }
    }, []);

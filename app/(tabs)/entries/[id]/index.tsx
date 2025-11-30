@@ -3,6 +3,7 @@ import { useEntries } from '@/features/hooks/useEntries';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, Text, Pressable, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
    SafeAreaView,
    useSafeAreaInsets,
@@ -64,7 +65,6 @@ export default function EntryDetailScreen() {
       dispute: entry?.dispute ?? '',
       energy: entry?.energy ?? '',
    });
-   const [saving, setSaving] = useState(false);
    const [justSaved, setJustSaved] = useState(false);
    const [hasScrolled, setHasScrolled] = useState(false);
 
@@ -122,8 +122,7 @@ export default function EntryDetailScreen() {
    );
 
    const handleSave = useCallback(async () => {
-      if (!entry || !hasChanges || saving) return;
-      setSaving(true);
+      if (!entry || !hasChanges) return;
       const patch: Partial<typeof entry> = {};
 
       if (trimmed.adversity !== baseline.adversity)
@@ -135,9 +134,8 @@ export default function EntryDetailScreen() {
       if (trimmed.energy !== baseline.energy) patch.energy = trimmed.energy;
 
       await store.updateEntry(entry.id, patch);
-      setSaving(false);
       setJustSaved(true);
-   }, [baseline, entry, hasChanges, saving, store, trimmed]);
+   }, [baseline, entry, hasChanges, store, trimmed]);
 
    const formattedTimestamp = entry
       ? formatDateTimeWithWeekday(entry.createdAt)
@@ -147,6 +145,13 @@ export default function EntryDetailScreen() {
       : hasChanges
         ? 'Unsaved changes'
         : '';
+   const statusDisplay = statusMessage || 'Saved';
+
+   useEffect(() => {
+      if (!justSaved) return;
+      const timer = setTimeout(() => setJustSaved(false), 2000);
+      return () => clearTimeout(timer);
+   }, [justSaved]);
 
    const handleScroll = useCallback(
       (e: any) => {
@@ -174,12 +179,20 @@ export default function EntryDetailScreen() {
                style={styles.backButton}
                hitSlop={8}
             >
-               <Text style={styles.backText}>Back</Text>
+               <Ionicons name="chevron-back" size={18} color="#111827" />
             </Pressable>
 
             <View style={styles.titleMeta}>
                <Text style={styles.timeStamp}>
                   {formattedTimestamp || ' '}
+               </Text>
+               <Text
+                  style={[
+                     styles.statusText,
+                     !statusMessage && styles.statusTextHidden,
+                  ]}
+               >
+                  {statusDisplay}
                </Text>
             </View>
 
@@ -187,25 +200,19 @@ export default function EntryDetailScreen() {
                <Pressable
                   style={[
                      styles.saveButton,
-                     (!hasChanges || saving) && styles.saveButtonDisabled,
+                     !hasChanges && styles.saveButtonDisabled,
                   ]}
                   onPress={handleSave}
-                  disabled={!hasChanges || saving}
+                  disabled={!hasChanges}
                >
-                  <Text style={styles.saveButtonText}>
-                     {saving ? 'Saving...' : 'Save'}
+                  <Text style={[styles.saveLabel, !hasChanges && styles.saveLabelDisabled]}>
+                     Save
                   </Text>
                </Pressable>
             </View>
          </View>
 
          {hasScrolled ? <View style={styles.divider} /> : null}
-
-         {statusMessage ? (
-            <View style={styles.statusRow}>
-               <Text style={styles.statusText}>{statusMessage}</Text>
-            </View>
-         ) : null}
 
          <KeyboardAwareScrollView
             style={styles.scroll}
@@ -252,31 +259,26 @@ const styles = StyleSheet.create({
       marginBottom: 16,
    },
    backButton: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 10,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#D1D5DB',
-      backgroundColor: '#FFFFFF',
+      padding: 8,
    },
-   backText: {
+   titleMeta: {
+      flex: 1,
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 4,
+   },
+   saveButton: {
+      padding: 8,
+   },
+   saveButtonDisabled: {
+      opacity: 0.5,
+   },
+   saveLabel: {
       fontSize: 14,
       color: '#111827',
    },
-   titleMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-   saveButton: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 10,
-      backgroundColor: '#111827',
-   },
-   saveButtonDisabled: {
-      backgroundColor: '#9CA3AF',
-   },
-   saveButtonText: {
-      color: '#FFFFFF',
-      fontSize: 14,
-      fontWeight: '600',
+   saveLabelDisabled: {
+      color: '#9CA3AF',
    },
    timeStamp: {
       fontSize: 16,
@@ -292,12 +294,14 @@ const styles = StyleSheet.create({
       backgroundColor: '#E5E7EB',
       marginBottom: 0,
    },
-   statusRow: {
-      marginBottom: 6,
-   },
    statusText: {
       fontSize: 13,
       color: '#6B7280',
+      position: 'absolute',
+      marginTop: 24
+   },
+   statusTextHidden: {
+      opacity: 0,
    },
    scroll: {
       paddingTop: 24,
