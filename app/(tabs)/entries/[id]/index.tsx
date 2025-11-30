@@ -26,6 +26,10 @@ const FIELD_META = [
       label: 'Belief',
       hint: 'What were you telling yourself?',
       placeholder: 'Capture the core thought',
+      accent: {
+         backgroundColor: palette.accentBeliefBg,
+         borderColor: palette.accentBeliefBorder,
+      },
    },
    {
       key: 'consequence',
@@ -38,6 +42,10 @@ const FIELD_META = [
       label: 'Dispute',
       hint: 'Evidence. Alternatives. Usefulness.',
       placeholder: 'Collect the key sentences you used to dispute',
+      accent: {
+         backgroundColor: palette.accentDisputeBg,
+         borderColor: palette.accentDisputeBorder,
+      },
    },
    {
       key: 'energy',
@@ -214,7 +222,13 @@ export default function EntryDetailScreen() {
                      value={form[field.key]}
                      onChangeText={setField(field.key)}
                      placeholder={field.placeholder}
-                     style={styles.input}
+                     style={[
+                        styles.input,
+                        field.accent && {
+                           backgroundColor: field.accent.backgroundColor,
+                           borderColor: field.accent.borderColor,
+                        },
+                     ]}
                      textAlignVertical="top"
                   />
                </View>
