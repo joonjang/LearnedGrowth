@@ -8,6 +8,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2025-11-30
 - EntryCard now can do undo delete
+- One source of truth for colors
 
 ### 2025-11-29
 - Abstracted out the FadeTop header for only one component render instead of recurring calls
@@ -146,7 +147,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
-- Make the card detail page presentable
+- Upon making an entry, it should go to [id] page
+- Make a CTA button visible on [id]
 - Address how the app just suddenly appears visible during startup instead of something gradual
 - Set up ai component of app
 - Set up Supabase
