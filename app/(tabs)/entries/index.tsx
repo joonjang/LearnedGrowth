@@ -16,7 +16,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import TopFade from '@/components/TopFade';
 
 type EntrySection = {
    title: string; // e.g. "Today", "Yesterday", "Jan 10"
@@ -75,7 +74,6 @@ export default function EntriesScreen() {
          style={styles.container}
          onStartShouldSetResponderCapture={handleTouchCapture}
       >
-         <TopFade style={styles.topGradient} height={insets.top + 48} />
          <SectionList
             sections={sections}
             keyExtractor={(item) => item.id}
@@ -207,13 +205,6 @@ const styles = StyleSheet.create({
       paddingHorizontal: 16,
       paddingTop: 16,
       paddingBottom: 40,
-   },
-   topGradient: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 1,
    },
    sectionHeaderWrapper: {
       paddingVertical: 12,

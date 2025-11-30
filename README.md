@@ -6,6 +6,12 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-11-29
+- Abstracted out the FadeTop header for only one component render instead of recurring calls
+- Implemented entry [id] view
+  - Can modify items
+- Card menu item now features a growing animation
+
 ### 2025-11-28
 - Added entry card editing and deleting navigation 
 - Abstracted out linear gradient header view
@@ -144,6 +150,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 - Make the card detail page presentable
-- Remove DEV page
+- Address how the app just suddenly appears visible during startup instead of something gradual
 - Set up ai component of app
 - Set up Supabase

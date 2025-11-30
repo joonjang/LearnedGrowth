@@ -1,11 +1,15 @@
 import { useEntriesAdapter } from '@/providers/AdapterProvider';
 import { Button, StyleSheet, Text, View } from 'react-native';
+import TopFade from './TopFade';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function AdapterGuard({ children }: { children: React.ReactNode }) {
    const { ready, error, reload } = useEntriesAdapter();
+   const insets = useSafeAreaInsets();
 
    return (
       <View style={styles.container}>
+         <TopFade height={insets.top + 48} />
          {children}
 
          {!ready && !error && (

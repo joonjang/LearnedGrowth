@@ -1,10 +1,21 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Entry } from '@/models/entry';
-import { Text, View, StyleSheet, Pressable } from 'react-native';
+import {
+   Text,
+   View,
+   StyleSheet,
+   Pressable,
+} from 'react-native';
 import CTA from './CTA';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEntries } from '@/features/hooks/useEntries';
+import Animated, {
+   useSharedValue,
+   useAnimatedStyle,
+   withTiming,
+   Easing,
+} from 'react-native-reanimated';
 
 export type MenuBounds = {
    x: number;
@@ -30,6 +41,55 @@ export default function EntryCard({
 }: Prop) {
    const store = useEntries();
    const menuRef = useRef<View | null>(null);
+
+   const menuScale = useSharedValue(0.7);
+   const menuOpacity = useSharedValue(0);
+   const menuWidth = useSharedValue(0);
+   const menuHeight = useSharedValue(0);
+
+   const menuStyle = useAnimatedStyle(() => {
+      const width = menuWidth.value || 1;
+      const height = menuHeight.value || 1;
+      const pivotX = width / 2; // right of center
+      const pivotY = -height / 2; // above center
+
+      return {
+         opacity: menuOpacity.value,
+         transform: [
+            { translateX: pivotX },
+            { translateY: pivotY },
+            { scale: menuScale.value },
+            { translateX: -pivotX },
+            { translateY: -pivotY },
+         ],
+      };
+   });
+
+   useEffect(() => {
+      if (isMenuOpen) {
+         // zoom in from top-right
+         menuScale.value = withTiming(1, {
+            duration: 140,
+            easing: Easing.out(Easing.cubic),
+         });
+
+         menuOpacity.value = withTiming(1, {
+            duration: 120,
+            easing: Easing.out(Easing.quad),
+         });
+      } else {
+         // zoom out toward top-right
+         menuScale.value = withTiming(0.7, {
+            duration: 90,
+            easing: Easing.in(Easing.cubic),
+         });
+
+         menuOpacity.value = withTiming(0, {
+            duration: 80,
+            easing: Easing.in(Easing.quad),
+         });
+      }
+   }, [isMenuOpen, menuScale, menuOpacity]);
 
    const measureMenu = useCallback(() => {
       if (!menuRef.current || !onMenuLayout) return;
@@ -67,24 +127,28 @@ export default function EntryCard({
             >
                <Ionicons name="ellipsis-horizontal" size={18} color="#6B7280" />
             </Pressable>
-            {isMenuOpen && (
-               <View ref={menuRef} style={styles.menu} onLayout={measureMenu}>
-                  <Pressable style={styles.menuItem} onPress={handleEdit}>
-                     <Ionicons
-                        name="pencil-outline"
-                        size={16}
-                        color="#1F2937"
-                     />
-                     <Text style={styles.menuText}>Edit</Text>
-                  </Pressable>
-                  <Pressable style={styles.menuItem} onPress={handleDelete}>
-                     <Ionicons name="trash-outline" size={16} color="#B91C1C" />
-                     <Text style={[styles.menuText, styles.deleteText]}>
-                        Delete
-                     </Text>
-                  </Pressable>
-               </View>
-            )}
+            <Animated.View
+               ref={menuRef}
+               pointerEvents={isMenuOpen ? 'auto' : 'none'}
+               style={[styles.menu, menuStyle]}
+               onLayout={(e) => {
+                  const { width, height } = e.nativeEvent.layout;
+                  menuWidth.value = width;
+                  menuHeight.value = height;
+                  measureMenu();
+               }}
+            >
+               <Pressable style={styles.menuItem} onPress={handleEdit}>
+                  <Ionicons name="pencil-outline" size={16} color="#1F2937" />
+                  <Text style={styles.menuText}>Edit</Text>
+               </Pressable>
+               <Pressable style={styles.menuItem} onPress={handleDelete}>
+                  <Ionicons name="trash-outline" size={16} color="#B91C1C" />
+                  <Text style={[styles.menuText, styles.deleteText]}>
+                     Delete
+                  </Text>
+               </Pressable>
+            </Animated.View>
          </View>
 
          <View style={styles.section}>

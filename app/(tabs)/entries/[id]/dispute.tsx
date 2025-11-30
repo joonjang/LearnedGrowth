@@ -12,12 +12,10 @@ import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView, KeyboardEvents } from 'react-native-keyboard-controller';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
 import InputBox from '@/components/newEntry/InputBox';
-import TopFade from '@/components/TopFade';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STEP_ORDER = [
    'evidence',
@@ -212,8 +210,7 @@ export default function DisputeScreen() {
             style={styles.root}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
          >
-            <View style={[styles.page]}>
-               <TopFade style={styles.topGradient} height={insets.top + 48} />
+            <View style={styles.page}>
                <ScrollView
                   ref={scrollRef}
                   style={styles.scroll}
@@ -287,13 +284,6 @@ const styles = StyleSheet.create({
    page: {
       flex: 1,
       paddingHorizontal: 20,
-   },
-   topGradient: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 1,
    },
    scroll: { flex: 1 },
    scrollContent: {

@@ -1,25 +1,22 @@
-import { formatDate, getTimeLabel } from '@/lib/date';
+import { formatDateTimeWithWeekday } from '@/lib/date';
 import { useEntries } from '@/features/hooks/useEntries';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { StyleSheet, View, Text, Pressable, TextInput } from 'react-native';
 import {
-   StyleSheet,
-   View,
-   Text,
-   Pressable,
-   ScrollView,
-   TextInput,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+   SafeAreaView,
+   useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
 
-const FIELD_META: Array<{
+const FIELD_META: {
    key: FieldKey;
    label: string;
    hint: string;
    placeholder: string;
-}> = [
+}[] = [
    {
       key: 'adversity',
       label: 'Adversity',
@@ -57,6 +54,8 @@ export default function EntryDetailScreen() {
    const entryId = Array.isArray(id) ? id[0] : id;
    const store = useEntries();
    const entry = entryId ? store.getEntryById(entryId) : undefined;
+   const insets = useSafeAreaInsets();
+   const keyboardOffset = insets.bottom + 32;
 
    const [form, setForm] = useState<Record<FieldKey, string>>({
       adversity: entry?.adversity ?? '',
@@ -67,6 +66,7 @@ export default function EntryDetailScreen() {
    });
    const [saving, setSaving] = useState(false);
    const [justSaved, setJustSaved] = useState(false);
+   const [hasScrolled, setHasScrolled] = useState(false);
 
    useEffect(() => {
       if (!entry) return;
@@ -78,6 +78,7 @@ export default function EntryDetailScreen() {
          energy: entry.energy ?? '',
       });
       setJustSaved(false);
+      setHasScrolled(false);
    }, [entry]);
 
    const trimmed = useMemo(
@@ -120,19 +121,8 @@ export default function EntryDetailScreen() {
       []
    );
 
-   const formattedDate = entry ? formatDate(entry.createdAt) : '';
-   const formattedTime = entry ? getTimeLabel(entry) : '';
-
-   if (!entry) {
-      return (
-         <SafeAreaView style={styles.container}>
-            <Text style={styles.text}>Entry not found.</Text>
-         </SafeAreaView>
-      );
-   }
-
    const handleSave = useCallback(async () => {
-      if (!hasChanges || saving) return;
+      if (!entry || !hasChanges || saving) return;
       setSaving(true);
       const patch: Partial<typeof entry> = {};
 
@@ -147,10 +137,37 @@ export default function EntryDetailScreen() {
       await store.updateEntry(entry.id, patch);
       setSaving(false);
       setJustSaved(true);
-   }, [baseline, entry.id, hasChanges, saving, store, trimmed]);
+   }, [baseline, entry, hasChanges, saving, store, trimmed]);
+
+   const formattedTimestamp = entry
+      ? formatDateTimeWithWeekday(entry.createdAt)
+      : '';
+   const statusMessage = justSaved
+      ? 'Saved'
+      : hasChanges
+        ? 'Unsaved changes'
+        : '';
+
+   const handleScroll = useCallback(
+      (e: any) => {
+         const y = e?.nativeEvent?.contentOffset?.y ?? 0;
+         if (y <= 0 && hasScrolled) setHasScrolled(false);
+         else if (y > 0 && !hasScrolled) setHasScrolled(true);
+      },
+      [hasScrolled]
+   );
+
+   if (!entry) {
+      return (
+         <SafeAreaView style={styles.container}>
+            <Text style={styles.text}>Entry not found.</Text>
+         </SafeAreaView>
+      );
+   }
 
    return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
+         <View style={{ height: insets.top }} />
          <View style={styles.header}>
             <Pressable
                onPress={() => router.back()}
@@ -161,42 +178,47 @@ export default function EntryDetailScreen() {
             </Pressable>
 
             <View style={styles.titleMeta}>
-               <Text style={styles.title}>Entry</Text>
+               <Text style={styles.timeStamp}>
+                  {formattedTimestamp || ' '}
+               </Text>
             </View>
 
-            <Pressable
-               style={[
-                  styles.saveButton,
-                  (!hasChanges || saving) && styles.saveButtonDisabled,
-               ]}
-               onPress={handleSave}
-               disabled={!hasChanges || saving}
-            >
-               <Text style={styles.saveButtonText}>
-                  {saving ? 'Saving...' : 'Save'}
-               </Text>
-            </Pressable>
+            <View style={styles.actions}>
+               <Pressable
+                  style={[
+                     styles.saveButton,
+                     (!hasChanges || saving) && styles.saveButtonDisabled,
+                  ]}
+                  onPress={handleSave}
+                  disabled={!hasChanges || saving}
+               >
+                  <Text style={styles.saveButtonText}>
+                     {saving ? 'Saving...' : 'Save'}
+                  </Text>
+               </Pressable>
+            </View>
          </View>
 
-         <Text style={styles.timeStamp}>
-            {formattedTime && formattedDate
-               ? `${formattedTime} · ${formattedDate}`
-               : formattedDate || ' '}
-         </Text>
+         {hasScrolled ? <View style={styles.divider} /> : null}
 
-         <View style={styles.divider} />
+         {statusMessage ? (
+            <View style={styles.statusRow}>
+               <Text style={styles.statusText}>{statusMessage}</Text>
+            </View>
+         ) : null}
 
-         <View style={styles.statusRow}>
-            <Text style={styles.statusText}>
-               {justSaved ? 'Saved' : hasChanges ? 'Unsaved changes' : ' '}
-            </Text>
-         </View>
-
-         <ScrollView
+         <KeyboardAwareScrollView
             style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+               { paddingBottom: insets.bottom + 16 },
+            ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
+            bottomOffset={keyboardOffset}
+            extraKeyboardSpace={12}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}
          >
             {FIELD_META.map((field) => (
                <View style={styles.section} key={field.key}>
@@ -207,31 +229,31 @@ export default function EntryDetailScreen() {
                      value={form[field.key]}
                      onChangeText={setField(field.key)}
                      placeholder={field.placeholder}
-                     style={styles.input}
-                     textAlignVertical="top"
+                    style={styles.input}
+                   textAlignVertical="top"
                   />
                </View>
             ))}
-         </ScrollView>
-      </SafeAreaView>
+         </KeyboardAwareScrollView>
+      </View>
    );
 }
 
 const styles = StyleSheet.create({
    container: {
       flex: 1,
-      padding: 16,
+      paddingHorizontal: 16,
       backgroundColor: '#F9FAFB',
    },
    header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 6,
+      marginBottom: 16,
    },
    backButton: {
-      paddingHorizontal: 10,
-      paddingVertical: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
       borderRadius: 10,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: '#D1D5DB',
@@ -242,11 +264,6 @@ const styles = StyleSheet.create({
       color: '#111827',
    },
    titleMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-   title: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: '#111827',
-   },
    saveButton: {
       paddingHorizontal: 12,
       paddingVertical: 8,
@@ -262,14 +279,18 @@ const styles = StyleSheet.create({
       fontWeight: '600',
    },
    timeStamp: {
-      fontSize: 13,
-      color: '#6B7280',
-      marginBottom: 8,
+      fontSize: 16,
+      color: '#111827',
+   },
+   actions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
    },
    divider: {
       height: 1,
       backgroundColor: '#E5E7EB',
-      marginBottom: 10,
+      marginBottom: 0,
    },
    statusRow: {
       marginBottom: 6,
@@ -279,10 +300,8 @@ const styles = StyleSheet.create({
       color: '#6B7280',
    },
    scroll: {
+      paddingTop: 24,
       flex: 1,
-   },
-   scrollContent: {
-      paddingBottom: 28,
    },
    section: {
       marginBottom: 16,
