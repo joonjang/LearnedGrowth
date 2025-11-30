@@ -7,6 +7,7 @@ import {
    Pressable,
    type TextLayoutEvent,
 } from 'react-native';
+import { palette } from '@/theme/colors';
 import CTA from './CTA';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -335,9 +336,9 @@ const styles = StyleSheet.create({
       paddingBottom: 18,
 
       borderRadius: 18,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: palette.cardBg,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#E5E7EB',
+      borderColor: palette.border,
       overflow: 'hidden',
 
       // iOS shadow: softer + less offset so corners don’t look heavy
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
       position: 'absolute',
       top: 8,
       right: 0,
-      backgroundColor: 'rgba(255, 255, 255, 1)',
+      backgroundColor: palette.cardBg,
       borderRadius: 12,
       paddingVertical: 6,
       shadowColor: '#000',
@@ -378,7 +379,7 @@ const styles = StyleSheet.create({
       elevation: 6,
       minWidth: 140,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#E5E7EB',
+      borderColor: palette.border,
       zIndex: 20,
    },
    menuItem: {
@@ -390,11 +391,11 @@ const styles = StyleSheet.create({
    },
    menuText: {
       fontSize: 14,
-      color: '#1F2937',
+      color: palette.menuText,
       fontWeight: '500',
    },
    deleteText: {
-      color: '#B91C1C',
+      color: palette.delete,
    },
    section: {
       marginBottom: 12,
@@ -404,21 +405,21 @@ const styles = StyleSheet.create({
       fontSize: 11,
       fontWeight: '600',
       letterSpacing: 0.4,
-      color: '#6B7280',
+      color: palette.hint,
       textTransform: 'uppercase',
    },
    text: {
       fontSize: 15,
       lineHeight: 22,
-      color: '#111827',
+      color: palette.text,
    },
    sectionCard: {
       paddingVertical: 12,
       paddingHorizontal: 12,
       borderRadius: 12,
-      backgroundColor: '#F9FAFB',
+      backgroundColor: palette.surfaceMuted,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#E5E7EB',
+      borderColor: palette.border,
    },
    accentBoxBase: {
       paddingVertical: 12,
@@ -427,37 +428,40 @@ const styles = StyleSheet.create({
       borderWidth: StyleSheet.hairlineWidth,
    },
    beliefBox: {
-      backgroundColor: '#FEF2F2',
-      borderColor: '#FCA5A5',
+      backgroundColor: palette.accentBeliefBg,
+      borderColor: palette.accentBeliefBorder,
    },
    beliefText: {
       fontSize: 15,
       fontWeight: '600',
-      color: '#9F1239',
+      color: palette.accentBeliefText,
    },
    disputeBox: {
-      backgroundColor: '#ECFDF3',
-      borderColor: '#A7F3D0',
+      backgroundColor: palette.accentDisputeBg,
+      borderColor: palette.accentDisputeBorder,
    },
    disputeText: {
       fontSize: 15,
       fontWeight: '600',
-      color: '#065F46',
+      color: palette.accentDisputeText,
    },
    expandHint: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
-      marginTop: 8,
+      paddingTop: 10,
+      paddingBottom: 4,
    },
    expandText: {
       fontSize: 12,
-      color: '#6B7280',
+      color: palette.hint,
       letterSpacing: 0.2,
    },
-   chevron: {
-      justifyContent: 'center',
-      alignItems: 'center',
+   expandDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: palette.mutedIcon,
    },
 });

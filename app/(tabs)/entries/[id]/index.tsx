@@ -10,6 +10,7 @@ import {
    useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { palette } from '@/theme/colors';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
 
@@ -227,7 +228,7 @@ const styles = StyleSheet.create({
    container: {
       flex: 1,
       paddingHorizontal: 16,
-      backgroundColor: '#F9FAFB',
+      backgroundColor: palette.cardBg,
    },
    header: {
       flexDirection: 'row',
@@ -252,14 +253,14 @@ const styles = StyleSheet.create({
    },
    saveLabel: {
       fontSize: 14,
-      color: '#111827',
+      color: palette.text,
    },
    saveLabelDisabled: {
-      color: '#9CA3AF',
+      color: palette.hint,
    },
    timeStamp: {
       fontSize: 16,
-      color: '#111827',
+      color: palette.text,
    },
    actions: {
       flexDirection: 'row',
@@ -268,12 +269,12 @@ const styles = StyleSheet.create({
    },
    divider: {
       height: 1,
-      backgroundColor: '#E5E7EB',
+      backgroundColor: palette.border,
       marginBottom: 0,
    },
    statusText: {
       fontSize: 13,
-      color: '#6B7280',
+      color: palette.hint,
       position: 'absolute',
       marginTop: 24
    },
@@ -291,28 +292,29 @@ const styles = StyleSheet.create({
    label: {
       fontSize: 15,
       fontWeight: '700',
-      color: '#111827',
+      color: palette.text,
    },
    subLabel: {
       fontSize: 13,
       fontWeight: '600',
-      color: '#6B7280',
+      color: palette.hint,
    },
    input: {
       marginTop: 6,
       minHeight: 90,
       paddingHorizontal: 12,
       paddingVertical: 10,
-      borderRadius: 12,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#E5E7EB',
-      backgroundColor: '#FFFFFF',
-      color: '#111827',
+      color: palette.text,
       fontSize: 14,
       lineHeight: 20,
+
+      borderRadius: 12,
+      backgroundColor: palette.surfaceMuted,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: palette.border,
    },
    text: {
       fontSize: 14,
-      color: '#111827',
+      color: palette.text,
    },
 });

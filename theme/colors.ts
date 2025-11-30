@@ -1,0 +1,16 @@
+export const palette = {
+   cardBg: '#FFFFFF',
+   surfaceMuted: '#F9FAFB',
+   border: '#E5E7EB',
+   text: '#111827',
+   hint: '#6B7280',
+   mutedIcon: '#9CA3AF',
+   menuText: '#1F2937',
+   delete: '#B91C1C',
+   accentBeliefBg: '#FEF2F2',
+   accentBeliefBorder: '#FCA5A5',
+   accentBeliefText: '#9F1239',
+   accentDisputeBg: '#ECFDF3',
+   accentDisputeBorder: '#A7F3D0',
+   accentDisputeText: '#065F46',
+};
