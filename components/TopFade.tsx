@@ -26,10 +26,8 @@ export default function TopFade({ height, colors = DEFAULT_COLORS, style }: Prop
 
 const styles = StyleSheet.create({
    base: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
+      ...StyleSheet.absoluteFillObject,
+      bottom: undefined, // allow explicit height to control the fade depth
       zIndex: 1,
    },
 });

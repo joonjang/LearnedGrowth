@@ -47,7 +47,9 @@ export default function EntriesScreen() {
    };
 
    const handleTouchCapture = (event: GestureResponderEvent) => {
-      if (!openMenuEntryId || !openMenuBounds) {
+      if (!openMenuEntryId) return false;
+      if (!openMenuBounds) {
+         closeMenu();
          return false;
       }
 
@@ -59,9 +61,7 @@ export default function EntriesScreen() {
          pageY >= openMenuBounds.y &&
          pageY <= openMenuBounds.y + openMenuBounds.height;
 
-      if (insideX && insideY) {
-         return false;
-      }
+      if (insideX && insideY) return false;
 
       closeMenu();
       return false;

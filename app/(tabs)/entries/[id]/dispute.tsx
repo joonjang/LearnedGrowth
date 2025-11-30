@@ -11,7 +11,16 @@ import type { AbcdeJson } from '@/models/abcdeJson';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+   NativeScrollEvent,
+   NativeSyntheticEvent,
+   Platform,
+   ScrollView,
+   StyleSheet,
+   Text,
+   TextInput,
+   View,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView, KeyboardEvents } from 'react-native-keyboard-controller';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
@@ -100,28 +109,17 @@ export default function DisputeScreen() {
       [form]
    );
 
-   const baseline = useMemo(
-      () => ({
-         evidence: (entry?.dispute ?? '').trim(),
-         alternatives: '',
-         usefulness: '',
-         energy: (entry?.energy ?? '').trim(),
-      }),
-      [entry]
-   );
+   const hasUnsavedChanges = useMemo(() => {
+      const composedDispute = buildDisputeText(trimmedForm);
+      const entryDispute = (entry?.dispute ?? '').trim();
+      const entryEnergy = (entry?.energy ?? '').trim();
 
-   const hasUnsavedChanges = useMemo(
-      () =>
-         trimmedForm.evidence !== baseline.evidence ||
-         trimmedForm.alternatives !== baseline.alternatives ||
-         trimmedForm.usefulness !== baseline.usefulness ||
-         trimmedForm.energy !== baseline.energy,
-      [baseline, trimmedForm]
-   );
+      return composedDispute !== entryDispute || trimmedForm.energy !== entryEnergy;
+   }, [entry?.dispute, entry?.energy, trimmedForm]);
 
    const currentEmpty = !trimmedForm[currKey];
 
-   const scrollRef = useRef<any>(null);
+   const scrollRef = useRef<ScrollView | null>(null);
    const stickToBottom = useRef(true);
    const inputRef = useRef<TextInput>(null);
    const { promptTextStyle, inputBoxDims, promptMaxHeight } =
@@ -154,26 +152,23 @@ export default function DisputeScreen() {
 
    const scrollToBottom = useCallback(
       (animated = true) => {
-         const ref = scrollRef.current as any;
+         const ref = scrollRef.current;
          if (!ref) return;
 
-         if (typeof ref.scrollToEnd === 'function') {
-            ref.scrollToEnd({ animated });
-            return;
-         }
-         if (typeof ref.scrollTo === 'function') {
-            ref.scrollTo({ y: Number.MAX_SAFE_INTEGER, animated });
-         }
+         ref.scrollToEnd({ animated });
       },
       []
    );
 
-   const handleScroll = useCallback((e: any) => {
-      const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
-      const gap =
-         contentSize.height - (contentOffset.y + layoutMeasurement.height);
-      stickToBottom.current = gap < 12;
-   }, []);
+   const handleScroll = useCallback(
+      (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+         const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+         const gap =
+            contentSize.height - (contentOffset.y + layoutMeasurement.height);
+         stickToBottom.current = gap < 12;
+      },
+      []
+   );
 
    useEffect(() => {
       requestAnimationFrame(() => scrollToBottom(false));

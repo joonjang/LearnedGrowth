@@ -26,6 +26,8 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
       dims,
       containerStyle,
       placeholder = 'Enter here',
+      scrollEnabled = true,
+      ...rest
    },
    ref
 ) {
@@ -43,8 +45,9 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
             onChangeText={onChangeText}
             style={styles.inputText}
             multiline
-            scrollEnabled
+            scrollEnabled={scrollEnabled}
             textAlignVertical="top"
+            {...rest}
          />
       </Pressable>
    );

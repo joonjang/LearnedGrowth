@@ -1,5 +1,6 @@
 import { formatDateTimeWithWeekday } from '@/lib/date';
 import { useEntries } from '@/features/hooks/useEntries';
+import type { Entry } from '@/models/entry';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, Text, Pressable, TextInput } from 'react-native';
@@ -12,12 +13,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
 
-const FIELD_META: {
-   key: FieldKey;
-   label: string;
-   hint: string;
-   placeholder: string;
-}[] = [
+const FIELD_META = [
    {
       key: 'adversity',
       label: 'Adversity',
@@ -48,7 +44,20 @@ const FIELD_META: {
       hint: 'How you feel after the disputation.',
       placeholder: 'Note any shift in mood or energy',
    },
-];
+] satisfies {
+   key: FieldKey;
+   label: string;
+   hint: string;
+   placeholder: string;
+}[];
+const FIELD_KEYS: FieldKey[] = FIELD_META.map((f) => f.key);
+
+function buildFieldRecord(getValue: (key: FieldKey) => string) {
+   return FIELD_KEYS.reduce((acc, key) => {
+      acc[key] = getValue(key);
+      return acc;
+   }, {} as Record<FieldKey, string>);
+}
 
 export default function EntryDetailScreen() {
    const { id } = useLocalSearchParams();
@@ -58,58 +67,31 @@ export default function EntryDetailScreen() {
    const insets = useSafeAreaInsets();
    const keyboardOffset = insets.bottom + 32;
 
-   const [form, setForm] = useState<Record<FieldKey, string>>({
-      adversity: entry?.adversity ?? '',
-      belief: entry?.belief ?? '',
-      consequence: entry?.consequence ?? '',
-      dispute: entry?.dispute ?? '',
-      energy: entry?.energy ?? '',
-   });
+   const [form, setForm] = useState<Record<FieldKey, string>>(() =>
+      buildFieldRecord((key) => entry?.[key] ?? '')
+   );
    const [justSaved, setJustSaved] = useState(false);
    const [hasScrolled, setHasScrolled] = useState(false);
 
    useEffect(() => {
       if (!entry) return;
-      setForm({
-         adversity: entry.adversity ?? '',
-         belief: entry.belief ?? '',
-         consequence: entry.consequence ?? '',
-         dispute: entry.dispute ?? '',
-         energy: entry.energy ?? '',
-      });
+      setForm(buildFieldRecord((key) => entry[key] ?? ''));
       setJustSaved(false);
       setHasScrolled(false);
    }, [entry]);
 
    const trimmed = useMemo(
-      () => ({
-         adversity: form.adversity.trim(),
-         belief: form.belief.trim(),
-         consequence: form.consequence.trim(),
-         dispute: form.dispute.trim(),
-         energy: form.energy.trim(),
-      }),
+      () => buildFieldRecord((key) => form[key].trim()),
       [form]
    );
 
    const baseline = useMemo(
-      () => ({
-         adversity: (entry?.adversity ?? '').trim(),
-         belief: (entry?.belief ?? '').trim(),
-         consequence: (entry?.consequence ?? '').trim(),
-         dispute: (entry?.dispute ?? '').trim(),
-         energy: (entry?.energy ?? '').trim(),
-      }),
+      () => buildFieldRecord((key) => (entry?.[key] ?? '').trim()),
       [entry]
    );
 
    const hasChanges = useMemo(
-      () =>
-         trimmed.adversity !== baseline.adversity ||
-         trimmed.belief !== baseline.belief ||
-         trimmed.consequence !== baseline.consequence ||
-         trimmed.dispute !== baseline.dispute ||
-         trimmed.energy !== baseline.energy,
+      () => FIELD_KEYS.some((key) => trimmed[key] !== baseline[key]),
       [baseline, trimmed]
    );
 
@@ -123,15 +105,10 @@ export default function EntryDetailScreen() {
 
    const handleSave = useCallback(async () => {
       if (!entry || !hasChanges) return;
-      const patch: Partial<typeof entry> = {};
-
-      if (trimmed.adversity !== baseline.adversity)
-         patch.adversity = trimmed.adversity;
-      if (trimmed.belief !== baseline.belief) patch.belief = trimmed.belief;
-      if (trimmed.consequence !== baseline.consequence)
-         patch.consequence = trimmed.consequence;
-      if (trimmed.dispute !== baseline.dispute) patch.dispute = trimmed.dispute;
-      if (trimmed.energy !== baseline.energy) patch.energy = trimmed.energy;
+      const patch = FIELD_KEYS.reduce((acc, key) => {
+         if (trimmed[key] !== baseline[key]) acc[key] = trimmed[key];
+         return acc;
+      }, {} as Partial<Entry>);
 
       await store.updateEntry(entry.id, patch);
       setJustSaved(true);
@@ -236,8 +213,8 @@ export default function EntryDetailScreen() {
                      value={form[field.key]}
                      onChangeText={setField(field.key)}
                      placeholder={field.placeholder}
-                    style={styles.input}
-                   textAlignVertical="top"
+                     style={styles.input}
+                     textAlignVertical="top"
                   />
                </View>
             ))}
