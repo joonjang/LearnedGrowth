@@ -58,6 +58,10 @@ const FIELD_META = [
    label: string;
    hint: string;
    placeholder: string;
+   accent?: {
+      backgroundColor: string;
+      borderColor: string;
+   };
 }[];
 const FIELD_KEYS: FieldKey[] = FIELD_META.map((f) => f.key);
 
