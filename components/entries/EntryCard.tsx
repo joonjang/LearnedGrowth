@@ -36,7 +36,6 @@ type Prop = {
    onMenuLayout?: (bounds: MenuBounds) => void;
 };
 
-
 export default function EntryCard({
    entry,
    isMenuOpen,
@@ -80,9 +79,7 @@ export default function EntryCard({
    const cardAnimatedStyle = useAnimatedStyle(() => ({
       transform: [
          {
-            scale:
-               1 +
-               pressProgress.value * 0.015,
+            scale: 1 + pressProgress.value * 0.015,
          },
       ],
       shadowOpacity: 0.06 + expandProgress.value * 0.04,
@@ -179,10 +176,10 @@ export default function EntryCard({
    const isExpandable = hasOverflow || heuristicExpandable;
 
    const expandHintView = (
-  <View style={styles.expandHint}>
-    <Text style={styles.expandText}>Tap to expand details</Text>
-  </View>
-);
+      <View style={styles.expandHint}>
+         <Text style={styles.expandText}>Tap to expand details</Text>
+      </View>
+   );
 
    return (
       <AnimatedPressable
@@ -282,7 +279,7 @@ export default function EntryCard({
             </View>
          </View>
 
-         {isExpandable && !expanded && !entry.dispute  && (
+         {isExpandable && !expanded && !entry.dispute && (
             expandHintView
          )}
 
@@ -318,9 +315,9 @@ export default function EntryCard({
                   </View>
                </View>
 
-                               {isExpandable &&  !expanded &&  (
-            expandHintView
-         )}
+               {isExpandable && !expanded && (
+                  expandHintView
+               )}
             </>
          )}
 
@@ -457,11 +454,5 @@ const styles = StyleSheet.create({
       fontSize: 12,
       color: palette.hint,
       letterSpacing: 0.2,
-   },
-   expandDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: palette.mutedIcon,
    },
 });
