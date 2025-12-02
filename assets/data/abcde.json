@@ -1,67 +1,83 @@
 {
    "adversity": [
-      "What happened in plain facts without opinions?",
-      "Where were you and who else was involved?",
-      "What led up to this moment step by step?",
-      "What did you observe with your senses?",
-      "What did not happen that you expected?",
-      "What part of this event is within your control?",
-      "What specific trigger set this off?",
-      "If a camera recorded this, what would it show?"
+      "What specifically happened today that bothered you?",
+      "What didn't go the way you expected today?",
+      "What happened recently that left you feeling upset or tense?",
+      "What was said or done that stuck with you in a bad way?",
+      "What specific situation made you feel stressed, sad, or angry?",
+      "What change or decision was hard for you to handle?",
+      "What message, comment, or action felt hurtful?",
+      "What was the most difficult moment of your day?"
    ],
    "belief": [
-      "What did you immediately tell yourself about this event?",
-      "What meaning did you assign to what happened?",
-      "What rule or story about yourself or others did this confirm for you?",
-      "What prediction did you make right after it happened?",
-      "What assumption are you making about causes and motives?",
-      "If this belief had a headline, what would it say?",
-      "What label did you apply to yourself or someone else?",
-      "What are you taking as proof that may only be interpretation?"
+      "In that moment, what did you immediately tell yourself?",
+      "What meaning did you assign to this event?",
+      "What bad outcome did you predict would happen next?",
+      "What did you assume was the reason this happened?",
+      "What story are you telling yourself about why this occurred?",
+      "What did you decide this situation implies about your future?",
+      "If you could sum up your thought in one sentence, what would it be?",
+      "What was the very first thought you had about yourself when it happened?",
+      "What judgment did you make about the situation?",
+      "What did you tell yourself this means about you as a person?"
    ],
    "consequence": [
-      "What emotions did you feel and how intense were they from 0 to 10?",
-      "What actions did you take because of the belief?",
-      "What actions did you avoid because of the belief?",
-      "How did this belief affect your body sensations or energy?",
-      "How did it influence your tone or words with others?",
-      "What short term result came from acting on this belief?",
-      "What long term effect might follow if this belief continues?",
-      "How did this belief impact your goals today?"
+      "Because you had that thought, what did you do (or stop doing)?",
+      "How did thinking that make your body feel physically?",
+      "Does thinking this way help you or hurt your goals?",
+      "Right after you had that thought, what emotion hit you?",
+      "How did that specific thought make you treat yourself or others?",
+      "What did you avoid doing after thinking that?",
+      "How did that thought affect your energy levels?",
+      "What happened to your mood immediately after you thought that?",
+      "Did thinking that make you want to give up or keep going?"
    ],
    "dispute": {
       "evidence": [
-         "What objective facts contradict or weaken this belief?",
-         "Are you confusing a possibility with a certainty?",
-         "What did you do well that this belief ignores?",
-         "Are you considering all the facts, or just the negative ones?",
-         "What is the strongest counterexample from your past?"
+         "What specific facts prove that your thought isn't 100% true?",
+         "Is your thought a proven fact, or just a possibility?",
+         "What positive details are you ignoring in this situation?",
+         "If you were a judge in a court, would this thought hold up as evidence?",
+         "What evidence exists that actually supports the opposite view?",
+         "If a video camera recorded the event, what would it show differently than your story?",
+         "What are you 100% sure about, and what are you just guessing?",
+         "Has there ever been a time when this wasn't true?",
+         "If a neutral observer saw this, would they agree with your harsh conclusion?",
+         "What are three facts that contradict your negative thought?"
       ],
       "alternatives": [
-         "What are three other explanations that fit the facts?",
-         "If the cause were specific and temporary, how would you phrase it?",
-         "What factors outside you could explain part of this?",
-         "What skills or habits could change this next time?",
-         "What simpler explanation might be true here?",
-         "What would you say to a friend in the same situation?"
+         "What is one reason this happened that has nothing to do with you?",
+         "Is it possible this is just a temporary setback, not a permanent one?",
+         "What is a simpler, less dramatic explanation for this?",
+         "If your best friend was in this situation, how would you explain it to them?",
+         "What are the specific circumstances (like timing or stress) that contributed to this?",
+         "How might a totally unbiased person explain what happened?",
+         "If you were feeling happy, how would you have interpreted this differently?",
+         "What is a kinder, more forgiving way to look at this?",
+         "Is it possible that multiple factors caused this, not just one?",
+         "What is a 'Non-Catastrophic' way to explain this?"
       ],
       "usefulness": [
-         "How helpful is this belief for your goals today?",
-         "What belief would lead to better action right now?",
-         "If you keep this belief, what do you gain and what do you lose?",
-         "What mindset shift would make you more effective in the next hour?",
-         "What version of this belief is both honest and motivating?",
-         "What action does a more useful belief point you toward?"
+         "If you keep thinking this way, what is the cost to you?",
+         "Does holding onto this thought help you solve the problem?",
+         "What would be a more useful thought to have right now?",
+         "If you let this thought go, what would you be able to do?",
+         "Is this thought moving you closer to your goals or further away?",
+         "What is the utility of blaming yourself in this specific instance?",
+         "Does this thought energize you or drain you?"
       ]
    },
    "energy": [
-      "After disputing, what emotion is present now and how strong is it from 0 to 10?",
-      "What is the next tiny step you feel ready to take?",
-      "What thought now feels truer and more helpful?",
-      "What commitment will you make for the next 24 hours?",
-      "What physical cue tells you your energy has shifted?",
-      "What support or resource will you use to keep momentum?",
-      "What will you do if the old belief returns?",
-      "How will you measure progress from this new stance?"
+      "Now that you've looked at the evidence, what is your emotion 0-10?",
+      "What is one small step you feel ready to take now?",
+      "What new thought feels more accurate to you?",
+      "What is a tiny commitment you can make for the next hour?",
+      "If the old negative thought comes back, what will you tell it?",
+      "How does your body feel now compared to when you started?",
+      "What feels different about the situation now?",
+      "What seems possible now that didn't seem possible a few minutes ago?",
+      "How would you describe your current mood in one word?",
+      "What weight feels like it has been lifted?",
+      "What are you willing to try now?"
    ]
 }

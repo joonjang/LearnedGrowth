@@ -10,7 +10,13 @@ import { Entry } from '@/models/entry';
 import type { AbcdeJson } from '@/models/abcdeJson';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+   useCallback,
+   useEffect,
+   useMemo,
+   useRef,
+   useState,
+} from 'react';
 import {
    NativeScrollEvent,
    NativeSyntheticEvent,
@@ -21,8 +27,14 @@ import {
    TextInput,
    View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { KeyboardAvoidingView, KeyboardEvents } from 'react-native-keyboard-controller';
+import {
+   SafeAreaView,
+   useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+import {
+   KeyboardAvoidingView,
+   KeyboardEvents,
+} from 'react-native-keyboard-controller';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
 import InputBox from '@/components/newEntry/InputBox';
 
@@ -114,7 +126,9 @@ export default function DisputeScreen() {
       const entryDispute = (entry?.dispute ?? '').trim();
       const entryEnergy = (entry?.energy ?? '').trim();
 
-      return composedDispute !== entryDispute || trimmedForm.energy !== entryEnergy;
+      return (
+         composedDispute !== entryDispute || trimmedForm.energy !== entryEnergy
+      );
    }, [entry?.dispute, entry?.energy, trimmedForm]);
 
    const currentEmpty = !trimmedForm[currKey];
@@ -150,19 +164,17 @@ export default function DisputeScreen() {
       router.back();
    }, [entry, store, trimmedForm]);
 
-   const scrollToBottom = useCallback(
-      (animated = true) => {
-         const ref = scrollRef.current;
-         if (!ref) return;
+   const scrollToBottom = useCallback((animated = true) => {
+      const ref = scrollRef.current;
+      if (!ref) return;
 
-         ref.scrollToEnd({ animated });
-      },
-      []
-   );
+      ref.scrollToEnd({ animated });
+   }, []);
 
    const handleScroll = useCallback(
       (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-         const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+         const { layoutMeasurement, contentOffset, contentSize } =
+            e.nativeEvent;
          const gap =
             contentSize.height - (contentOffset.y + layoutMeasurement.height);
          stickToBottom.current = gap < 12;
@@ -222,20 +234,13 @@ export default function DisputeScreen() {
                         requestAnimationFrame(() => scrollToBottom(true));
                      }
                   }}
-                  
                >
-                  <StepperHeader
-                     step={idx + 1}
-                     total={STEP_ORDER.length}
-                     label={STEP_LABEL[currKey]}
-                  />
-
                   <EntryContextView
                      adversity={entry.adversity}
                      belief={entry.belief}
                      style={styles.contextBox}
                   />
-
+                  <Text>Challenge your belief.</Text>
                   <PromptDisplay
                      text={prompts[currKey]}
                      visited={hasVisited(currKey)}

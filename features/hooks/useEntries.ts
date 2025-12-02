@@ -47,7 +47,9 @@ export function useEntries() {
             dirtySince: null,
             isDeleted: false,
          };
-         await store.getState().create(draft);
+         const newEntry = await store.getState().create(draft);
+
+         return newEntry;
       },
       [store]
    );

@@ -79,7 +79,7 @@ export default function StepperButton({
          <View style={styles.divider} />
          <View style={styles.actionCol}>
             <Button
-               title={isLast ? 'Finish' : 'Next'}
+               title={isLast ? 'Submit' : 'Next'}
                onPress={handleNext}
                disabled={disableNext}
                color={isLast ? 'red' : undefined}

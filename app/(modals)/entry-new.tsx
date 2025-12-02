@@ -82,17 +82,24 @@ export default function NewEntryModal() {
       }
    }, []);
 
-   const submit = useCallback(() => {
+   const submit = useCallback(async () => {
       const { adversity, belief, consequence } = trimmedForm;
 
       if (!adversity || !belief || !consequence) {
-         Alert.alert('Add required text', 'Please fill in all fields before saving.');
+         Alert.alert(
+            'Add required text',
+            'Please fill in all fields before saving.'
+         );
          return;
       }
 
-      store.createEntry(adversity, belief, consequence);
+      const newEntry = await store.createEntry(adversity, belief, consequence);
       router.back();
-   }, [ store, trimmedForm]);
+      router.navigate({
+         pathname: '/(tabs)/entries/[id]/dispute',
+         params: { id: newEntry.id },
+      });
+   }, [store, trimmedForm]);
 
    const keyboardVerticalOffset = Platform.OS === 'ios' ? headerHeight : 0;
 
@@ -102,10 +109,7 @@ export default function NewEntryModal() {
          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
          keyboardVerticalOffset={keyboardVerticalOffset}
       >
-         <TouchableWithoutFeedback
-            onPress={dismissKeyboard}
-            accessible={false}
-         >
+         <TouchableWithoutFeedback onPress={dismissKeyboard} accessible={false}>
             <View className="page" style={styles.page}>
                <StepperHeader
                   step={idx + 1}

@@ -1,0 +1,47 @@
+{
+  "analysis": {
+    "restatedBelief": "I'm feeling confused and having a hard time learning this new skill while building the app.",
+    "explanatoryStyle": {
+      "permanence": {
+        "style": "temporary",
+        "quote": "having a difficult time learning something new",
+        "comment": "The language describes a current struggle rather than an absolute or permanent state — it points to a present difficulty."
+      },
+      "pervasiveness": {
+        "style": "specific",
+        "quote": "learning something new",
+        "comment": "The belief is tied to this learning task (making the app) rather than claiming that everything in your life is failing."
+      },
+      "personalization": {
+        "style": "personal",
+        "quote": "I am confused",
+        "comment": "You focus on your own experience (confusion), which assigns the challenge to you personally rather than to external factors."
+      }
+    },
+    "educationalSummary": "Your explanatory style is largely temporary and specific, which is helpful — it keeps the problem confined to this situation and moment. However, the personal focus (“I am confused”) can increase frustration by making it feel like a personal shortcoming. A more optimistic style would keep the situation framed as a temporary learning curve, attribute difficulty to factors like unfamiliar tools or missing examples, and note concrete progress so the challenge feels solvable.",
+    "safetyNotice": null
+  },
+  "aiDispute": {
+    "acknowledgement": "It makes perfect sense to feel frustrated — building an app and learning new tools at the same time is challenging and confusing.",
+    "evidenceAgainstBelief": [
+      "Everyone learning a new technology experiences confusion at first; it's a normal step in skill development.",
+      "You likely have solved related problems before, so you already have learning strategies to draw on.",
+      "Some obstacles may be due to unclear docs, bugs, or complexity of the task rather than a fixed inability to learn."
+    ],
+    "alternativeExplanations": [
+      "This task uses unfamiliar tools or libraries that have a steep learning curve.",
+      "The instructions or examples available are incomplete or unclear.",
+      "You're tired, distracted, or trying to tackle too much at once instead of breaking it into smaller steps."
+    ],
+    "usefulnessReflection": "Holding the belief 'I'm confused and having a difficult time' can be useful short-term because it honestly describes your experience and can prompt you to slow down. But if you stay stuck in that label it tends to lower motivation and blocks problem-solving. A more useful stance is to acknowledge the confusion while also naming specific obstacles and next steps to make progress.",
+    "alternativeBelief": "I'm struggling with parts of this project right now, but this is a normal learning phase — I can make progress by breaking the problem into smaller steps, using examples, and asking for help when needed.",
+    "encouragement": "You can get unstuck: try isolating one small feature to finish, look for a simple tutorial or example that matches that piece, and celebrate that small win to build momentum.",
+    "safetyNotice": null
+  },
+  "disputationScaffold": {
+    "exampleEvidenceFor": "I couldn't get the login feature to work after several attempts and I felt lost reading the library docs, so it makes sense I feel confused.",
+    "exampleEvidenceAgainst": "Earlier I successfully implemented a different feature (or debugged a tricky bug), which shows I can learn and solve problems. The current confusion may come from unclear documentation or an unfamiliar API rather than from being incapable.",
+    "exampleAlternatives": "Maybe the library has poor examples, or I tried to learn too many things at once. If I focus on one small piece and find a tutorial or ask a question, I’ll likely make progress quickly.",
+    "exampleUsefulness": "Saying 'I'm confused' helps me notice I need a different approach, but staying with that belief doesn't help me move forward. A more useful view is: 'I'm in a learning curve and will improve with one small, focused step.'"
+  }
+}

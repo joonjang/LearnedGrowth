@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 
 type Prop = {
@@ -10,16 +10,20 @@ export default function CTA({ id }: Prop) {
     <View>
       <View style={styles.divider} />
 
-      <Link
-        href={`/(tabs)/entries/${id}/dispute`}
-        asChild
+      <Pressable
+        style={styles.button}
+        onPress={() =>
+          router.push({
+            pathname: '/(tabs)/entries/[id]/dispute',
+            params: {
+              id,
+              animateFromBottom: '1',
+            },
+          })
+        }
       >
-        <Pressable style={styles.button}>
-          <Text style={styles.buttonText}>
-            ✨ Challenge this belief
-          </Text>
-        </Pressable>
-      </Link>
+        <Text style={styles.buttonText}>✨ Challenge this belief</Text>
+      </Pressable>
     </View>
   );
 }
@@ -35,7 +39,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: '#2ECC71', // primary blue, tweak as you like
+    backgroundColor: '#2ECC71',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -6,6 +6,15 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-01
+- Make an API for backend logic
+- Removed `api` from this repo and made private
+- API now communicates with openAi
+- Updated abcde JSON prompts to flow better when mixed and matched
+
+## Phase 1: Make the frontend + database (Complete). 
+## Starting Phase 2: The AI layer
+
 ### 2025-11-30
 - EntryCard now can do undo delete
 - One source of truth for colors
@@ -147,8 +156,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
+- Clean up API code
+- Make UI/UX that integrates AI response
+- Set up local ai component of app
 - Upon making an entry, it should go to [id] page
 - Make a CTA button visible on [id]
-- Address how the app just suddenly appears visible during startup instead of something gradual
-- Set up ai component of app
 - Set up Supabase

@@ -3,7 +3,7 @@ import { useEntries } from '@/features/hooks/useEntries';
 import type { Entry } from '@/models/entry';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View, Text, Pressable, TextInput } from 'react-native';
+import { StyleSheet, View, Text, Pressable, TextInput, Button, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
    SafeAreaView,
@@ -11,6 +11,7 @@ import {
 } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { palette } from '@/theme/colors';
+import { useAbcAi } from '@/features/hooks/useAbcAi';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
 
@@ -40,7 +41,7 @@ const FIELD_META = [
    {
       key: 'dispute',
       label: 'Dispute',
-      hint: 'Evidence. Alternatives. Usefulness.',
+      hint: 'Argument against negative belief.',
       placeholder: 'Collect the key sentences you used to dispute',
       accent: {
          backgroundColor: palette.accentDisputeBg,
@@ -152,6 +153,9 @@ export default function EntryDetailScreen() {
       [hasScrolled]
    );
 
+      // TODO: abstract analyze
+const { analyze, lastResult, loading } = useAbcAi();
+
    if (!entry) {
       return (
          <SafeAreaView style={styles.container}>
@@ -159,6 +163,20 @@ export default function EntryDetailScreen() {
          </SafeAreaView>
       );
    }
+
+async function onAnalyzePress() {
+  if (!entry) return;
+
+  const adversity = form.adversity.trim();
+  const belief = form.belief.trim();
+  const consequence = form.consequence.trim();
+
+  await analyze({
+    adversity,
+    belief,
+    consequence: consequence || undefined,
+  });
+}
 
    return (
       <View style={styles.container}>
@@ -237,12 +255,55 @@ export default function EntryDetailScreen() {
                   />
                </View>
             ))}
+
+           <Button
+  title={loading ? "Analyzing..." : "Analyze"}
+  onPress={onAnalyzePress}
+  disabled={loading}
+/>
+
+{lastResult && (
+  <View style={styles.aiResultContainer}>
+    <Text style={styles.aiResultTitle}>AI analysis (debug)</Text>
+    <Text style={styles.aiResultText}>
+      {JSON.stringify(lastResult, null, 2)}
+    </Text>
+  </View>
+)}
+
          </KeyboardAwareScrollView>
       </View>
    );
 }
 
 const styles = StyleSheet.create({
+
+    aiResultContainer: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: palette.surfaceMuted,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.border,
+  },
+  aiResultTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 8,
+    color: palette.text,
+  },
+  aiResultText: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: palette.text,
+    // optional: make it feel more "code-ish"
+    fontFamily: Platform.select({
+      ios: "Menlo",
+      android: "monospace",
+      default: "System",
+    }),
+   },
+
    container: {
       flex: 1,
       paddingHorizontal: 16,
