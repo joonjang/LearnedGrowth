@@ -86,10 +86,11 @@ export default function NewEntryModal() {
       }
 
       const newEntry = await store.createEntry(adversity, belief, consequence);
-      router.back();
-      router.navigate({
-         pathname: '/(cards)/[id]/dispute',
-         params: { id: newEntry.id },
+
+      // Replace the modal with detail on the entries stack so back returns to the list.
+      router.replace({
+         pathname: '/(tabs)/entries/[id]',
+         params: { id: newEntry.id, animateInstant: '1' },
       });
    }, [store, trimmedForm]);
 

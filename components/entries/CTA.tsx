@@ -13,7 +13,7 @@ export default function CTA({ id }: Prop) {
          <Pressable
             style={styles.button}
             onPress={() => {
-               router.push(`/(cards)/${id}/dispute`);
+               router.push(`/(tabs)/entries/${id}/dispute`);
             }}
          >
             <Text style={styles.buttonText}>✨ Challenge this belief</Text>

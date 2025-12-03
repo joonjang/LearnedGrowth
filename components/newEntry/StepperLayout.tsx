@@ -8,13 +8,11 @@ import {
    ViewStyle,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import {
-   ScrollView,
-   ScrollViewProps,
-} from 'react-native-gesture-handler';
+import { ScrollView, ScrollViewProps } from 'react-native-gesture-handler';
 import StepperHeader from './StepperHeader';
 import PromptDisplay from './PromptDisplay';
 import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type PromptContentProps = {
    text: string;
@@ -53,7 +51,7 @@ export default function StepperLayout({
    onBackgroundPress,
 }: StepperLayoutProps) {
    const { contentContainerStyle, ...restScrollProps } = scrollProps ?? {};
-
+   const insets = useSafeAreaInsets();
    const pageContent = (
       <View style={styles.page}>
          <ScrollView
@@ -61,7 +59,7 @@ export default function StepperLayout({
             style={styles.scroll}
             contentContainerStyle={[
                styles.scrollContent,
-               { paddingTop: topInset + 12 },
+               { paddingTop: 24 },
                contentContainerStyle,
             ]}
             keyboardShouldPersistTaps="handled"
@@ -80,9 +78,16 @@ export default function StepperLayout({
    );
 
    return (
-      <KeyboardAvoidingView style={styles.root} behavior="padding">
+      <KeyboardAvoidingView
+         style={styles.root}
+         behavior="padding"
+         keyboardVerticalOffset={insets.bottom + 24}
+      >
          {onBackgroundPress ? (
-            <TouchableWithoutFeedback onPress={onBackgroundPress} accessible={false}>
+            <TouchableWithoutFeedback
+               onPress={onBackgroundPress}
+               accessible={false}
+            >
                {pageContent}
             </TouchableWithoutFeedback>
          ) : (

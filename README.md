@@ -9,7 +9,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2025-12-03
 - Refactored entry-new and dispute
   - animation and routing logic changed
-  - dispute is now in its own route
   - unified shared logic and component use 
 
 ### 2025-12-02
@@ -18,7 +17,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - API now communicates with openAi
 - Updated abcde JSON prompts to flow better when mixed and matched
 
-## Phase 1: Make the frontend + database (Complete). 
+## Phase 1: Make the offline mode + database (Complete)
 ## Starting Phase 2: The AI layer
 
 ### 2025-11-30

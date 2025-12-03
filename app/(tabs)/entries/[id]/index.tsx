@@ -4,6 +4,7 @@ import type { Entry } from '@/models/entry';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, Text, Pressable, TextInput, Button, Platform } from 'react-native';
+import CTA from '@/components/entries/CTA';
 import { Ionicons } from '@expo/vector-icons';
 import {
    SafeAreaView,
@@ -106,6 +107,17 @@ export default function EntryDetailScreen() {
 
    const hasChanges = useMemo(
       () => FIELD_KEYS.some((key) => trimmed[key] !== baseline[key]),
+      [baseline, trimmed]
+   );
+
+   const visibleFields = useMemo(
+      () =>
+         FIELD_META.filter((field) => {
+            if (field.key === 'dispute' || field.key === 'energy') {
+               return Boolean(baseline[field.key] || trimmed[field.key]);
+            }
+            return true;
+         }),
       [baseline, trimmed]
    );
 
@@ -234,7 +246,7 @@ export default function EntryDetailScreen() {
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
          >
-            {FIELD_META.map((field) => (
+            {visibleFields.map((field) => (
                <View style={styles.section} key={field.key}>
                   <Text style={styles.label}>{field.label}</Text>
                   <Text style={styles.subLabel}>{field.hint}</Text>
@@ -254,6 +266,12 @@ export default function EntryDetailScreen() {
                   />
                </View>
             ))}
+
+            {!entry.dispute?.trim() && (
+               <View style={{ marginTop: 4 }}>
+                  <CTA id={entry.id} />
+               </View>
+            )}
 
            <Button
   title={loading ? "Analyzing..." : "Analyze"}

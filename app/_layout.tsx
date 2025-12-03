@@ -15,26 +15,11 @@ export default function RootLayout() {
                   <SafeAreaProvider>
                      <AdapterGuard>
                         <Stack screenOptions={{ headerShown: false }}>
-                           <Stack.Screen name="(tabs)" />
-                           <Stack.Screen
-                              name="(cards)/entry-new"
-                              options={{
-                                 presentation: 'card',
-                                 animation: 'slide_from_bottom',
-                              }}
-                           />
-                           <Stack.Screen
-                              name="(cards)/[id]/dispute"
-                              options={{
-                                 title: 'Dispute',
-                                 animation: 'fade_from_bottom',
-                                 presentation: 'card',
-                              }}
-                           />
-                        </Stack>
-                     </AdapterGuard>
-                  </SafeAreaProvider>
-               </EntriesStoreProvider>
+                        <Stack.Screen name="(tabs)" />
+                     </Stack>
+                  </AdapterGuard>
+               </SafeAreaProvider>
+            </EntriesStoreProvider>
             </AdapterProvider>
          </KeyboardProvider>
       </GestureHandlerRootView>

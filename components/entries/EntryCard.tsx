@@ -183,7 +183,10 @@ export default function EntryCard({
 
   const handleEdit = () => {
     onCloseMenu();
-    router.push(`/(tabs)/entries/${entry.id}`);
+    router.push({
+      pathname: '/(tabs)/entries/[id]',
+      params: { id: entry.id },
+    });
   };
 
   const handleDelete = () => {

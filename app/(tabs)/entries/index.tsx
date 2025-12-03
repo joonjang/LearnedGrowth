@@ -160,7 +160,10 @@ export default function EntriesScreen() {
                }
 
                const handleEdit = () => {
-                  router.push(`/(tabs)/entries/${item.entry.id}`);
+                  router.push({
+                     pathname: '/(tabs)/entries/[id]',
+                     params: { id: item.entry.id },
+                  });
                };
 
                return (
@@ -179,7 +182,7 @@ export default function EntriesScreen() {
          />
 
          <View style={styles.newButtonWrapper}>
-            <Link href={'/(cards)/entry-new'} asChild>
+            <Link href={'/(tabs)/entries/new'} asChild>
                <Pressable
                   style={styles.newButton}
                   accessibilityLabel="Create new entry"
