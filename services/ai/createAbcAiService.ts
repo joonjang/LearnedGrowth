@@ -1,20 +1,26 @@
-
-import { AbcAiService } from "@/models/aiService";
+import { AbcAiService, AiError } from "@/models/aiService";
 import { CloudAiService } from "./CloudAiService";
-// import { LocalAiService } from "./LocalAiService";
+import { LocalAiService } from "./LocalAiService";
+import { OfflineAiService } from "./OfflineAiService";
 
-// async function hasLocalModelReady(): Promise<boolean> {
-//   // TODO: check AsyncStorage flag, device capabilities, model download, settings, etc.
-//   return false;
-// }
+const mode = (process.env.EXPO_PUBLIC_AI_MODE as string | undefined)?.toLowerCase();
 
 export async function createAbcAiService(): Promise<AbcAiService> {
-//   const canUseLocal = await hasLocalModelReady();
+  if (mode === "offline") {
+    return new OfflineAiService();
+  }
 
-//   if (canUseLocal) {
-//     const localLlm = /* init your on-device model here */;
-//     return new LocalAiService(localLlm);
-//   }
+  if (mode === "local") {
+    const local = new LocalAiService();
+    if (!(await local.ready())) {
+      throw new AiError("local-unavailable", "Local AI mode selected but model is not ready");
+    }
+    return local;
+  }
 
-  return new CloudAiService();
+  const cloud = new CloudAiService();
+  if (!(await cloud.ready())) {
+    throw new AiError("config", "Cloud AI mode selected but API base URL is missing");
+  }
+  return cloud;
 }

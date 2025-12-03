@@ -153,8 +153,7 @@ export default function EntryDetailScreen() {
       [hasScrolled]
    );
 
-      // TODO: abstract analyze
-const { analyze, lastResult, loading } = useAbcAi();
+   const { analyze, lastResult, loading, error: aiError } = useAbcAi();
 
    if (!entry) {
       return (
@@ -164,19 +163,19 @@ const { analyze, lastResult, loading } = useAbcAi();
       );
    }
 
-async function onAnalyzePress() {
-  if (!entry) return;
+   async function onAnalyzePress() {
+      if (!entry) return;
 
-  const adversity = form.adversity.trim();
-  const belief = form.belief.trim();
-  const consequence = form.consequence.trim();
+      const adversity = form.adversity.trim();
+      const belief = form.belief.trim();
+      const consequence = form.consequence.trim();
 
-  await analyze({
-    adversity,
-    belief,
-    consequence: consequence || undefined,
-  });
-}
+      await analyze({
+         adversity,
+         belief,
+         consequence: consequence || undefined,
+      });
+   }
 
    return (
       <View style={styles.container}>
@@ -268,6 +267,12 @@ async function onAnalyzePress() {
     <Text style={styles.aiResultText}>
       {JSON.stringify(lastResult, null, 2)}
     </Text>
+  </View>
+)}
+{aiError && (
+  <View style={styles.aiResultContainer}>
+    <Text style={styles.aiResultTitle}>AI error</Text>
+    <Text style={styles.aiResultText}>{aiError}</Text>
   </View>
 )}
 
