@@ -25,19 +25,10 @@ export default function RootLayout() {
                            />
                            <Stack.Screen
                               name="(cards)/[id]/dispute"
-                              options={({ route }) => {
-                                 const { animateFromBottom } = (route.params ??
-                                    {}) as {
-                                    animateFromBottom?: string;
-                                 };
-
-                                 return {
-                                    title: 'Dispute',
-                                    animation: animateFromBottom
-                                       ? 'fade_from_bottom'
-                                       : 'none',
-                                    presentation: 'card',
-                                 };
+                              options={{
+                                 title: 'Dispute',
+                                 animation: 'fade_from_bottom',
+                                 presentation: 'card',
                               }}
                            />
                         </Stack>

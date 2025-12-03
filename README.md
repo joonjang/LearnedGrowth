@@ -6,6 +6,12 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-03
+- Refactored entry-new and dispute
+  - animation and routing logic changed
+  - dispute is now in its own route
+  - unified shared logic and component use 
+
 ### 2025-12-02
 - Make an API for backend logic
 - Removed `api` from this repo and made private
