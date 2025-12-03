@@ -6,7 +6,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
-### 2025-12-01
+### 2025-12-02
 - Make an API for backend logic
 - Removed `api` from this repo and made private
 - API now communicates with openAi
