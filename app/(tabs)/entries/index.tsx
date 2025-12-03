@@ -179,7 +179,7 @@ export default function EntriesScreen() {
          />
 
          <View style={styles.newButtonWrapper}>
-            <Link href={'/(modals)/entry-new'} asChild>
+            <Link href={'/(cards)/entry-new'} asChild>
                <Pressable
                   style={styles.newButton}
                   accessibilityLabel="Create new entry"

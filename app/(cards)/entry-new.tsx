@@ -88,7 +88,7 @@ export default function NewEntryModal() {
       const newEntry = await store.createEntry(adversity, belief, consequence);
       router.back();
       router.navigate({
-         pathname: '/(tabs)/entries/[id]/dispute',
+         pathname: '/(cards)/[id]/dispute',
          params: { id: newEntry.id },
       });
    }, [store, trimmedForm]);

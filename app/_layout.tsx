@@ -17,10 +17,27 @@ export default function RootLayout() {
                         <Stack screenOptions={{ headerShown: false }}>
                            <Stack.Screen name="(tabs)" />
                            <Stack.Screen
-                              name="(modals)/entry-new"
+                              name="(cards)/entry-new"
                               options={{
-                                 presentation: 'fullScreenModal',
-                                 
+                                 presentation: 'card',
+                                 animation: 'slide_from_bottom',
+                              }}
+                           />
+                           <Stack.Screen
+                              name="(cards)/[id]/dispute"
+                              options={({ route }) => {
+                                 const { animateFromBottom } = (route.params ??
+                                    {}) as {
+                                    animateFromBottom?: string;
+                                 };
+
+                                 return {
+                                    title: 'Dispute',
+                                    animation: animateFromBottom
+                                       ? 'fade_from_bottom'
+                                       : 'none',
+                                    presentation: 'card',
+                                 };
                               }}
                            />
                         </Stack>

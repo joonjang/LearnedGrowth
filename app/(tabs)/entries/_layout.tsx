@@ -11,20 +11,7 @@ export default function EntriesStack() {
                animation: 'default',
             }}
          />
-         <Stack.Screen
-            name="[id]/dispute"
-            options={({ route }) => {
-               const { animateFromBottom } = (route.params ?? {}) as {
-                  animateFromBottom?: string;
-               };
-
-               return {
-                  title: 'Dispute',
-                  animation: animateFromBottom ? 'fade_from_bottom' : 'none',
-                  presentation: 'fullScreenModal',
-               };
-            }}
-         />
+         
       </ThemedStack>
    );
 }

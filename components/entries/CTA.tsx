@@ -14,7 +14,7 @@ export default function CTA({ id }: Prop) {
         style={styles.button}
         onPress={() =>
           router.push({
-            pathname: '/(tabs)/entries/[id]/dispute',
+            pathname: '/(cards)/[id]/dispute',
             params: {
               id,
               animateFromBottom: '1',
