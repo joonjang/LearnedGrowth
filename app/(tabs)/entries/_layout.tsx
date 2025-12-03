@@ -21,6 +21,7 @@ export default function EntriesStack() {
                return {
                   title: 'Dispute',
                   animation: animateFromBottom ? 'fade_from_bottom' : 'none',
+                  presentation: 'fullScreenModal',
                };
             }}
          />

@@ -25,6 +25,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { KeyboardAvoidingView, KeyboardEvents } from 'react-native-keyboard-controller';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
 import InputBox from '@/components/newEntry/InputBox';
+import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
 
 const STEP_ORDER = [
    'evidence',
@@ -63,6 +64,7 @@ export default function DisputeScreen() {
    const entry = entryId ? store.getEntryById(entryId) : undefined;
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
    const insets = useSafeAreaInsets();
+   const isKeyboardVisible = useKeyboardVisible();
 
    const [idx, setIdx] = useState(0);
    const [form, setForm] = useState<Record<NewInputDisputeType, string>>({
@@ -200,10 +202,9 @@ export default function DisputeScreen() {
    }
 
    return (
-      <View style={styles.safeArea}>
          <KeyboardAvoidingView
             style={styles.root}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={'padding'}
          >
             <View style={styles.page}>
                <ScrollView
@@ -247,7 +248,9 @@ export default function DisputeScreen() {
                      containerStyle={styles.promptContainer}
                   />
                </ScrollView>
-               <View style={styles.inputWrapper}>
+               <View style={[styles.inputWrapper, 
+                                 {paddingBottom: !isKeyboardVisible ? 24 : 0}
+                              ]}>
                   <InputBox
                      ref={inputRef}
                      value={form[currKey]}
@@ -268,13 +271,11 @@ export default function DisputeScreen() {
                />
             </View>
          </KeyboardAvoidingView>
-      </View>
    );
 }
 
 const styles = StyleSheet.create({
-   safeArea: { flex: 1, backgroundColor: '#fff' },
-   root: { flex: 1 },
+   root: { flex: 1,  backgroundColor: '#fff' },
 
    page: {
       flex: 1,

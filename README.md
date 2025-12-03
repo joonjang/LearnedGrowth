@@ -156,7 +156,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
-- Clean up API code
+- Add test to for API
 - Make UI/UX that integrates AI response
 - Set up local ai component of app
 - Upon making an entry, it should go to [id] page
