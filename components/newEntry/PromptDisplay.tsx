@@ -2,6 +2,7 @@ import { useDeferredReady } from '@/features/hooks/useDeferredReady';
 import {
    ScrollView,
    StyleSheet,
+   StyleProp,
    Text,
    TextStyle,
    View,
@@ -16,7 +17,7 @@ type Props = {
    visited: boolean;
    onVisited?: () => void;
    textStyle: TextStyle;
-   containerStyle?: ViewStyle;
+   containerStyle?: StyleProp<ViewStyle>;
    numberOfLines?: number;
    maxHeight?: number;
    scrollEnabled?: boolean;

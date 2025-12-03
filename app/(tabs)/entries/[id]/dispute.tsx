@@ -1,31 +1,29 @@
 import EntryContextView from '@/components/newEntry/EntryContextView';
+import InputBox from '@/components/newEntry/InputBox';
 import StepperButton from '@/components/newEntry/StepperButton';
-import StepperHeader from '@/components/newEntry/StepperHeader';
+import StepperLayout, {
+   KeyboardAwareInputWrapper,
+} from '@/components/newEntry/StepperLayout';
 import rawAbcde from '@/assets/data/abcde.json';
-import { usePrompts } from '@/features/hooks/usePrompts';
-import { useVisitedSet } from '@/features/hooks/useVisitedSet';
 import { useEntries } from '@/features/hooks/useEntries';
+import { usePrompts } from '@/features/hooks/usePrompts';
 import { usePromptLayout } from '@/features/hooks/usePromptLayout';
-import { Entry } from '@/models/entry';
+import { useVisitedSet } from '@/features/hooks/useVisitedSet';
 import type { AbcdeJson } from '@/models/abcdeJson';
+import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    NativeScrollEvent,
    NativeSyntheticEvent,
-   Platform,
-   ScrollView,
    StyleSheet,
    Text,
    TextInput,
-   View,
 } from 'react-native';
+import type { ScrollView } from 'react-native-gesture-handler';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { KeyboardAvoidingView, KeyboardEvents } from 'react-native-keyboard-controller';
-import PromptDisplay from '@/components/newEntry/PromptDisplay';
-import InputBox from '@/components/newEntry/InputBox';
-import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
+import { KeyboardEvents } from 'react-native-keyboard-controller';
 
 const STEP_ORDER = [
    'evidence',
@@ -64,7 +62,6 @@ export default function DisputeScreen() {
    const entry = entryId ? store.getEntryById(entryId) : undefined;
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
    const insets = useSafeAreaInsets();
-   const isKeyboardVisible = useKeyboardVisible();
 
    const [idx, setIdx] = useState(0);
    const [form, setForm] = useState<Record<NewInputDisputeType, string>>({
@@ -202,64 +199,36 @@ export default function DisputeScreen() {
    }
 
    return (
-         <KeyboardAvoidingView
-            style={styles.root}
-            behavior={'padding'}
-         >
-            <View style={styles.page}>
-               <ScrollView
-                  ref={scrollRef}
-                  style={styles.scroll}
-                  contentContainerStyle={[
-                     styles.scrollContent,
-                     { paddingTop: insets.top + 12 },
-                  ]}
-                  keyboardShouldPersistTaps="handled"
-                  showsVerticalScrollIndicator={false}
-                  onScroll={handleScroll}
-                  scrollEventThrottle={16}
-                  onContentSizeChange={() => {
-                     if (stickToBottom.current) {
-                        requestAnimationFrame(() => scrollToBottom(true));
-                     }
-                  }}
-                  
-               >
-                  <StepperHeader
-                     step={idx + 1}
-                     total={STEP_ORDER.length}
-                     label={STEP_LABEL[currKey]}
-                  />
-
-                  <EntryContextView
-                     adversity={entry.adversity}
-                     belief={entry.belief}
-                     style={styles.contextBox}
-                  />
-
-                  <PromptDisplay
-                     text={prompts[currKey]}
-                     visited={hasVisited(currKey)}
-                     onVisited={() => markVisited(currKey)}
-                     textStyle={promptTextStyle}
-                     maxHeight={promptMaxHeight}
-                     scrollEnabled
-                     numberOfLines={6}
-                     containerStyle={styles.promptContainer}
-                  />
-               </ScrollView>
-               <View style={[styles.inputWrapper, 
-                                 {paddingBottom: !isKeyboardVisible ? 24 : 0}
-                              ]}>
-                  <InputBox
-                     ref={inputRef}
-                     value={form[currKey]}
-                     onChangeText={setField(currKey)}
-                     dims={inputBoxDims}
-                     scrollEnabled
-                     onFocus={() => scrollToBottom(true)}
-                  />
-               </View>
+      <StepperLayout
+         step={idx + 1}
+         totalSteps={STEP_ORDER.length}
+         label={STEP_LABEL[currKey]}
+         prompt={{
+            text: prompts[currKey],
+            visited: hasVisited(currKey),
+            onVisited: () => markVisited(currKey),
+            textStyle: promptTextStyle,
+            maxHeight: promptMaxHeight,
+            scrollEnabled: true,
+            numberOfLines: 6,
+         }}
+         extraContent={
+            <EntryContextView
+               adversity={entry.adversity}
+               belief={entry.belief}
+               style={styles.contextBox}
+            />
+         }
+         inputSection={
+            <KeyboardAwareInputWrapper>
+               <InputBox
+                  ref={inputRef}
+                  value={form[currKey]}
+                  onChangeText={setField(currKey)}
+                  dims={inputBoxDims}
+                  scrollEnabled
+                  onFocus={() => scrollToBottom(true)}
+               />
                <StepperButton
                   idx={idx}
                   totalSteps={STEP_ORDER.length}
@@ -269,34 +238,25 @@ export default function DisputeScreen() {
                   hasUnsavedChanges={hasUnsavedChanges}
                   disableNext={currentEmpty}
                />
-            </View>
-         </KeyboardAvoidingView>
+            </KeyboardAwareInputWrapper>
+         }
+         scrollRef={scrollRef}
+         scrollProps={{
+            onScroll: handleScroll,
+            scrollEventThrottle: 16,
+            onContentSizeChange: () => {
+               if (stickToBottom.current) {
+                  requestAnimationFrame(() => scrollToBottom(true));
+               }
+            },
+         }}
+         topInset={insets.top}
+      />
    );
 }
 
 const styles = StyleSheet.create({
-   root: { flex: 1,  backgroundColor: '#fff' },
-
-   page: {
-      flex: 1,
-      paddingHorizontal: 20,
-   },
-   scroll: { flex: 1 },
-   scrollContent: {
-      flexGrow: 1,
-      justifyContent: 'space-between',
-      gap: 16,
-   },
-   promptContainer: {
-      flexGrow: 1,
-      justifyContent: 'space-evenly',
-   },
-
    contextBox: { marginHorizontal: 16 },
-   inputWrapper: {
-      paddingHorizontal: 16,
-   },
-
    centered: {
       flex: 1,
       justifyContent: 'center',

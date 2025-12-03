@@ -20,6 +20,7 @@ export default function RootLayout() {
                               name="(modals)/entry-new"
                               options={{
                                  presentation: 'fullScreenModal',
+                                 
                               }}
                            />
                         </Stack>

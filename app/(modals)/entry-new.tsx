@@ -1,35 +1,19 @@
-import InputField from '@/components/newEntry/InputField';
+import InputBox from '@/components/newEntry/InputBox';
 import StepperButton from '@/components/newEntry/StepperButton';
-import StepperHeader from '@/components/newEntry/StepperHeader';
+import StepperLayout, {
+   KeyboardAwareInputWrapper,
+} from '@/components/newEntry/StepperLayout';
 import { useEntries } from '@/features/hooks/useEntries';
 import { usePrompts } from '@/features/hooks/usePrompts';
 import { useVisitedSet } from '@/features/hooks/useVisitedSet';
+import { usePromptLayout } from '@/features/hooks/usePromptLayout';
+import rawAbcde from '@/assets/data/abcde.json';
+import { NewInputEntryType } from '@/models/newInputEntryType';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import {
-   Platform,
-   TouchableWithoutFeedback,
-   View,
-   StyleSheet,
-   Keyboard,
-   Alert,
-   TextInput,
-} from 'react-native';
-import rawAbcde from '@/assets/data/abcde.json';
-// import rawAbcde from '@/assets/data/abcdeDev.json';
-import { useHeaderHeight } from '@react-navigation/elements';
+import { Alert, Keyboard, TextInput } from 'react-native';
+import { KeyboardController } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { NewInputEntryType } from '@/models/newInputEntryType';
-import {
-   KeyboardAvoidingView,
-   KeyboardController,
-} from 'react-native-keyboard-controller';
-import { ScrollView } from 'react-native-gesture-handler';
-import InputBox from '@/components/newEntry/InputBox';
-import PromptDisplay from '@/components/newEntry/PromptDisplay';
-import React from 'react';
-import { usePromptLayout } from '@/features/hooks/usePromptLayout';
-import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
 
 const STEP_ORDER = ['adversity', 'belief', 'consequence'] as const;
 const STEP_LABEL: Record<NewInputEntryType, string> = {
@@ -44,7 +28,6 @@ export default function NewEntryModal() {
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
    const { promptTextStyle, inputBoxDims, promptMaxHeight } = usePromptLayout();
-   const isKeyboardVisible = useKeyboardVisible();
 
    const [form, setForm] = useState<Record<NewInputEntryType, string>>({
       adversity: '',
@@ -111,73 +94,28 @@ export default function NewEntryModal() {
    }, [store, trimmedForm]);
 
    return (
-      <KeyboardAvoidingView style={styles.root} behavior={'padding'}>
-         <TouchableWithoutFeedback onPress={dismissKeyboard} accessible={false}>
-            <View className="page" style={styles.page}>
-               <ScrollView
-                  style={styles.scroll}
-                  contentContainerStyle={[
-                     styles.scrollContent,
-                     { paddingTop: insets.top + 12},
-                  ]}
-                  keyboardShouldPersistTaps="handled"
-                  showsVerticalScrollIndicator={false}
-               >
-                  <StepperHeader
-                     step={idx + 1}
-                     total={STEP_ORDER.length}
-                     label={STEP_LABEL[currKey]}
-                  />
-
-                  <PromptDisplay
-                     text={prompts[currKey]}
-                     visited={hasVisited(currKey)}
-                     onVisited={() => markVisited(currKey)}
-                     textStyle={promptTextStyle}
-                     maxHeight={promptMaxHeight}
-                     scrollEnabled
-                     numberOfLines={6}
-                     containerStyle={styles.promptContainer}
-                  />
-               </ScrollView>
-               <View style={[styles.inputWrapper, 
-                  {paddingBottom: !isKeyboardVisible ? 24 : 0}
-               ]}>
-                  <InputBox
-                     ref={inputRef}
-                     value={form[currKey]}
-                     onChangeText={setField(currKey)}
-                     dims={inputBoxDims}
-                     scrollEnabled
-                  />
-                  <StepperButton
-                     idx={idx}
-                     totalSteps={STEP_ORDER.length}
-                     setIdx={setIdx}
-                     onSubmit={submit}
-                     onExit={() => router.back()}
-                     hasUnsavedChanges={hasAnyContent}
-                     disableNext={currentEmpty}
-                  />
-               </View>
-               {/* <StepperHeader
-                  step={idx + 1}
-                  total={STEP_ORDER.length}
-                  label={STEP_LABEL[currKey]}
+      <StepperLayout
+         step={idx + 1}
+         totalSteps={STEP_ORDER.length}
+         label={STEP_LABEL[currKey]}
+         prompt={{
+            text: prompts[currKey],
+            visited: hasVisited(currKey),
+            onVisited: () => markVisited(currKey),
+            textStyle: promptTextStyle,
+            maxHeight: promptMaxHeight,
+            scrollEnabled: true,
+            numberOfLines: 6,
+         }}
+         inputSection={
+            <KeyboardAwareInputWrapper>
+               <InputBox
+                  ref={inputRef}
+                  value={form[currKey]}
+                  onChangeText={setField(currKey)}
+                  dims={inputBoxDims}
+                  scrollEnabled
                />
-
-               <View style={styles.content}>
-                  <InputField
-                     value={form[currKey]}
-                     setValue={setField(currKey)}
-                     entryType={currKey}
-                     prompt={prompts[currKey]}
-                     visited={hasVisited(currKey)}
-                     markVisited={markVisited}
-                     scrollEnabled
-                  />
-               </View>
-
                <StepperButton
                   idx={idx}
                   totalSteps={STEP_ORDER.length}
@@ -186,33 +124,11 @@ export default function NewEntryModal() {
                   onExit={() => router.back()}
                   hasUnsavedChanges={hasAnyContent}
                   disableNext={currentEmpty}
-                  style={{ paddingBottom: insets.bottom + 12 }}
-               /> */}
-            </View>
-         </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+               />
+            </KeyboardAwareInputWrapper>
+         }
+         topInset={insets.top}
+         onBackgroundPress={dismissKeyboard}
+      />
    );
 }
-
-const styles = StyleSheet.create({
-   root: { flex: 1, backgroundColor: '#fff' },
-   page: {
-      flex: 1,
-      paddingHorizontal: 20,
-   },
-   content: { flex: 1 },
-   scroll: { flex: 1 },
-   scrollContent: {
-      flexGrow: 1,
-      justifyContent: 'space-between',
-      gap: 16,
-   },
-   promptContainer: {
-      flexGrow: 1,
-      justifyContent: 'space-evenly',
-   },
-   inputWrapper: {
-      paddingHorizontal: 16,
-   },
-});
-
