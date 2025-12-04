@@ -504,12 +504,14 @@ export default function DisputeScreen() {
                      </View>
 
                      <View style={{ flex: 1 }}>
-                        <AiInsightCard
+                        {/* <AiInsightCard
                            data={lastResult?.data}
                            streamingText={streaming ? streamText : undefined}
                            loading={loading}
                            error={error}
-                        />
+                        /> */}
+
+                        <Text>{prettyJson}</Text>
                      </View>
                   </ScrollView>
                </>

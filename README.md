@@ -162,6 +162,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
+- Abstract card dimension and sizes
 - Update database to store AI response to respective entry
 - Add test to for API
 - Disable editing of ABC once dispute has been
