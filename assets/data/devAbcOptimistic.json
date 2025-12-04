@@ -1,0 +1,39 @@
+{
+   "input": {
+      "adversity": "I am making an app and its not going as planned",
+      "belief": "I am confused and having a difficult time learning something new",
+      "consequence": "Frustration"
+   },
+   "output": {
+"safety": {
+"isCrisis": false,
+"crisisMessage": null
+},
+"analysis": {
+"dimensions": {
+"permanence": {
+"score": "optimistic",
+"detectedPhrase": "having a difficult time learning something new",
+"insight": "This thought is focused on the current challenge and learning process. It's about right now, not forever. This is a helpful way to see things because it keeps the problem temporary and tied to learning."
+},
+"pervasiveness": {
+"score": "optimistic",
+"detectedPhrase": "learning something new",
+"insight": "You're connecting your struggle to this one situation—making the app. This kind of thinking can support you because it doesn't make the problem about everything in your life."
+},
+"personalization": {
+"score": "optimistic",
+"detectedPhrase": "having a difficult time learning something new",
+"insight": "You’re saying it’s tough to learn something new, not that you’re bad at everything. This is helpful because it leaves room to get better with practice."
+}
+},
+"emotionalLogic": "It makes sense to feel frustrated when you’re facing a hard challenge and things aren’t working right away."
+},
+"suggestions": {
+"evidenceQuestion": "Can you remember other times you struggled at first but figured things out later?",
+"alternativesQuestion": "What’s one small thing you could try differently next time you get stuck?",
+"usefulnessQuestion": "How might it help you to see this as part of learning, not proof you can't do it?",
+"counterBelief": "Learning new things is hard at first, but that doesn't mean I can't figure it out with more practice."
+}
+}
+}

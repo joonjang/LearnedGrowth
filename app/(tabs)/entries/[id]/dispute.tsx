@@ -10,7 +10,13 @@ import { Entry } from '@/models/entry';
 import type { AbcdeJson } from '@/models/abcdeJson';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+   useCallback,
+   useEffect,
+   useMemo,
+   useRef,
+   useState,
+} from 'react';
 import {
    NativeScrollEvent,
    NativeSyntheticEvent,
@@ -21,11 +27,20 @@ import {
    TextInput,
    View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { KeyboardAvoidingView, KeyboardEvents } from 'react-native-keyboard-controller';
+import {
+   SafeAreaView,
+   useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+import {
+   KeyboardAvoidingView,
+   KeyboardEvents,
+} from 'react-native-keyboard-controller';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
 import InputBox from '@/components/newEntry/InputBox';
 import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
+import { useAbcAi } from '@/features/hooks/useAbcAi';
+import ThreeDotsLoader from '@/components/ThreeDotLoader';
+import { AiInsightCard } from '@/components/entries/AiIngsightCard';
 
 const STEP_ORDER = [
    'evidence',
@@ -33,6 +48,11 @@ const STEP_ORDER = [
    'usefulness',
    'energy',
 ] as const;
+const DIMENSION_COLORS = {
+   permanence: '#FCA5A5', // stronger rose
+   pervasiveness: '#93C5FD', // stronger blue
+   personalization: '#C4B5FD', // stronger violet
+};
 const STEP_LABEL: Record<NewInputDisputeType, string> = {
    evidence: 'Evidence',
    alternatives: 'Alternatives',
@@ -57,8 +77,94 @@ function buildDisputeText(form: Record<NewInputDisputeType, string>) {
    return sentences.join(' ');
 }
 
+type Highlight = { phrase: string; color?: string };
+
+function findMatches(text: string, phrase: string, color?: string) {
+   const hay = text.toLowerCase();
+   const needle = phrase.toLowerCase();
+   const spans: { start: number; end: number; color?: string }[] = [];
+   let idx = hay.indexOf(needle);
+   while (idx !== -1) {
+      spans.push({ start: idx, end: idx + needle.length, color });
+      idx = hay.indexOf(needle, idx + needle.length);
+   }
+   return spans;
+}
+
+function buildSegments(text: string, highlights: Highlight[]) {
+   if (!highlights.length) return [text];
+
+   const matches = highlights.flatMap((h) => findMatches(text, h.phrase, h.color));
+   if (!matches.length) return [text];
+
+   const boundaries = new Set<number>([0, text.length]);
+   matches.forEach(({ start, end }) => {
+      boundaries.add(start);
+      boundaries.add(end);
+   });
+   const points = Array.from(boundaries).sort((a, b) => a - b);
+
+   const segments: Array<string | { text: string; color?: string }> = [];
+   let overlapStripe = 0;
+
+   for (let i = 0; i < points.length - 1; i++) {
+      const start = points[i];
+      const end = points[i + 1];
+      if (end <= start) continue;
+      const slice = text.slice(start, end);
+      const active = matches.filter((m) => m.start < end && m.end > start);
+
+      if (!active.length) {
+         segments.push(slice);
+         continue;
+      }
+
+      let color: string | undefined;
+      if (active.length === 1) {
+         color = active[0].color;
+      } else {
+         color = active[overlapStripe % active.length].color || active[0].color;
+         overlapStripe += 1;
+      }
+      segments.push({ text: slice, color });
+   }
+
+   return segments;
+}
+
+function HighlightedText({ text, highlights }: { text: string; highlights: Highlight[] }) {
+   const segments = useMemo(
+      () => buildSegments(text, highlights),
+      [text, highlights]
+   );
+
+   return (
+      <Text style={styles.contextText}>
+         {segments.map((seg, i) =>
+            typeof seg === 'string' ? (
+               <Text key={i}>{seg}</Text>
+            ) : (
+               <Text
+                  key={i}
+                  style={[
+                     styles.highlight,
+                     seg.color ? { backgroundColor: seg.color } : null,
+                  ]}
+               >
+                  {seg.text}
+               </Text>
+            )
+         )}
+      </Text>
+   );
+}
+
 export default function DisputeScreen() {
-   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+   const { id, analyze: analyzeParam } = useLocalSearchParams<{
+      id?: string | string[];
+      analyze?: string | string[];
+   }>();
+
    const entryId = Array.isArray(id) ? id[0] : id;
    const store = useEntries();
    const entry = entryId ? store.getEntryById(entryId) : undefined;
@@ -73,6 +179,36 @@ export default function DisputeScreen() {
       usefulness: '',
       energy: entry?.energy ?? '',
    });
+
+   const [analysisTriggered, setAnalysisTriggered] = useState(false);
+
+   const { analyze, lastResult, loading, error, ready, streamText, streaming } =
+      useAbcAi();
+
+   useEffect(() => {
+      if (!entry || !ready) return;
+      const shouldAnalyze = analyzeParam === '1' || analyzeParam === 'true';
+      if (!shouldAnalyze || analysisTriggered || lastResult) return;
+      setAnalysisTriggered(true);
+      analyze({
+         adversity: entry.adversity,
+         belief: entry.belief,
+         consequence: entry.consequence ?? undefined,
+      }).catch((e) => console.log(e)); // optionally reset or surface error
+   }, [ready, analyzeParam, analysisTriggered, entry, lastResult, analyze]);
+
+   const [prettyJson, setPrettyJson] = useState<string | null>(null);
+
+   useEffect(() => {
+      if (streaming) return; // still building, keep raw text
+      try {
+         setPrettyJson(JSON.stringify(JSON.parse(streamText), null, 2));
+      } catch {
+         setPrettyJson(
+            lastResult ? JSON.stringify(lastResult.data, null, 2) : null
+         );
+      }
+   }, [streaming, streamText, lastResult]);
 
    // dispute should have all empty fields, return if either are filled or if entry doesnt exist
    useEffect(() => {
@@ -106,8 +242,54 @@ export default function DisputeScreen() {
       const entryDispute = (entry?.dispute ?? '').trim();
       const entryEnergy = (entry?.energy ?? '').trim();
 
-      return composedDispute !== entryDispute || trimmedForm.energy !== entryEnergy;
+      return (
+         composedDispute !== entryDispute || trimmedForm.energy !== entryEnergy
+      );
    }, [entry?.dispute, entry?.energy, trimmedForm]);
+
+   const highlightMap = useMemo(() => {
+      if (!entry || !lastResult?.data) return undefined;
+      const dims = lastResult.data.analysis.dimensions;
+      const fields: {
+         adversity: string;
+         belief: string;
+         consequence: string;
+      } = {
+         adversity: entry.adversity ?? '',
+         belief: entry.belief ?? '',
+         consequence: entry.consequence ?? '',
+      };
+
+      const map: {
+         adversity: Highlight[];
+         belief: Highlight[];
+         consequence: Highlight[];
+      } = { adversity: [], belief: [], consequence: [] };
+
+      const addPhrase = (phrase: string | null | undefined, color: string) => {
+         const needle = phrase?.trim();
+         if (!needle) return;
+         const lower = needle.toLowerCase();
+         const target = (['adversity', 'belief', 'consequence'] as const).find(
+            (key) => fields[key].toLowerCase().includes(lower)
+         );
+         if (!target) return;
+         map[target].push({ phrase: needle, color });
+      };
+
+      addPhrase(dims.permanence.detectedPhrase, DIMENSION_COLORS.permanence);
+      addPhrase(dims.pervasiveness.detectedPhrase, DIMENSION_COLORS.pervasiveness);
+      addPhrase(dims.personalization.detectedPhrase, DIMENSION_COLORS.personalization);
+
+      if (
+         !map.adversity.length &&
+         !map.belief.length &&
+         !map.consequence.length
+      ) {
+         return undefined;
+      }
+      return map;
+   }, [entry, lastResult?.data]);
 
    const currentEmpty = !trimmedForm[currKey];
 
@@ -142,19 +324,17 @@ export default function DisputeScreen() {
       router.back();
    }, [entry, store, trimmedForm]);
 
-   const scrollToBottom = useCallback(
-      (animated = true) => {
-         const ref = scrollRef.current;
-         if (!ref) return;
+   const scrollToBottom = useCallback((animated = true) => {
+      const ref = scrollRef.current;
+      if (!ref) return;
 
-         ref.scrollToEnd({ animated });
-      },
-      []
-   );
+      ref.scrollToEnd({ animated });
+   }, []);
 
    const handleScroll = useCallback(
       (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-         const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+         const { layoutMeasurement, contentOffset, contentSize } =
+            e.nativeEvent;
          const gap =
             contentSize.height - (contentOffset.y + layoutMeasurement.height);
          stickToBottom.current = gap < 12;
@@ -192,83 +372,155 @@ export default function DisputeScreen() {
    }
 
    return (
-         <KeyboardAvoidingView
-            style={styles.root}
-            behavior={'padding'}
-            keyboardVerticalOffset={insets.bottom + 24}
-         >
-            <View style={styles.page}>
-               <ScrollView
-                  ref={scrollRef}
-                  style={styles.scroll}
-                  contentContainerStyle={[
-                     styles.scrollContent,
-                     { paddingTop: 24 },
-                  ]}
-                  keyboardShouldPersistTaps="handled"
-                  showsVerticalScrollIndicator={false}
-                  onScroll={handleScroll}
-                  scrollEventThrottle={16}
-                  onContentSizeChange={() => {
-                     if (stickToBottom.current) {
-                        requestAnimationFrame(() => scrollToBottom(true));
-                     }
-                  }}
-                  
-               >
-                  <StepperHeader
-                     step={idx + 1}
-                     total={STEP_ORDER.length}
-                     label={STEP_LABEL[currKey]}
-                  />
+      <KeyboardAvoidingView
+         style={styles.root}
+         behavior={'padding'}
+         keyboardVerticalOffset={insets.bottom + 24}
+      >
+         <View style={styles.page}>
+            {!analysisTriggered && (
+               <>
+                  <ScrollView
+                     ref={scrollRef}
+                     style={styles.scroll}
+                     contentContainerStyle={[
+                        styles.scrollContent,
+                        { paddingTop: 24 },
+                     ]}
+                     keyboardShouldPersistTaps="handled"
+                     showsVerticalScrollIndicator={false}
+                     onScroll={handleScroll}
+                     scrollEventThrottle={16}
+                     onContentSizeChange={() => {
+                        if (stickToBottom.current) {
+                           requestAnimationFrame(() => scrollToBottom(true));
+                        }
+                     }}
+                  >
+                     <StepperHeader
+                        step={idx + 1}
+                        total={STEP_ORDER.length}
+                        label={STEP_LABEL[currKey]}
+                     />
 
-                  <EntryContextView
-                     adversity={entry.adversity}
-                     belief={entry.belief}
-                     consequence={entry.consequence ?? ''}
-                     style={styles.contextBox}
-                  />
+                     <EntryContextView
+                        adversity={entry.adversity}
+                        belief={entry.belief}
+                        consequence={entry.consequence ?? ''}
+                        style={styles.contextBox}
+                     />
 
-                  <PromptDisplay
-                     text={prompts[currKey]}
-                     visited={hasVisited(currKey)}
-                     onVisited={() => markVisited(currKey)}
-                     textStyle={promptTextStyle}
-                     maxHeight={promptMaxHeight}
-                     scrollEnabled
-                     numberOfLines={6}
-                     containerStyle={styles.promptContainer}
-                  />
-               </ScrollView>
-               <View style={[styles.inputWrapper, 
-                                 {paddingBottom: !isKeyboardVisible ? 24 : 0}
-                              ]}>
-                  <InputBox
-                     ref={inputRef}
-                     value={form[currKey]}
-                     onChangeText={setField(currKey)}
-                     dims={inputBoxDims}
-                     scrollEnabled
-                     onFocus={() => scrollToBottom(true)}
-                  />
-                  <StepperButton
-                  idx={idx}
-                  totalSteps={STEP_ORDER.length}
-                  setIdx={setIdx}
-                  onSubmit={submit}
-                  onExit={() => router.back()}
-                  hasUnsavedChanges={hasUnsavedChanges}
-                  disableNext={currentEmpty}
-               />
-               </View>
-               
-            </View>
-         </KeyboardAvoidingView>
+                     <PromptDisplay
+                        text={prompts[currKey]}
+                        visited={hasVisited(currKey)}
+                        onVisited={() => markVisited(currKey)}
+                        textStyle={promptTextStyle}
+                        maxHeight={promptMaxHeight}
+                        scrollEnabled
+                        numberOfLines={6}
+                        containerStyle={styles.promptContainer}
+                     />
+                  </ScrollView>
+                  <View
+                     style={[
+                        styles.inputWrapper,
+                        { paddingBottom: !isKeyboardVisible ? 24 : 0 },
+                     ]}
+                  >
+                     <InputBox
+                        ref={inputRef}
+                        value={form[currKey]}
+                        onChangeText={setField(currKey)}
+                        dims={inputBoxDims}
+                        scrollEnabled
+                        onFocus={() => scrollToBottom(true)}
+                     />
+                     <StepperButton
+                        idx={idx}
+                        totalSteps={STEP_ORDER.length}
+                        setIdx={setIdx}
+                        onSubmit={submit}
+                        onExit={() => router.back()}
+                        hasUnsavedChanges={hasUnsavedChanges}
+                        disableNext={currentEmpty}
+                     />
+                  </View>
+               </>
+            )}
+            {analysisTriggered && (
+               <>
+                  <ScrollView
+                     ref={scrollRef}
+                     style={styles.scroll}
+                     contentContainerStyle={[
+                        styles.scrollContent,
+                        { paddingTop: 24 },
+                     ]}
+                     keyboardShouldPersistTaps="handled"
+                     showsVerticalScrollIndicator={false}
+                     onScroll={handleScroll}
+                     scrollEventThrottle={16}
+                     onContentSizeChange={() => {
+                        if (stickToBottom.current) {
+                           requestAnimationFrame(() => scrollToBottom(true));
+                        }
+                     }}
+                  >
+                     <View style={[styles.container]}>
+                        <Text style={styles.text}>AI Insight</Text>
+                     </View>
+                     <View style={{ flex: 1 }}>
+                        <View style={[styles.contextBox]}>
+                           <View style={styles.contextRow}>
+                              <Text style={styles.contextLabel}>Adversity</Text>
+                              <HighlightedText
+                                 text={entry.adversity}
+                                 highlights={highlightMap?.adversity ?? []}
+                              />
+                           </View>
+                           <View style={styles.contextDivider} />
+                           <View style={styles.contextRow}>
+                              <Text style={styles.contextLabel}>Belief</Text>
+                              <HighlightedText
+                                 text={entry.belief}
+                                 highlights={highlightMap?.belief ?? []}
+                              />
+                           </View>
+                           {entry.consequence && (
+                              <>
+                                 <View style={styles.contextDivider} />
+                                 <View style={styles.contextRow}>
+                                    <Text style={styles.contextLabel}>
+                                       Consequence
+                                    </Text>
+                                    <HighlightedText
+                                       text={entry.consequence}
+                                       highlights={highlightMap?.consequence ?? []}
+                                    />
+                                 </View>
+                              </>
+                           )}
+                        </View>
+                     </View>
+
+                     <View style={{ flex: 1 }}>
+                        <AiInsightCard
+                           data={lastResult?.data}
+                           streamingText={streaming ? streamText : undefined}
+                           loading={loading}
+                           error={error}
+                        />
+                     </View>
+                  </ScrollView>
+               </>
+            )}
+         </View>
+      </KeyboardAvoidingView>
    );
 }
 
 const styles = StyleSheet.create({
-   root: { flex: 1,  backgroundColor: '#fff' },
+   root: { flex: 1, backgroundColor: '#fff' },
 
    page: {
       flex: 1,
@@ -285,7 +537,6 @@ const styles = StyleSheet.create({
       justifyContent: 'space-evenly',
    },
 
-   contextBox: { marginHorizontal: 16 },
    inputWrapper: {
       paddingHorizontal: 16,
    },
@@ -295,5 +546,40 @@ const styles = StyleSheet.create({
       justifyContent: 'center',
       alignItems: 'center',
       gap: 8,
+   },
+   container: {
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+   },
+   text: { fontSize: 16, fontWeight: '500' },
+
+   contextBox: {
+      backgroundColor: '#F3F4F6',
+      padding: 12,
+      borderRadius: 12,
+      gap: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: '#E5E7EB',
+   },
+   contextRow: { gap: 4 },
+   contextLabel: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: '#374151',
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+   },
+   contextText: { fontSize: 14, color: '#111827' },
+   highlight: {
+      backgroundColor: '#FACC15',
+      borderColor: '#D97706',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: 4,
+      paddingHorizontal: 2,
+   },
+   contextDivider: {
+      height: 1,
+      backgroundColor: '#E5E7EB',
+      marginVertical: 2,
    },
 });

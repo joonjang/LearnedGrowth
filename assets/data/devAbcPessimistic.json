@@ -1,0 +1,39 @@
+{
+   "input": {
+      "adversity": "my lower back hurts",
+      "belief": "i have terrible posture and  my back is going to be hunch backed. i always slouch so much and i dont know if im overthinking it or if my posture is actually bad",
+      "consequence": "my back hurts and i get self conscious. maybe its because im too short so im leg doesnt touch the ground"
+   },
+   "output": {
+      "safety": {
+         "isCrisis": false,
+         "crisisMessage": null
+      },
+      "analysis": {
+         "dimensions": {
+            "permanence": {
+               "score": "pessimistic",
+               "detectedPhrase": "i always slouch so much",
+               "insight": "This makes it feel like you believe your posture is always bad and won't improve."
+            },
+            "pervasiveness": {
+               "score": "pessimistic",
+               "detectedPhrase": "my back is going to be hunch backed",
+               "insight": "The belief makes it seem like this one problem will affect your entire future body and how you feel about yourself."
+            },
+            "personalization": {
+               "score": "mixed",
+               "detectedPhrase": "i have terrible posture",
+               "insight": "You blame yourself and your habits, but also wonder if maybe you’re overthinking or if it’s about your height."
+            }
+         },
+         "emotionalLogic": "It makes sense to feel self-conscious and worried if you believe your back will always hurt and your posture will ruin your health."
+      },
+      "suggestions": {
+         "evidenceQuestion": "Are there times when your posture is better, or days your back doesn't hurt as much?",
+         "alternativesQuestion": "Could your back pain also be from something else, like sitting in a certain chair or not moving enough during the day?",
+         "usefulnessQuestion": "If you keep believing your posture will never improve, how does that make you feel about trying to fix it?",
+         "counterBelief": "Maybe my posture isn't perfect now, but there are things I can try to help my back and improve over time."
+      }
+   }
+}
