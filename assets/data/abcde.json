@@ -1,17 +1,16 @@
 {
   "adversity": [
-    "What specific event happened today that bothered you?",
-    "What details about today didn't go the way you expected?",
+    "What event happened that bothered you?",
+    "What didn't go the way you expected?",
     "What specifically happened that left you feeling upset or tense?",
-    "What specific words or actions stuck with you in a bad way?",
-    "What was the exact situation that made you feel stressed, sad, or angry?",
-    "What change or decision was the hardest part of your day to handle?",
-    "What specific message, comment, or action felt hurtful?",
-    "What was the single most difficult moment of your day?"
+    "What was a situation that made you feel stressed, sad, or angry?",
+    "What change or decision was difficult to handle?",
+    "What situation made you think, \"I wish this had gone differently\"?",
+    "What is one small scene you keep replaying in your head?",
   ],
   "belief": [
     "In that moment, what did you immediately tell yourself?",
-    "What meaning have you assigned to this event?",
+    "What meaning are you giving this event?",
     "What bad outcome did you predict would happen next?",
     "What did you assume caused this to happen?",
     "What story are you telling yourself about why this occurred?",
@@ -24,18 +23,18 @@
   "consequence": [
     "Because you had that thought, how did your behavior change?",
     "In what ways did thinking that affect your body physically?",
-    "How is thinking this way impacting your current goals?",
+    "How is thinking this way getting in the way of things you care about doing?",
     "Right after you had that thought, what specific emotions came up?",
     "How did that specific thought influence how you treated yourself or others?",
     "What tasks or actions did you avoid because of that thought?",
-    "In what way did that thought alter your energy levels?",
+    "How did that thought change your energy level?",
     "How would you describe the shift in your mood immediately after thinking that?",
     "How did thinking that influence your desire to keep trying?"
   ],
   "dispute": {
     "evidence": [
       "What specific facts suggest your thought might be exaggerated?",
-      "What separates the proven facts of this situation from your assumptions?",
+      "What are the plain facts of what happened, and what parts are guesses or interpretations?",
       "What positive details might you be overlooking in this situation?",
       "If you had to prove this thought in court, what evidence would actually hold up?",
       "What concrete evidence exists that supports the opposite view?",
@@ -55,20 +54,20 @@
       "If you were feeling confident right now, how would you interpret this differently?",
       "What is a kinder, more forgiving way to describe what happened?",
       "What other factors contributed to this outcome besides you?",
-      "What is a 'Non-Catastrophic' way to look at this?"
+      "What is a calmer, less scary way to look at this?"
     ],
     "usefulness": [
       "If you keep thinking this way, what will it cost you?",
-      "How is holding onto this thought serving or hindering you right now?",
+      "How is holding onto this thought helping you or getting in your way right now?",
       "What would be a more useful thought to focus on to solve the problem?",
       "If you let this thought go, what would you be free to do?",
       "In what way is this thought affecting your progress toward your goals?",
-      "What is the actual utility of blaming yourself in this specific instance?",
+      "How does blaming yourself here help you, if at all?",
       "How does focusing on this thought affect your energy levels?"
     ]
   },
   "energy": [
-    "Now that you've looked at the evidence, how would you describe your emotion 0-10?",
+    "Now that you’ve looked at this more closely, how would you rate your emotion from 0 to 10?",
     "What is one small step you feel ready to take right now?",
     "What new thought feels the most accurate and helpful to you?",
     "What tiny commitment can you make for the next hour?",

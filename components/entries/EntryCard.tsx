@@ -8,7 +8,7 @@ import {
    type TextLayoutEvent,
 } from 'react-native';
 import { palette } from '@/theme/colors';
-import CTA from './CTA';
+import CTAButton from './CTAButton';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Animated, {
@@ -17,6 +17,7 @@ import Animated, {
    withTiming,
    Easing,
 } from 'react-native-reanimated';
+import AnalyzeButton from './AnalyzeButton';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -324,7 +325,8 @@ export default function EntryCard({
          {!entry.dispute ? (
             <>
                <View style={styles.divider} />
-               <CTA id={entry.id} />
+               <CTAButton id={entry.id} />
+               <AnalyzeButton id={entry.id} />
             </>
          ) : (
             <>

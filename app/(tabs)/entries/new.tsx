@@ -9,11 +9,14 @@ import { useVisitedSet } from '@/features/hooks/useVisitedSet';
 import { usePromptLayout } from '@/features/hooks/usePromptLayout';
 import rawAbcde from '@/assets/data/abcde.json';
 import { NewInputEntryType } from '@/models/newInputEntryType';
-import { router } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, TextInput } from 'react-native';
+import { router, useNavigation } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Keyboard, KeyboardAvoidingView, ScrollView, TextInput, View, StyleSheet } from 'react-native';
 import { KeyboardController } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import PromptDisplay from '@/components/newEntry/PromptDisplay';
+import StepperHeader from '@/components/newEntry/StepperHeader';
+import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
 
 const STEP_ORDER = ['adversity', 'belief', 'consequence'] as const;
 const STEP_LABEL: Record<NewInputEntryType, string> = {
@@ -28,6 +31,7 @@ export default function NewEntryModal() {
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
    const { promptTextStyle, inputBoxDims, promptMaxHeight } = usePromptLayout();
+   const isKeyboardVisible = useKeyboardVisible();
 
    const [form, setForm] = useState<Record<NewInputEntryType, string>>({
       adversity: '',
@@ -66,15 +70,7 @@ export default function NewEntryModal() {
 
    const currentEmpty = !trimmedForm[currKey];
 
-   const dismissKeyboard = useCallback(async () => {
-      try {
-         await KeyboardController.dismiss();
-      } catch {
-         Keyboard.dismiss();
-      }
-   }, []);
-
-   const submit = useCallback(async () => {
+    const submit = useCallback(async () => {
       const { adversity, belief, consequence } = trimmedForm;
 
       if (!adversity || !belief || !consequence) {
@@ -94,30 +90,55 @@ export default function NewEntryModal() {
       });
    }, [store, trimmedForm]);
 
+
+   // TODO: save entry if gesture swiped down and there is an input, or provide an alert to confirm closing
+
    return (
-      <StepperLayout
-         step={idx + 1}
-         totalSteps={STEP_ORDER.length}
-         label={STEP_LABEL[currKey]}
-         prompt={{
-            text: prompts[currKey],
-            visited: hasVisited(currKey),
-            onVisited: () => markVisited(currKey),
-            textStyle: promptTextStyle,
-            maxHeight: promptMaxHeight,
-            scrollEnabled: true,
-            numberOfLines: 6,
-         }}
-         inputSection={
-            <KeyboardAwareInputWrapper>
-               <InputBox
-                  ref={inputRef}
-                  value={form[currKey]}
-                  onChangeText={setField(currKey)}
-                  dims={inputBoxDims}
-                  scrollEnabled
-               />
-               <StepperButton
+         <KeyboardAvoidingView
+            style={styles.root}
+            behavior={'padding'}
+            keyboardVerticalOffset={insets.bottom + 24}
+         >
+            <View style={styles.page}>
+               <ScrollView
+                  style={styles.scroll}
+                  contentContainerStyle={[
+                     styles.scrollContent,
+                     { paddingTop: 24 },
+                  ]}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                  
+               >
+                  <StepperHeader
+                     step={idx + 1}
+                     total={STEP_ORDER.length}
+                     label={STEP_LABEL[currKey]}
+                  />
+
+
+                  <PromptDisplay
+                     text={prompts[currKey]}
+                     visited={hasVisited(currKey)}
+                     onVisited={() => markVisited(currKey)}
+                     textStyle={promptTextStyle}
+                     maxHeight={promptMaxHeight}
+                     scrollEnabled
+                     numberOfLines={6}
+                     containerStyle={styles.promptContainer}
+                  />
+               </ScrollView>
+               <View style={[styles.inputWrapper, 
+                                 {paddingBottom: !isKeyboardVisible ? 24 : 0}
+                              ]}>
+                  <InputBox
+                     ref={inputRef}
+                     value={form[currKey]}
+                     onChangeText={setField(currKey)}
+                     dims={inputBoxDims}
+                     scrollEnabled
+                  />
+                  <StepperButton
                   idx={idx}
                   totalSteps={STEP_ORDER.length}
                   setIdx={setIdx}
@@ -126,10 +147,40 @@ export default function NewEntryModal() {
                   hasUnsavedChanges={hasAnyContent}
                   disableNext={currentEmpty}
                />
-            </KeyboardAwareInputWrapper>
-         }
-         topInset={insets.top}
-         onBackgroundPress={dismissKeyboard}
-      />
+               </View>
+               
+            </View>
+         </KeyboardAvoidingView>
    );
 }
+
+const styles = StyleSheet.create({
+   root: { flex: 1,  backgroundColor: '#fff' },
+
+   page: {
+      flex: 1,
+      paddingHorizontal: 20,
+   },
+   scroll: { flex: 1 },
+   scrollContent: {
+      flexGrow: 1,
+      justifyContent: 'space-between',
+      gap: 16,
+   },
+   promptContainer: {
+      flexGrow: 1,
+      justifyContent: 'space-evenly',
+   },
+
+   contextBox: { marginHorizontal: 16 },
+   inputWrapper: {
+      paddingHorizontal: 16,
+   },
+
+   centered: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 8,
+   },
+});

@@ -3,8 +3,16 @@ import { useEntries } from '@/features/hooks/useEntries';
 import type { Entry } from '@/models/entry';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View, Text, Pressable, TextInput, Button, Platform, ScrollView } from 'react-native';
-import CTA from '@/components/entries/CTA';
+import {
+   StyleSheet,
+   View,
+   Text,
+   Pressable,
+   TextInput,
+   Platform,
+   ScrollView,
+} from 'react-native';
+import CTAButton from '@/components/entries/CTAButton';
 import { Ionicons } from '@expo/vector-icons';
 import {
    SafeAreaView,
@@ -13,6 +21,7 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { palette } from '@/theme/colors';
 import { useAbcAi } from '@/features/hooks/useAbcAi';
+import AnalyzeButton from '@/components/entries/AnalyzeButton';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
 
@@ -72,6 +81,28 @@ function buildFieldRecord(getValue: (key: FieldKey) => string) {
       acc[key] = getValue(key);
       return acc;
    }, {} as Record<FieldKey, string>);
+}
+
+
+function renderStyleRow(
+   label: string,
+   score: string | null,
+   detectedPhrase: string | null,
+   insight: string | null
+) {
+   if (!score && !detectedPhrase && !insight) return null;
+   return (
+      <View style={styles.aiStyleRow} key={label}>
+         <Text style={styles.aiStyleLabel}>{label}</Text>
+         <View style={styles.aiStyleContent}>
+            {score ? <Text style={styles.aiStyleChip}>{score}</Text> : null}
+            {detectedPhrase ? (
+               <Text style={styles.aiBody}>&quot;{detectedPhrase}&quot;</Text>
+            ) : null}
+            {insight ? <Text style={styles.aiSubtle}>{insight}</Text> : null}
+         </View>
+      </View>
+   );
 }
 
 export default function EntryDetailScreen() {
@@ -147,8 +178,8 @@ export default function EntryDetailScreen() {
    const statusMessage = justSaved
       ? 'Saved'
       : hasChanges
-        ? 'Unsaved changes'
-        : '';
+      ? 'Unsaved changes'
+      : '';
    const statusDisplay = statusMessage || 'Saved';
 
    useEffect(() => {
@@ -166,7 +197,11 @@ export default function EntryDetailScreen() {
       [hasScrolled]
    );
 
-   const { analyze, lastResult, loading, error: aiError, streamText, streaming } = useAbcAi();
+   const {
+      lastResult,
+      error: aiError,
+      streamText,
+   } = useAbcAi();
 
    useEffect(() => {
       if (!streamText) return;
@@ -183,20 +218,7 @@ export default function EntryDetailScreen() {
       );
    }
 
-   async function onAnalyzePress() {
-      if (!entry) return;
-
-      const adversity = form.adversity.trim();
-      const belief = form.belief.trim();
-      const consequence = form.consequence.trim();
-
-      await analyze({
-         adversity,
-         belief,
-         consequence: consequence || undefined,
-      });
-   }
-
+  
    return (
       <View style={styles.container}>
          <View style={{ height: insets.top }} />
@@ -210,9 +232,7 @@ export default function EntryDetailScreen() {
             </Pressable>
 
             <View style={styles.titleMeta}>
-               <Text style={styles.timeStamp}>
-                  {formattedTimestamp || ' '}
-               </Text>
+               <Text style={styles.timeStamp}>{formattedTimestamp || ' '}</Text>
                <Text
                   style={[
                      styles.statusText,
@@ -232,7 +252,12 @@ export default function EntryDetailScreen() {
                   onPress={handleSave}
                   disabled={!hasChanges}
                >
-                  <Text style={[styles.saveLabel, !hasChanges && styles.saveLabelDisabled]}>
+                  <Text
+                     style={[
+                        styles.saveLabel,
+                        !hasChanges && styles.saveLabelDisabled,
+                     ]}
+                  >
                      Save
                   </Text>
                </Pressable>
@@ -243,9 +268,7 @@ export default function EntryDetailScreen() {
 
          <KeyboardAwareScrollView
             style={styles.scroll}
-            contentContainerStyle={[
-               { paddingBottom: insets.bottom + 16 },
-            ]}
+            contentContainerStyle={[{ paddingBottom: insets.bottom + 16 }]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
             bottomOffset={keyboardOffset}
@@ -275,19 +298,14 @@ export default function EntryDetailScreen() {
                </View>
             ))}
 
-           {!entry.dispute?.trim() && (
-
-                  <CTA id={entry.id} />
-
+            {!entry.dispute?.trim() && (
+               <>
+                  <CTAButton id={entry.id} />
+                  <AnalyzeButton id={entry.id} />
+               </>
             )}
 
-           <Button
-              title={loading ? (streaming ? "Streaming..." : "Analyzing...") : "Analyze"}
-              onPress={onAnalyzePress}
-              disabled={loading}
-           />
-
-           {(streaming || streamText) && (
+            {/* {(streaming || streamText) && (
               <View style={styles.aiResultContainer}>
                  <Text style={styles.aiResultTitle}>
                     {streaming ? "Streaming response" : "Last streamed response"}
@@ -297,63 +315,210 @@ export default function EntryDetailScreen() {
                     style={styles.aiResultScroll}
                     nestedScrollEnabled
                     showsVerticalScrollIndicator={false}
-                 >
-                    <Text style={styles.aiResultText}>
-                       {streamText || "(waiting for data...)"}
-                    </Text>
-                 </ScrollView>
-              </View>
-           )}
-
-           {/* {lastResult && (
-              <View style={styles.aiResultContainer}>
-                 <Text style={styles.aiResultTitle}>AI analysis (parsed)</Text>
-                 <Text style={styles.aiResultText}>
-                    {JSON.stringify(lastResult, null, 2)}
-                 </Text>
-              </View>
+                >
+                   <Text style={styles.aiResultText}>
+                      {streamText || "(waiting for data...)"}
+                   </Text>
+                </ScrollView>
+             </View>
            )} */}
-           {aiError && (
-              <View style={styles.aiResultContainer}>
-                 <Text style={styles.aiResultTitle}>AI error</Text>
-                 <Text style={styles.aiResultText}>{aiError}</Text>
-              </View>
-           )}
 
+            {lastResult && (
+               <View style={styles.aiResultContainer}>
+                  <Text style={styles.aiResultTitle}>AI insights</Text>
+
+                  <View style={styles.aiSection}>
+                     <Text style={styles.aiSectionHeading}>Analysis</Text>
+                     {lastResult.data.analysis.emotionalLogic ? (
+                        <Text style={styles.aiBody}>
+                           {lastResult.data.analysis.emotionalLogic}
+                        </Text>
+                     ) : null}
+                     <View style={styles.aiStyleGroup}>
+                        {renderStyleRow(
+                           'Permanence',
+                           lastResult.data.analysis.dimensions.permanence.score,
+                           lastResult.data.analysis.dimensions.permanence
+                              .detectedPhrase,
+                           lastResult.data.analysis.dimensions.permanence
+                              .insight
+                        )}
+                        {renderStyleRow(
+                           'Pervasiveness',
+                           lastResult.data.analysis.dimensions.pervasiveness
+                              .score,
+                           lastResult.data.analysis.dimensions.pervasiveness
+                              .detectedPhrase,
+                           lastResult.data.analysis.dimensions.pervasiveness
+                              .insight
+                        )}
+                        {renderStyleRow(
+                           'Personalization',
+                           lastResult.data.analysis.dimensions.personalization
+                              .score,
+                           lastResult.data.analysis.dimensions.personalization
+                              .detectedPhrase,
+                           lastResult.data.analysis.dimensions.personalization
+                              .insight
+                        )}
+                     </View>
+                  </View>
+
+                  <View style={styles.aiSection}>
+                     <Text style={styles.aiSectionHeading}>Suggestions</Text>
+                     {lastResult.data.suggestions.evidenceQuestion ? (
+                        <Text style={styles.aiBody}>
+                           Evidence:{' '}
+                           {lastResult.data.suggestions.evidenceQuestion}
+                        </Text>
+                     ) : null}
+                     {lastResult.data.suggestions.alternativesQuestion ? (
+                        <Text style={styles.aiBody}>
+                           Alternatives:{' '}
+                           {lastResult.data.suggestions.alternativesQuestion}
+                        </Text>
+                     ) : null}
+                     {lastResult.data.suggestions.usefulnessQuestion ? (
+                        <Text style={styles.aiBody}>
+                           Usefulness:{' '}
+                           {lastResult.data.suggestions.usefulnessQuestion}
+                        </Text>
+                     ) : null}
+                     {lastResult.data.suggestions.counterBelief ? (
+                        <Text style={styles.aiSubtle}>
+                           Counter belief:{' '}
+                           {lastResult.data.suggestions.counterBelief}
+                        </Text>
+                     ) : null}
+                  </View>
+
+                  {lastResult.data.safety.isCrisis && (
+                     <View style={styles.aiSection}>
+                        <Text style={styles.aiSectionHeading}>Safety</Text>
+                        <Text style={styles.aiBody}>
+                           {lastResult.data.safety.crisisMessage ??
+                              'The AI detected crisis language. Please seek immediate help from local emergency services or a crisis line.'}
+                        </Text>
+                     </View>
+                  )}
+               </View>
+            )}
+            {aiError && (
+               <View style={styles.aiResultContainer}>
+                  <Text style={styles.aiResultTitle}>AI error</Text>
+                  <Text style={styles.aiResultText}>{aiError}</Text>
+               </View>
+            )}
          </KeyboardAwareScrollView>
       </View>
    );
 }
 
 const styles = StyleSheet.create({
-
-    aiResultContainer: {
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: palette.surfaceMuted,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.border,
-  },
-  aiResultTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 8,
-    color: palette.text,
-  },
-  aiResultText: {
-    fontSize: 12,
-    lineHeight: 16,
-    color: palette.text,
-    // optional: make it feel more "code-ish"
-    fontFamily: Platform.select({
-      ios: "Menlo",
-      android: "monospace",
-      default: "System",
-    }),
+   aiResultContainer: {
+      marginTop: 16,
+      padding: 12,
+      borderRadius: 12,
+      backgroundColor: palette.surfaceMuted,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: palette.border,
+   },
+   aiResultTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      marginBottom: 8,
+      color: palette.text,
+   },
+   aiResultText: {
+      fontSize: 12,
+      lineHeight: 16,
+      color: palette.text,
+      // optional: make it feel more "code-ish"
+      fontFamily: Platform.select({
+         ios: 'Menlo',
+         android: 'monospace',
+         default: 'System',
+      }),
    },
    aiResultScroll: {
       maxHeight: 240,
+   },
+   aiSection: {
+      gap: 6,
+      marginBottom: 12,
+   },
+   aiSectionHeading: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: palette.text,
+   },
+   aiBody: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: palette.text,
+   },
+   aiSubtle: {
+      fontSize: 12,
+      lineHeight: 16,
+      color: palette.hint,
+   },
+   aiBullet: {
+      marginLeft: 2,
+   },
+   aiStyleGroup: {
+      marginTop: 6,
+      gap: 8,
+   },
+   aiStyleRow: {
+      gap: 4,
+   },
+   aiStyleLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: palette.text,
+   },
+   aiStyleContent: {
+      gap: 2,
+   },
+   aiStyleChip: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+      backgroundColor: palette.surfaceMuted,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: palette.border,
+      fontSize: 12,
+      color: palette.text,
+      textTransform: 'capitalize',
+   },
+   inlineAnalysis: {
+      marginTop: 10,
+      padding: 12,
+      borderRadius: 12,
+      backgroundColor: palette.surfaceMuted,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: palette.border,
+      gap: 6,
+   },
+   inlineHeading: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: palette.text,
+   },
+   inlineBody: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: palette.text,
+   },
+   inlineSubtle: {
+      fontSize: 12,
+      lineHeight: 16,
+      color: palette.hint,
+   },
+   inlineStyleGroup: {
+      marginTop: 4,
+      gap: 8,
    },
 
    container: {
@@ -407,7 +572,7 @@ const styles = StyleSheet.create({
       fontSize: 13,
       color: palette.hint,
       position: 'absolute',
-      marginTop: 24
+      marginTop: 24,
    },
    statusTextHidden: {
       opacity: 0,

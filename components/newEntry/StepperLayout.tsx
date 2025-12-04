@@ -1,5 +1,6 @@
 import React, { ReactNode, RefObject } from 'react';
 import {
+   ScrollViewProps,
    StyleProp,
    StyleSheet,
    TextStyle,
@@ -8,7 +9,7 @@ import {
    ViewStyle,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { ScrollView, ScrollViewProps } from 'react-native-gesture-handler';
+import { ScrollView } from 'react-native-gesture-handler';
 import StepperHeader from './StepperHeader';
 import PromptDisplay from './PromptDisplay';
 import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
@@ -31,11 +32,11 @@ type StepperLayoutProps = {
    label: string;
    prompt: PromptContentProps;
    inputSection: ReactNode;
-   topInset: number;
    extraContent?: ReactNode;
    scrollRef?: RefObject<ScrollView | null>;
    scrollProps?: ScrollViewProps;
    onBackgroundPress?: () => void;
+   ai?: string;
 };
 
 export default function StepperLayout({
@@ -44,7 +45,6 @@ export default function StepperLayout({
    label,
    prompt,
    inputSection,
-   topInset,
    extraContent,
    scrollRef,
    scrollProps,

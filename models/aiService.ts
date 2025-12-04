@@ -6,41 +6,32 @@ export type AbcInput = {
   consequence?: string;
 };
 
-export type PermanenceStyle = "permanent" | "temporary" | "mixed" | null;
-export type PervasivenessStyle = "pervasive" | "specific" | "mixed" | null;
-export type PersonalizationStyle = "personal" | "external" | "mixed" | null;
+export type DimensionScore = string | null; // e.g., "optimistic", "pessimistic", etc.
 
-type StyleSection<T extends string | null> = {
-  style: T;
-  quote: string | null;
-  comment: string | null;
+export type ExplanatoryDimension = {
+  score: DimensionScore;
+  detectedPhrase: string | null;
+  insight: string | null;
 };
 
 export type LearnedGrowthResponse = {
+  safety: {
+    isCrisis: boolean;
+    crisisMessage: string | null;
+  };
   analysis: {
-    restatedBelief: string | null;
-    explanatoryStyle: {
-      permanence: StyleSection<PermanenceStyle>;
-      pervasiveness: StyleSection<PervasivenessStyle>;
-      personalization: StyleSection<PersonalizationStyle>;
+    dimensions: {
+      permanence: ExplanatoryDimension;
+      pervasiveness: ExplanatoryDimension;
+      personalization: ExplanatoryDimension;
     };
-    educationalSummary: string | null;
-    safetyNotice: string | null;
+    emotionalLogic: string | null;
   };
-  aiDispute: {
-    acknowledgement: string | null;
-    evidenceAgainstBelief: string[];
-    alternativeExplanations: string[];
-    usefulnessReflection: string | null;
-    alternativeBelief: string | null;
-    encouragement: string | null;
-    safetyNotice: string | null;
-  };
-  disputationScaffold: {
-    exampleEvidenceFor: string | null;
-    exampleEvidenceAgainst: string | null;
-    exampleAlternatives: string | null;
-    exampleUsefulness: string | null;
+  suggestions: {
+    evidenceQuestion: string | null;
+    alternativesQuestion: string | null;
+    usefulnessQuestion: string | null;
+    counterBelief: string | null;
   };
 };
 
@@ -79,56 +70,45 @@ export function normalizeLearnedGrowthResponse(raw: any): LearnedGrowthResponse 
     throw new AiError("invalid-response", "Expected string or null");
   };
 
-  const ensureStringArray = (val: any) => {
-    if (val === null || val === undefined) return [];
-    if (Array.isArray(val) && val.every((v) => typeof v === "string")) return val;
-    throw new AiError("invalid-response", "Expected string array");
+  const ensureBoolean = (val: any) => {
+    if (typeof val === "boolean") return val;
+    if (val === undefined || val === null) return false;
+    throw new AiError("invalid-response", "Expected boolean");
   };
 
-  const ensureStyle = <T extends string | null>(val: any, allowed: Set<T>): StyleSection<T> => {
-    if (!val || typeof val !== "object") throw new AiError("invalid-response", "Missing style section");
-    const style = val.style as T;
-    if (!allowed.has(style)) throw new AiError("invalid-response", "Unexpected style value");
+  const ensureDimension = (val: any): ExplanatoryDimension => {
+    if (!val || typeof val !== "object") {
+      throw new AiError("invalid-response", "Missing dimension");
+    }
     return {
-      style,
-      quote: ensureStringOrNull(val.quote),
-      comment: ensureStringOrNull(val.comment),
+      score: ensureStringOrNull(val.score),
+      detectedPhrase: ensureStringOrNull(val.detectedPhrase),
+      insight: ensureStringOrNull(val.insight),
     };
   };
 
   const analysis = raw.analysis ?? {};
-  const aiDispute = raw.aiDispute ?? {};
-  const scaffold = raw.disputationScaffold ?? {};
-
-  const permanenceAllowed = new Set<PermanenceStyle>(["permanent", "temporary", "mixed", null]);
-  const pervasivenessAllowed = new Set<PervasivenessStyle>(["pervasive", "specific", "mixed", null]);
-  const personalizationAllowed = new Set<PersonalizationStyle>(["personal", "external", "mixed", null]);
+  const suggestions = raw.suggestions ?? {};
+  const safety = raw.safety ?? {};
 
   return {
+    safety: {
+      isCrisis: ensureBoolean(safety.isCrisis),
+      crisisMessage: ensureStringOrNull(safety.crisisMessage),
+    },
     analysis: {
-      restatedBelief: ensureStringOrNull(analysis.restatedBelief),
-      explanatoryStyle: {
-        permanence: ensureStyle(analysis.explanatoryStyle?.permanence, permanenceAllowed),
-        pervasiveness: ensureStyle(analysis.explanatoryStyle?.pervasiveness, pervasivenessAllowed),
-        personalization: ensureStyle(analysis.explanatoryStyle?.personalization, personalizationAllowed),
+      dimensions: {
+        permanence: ensureDimension(analysis.dimensions?.permanence),
+        pervasiveness: ensureDimension(analysis.dimensions?.pervasiveness),
+        personalization: ensureDimension(analysis.dimensions?.personalization),
       },
-      educationalSummary: ensureStringOrNull(analysis.educationalSummary),
-      safetyNotice: ensureStringOrNull(analysis.safetyNotice),
+      emotionalLogic: ensureStringOrNull(analysis.emotionalLogic),
     },
-    aiDispute: {
-      acknowledgement: ensureStringOrNull(aiDispute.acknowledgement),
-      evidenceAgainstBelief: ensureStringArray(aiDispute.evidenceAgainstBelief),
-      alternativeExplanations: ensureStringArray(aiDispute.alternativeExplanations),
-      usefulnessReflection: ensureStringOrNull(aiDispute.usefulnessReflection),
-      alternativeBelief: ensureStringOrNull(aiDispute.alternativeBelief),
-      encouragement: ensureStringOrNull(aiDispute.encouragement),
-      safetyNotice: ensureStringOrNull(aiDispute.safetyNotice),
-    },
-    disputationScaffold: {
-      exampleEvidenceFor: ensureStringOrNull(scaffold.exampleEvidenceFor),
-      exampleEvidenceAgainst: ensureStringOrNull(scaffold.exampleEvidenceAgainst),
-      exampleAlternatives: ensureStringOrNull(scaffold.exampleAlternatives),
-      exampleUsefulness: ensureStringOrNull(scaffold.exampleUsefulness),
+    suggestions: {
+      evidenceQuestion: ensureStringOrNull(suggestions.evidenceQuestion),
+      alternativesQuestion: ensureStringOrNull(suggestions.alternativesQuestion),
+      usefulnessQuestion: ensureStringOrNull(suggestions.usefulnessQuestion),
+      counterBelief: ensureStringOrNull(suggestions.counterBelief),
     },
   };
 }

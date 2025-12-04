@@ -1,24 +1,26 @@
+
 import { router } from 'expo-router';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import {  Text, Pressable, StyleSheet } from 'react-native';
 
 type Prop = {
    id: string;
 };
 
-export default function CTA({ id }: Prop) {
+export default function AnalyzeButton({ id }: Prop) {
+
+
+   function aiAnalysis(){
+      router.push(`/(tabs)/entries/${id}/dispute?analyze=1`);
+   }
    return (
-      <View>
-         
 
          <Pressable
             style={styles.button}
-            onPress={() => {
-               router.push(`/(tabs)/entries/${id}/dispute`);
-            }}
+            onPress={aiAnalysis}
          >
-            <Text style={styles.buttonText}>✨ Challenge this belief</Text>
+            <Text style={styles.buttonText}>Analyze with AI</Text>
          </Pressable>
-      </View>
+
    );
 }
 
@@ -28,12 +30,12 @@ const styles = StyleSheet.create({
       paddingVertical: 10,
       paddingHorizontal: 12,
       borderRadius: 999,
-      backgroundColor: '#2ECC71',
+      backgroundColor: '#af2eccff',
       alignItems: 'center',
       justifyContent: 'center',
    },
    buttonText: {
-      fontSize: 14,
+      fontSize: 16,
       fontWeight: '600',
       color: '#FFFFFF',
    },

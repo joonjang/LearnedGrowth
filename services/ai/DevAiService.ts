@@ -20,11 +20,6 @@ export class DevAiService implements AbcAiService {
     input: AbcInput,
     opts?: { signal?: AbortSignal; onChunk?: (partial: string) => void }
   ): Promise<LearnedGrowthResult> {
-    // optional: surface a warning if the input differs from the fixture
-    const mismatched =
-      input.adversity?.trim() !== devInput.adversity?.trim() ||
-      input.belief?.trim() !== devInput.belief?.trim() ||
-      (input.consequence ?? "").trim() !== (devInput.consequence ?? "").trim();
 
     const data = normalizeLearnedGrowthResponse(devResponse);
     opts?.onChunk?.(JSON.stringify(data));
@@ -34,7 +29,6 @@ export class DevAiService implements AbcAiService {
       meta: {
         source: this.mode,
         model: "dev-fixture",
-        warnings: mismatched ? ["Input differs from devAbcInput.json"] : undefined,
         latencyMs: 0,
       },
     };

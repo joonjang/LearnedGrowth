@@ -162,7 +162,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
+- Update database to store AI response to respective entry
 - Add test to for API
+- Disable editing of ABC once dispute has been
 - Make UI/UX that integrates AI response
 - Set up local ai component of app
 - Upon making an entry, it should go to [id] page
