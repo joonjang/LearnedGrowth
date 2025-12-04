@@ -44,7 +44,7 @@ export type LearnedGrowthResponse = {
   };
 };
 
-export type AiSource = "cloud" | "local" | "offline";
+export type AiSource = "cloud" | "local" | "offline" | "dev";
 
 export type LearnedGrowthResult = {
   data: LearnedGrowthResponse;
@@ -139,6 +139,6 @@ export interface AbcAiService {
   ready(): Promise<boolean>;
   getLearnedOptimismSupport(
     input: AbcInput,
-    opts?: { signal?: AbortSignal }
+    opts?: { signal?: AbortSignal; onChunk?: (partial: string) => void }
   ): Promise<LearnedGrowthResult>;
 }

@@ -11,6 +11,8 @@ export function useAbcAi() {
   const [lastResult, setLastResult] = useState<LearnedGrowthResult | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [streamText, setStreamText] = useState<string>("");
+  const [streaming, setStreaming] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,11 +45,15 @@ export function useAbcAi() {
   async function analyze(input: AbcInput) {
     if (!service) throw new Error("AI service not ready");
     setLoading(true);
+    setStreaming(true);
     setInitError(null);
     setLastError(null);
+    setStreamText("");
 
     try {
-      const result = await service.getLearnedOptimismSupport(input);
+      const result = await service.getLearnedOptimismSupport(input, {
+        onChunk: (partial) => setStreamText(partial),
+      });
       setLastResult(result);
       return result;
     } catch (e) {
@@ -56,12 +62,15 @@ export function useAbcAi() {
       throw e;
     } finally {
       setLoading(false);
+      setStreaming(false);
     }
   }
 
   return {
     analyze,
     lastResult,
+    streamText,
+    streaming,
     loading,
     initError,
     error: lastError,

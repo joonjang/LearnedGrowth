@@ -10,6 +10,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Refactored entry-new and dispute
   - animation and routing logic changed
   - unified shared logic and component use 
+- Display streamed API data to app
 
 ### 2025-12-02
 - Make an API for backend logic

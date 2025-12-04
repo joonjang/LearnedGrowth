@@ -8,7 +8,7 @@ type Prop = {
 export default function CTA({ id }: Prop) {
    return (
       <View>
-         <View style={styles.divider} />
+         
 
          <Pressable
             style={styles.button}
@@ -23,11 +23,6 @@ export default function CTA({ id }: Prop) {
 }
 
 const styles = StyleSheet.create({
-   divider: {
-      height: 0.5,
-      backgroundColor: '#9E9E9E',
-      marginVertical: 8,
-   },
    button: {
       marginTop: 4,
       paddingVertical: 10,

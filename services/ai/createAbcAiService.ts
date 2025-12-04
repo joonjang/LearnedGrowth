@@ -2,10 +2,16 @@ import { AbcAiService, AiError } from "@/models/aiService";
 import { CloudAiService } from "./CloudAiService";
 import { LocalAiService } from "./LocalAiService";
 import { OfflineAiService } from "./OfflineAiService";
+import { DevAiService } from "./DevAiService";
 
 const mode = (process.env.EXPO_PUBLIC_AI_MODE as string | undefined)?.toLowerCase();
 
 export async function createAbcAiService(): Promise<AbcAiService> {
+  if (mode === "dev") {
+    console.log("DEV CALLED")
+    return new DevAiService();
+  }
+
   if (mode === "offline") {
     return new OfflineAiService();
   }
@@ -19,6 +25,7 @@ export async function createAbcAiService(): Promise<AbcAiService> {
   }
 
   const cloud = new CloudAiService();
+  console.log("CLOUD CALLED")
   if (!(await cloud.ready())) {
     throw new AiError("config", "Cloud AI mode selected but API base URL is missing");
   }

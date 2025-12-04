@@ -2,8 +2,8 @@ import { formatDateTimeWithWeekday } from '@/lib/date';
 import { useEntries } from '@/features/hooks/useEntries';
 import type { Entry } from '@/models/entry';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View, Text, Pressable, TextInput, Button, Platform } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, View, Text, Pressable, TextInput, Button, Platform, ScrollView } from 'react-native';
 import CTA from '@/components/entries/CTA';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -87,6 +87,7 @@ export default function EntryDetailScreen() {
    );
    const [justSaved, setJustSaved] = useState(false);
    const [hasScrolled, setHasScrolled] = useState(false);
+   const streamScrollRef = useRef<ScrollView | null>(null);
 
    useEffect(() => {
       if (!entry) return;
@@ -165,7 +166,14 @@ export default function EntryDetailScreen() {
       [hasScrolled]
    );
 
-   const { analyze, lastResult, loading, error: aiError } = useAbcAi();
+   const { analyze, lastResult, loading, error: aiError, streamText, streaming } = useAbcAi();
+
+   useEffect(() => {
+      if (!streamText) return;
+      const ref = streamScrollRef.current;
+      if (!ref) return;
+      ref.scrollToEnd({ animated: true });
+   }, [streamText]);
 
    if (!entry) {
       return (
@@ -267,32 +275,50 @@ export default function EntryDetailScreen() {
                </View>
             ))}
 
-            {!entry.dispute?.trim() && (
-               <View style={{ marginTop: 4 }}>
+           {!entry.dispute?.trim() && (
+
                   <CTA id={entry.id} />
-               </View>
+
             )}
 
            <Button
-  title={loading ? "Analyzing..." : "Analyze"}
-  onPress={onAnalyzePress}
-  disabled={loading}
-/>
+              title={loading ? (streaming ? "Streaming..." : "Analyzing...") : "Analyze"}
+              onPress={onAnalyzePress}
+              disabled={loading}
+           />
 
-{lastResult && (
-  <View style={styles.aiResultContainer}>
-    <Text style={styles.aiResultTitle}>AI analysis (debug)</Text>
-    <Text style={styles.aiResultText}>
-      {JSON.stringify(lastResult, null, 2)}
-    </Text>
-  </View>
-)}
-{aiError && (
-  <View style={styles.aiResultContainer}>
-    <Text style={styles.aiResultTitle}>AI error</Text>
-    <Text style={styles.aiResultText}>{aiError}</Text>
-  </View>
-)}
+           {(streaming || streamText) && (
+              <View style={styles.aiResultContainer}>
+                 <Text style={styles.aiResultTitle}>
+                    {streaming ? "Streaming response" : "Last streamed response"}
+                 </Text>
+                 <ScrollView
+                    ref={streamScrollRef}
+                    style={styles.aiResultScroll}
+                    nestedScrollEnabled
+                    showsVerticalScrollIndicator={false}
+                 >
+                    <Text style={styles.aiResultText}>
+                       {streamText || "(waiting for data...)"}
+                    </Text>
+                 </ScrollView>
+              </View>
+           )}
+
+           {/* {lastResult && (
+              <View style={styles.aiResultContainer}>
+                 <Text style={styles.aiResultTitle}>AI analysis (parsed)</Text>
+                 <Text style={styles.aiResultText}>
+                    {JSON.stringify(lastResult, null, 2)}
+                 </Text>
+              </View>
+           )} */}
+           {aiError && (
+              <View style={styles.aiResultContainer}>
+                 <Text style={styles.aiResultTitle}>AI error</Text>
+                 <Text style={styles.aiResultText}>{aiError}</Text>
+              </View>
+           )}
 
          </KeyboardAwareScrollView>
       </View>
@@ -325,6 +351,9 @@ const styles = StyleSheet.create({
       android: "monospace",
       default: "System",
     }),
+   },
+   aiResultScroll: {
+      maxHeight: 240,
    },
 
    container: {

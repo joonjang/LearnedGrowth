@@ -14,7 +14,8 @@ export class OfflineAiService implements AbcAiService {
   }
 
   async getLearnedOptimismSupport(
-    _input: AbcInput
+    _input: AbcInput,
+    _opts?: { signal?: AbortSignal; onChunk?: (partial: string) => void }
   ): Promise<LearnedGrowthResult> {
     throw new AiError("offline", "AI is disabled in offline mode");
   }

@@ -24,7 +24,7 @@ export class LocalAiService implements AbcAiService {
 
   async getLearnedOptimismSupport(
     input: AbcInput,
-    opts?: { signal?: AbortSignal }
+    opts?: { signal?: AbortSignal; onChunk?: (partial: string) => void }
   ): Promise<LearnedGrowthResult> {
     if (!this.runner) {
       throw new AiError("local-unavailable", "Local AI model is not ready");
@@ -33,6 +33,7 @@ export class LocalAiService implements AbcAiService {
     const started = Date.now();
     const raw = await this.runner(input, opts);
     const data = normalizeLearnedGrowthResponse(raw);
+    opts?.onChunk?.(JSON.stringify(data));
 
     return {
       data,
