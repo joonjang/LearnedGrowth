@@ -74,20 +74,10 @@ export default function DisputeScreen() {
       energy: entry?.energy ?? '',
    });
 
-   // Hydrate form once when the entry appears so existing dispute/energy are preserved.
+   // dispute should have all empty fields, return if either are filled or if entry doesnt exist
    useEffect(() => {
       if (!entry) return;
-      setForm((prev) => {
-         const hasUserInput = Object.values(prev).some((val) => !!val.trim());
-         if (hasUserInput) return prev;
-
-         return {
-            evidence: entry.dispute ?? '',
-            alternatives: '',
-            usefulness: '',
-            energy: entry.energy ?? '',
-         };
-      });
+      if (entry.dispute || entry.energy) return;
    }, [entry]);
 
    const data = rawAbcde as AbcdeJson;
