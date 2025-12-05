@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.joonjang.LearnedGrowth"
+      "bundleIdentifier": "com.joonjang.LearnedGrowth",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -47,6 +50,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": false
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "dd02daeb-fafb-4699-8914-52231f5f8839"
+      }
+    },
+    "owner": "joonjang"
   }
 }
