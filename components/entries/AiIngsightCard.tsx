@@ -1,5 +1,5 @@
 import { LearnedGrowthResponse } from '@/models/aiService';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import ThreeDotsLoader from '../ThreeDotLoader';
 
 type Props = {
@@ -7,6 +7,8 @@ type Props = {
   streamingText?: string;
   loading?: boolean;
   error?: string | null;
+  onPressIn?: (field: 'permanence' | 'pervasiveness' | 'personalization') => void;
+  onPressOut?: (field: 'permanence' | 'pervasiveness' | 'personalization') => void;
 };
 
 type Score = 'optimistic' | 'mixed' | 'pessimistic' | null | undefined;
@@ -40,7 +42,7 @@ function getScoreChip(score: Score) {
   }
 }
 
-export function AiInsightCard({ data, streamingText, loading, error }: Props) {
+export function AiInsightCard({ data, streamingText, loading, error, onPressIn, onPressOut }: Props) {
   if (loading) {
     return (
       <View style={styles.card}>
@@ -111,7 +113,11 @@ export function AiInsightCard({ data, streamingText, loading, error }: Props) {
         <Text style={styles.sectionTitle}>How your mind is seeing this</Text>
 
         {/* Permanence */}
-        <View style={styles.dimensionRow}>
+        <Pressable
+          onPressIn={() => onPressIn?.('permanence')}
+          onPressOut={() => onPressOut?.('permanence')}
+          style={({ pressed }) => [styles.dimensionRow, pressed && styles.dimensionRowPressed]}
+        >
           <View style={styles.dimensionHeaderRow}>
             <Text style={styles.dimensionLabel}>Time</Text>
             <View style={[styles.chip, permanenceChip.containerStyle]}>
@@ -123,10 +129,14 @@ export function AiInsightCard({ data, streamingText, loading, error }: Props) {
           <Text style={styles.dimensionText}>
             {dims.permanence.insight || 'No clear pattern here.'}
           </Text>
-        </View>
+        </Pressable>
 
         {/* Pervasiveness */}
-        <View style={styles.dimensionRow}>
+        <Pressable
+          onPressIn={() => onPressIn?.('pervasiveness')}
+          onPressOut={() => onPressOut?.('pervasiveness')}
+          style={({ pressed }) => [styles.dimensionRow, pressed && styles.dimensionRowPressed]}
+        >
           <View style={styles.dimensionHeaderRow}>
             <Text style={styles.dimensionLabel}>How big it feels</Text>
             <View style={[styles.chip, pervasivenessChip.containerStyle]}>
@@ -138,10 +148,14 @@ export function AiInsightCard({ data, streamingText, loading, error }: Props) {
           <Text style={styles.dimensionText}>
             {dims.pervasiveness.insight || 'No clear pattern here.'}
           </Text>
-        </View>
+        </Pressable>
 
         {/* Personalization */}
-        <View style={styles.dimensionRow}>
+        <Pressable
+          onPressIn={() => onPressIn?.('personalization')}
+          onPressOut={() => onPressOut?.('personalization')}
+          style={({ pressed }) => [styles.dimensionRow, pressed && styles.dimensionRowPressed]}
+        >
           <View style={styles.dimensionHeaderRow}>
             <Text style={styles.dimensionLabel}>Who gets the blame</Text>
             <View style={[styles.chip, personalizationChip.containerStyle]}>
@@ -153,7 +167,7 @@ export function AiInsightCard({ data, streamingText, loading, error }: Props) {
           <Text style={styles.dimensionText}>
             {dims.personalization.insight || 'No clear pattern here.'}
           </Text>
-        </View>
+        </Pressable>
       </View>
 
       {/* Questions to reflect on */}
@@ -237,6 +251,12 @@ const styles = StyleSheet.create({
   dimensionRow: {
     marginTop: 8,
     gap: 2,
+  },
+  dimensionRowPressed: {
+    transform: [{ scale: 0.97 }, { translateY: 1 }],
+    backgroundColor: '#f0f4ff',
+    borderRadius: 10,
+    padding: 6,
   },
   dimensionHeaderRow: {
     flexDirection: 'row',

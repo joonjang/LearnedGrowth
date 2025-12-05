@@ -6,6 +6,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-04
+- Implemented AI response UI/UX
+
 ### 2025-12-03
 - Refactored entry-new and dispute
   - animation and routing logic changed

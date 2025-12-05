@@ -41,6 +41,7 @@ import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
 import { useAbcAi } from '@/features/hooks/useAbcAi';
 import ThreeDotsLoader from '@/components/ThreeDotLoader';
 import { AiInsightCard } from '@/components/entries/AiIngsightCard';
+import Animated from 'react-native-reanimated';
 
 const STEP_ORDER = [
    'evidence',
@@ -78,6 +79,11 @@ function buildDisputeText(form: Record<NewInputDisputeType, string>) {
 }
 
 type Highlight = { phrase: string; color?: string };
+type HighlightMap = {
+   adversity: Highlight[];
+   belief: Highlight[];
+   consequence: Highlight[];
+};
 
 function findMatches(text: string, phrase: string, color?: string) {
    const hay = text.toLowerCase();
@@ -94,7 +100,9 @@ function findMatches(text: string, phrase: string, color?: string) {
 function buildSegments(text: string, highlights: Highlight[]) {
    if (!highlights.length) return [text];
 
-   const matches = highlights.flatMap((h) => findMatches(text, h.phrase, h.color));
+   const matches = highlights.flatMap((h) =>
+      findMatches(text, h.phrase, h.color)
+   );
    if (!matches.length) return [text];
 
    const boundaries = new Set<number>([0, text.length]);
@@ -132,7 +140,13 @@ function buildSegments(text: string, highlights: Highlight[]) {
    return segments;
 }
 
-function HighlightedText({ text, highlights }: { text: string; highlights: Highlight[] }) {
+function HighlightedText({
+   text,
+   highlights,
+}: {
+   text: string;
+   highlights: Highlight[];
+}) {
    const segments = useMemo(
       () => buildSegments(text, highlights),
       [text, highlights]
@@ -181,6 +195,14 @@ export default function DisputeScreen() {
    });
 
    const [analysisTriggered, setAnalysisTriggered] = useState(false);
+   const [showPermanenceHighlight, setShowPermanenceHighlight] = useState(false);
+   const [showPervasivenessHighlight, setShowPervasivenessHighlight] =
+      useState(false);
+   const [showPersonalizationHighlight, setShowPersonalizationHighlight] =
+      useState(false);
+   const [permanencePressed, setPermanencePressed] = useState(false);
+   const [pervasivenessPressed, setPervasivenessPressed] = useState(false);
+   const [personalizationPressed, setPersonalizationPressed] = useState(false);
 
    const { analyze, lastResult, loading, error, ready, streamText, streaming } =
       useAbcAi();
@@ -196,19 +218,6 @@ export default function DisputeScreen() {
          consequence: entry.consequence ?? undefined,
       }).catch((e) => console.log(e)); // optionally reset or surface error
    }, [ready, analyzeParam, analysisTriggered, entry, lastResult, analyze]);
-
-   const [prettyJson, setPrettyJson] = useState<string | null>(null);
-
-   useEffect(() => {
-      if (streaming) return; // still building, keep raw text
-      try {
-         setPrettyJson(JSON.stringify(JSON.parse(streamText), null, 2));
-      } catch {
-         setPrettyJson(
-            lastResult ? JSON.stringify(lastResult.data, null, 2) : null
-         );
-      }
-   }, [streaming, streamText, lastResult]);
 
    // dispute should have all empty fields, return if either are filled or if entry doesnt exist
    useEffect(() => {
@@ -247,46 +256,60 @@ export default function DisputeScreen() {
       );
    }, [entry?.dispute, entry?.energy, trimmedForm]);
 
-   const highlightMap = useMemo(() => {
-      if (!entry || !lastResult?.data) return undefined;
-      const dims = lastResult.data.analysis.dimensions;
-      const fields: {
-         adversity: string;
-         belief: string;
-         consequence: string;
-      } = {
-         adversity: entry.adversity ?? '',
-         belief: entry.belief ?? '',
-         consequence: entry.consequence ?? '',
-      };
+   const permanenceHighlights = useMemo<HighlightMap>(() => {
+      const phrase = lastResult?.data?.analysis?.dimensions?.permanence?.detectedPhrase;
+      if (!entry || !phrase) return { adversity: [], belief: [], consequence: [] };
+      const needle = phrase.trim();
+      if (!needle) return { adversity: [], belief: [], consequence: [] };
+      const lower = needle.toLowerCase();
+      const map: HighlightMap = { adversity: [], belief: [], consequence: [] };
+      if (entry.adversity?.toLowerCase().includes(lower)) {
+         map.adversity.push({ phrase: needle, color: DIMENSION_COLORS.permanence });
+      }
+      if (entry.belief?.toLowerCase().includes(lower)) {
+         map.belief.push({ phrase: needle, color: DIMENSION_COLORS.permanence });
+      }
+      if (entry.consequence?.toLowerCase().includes(lower)) {
+         map.consequence.push({ phrase: needle, color: DIMENSION_COLORS.permanence });
+      }
+      return map;
+   }, [entry, lastResult?.data]);
 
-      const map: {
-         adversity: Highlight[];
-         belief: Highlight[];
-         consequence: Highlight[];
-      } = { adversity: [], belief: [], consequence: [] };
+   const pervasivenessHighlights = useMemo<HighlightMap>(() => {
+      const phrase = lastResult?.data?.analysis?.dimensions?.pervasiveness?.detectedPhrase;
+      if (!entry || !phrase) return { adversity: [], belief: [], consequence: [] };
+      const needle = phrase.trim();
+      if (!needle) return { adversity: [], belief: [], consequence: [] };
+      const lower = needle.toLowerCase();
+      const map: HighlightMap = { adversity: [], belief: [], consequence: [] };
+      if (entry.adversity?.toLowerCase().includes(lower)) {
+         map.adversity.push({ phrase: needle, color: DIMENSION_COLORS.pervasiveness });
+      }
+      if (entry.belief?.toLowerCase().includes(lower)) {
+         map.belief.push({ phrase: needle, color: DIMENSION_COLORS.pervasiveness });
+      }
+      if (entry.consequence?.toLowerCase().includes(lower)) {
+         map.consequence.push({ phrase: needle, color: DIMENSION_COLORS.pervasiveness });
+      }
+      return map;
+   }, [entry, lastResult?.data]);
 
-      const addPhrase = (phrase: string | null | undefined, color: string) => {
-         const needle = phrase?.trim();
-         if (!needle) return;
-         const lower = needle.toLowerCase();
-         const target = (['adversity', 'belief', 'consequence'] as const).find(
-            (key) => fields[key].toLowerCase().includes(lower)
-         );
-         if (!target) return;
-         map[target].push({ phrase: needle, color });
-      };
-
-      addPhrase(dims.permanence.detectedPhrase, DIMENSION_COLORS.permanence);
-      addPhrase(dims.pervasiveness.detectedPhrase, DIMENSION_COLORS.pervasiveness);
-      addPhrase(dims.personalization.detectedPhrase, DIMENSION_COLORS.personalization);
-
-      if (
-         !map.adversity.length &&
-         !map.belief.length &&
-         !map.consequence.length
-      ) {
-         return undefined;
+   const personalizationHighlights = useMemo<HighlightMap>(() => {
+      const phrase =
+         lastResult?.data?.analysis?.dimensions?.personalization?.detectedPhrase;
+      if (!entry || !phrase) return { adversity: [], belief: [], consequence: [] };
+      const needle = phrase.trim();
+      if (!needle) return { adversity: [], belief: [], consequence: [] };
+      const lower = needle.toLowerCase();
+      const map: HighlightMap = { adversity: [], belief: [], consequence: [] };
+      if (entry.adversity?.toLowerCase().includes(lower)) {
+         map.adversity.push({ phrase: needle, color: DIMENSION_COLORS.personalization });
+      }
+      if (entry.belief?.toLowerCase().includes(lower)) {
+         map.belief.push({ phrase: needle, color: DIMENSION_COLORS.personalization });
+      }
+      if (entry.consequence?.toLowerCase().includes(lower)) {
+         map.consequence.push({ phrase: needle, color: DIMENSION_COLORS.personalization });
       }
       return map;
    }, [entry, lastResult?.data]);
@@ -362,6 +385,22 @@ export default function DisputeScreen() {
          didShowSub.remove();
       };
    }, [scrollToBottom]);
+
+
+   useEffect(() => {
+      const t1 = setTimeout(() => {
+         setPermanencePressed(true);
+         setShowPermanenceHighlight(true);
+      }, 800);
+      const t2 = setTimeout(() => {
+         setPermanencePressed(false);
+         setShowPermanenceHighlight(false);
+      }, 1300);
+      return () => {
+         clearTimeout(t1);
+         clearTimeout(t2);
+      };
+   }, []);
 
    if (!entry) {
       return (
@@ -473,18 +512,42 @@ export default function DisputeScreen() {
                         <View style={[styles.contextBox]}>
                            <View style={styles.contextRow}>
                               <Text style={styles.contextLabel}>Adversity</Text>
-                              <HighlightedText
-                                 text={entry.adversity}
-                                 highlights={highlightMap?.adversity ?? []}
-                              />
+                             <HighlightedText
+                                text={entry.adversity}
+                                highlights={
+                                    [
+                                       ...(showPermanenceHighlight
+                                          ? permanenceHighlights.adversity
+                                          : []),
+                                       ...(showPervasivenessHighlight
+                                          ? pervasivenessHighlights.adversity
+                                          : []),
+                                       ...(showPersonalizationHighlight
+                                          ? personalizationHighlights.adversity
+                                          : []),
+                                    ]
+                                 }
+                             />
                            </View>
                            <View style={styles.contextDivider} />
                            <View style={styles.contextRow}>
                               <Text style={styles.contextLabel}>Belief</Text>
-                              <HighlightedText
-                                 text={entry.belief}
-                                 highlights={highlightMap?.belief ?? []}
-                              />
+                             <HighlightedText
+                                text={entry.belief}
+                                highlights={
+                                    [
+                                       ...(showPermanenceHighlight
+                                          ? permanenceHighlights.belief
+                                          : []),
+                                       ...(showPervasivenessHighlight
+                                          ? pervasivenessHighlights.belief
+                                          : []),
+                                       ...(showPersonalizationHighlight
+                                          ? personalizationHighlights.belief
+                                          : []),
+                                    ]
+                                 }
+                             />
                            </View>
                            {entry.consequence && (
                               <>
@@ -495,7 +558,19 @@ export default function DisputeScreen() {
                                     </Text>
                                     <HighlightedText
                                        text={entry.consequence}
-                                       highlights={highlightMap?.consequence ?? []}
+                                       highlights={
+                                          [
+                                             ...(showPermanenceHighlight
+                                                ? permanenceHighlights.consequence
+                                                : []),
+                                             ...(showPervasivenessHighlight
+                                                ? pervasivenessHighlights.consequence
+                                                : []),
+                                             ...(showPersonalizationHighlight
+                                                ? personalizationHighlights.consequence
+                                                : []),
+                                          ]
+                                       }
                                     />
                                  </View>
                               </>
@@ -504,14 +579,34 @@ export default function DisputeScreen() {
                      </View>
 
                      <View style={{ flex: 1 }}>
-                        {/* <AiInsightCard
+                        <AiInsightCard
                            data={lastResult?.data}
                            streamingText={streaming ? streamText : undefined}
                            loading={loading}
                            error={error}
-                        /> */}
-
-                        <Text>{prettyJson}</Text>
+                           onPressIn={(field) => {
+                              if (field === 'permanence') {
+                                 setShowPermanenceHighlight(true);
+                              }
+                              if (field === 'pervasiveness') {
+                                 setShowPervasivenessHighlight(true);
+                              }
+                              if (field === 'personalization') {
+                                 setShowPersonalizationHighlight(true);
+                              }
+                           }}
+                           onPressOut={(field) => {
+                              if (field === 'permanence') {
+                                 setShowPermanenceHighlight(false);
+                              }
+                              if (field === 'pervasiveness') {
+                                 setShowPervasivenessHighlight(false);
+                              }
+                              if (field === 'personalization') {
+                                 setShowPersonalizationHighlight(false);
+                              }
+                           }}
+                        />
                      </View>
                   </ScrollView>
                </>
@@ -583,5 +678,17 @@ const styles = StyleSheet.create({
       height: 1,
       backgroundColor: '#E5E7EB',
       marginVertical: 2,
+   },
+
+   card: {
+      padding: 12,
+      borderRadius: 12,
+      backgroundColor: '#f5f5f7',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: '#e5e7eb',
+      gap: 4,
+   },
+   cardPressed: {
+      transform: [{ scale: 0.97 }, { translateY: 1 }],
    },
 });
