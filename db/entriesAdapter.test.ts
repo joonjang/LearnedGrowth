@@ -26,6 +26,7 @@ describe.each([
             id: '123',
             adversity: 'Test adversity',
             belief: 'Test belief',
+            analysis: null,
             createdAt: clock.nowIso(),
             updatedAt: clock.nowIso(),
             dirtySince: null,
@@ -102,6 +103,39 @@ describe.each([
             });
             const got = await db.getById('u');
             expect(got!.adversity).toBe('仕事🙂');
+         });
+         it('persists analysis JSON and returns clones', async () => {
+            const analysis = {
+               dimensions: {
+                  permanence: {
+                     score: 'optimistic',
+                     detectedPhrase: 'phrase a',
+                     insight: 'insight a',
+                  },
+                  pervasiveness: {
+                     score: 'pessimistic',
+                     detectedPhrase: 'phrase b',
+                     insight: 'insight b',
+                  },
+                  personalization: {
+                     score: 'mixed',
+                     detectedPhrase: 'phrase c',
+                     insight: 'insight c',
+                  },
+               },
+               emotionalLogic: 'sample logic',
+            };
+
+            await db.add({ ...entry, id: 'an1', analysis });
+            const saved = await db.getById('an1');
+            expect(saved?.analysis).toEqual(analysis);
+
+            if (saved?.analysis) {
+               saved.analysis.emotionalLogic = 'changed';
+            }
+
+            const again = await db.getById('an1');
+            expect(again?.analysis?.emotionalLogic).toBe('sample logic');
          });
          it('getAll excludes deleted but getById still returns them', async () => {
             await db.add(entry);

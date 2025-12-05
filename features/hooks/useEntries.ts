@@ -34,13 +34,14 @@ export function useEntries() {
 
    const createEntry = useCallback(
       async function onInsert(adversity: string, belief: string, consequence: string = '') {
-         const draft = {
-            id: 'new',
-            adversity: adversity,
-            belief: belief,
-            consequence: consequence,
-            dispute: '',
-            energy: '',
+      const draft = {
+         id: 'new',
+         adversity: adversity,
+         belief: belief,
+         analysis: null,
+         consequence: consequence,
+         dispute: '',
+         energy: '',
             createdAt: '',
             updatedAt: '',
             accountId: null,

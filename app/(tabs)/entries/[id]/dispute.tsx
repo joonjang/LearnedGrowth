@@ -4,6 +4,7 @@ import { useVisitedSet } from '@/features/hooks/useVisitedSet';
 import { useEntries } from '@/features/hooks/useEntries';
 import { usePromptLayout } from '@/features/hooks/usePromptLayout';
 import { Entry } from '@/models/entry';
+import type { LearnedGrowthResponse } from '@/models/aiService';
 import type { AbcdeJson } from '@/models/abcdeJson';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -77,8 +78,8 @@ export default function DisputeScreen() {
    }>();
 
    const entryId = Array.isArray(id) ? id[0] : id;
-   const store = useEntries();
-   const entry = entryId ? store.getEntryById(entryId) : undefined;
+   const { getEntryById, updateEntry } = useEntries();
+   const entry = entryId ? getEntryById(entryId) : undefined;
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
    const insets = useSafeAreaInsets();
    const isKeyboardVisible = useKeyboardVisible();
@@ -154,34 +155,53 @@ export default function DisputeScreen() {
       );
    }, [entry?.dispute, entry?.energy, trimmedForm]);
 
+   const analysisData = useMemo(
+      () => lastResult?.data?.analysis ?? entry?.analysis ?? null,
+      [entry?.analysis, lastResult?.data?.analysis]
+   );
+
+   useEffect(() => {
+      if (!entry || !lastResult?.data?.analysis) return;
+
+      const storedKey = entry.analysis
+         ? JSON.stringify(entry.analysis)
+         : null;
+      const incomingKey = JSON.stringify(lastResult.data.analysis);
+      if (storedKey === incomingKey) return;
+
+      updateEntry(entry.id, { analysis: lastResult.data.analysis }).catch(
+         (e) => console.warn('Failed to store analysis', e)
+      );
+   }, [entry, lastResult?.data?.analysis, updateEntry]);
+
    const permanenceHighlights = useMemo<HighlightMap>(
       () =>
          buildHighlightMap(
             entry,
-            lastResult?.data?.analysis?.dimensions?.permanence?.detectedPhrase,
+            analysisData?.dimensions?.permanence?.detectedPhrase,
             DIMENSION_COLORS.permanence
          ),
-      [entry, lastResult?.data]
+      [entry, analysisData?.dimensions?.permanence?.detectedPhrase]
    );
 
    const pervasivenessHighlights = useMemo<HighlightMap>(
       () =>
          buildHighlightMap(
             entry,
-            lastResult?.data?.analysis?.dimensions?.pervasiveness?.detectedPhrase,
+            analysisData?.dimensions?.pervasiveness?.detectedPhrase,
             DIMENSION_COLORS.pervasiveness
          ),
-      [entry, lastResult?.data]
+      [entry, analysisData?.dimensions?.pervasiveness?.detectedPhrase]
    );
 
    const personalizationHighlights = useMemo<HighlightMap>(
       () =>
          buildHighlightMap(
             entry,
-            lastResult?.data?.analysis?.dimensions?.personalization?.detectedPhrase,
+            analysisData?.dimensions?.personalization?.detectedPhrase,
             DIMENSION_COLORS.personalization
          ),
-      [entry, lastResult?.data]
+      [entry, analysisData?.dimensions?.personalization?.detectedPhrase]
    );
 
    const highlightSets = useMemo(
@@ -202,6 +222,21 @@ export default function DisputeScreen() {
          energy: prompts.energy,
       } as Record<NewInputDisputeType, string>;
    }, [lastResult?.data?.suggestions, prompts]);
+
+   const aiData: LearnedGrowthResponse | null = useMemo(() => {
+      if (lastResult?.data) return lastResult.data;
+      if (!entry?.analysis) return null;
+      return {
+         analysis: entry.analysis,
+         safety: { isCrisis: false, crisisMessage: null },
+         suggestions: {
+            evidenceQuestion: null,
+            alternativesQuestion: null,
+            usefulnessQuestion: null,
+            counterBelief: null,
+         },
+      };
+   }, [entry?.analysis, lastResult?.data]);
 
    const handleDimensionPressIn = useCallback(
       (field: 'permanence' | 'pervasiveness' | 'personalization') => {
@@ -246,10 +281,10 @@ export default function DisputeScreen() {
       if (nextEnergy !== (entry.energy ?? '')) patch.energy = nextEnergy;
 
       if (Object.keys(patch).length) {
-         await store.updateEntry(entry.id, patch);
+         await updateEntry(entry.id, patch);
       }
       router.back();
-   }, [entry, store, trimmedForm]);
+   }, [entry, trimmedForm, updateEntry]);
 
    const scrollToBottom = useCallback((animated = true) => {
       const ref = scrollRef.current;
@@ -368,6 +403,7 @@ export default function DisputeScreen() {
                   insetsPadding={insets.bottom + 24}
                   promptContainerStyle={styles.promptContainer}
                   contextBoxStyle={styles.contextBox}
+                  onShowInsights={() => setViewMode('analysis')}
                />
             </Animated.View>
 
@@ -382,7 +418,7 @@ export default function DisputeScreen() {
                   showPermanenceHighlight={showPermanenceHighlight}
                   showPervasivenessHighlight={showPervasivenessHighlight}
                   showPersonalizationHighlight={showPersonalizationHighlight}
-                  aiData={lastResult?.data}
+                  aiData={aiData}
                   loading={loading}
                   error={error}
                   streamingText={streamText}
@@ -430,6 +466,7 @@ export const styles = StyleSheet.create({
       paddingBottom: 4,
       flexDirection: 'row',
       justifyContent: 'flex-end',
+      position: 'absolute'
    },
    switchButton: {
       paddingHorizontal: 10,

@@ -1,6 +1,6 @@
 import * as SQLite from "expo-sqlite";
 
-const LATEST = 1; // bump this when schema changes
+const LATEST = 2; // bump this when schema changes
 
 export async function createDb(dbName = "entries.db"): Promise<SQLite.SQLiteDatabase> {
    const db = await SQLite.openDatabaseAsync(dbName);
@@ -38,8 +38,11 @@ export async function createDb(dbName = "entries.db"): Promise<SQLite.SQLiteData
       `);
       }
 
-      // Add more blocks as you bump versions
-      // if (current < 2) { ... }
+      if (current < 2) {
+         await db.execAsync(`
+          ALTER TABLE entries ADD COLUMN analysis TEXT;
+        `);
+      }
 
       // finally, set to latest
       if (current < LATEST) {

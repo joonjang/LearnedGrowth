@@ -2,8 +2,10 @@ import React from 'react';
 import {
    NativeScrollEvent,
    NativeSyntheticEvent,
+   Pressable,
    ScrollView,
    StyleSheet,
+   Text,
    TextInput,
    View,
 } from 'react-native';
@@ -41,6 +43,7 @@ type Props = {
    insetsPadding: number;
    promptContainerStyle?: any;
    contextBoxStyle?: any;
+   onShowInsights?: () => void;
 };
 
 export default function DisputeSteps({
@@ -68,6 +71,7 @@ export default function DisputeSteps({
    insetsPadding,
    promptContainerStyle,
    contextBoxStyle,
+   onShowInsights,
 }: Props) {
    return (
       <>
@@ -96,6 +100,13 @@ export default function DisputeSteps({
                consequence={entry.consequence ?? ''}
                style={contextBoxStyle ?? styles.contextBox}
             />
+            {onShowInsights ? (
+               <Pressable style={styles.contextAction} onPress={onShowInsights}>
+                  <View style={styles.contextActionInner}>
+                     <Text style={styles.contextActionText}>View AI insight</Text>
+                  </View>
+               </Pressable>
+            ) : null}
 
             <PromptDisplay
                text={prompts[currKey]}
@@ -157,5 +168,22 @@ const styles = StyleSheet.create({
       gap: 10,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: '#E5E7EB',
+   },
+   contextAction: {
+      marginTop: 8,
+   },
+   contextActionInner: {
+      alignSelf: 'flex-end',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 999,
+      backgroundColor: '#e5edff',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: '#cbd5ff',
+   },
+   contextActionText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#1e3a8a',
    },
 });

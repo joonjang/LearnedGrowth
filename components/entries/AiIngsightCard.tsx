@@ -294,17 +294,13 @@ export function AiInsightCard({
          {suggestions.counterBelief ? (
             <View style={styles.sectionBlock}>
                <Text style={styles.sectionTitle}>
-                  Another way you could say it
+                  Another way to see it
                </Text>
                <View style={styles.counterBubble}>
                   <Text style={styles.counterText}>
                      {suggestions.counterBelief}
                   </Text>
                </View>
-               <Text style={styles.helperText}>
-                  You can use this as-is, or tweak the wording to sound more
-                  like you.
-               </Text>
             </View>
          ) : null}
       </View>
@@ -402,7 +398,7 @@ const styles = StyleSheet.create({
       marginTop: 4,
       padding: 10,
       borderRadius: 12,
-      backgroundColor: '#ffffff',
+      backgroundColor: '#ffffffff',
    },
    counterText: {
       fontSize: 14,

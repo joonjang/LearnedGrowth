@@ -9,6 +9,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2025-12-04
 - Implemented AI response UI/UX
 - dispute.tsx plumbing change
+- Extended database to hold 'analysis' JSON field items
 
 ### 2025-12-03
 - Refactored entry-new and dispute
@@ -167,11 +168,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 - Abstract card dimension and sizes
-- Update database to store AI response to respective entry
 - Add test to for API
-- Disable editing of ABC once dispute has been
+- Disable editing of ABC once dispute has been made
 - Make UI/UX that integrates AI response
-- Set up local ai component of app
-- Upon making an entry, it should go to [id] page
-- Make a CTA button visible on [id]
 - Set up Supabase
