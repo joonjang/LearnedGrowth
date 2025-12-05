@@ -23,6 +23,11 @@ import {
    TextInput,
    View,
 } from 'react-native';
+import Animated, {
+   useAnimatedStyle,
+   useSharedValue,
+   withTiming,
+} from 'react-native-reanimated';
 import {
    SafeAreaView,
    useSafeAreaInsets,
@@ -92,6 +97,10 @@ export default function DisputeScreen() {
       useState(false);
    const [showPersonalizationHighlight, setShowPersonalizationHighlight] =
       useState(false);
+   const [viewMode, setViewMode] = useState<'steps' | 'analysis'>('steps');
+   const [hasAutoOpenedAnalysis, setHasAutoOpenedAnalysis] = useState(false);
+   const stepsProgress = useSharedValue(1);
+   const analysisProgress = useSharedValue(0);
 
    const { analyze, lastResult, loading, error, ready, streamText } =
       useAbcAi();
@@ -184,6 +193,16 @@ export default function DisputeScreen() {
       [permanenceHighlights, pervasivenessHighlights, personalizationHighlights]
    );
 
+   const suggestionPrompts = useMemo(() => {
+      const sug = lastResult?.data?.suggestions;
+      return {
+         evidence: sug?.evidenceQuestion ?? prompts.evidence,
+         alternatives: sug?.alternativesQuestion ?? prompts.alternatives,
+         usefulness: sug?.usefulnessQuestion ?? prompts.usefulness,
+         energy: prompts.energy,
+      } as Record<NewInputDisputeType, string>;
+   }, [lastResult?.data?.suggestions, prompts]);
+
    const handleDimensionPressIn = useCallback(
       (field: 'permanence' | 'pervasiveness' | 'personalization') => {
          setShowPermanenceHighlight(field === 'permanence');
@@ -271,7 +290,38 @@ export default function DisputeScreen() {
       };
    }, [scrollToBottom]);
 
-   const showAnalysis = analysisTriggered || !!lastResult;
+   useEffect(() => {
+      if (!hasAutoOpenedAnalysis && (analysisTriggered || lastResult)) {
+         setViewMode('analysis');
+         setHasAutoOpenedAnalysis(true);
+      }
+   }, [analysisTriggered, hasAutoOpenedAnalysis, lastResult]);
+
+   const stepsAnimatedStyle = useAnimatedStyle(() => ({
+      opacity: stepsProgress.value,
+      transform: [
+         {
+            translateY: (1 - stepsProgress.value) * 12,
+         },
+      ],
+   }));
+
+   const analysisAnimatedStyle = useAnimatedStyle(() => ({
+      opacity: analysisProgress.value,
+      transform: [
+         {
+            translateY: (1 - analysisProgress.value) * -12,
+         },
+      ],
+   }));
+
+   useEffect(() => {
+      const toSteps = viewMode === 'steps';
+      stepsProgress.value = withTiming(toSteps ? 1 : 0, { duration: 220 });
+      analysisProgress.value = withTiming(toSteps ? 0 : 1, { duration: 220 });
+   }, [analysisProgress, stepsProgress, viewMode]);
+
+   const showAnalysis = viewMode === 'analysis';
 
 
    if (!entry) {
@@ -289,12 +339,15 @@ export default function DisputeScreen() {
          keyboardVerticalOffset={insets.bottom + 24}
       >
          <View style={styles.page}>
-            {!showAnalysis ? (
+            <Animated.View
+               pointerEvents={showAnalysis ? 'none' : 'auto'}
+               style={[styles.layer, stepsAnimatedStyle]}
+            >
                <DisputeSteps
                   entry={entry}
                   idx={idx}
                   currKey={currKey}
-                  prompts={prompts}
+                  prompts={suggestionPrompts}
                   promptTextStyle={promptTextStyle}
                   promptMaxHeight={promptMaxHeight}
                   hasVisited={hasVisited}
@@ -316,7 +369,12 @@ export default function DisputeScreen() {
                   promptContainerStyle={styles.promptContainer}
                   contextBoxStyle={styles.contextBox}
                />
-            ) : (
+            </Animated.View>
+
+            <Animated.View
+               pointerEvents={showAnalysis ? 'auto' : 'none'}
+               style={[styles.layer, analysisAnimatedStyle]}
+            >
                <ABCAnalysis
                   entry={entry}
                   highlights={highlightSets}
@@ -328,10 +386,11 @@ export default function DisputeScreen() {
                   loading={loading}
                   error={error}
                   streamingText={streamText}
+                  onGoToSteps={() => setViewMode('steps')}
                   onPressIn={handleDimensionPressIn}
                   onPressOut={handleDimensionPressOut}
                />
-            )}
+            </Animated.View>
          </View>
       </KeyboardAvoidingView>
    );
@@ -342,7 +401,7 @@ export const styles = StyleSheet.create({
 
    page: {
       flex: 1,
-      paddingHorizontal: 20,
+      position: 'relative',
    },
    scroll: { flex: 1 },
    scrollContent: {
@@ -364,6 +423,26 @@ export const styles = StyleSheet.create({
       justifyContent: 'center',
       alignItems: 'center',
       gap: 8,
+   },
+   topRow: {
+      paddingHorizontal: 4,
+      paddingTop: 12,
+      paddingBottom: 4,
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+   },
+   switchButton: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: '#cbd5e1',
+      backgroundColor: '#f8fafc',
+   },
+   switchButtonText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#334155',
    },
    container: {
       paddingHorizontal: 20,
@@ -394,6 +473,10 @@ export const styles = StyleSheet.create({
       borderWidth: StyleSheet.hairlineWidth,
       borderRadius: 4,
       paddingHorizontal: 2,
+   },
+   layer: {
+      ...StyleSheet.absoluteFillObject,
+      paddingHorizontal: 20,
    },
    contextDivider: {
       height: 1,

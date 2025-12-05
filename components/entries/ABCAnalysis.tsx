@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AiInsightCard } from '@/components/entries/AiIngsightCard';
 import ThreeDotsLoader from '@/components/ThreeDotLoader';
@@ -26,6 +26,7 @@ type Props = {
     pervasiveness?: string;
     personalization?: string;
   };
+  onGoToSteps?: () => void;
   onPressIn?: (field: 'permanence' | 'pervasiveness' | 'personalization') => void;
   onPressOut?: (field: 'permanence' | 'pervasiveness' | 'personalization') => void;
 };
@@ -41,12 +42,10 @@ export default function ABCAnalysis({
   error,
   streamingText,
   highlightColors,
+  onGoToSteps,
   onPressIn,
   onPressOut,
 }: Props) {
-  const safety = aiData?.safety;
-  const analysis = aiData?.analysis;
-
   const activeHighlights: HighlightMap = {
     adversity: [
       ...(showPermanenceHighlight ? highlights.permanence.adversity : []),
@@ -74,6 +73,7 @@ export default function ABCAnalysis({
     >
       <View style={styles.container}>
         <Text style={styles.text}>AI Insight</Text>
+        
       </View>
 
       <View style={{ flex: 1 }}>
@@ -123,6 +123,12 @@ export default function ABCAnalysis({
         ) : (
           <Text style={styles.subText}>Waiting for AI insight…</Text>
         )}
+
+        {onGoToSteps && aiData ? (
+          <Pressable style={styles.switchButton} onPress={onGoToSteps}>
+            <Text style={styles.switchButtonText}>Dispute your belief</Text>
+          </Pressable>
+        ) : null}
       </View>
     </ScrollView>
   );
@@ -134,12 +140,30 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'space-between',
     gap: 16,
+    paddingBottom: 48,
   },
   container: {
     paddingHorizontal: 20,
     paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   text: { fontSize: 16, fontWeight: '500' },
+  switchButton: {
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: '#2ECC71',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  switchButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
   contextBox: {
     backgroundColor: '#F3F4F6',
     padding: 12,

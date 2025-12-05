@@ -74,7 +74,7 @@ export function buildSegments(text: string, highlights: Highlight[]) {
   });
   const points = Array.from(boundaries).sort((a, b) => a - b);
 
-  const segments: Array<string | { text: string; color?: string }> = [];
+  const segments: (string | { text: string; color?: string })[] = [];
   let overlapStripe = 0;
 
   for (let i = 0; i < points.length - 1; i++) {

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Text, Pressable, StyleSheet } from 'react-native';
 
 type Prop = {
    id: string;
@@ -13,7 +13,7 @@ export default function CTAButton({ id }: Prop) {
                router.push(`/(tabs)/entries/${id}/dispute`);
             }}
          >
-            <Text style={styles.buttonText}>✨ Challenge this belief</Text>
+            <Text style={styles.buttonText}>✨ Dispute this belief</Text>
          </Pressable>
    );
 }
