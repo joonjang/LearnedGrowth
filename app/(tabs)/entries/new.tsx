@@ -1,18 +1,14 @@
 import InputBox from '@/components/newEntry/InputBox';
 import StepperButton from '@/components/newEntry/StepperButton';
-import StepperLayout, {
-   KeyboardAwareInputWrapper,
-} from '@/components/newEntry/StepperLayout';
 import { useEntries } from '@/features/hooks/useEntries';
 import { usePrompts } from '@/features/hooks/usePrompts';
 import { useVisitedSet } from '@/features/hooks/useVisitedSet';
 import { usePromptLayout } from '@/features/hooks/usePromptLayout';
 import rawAbcde from '@/assets/data/abcde.json';
 import { NewInputEntryType } from '@/models/newInputEntryType';
-import { router, useNavigation } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, ScrollView, TextInput, View, StyleSheet } from 'react-native';
-import { KeyboardController } from 'react-native-keyboard-controller';
+import { router } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Alert, KeyboardAvoidingView, ScrollView, TextInput, View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
 import StepperHeader from '@/components/newEntry/StepperHeader';

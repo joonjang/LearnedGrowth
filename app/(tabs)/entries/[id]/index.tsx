@@ -2,7 +2,7 @@ import { formatDateTimeWithWeekday } from '@/lib/date';
 import { useEntries } from '@/features/hooks/useEntries';
 import type { Entry } from '@/models/entry';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
    StyleSheet,
    View,
@@ -10,7 +10,6 @@ import {
    Pressable,
    TextInput,
    Platform,
-   ScrollView,
 } from 'react-native';
 import CTAButton from '@/components/entries/CTAButton';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,9 +17,11 @@ import {
    SafeAreaView,
    useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import {
+   KeyboardAwareScrollView,
+   KeyboardController,
+} from 'react-native-keyboard-controller';
 import { palette } from '@/theme/colors';
-import { useAbcAi } from '@/features/hooks/useAbcAi';
 import AnalyzeButton from '@/components/entries/AnalyzeButton';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
@@ -84,27 +85,6 @@ function buildFieldRecord(getValue: (key: FieldKey) => string) {
 }
 
 
-function renderStyleRow(
-   label: string,
-   score: string | null,
-   detectedPhrase: string | null,
-   insight: string | null
-) {
-   if (!score && !detectedPhrase && !insight) return null;
-   return (
-      <View style={styles.aiStyleRow} key={label}>
-         <Text style={styles.aiStyleLabel}>{label}</Text>
-         <View style={styles.aiStyleContent}>
-            {score ? <Text style={styles.aiStyleChip}>{score}</Text> : null}
-            {detectedPhrase ? (
-               <Text style={styles.aiBody}>&quot;{detectedPhrase}&quot;</Text>
-            ) : null}
-            {insight ? <Text style={styles.aiSubtle}>{insight}</Text> : null}
-         </View>
-      </View>
-   );
-}
-
 export default function EntryDetailScreen() {
    const { id } = useLocalSearchParams();
    const entryId = Array.isArray(id) ? id[0] : id;
@@ -118,7 +98,7 @@ export default function EntryDetailScreen() {
    );
    const [justSaved, setJustSaved] = useState(false);
    const [hasScrolled, setHasScrolled] = useState(false);
-   const streamScrollRef = useRef<ScrollView | null>(null);
+   const [focusedField, setFocusedField] = useState<FieldKey | null>(null);
 
    useEffect(() => {
       if (!entry) return;
@@ -174,6 +154,8 @@ export default function EntryDetailScreen() {
 
       await store.updateEntry(entry.id, patch);
       setJustSaved(true);
+      setFocusedField(null);
+      KeyboardController.dismiss();
    }, [baseline, entry, hasChanges, store, trimmed]);
 
    const formattedTimestamp = entry
