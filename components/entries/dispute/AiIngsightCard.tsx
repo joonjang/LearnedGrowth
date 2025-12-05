@@ -3,7 +3,7 @@ import { cardBase, chipBase, sectionBlock as sectionBase } from '@/theme/compone
 import { palette } from '@/theme/colors';
 import { typography } from '@/theme/typography';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import ThreeDotsLoader from '../ThreeDotLoader';
+import ThreeDotsLoader from '../../ThreeDotLoader';
 
 type Props = {
    data?: LearnedGrowthResponse | null;

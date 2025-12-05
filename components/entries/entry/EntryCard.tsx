@@ -8,7 +8,7 @@ import {
    type TextLayoutEvent,
 } from 'react-native';
 import { palette } from '@/theme/colors';
-import CTAButton from './CTAButton';
+
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Animated, {
@@ -17,7 +17,9 @@ import Animated, {
    withTiming,
    Easing,
 } from 'react-native-reanimated';
-import AnalyzeButton from './AnalyzeButton';
+import CTAButton from '../CTAButton';
+import AnalyzeButton from '../dispute/AnalyzeButton';
+
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -460,7 +462,7 @@ const styles = StyleSheet.create({
       paddingVertical: 12,
       paddingHorizontal: 12,
       borderRadius: 12,
-      backgroundColor: palette.surfaceMuted,
+      backgroundColor: palette.cardGrey,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: palette.border,
    },

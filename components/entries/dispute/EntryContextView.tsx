@@ -1,21 +1,21 @@
+import { palette } from '@/theme/colors';
+import { shadowSoft } from '@/theme/shadows';
 import React from 'react';
-import { StyleSheet, Text, View, StyleProp, ViewStyle } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 type Props = {
    adversity: string;
    belief: string;
    consequence: string;
-   style?: StyleProp<ViewStyle>;
 };
 
 export default function EntryContextView({
    adversity,
    belief,
    consequence,
-   style,
 }: Props) {
    return (
-      <View style={[styles.contextBox, style]}>
+      <View style={[styles.contextBox]}>
          <View style={styles.contextRow}>
             <Text style={styles.contextLabel}>Adversity</Text>
             <Text style={styles.contextText}>{adversity}</Text>
@@ -40,12 +40,14 @@ export default function EntryContextView({
 
 const styles = StyleSheet.create({
    contextBox: {
-      backgroundColor: '#F3F4F6',
+      backgroundColor: palette.cardGrey,
       padding: 12,
       borderRadius: 12,
       gap: 10,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: '#E5E7EB',
+
+      ...shadowSoft
    },
    contextRow: { gap: 4 },
    contextLabel: {

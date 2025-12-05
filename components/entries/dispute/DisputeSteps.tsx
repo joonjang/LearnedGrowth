@@ -2,15 +2,13 @@ import React from 'react';
 import {
    NativeScrollEvent,
    NativeSyntheticEvent,
-   Pressable,
    ScrollView,
    StyleSheet,
-   Text,
    TextInput,
    View,
 } from 'react-native';
 
-import EntryContextView from '@/components/newEntry/EntryContextView';
+import EntryContextView from '@/components/entries/dispute/EntryContextView';
 import InputBox from '@/components/newEntry/InputBox';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
 import StepperButton from '@/components/newEntry/StepperButton';
@@ -40,9 +38,7 @@ type Props = {
    inputRef: React.RefObject<TextInput | null>;
    isKeyboardVisible: boolean;
    inputBoxDims: any;
-   insetsPadding: number;
    promptContainerStyle?: any;
-   contextBoxStyle?: any;
    onShowInsights?: () => void;
 };
 
@@ -68,10 +64,7 @@ export default function DisputeSteps({
    inputRef,
    isKeyboardVisible,
    inputBoxDims,
-   insetsPadding,
    promptContainerStyle,
-   contextBoxStyle,
-   onShowInsights,
 }: Props) {
    return (
       <>
@@ -98,7 +91,6 @@ export default function DisputeSteps({
                adversity={entry.adversity}
                belief={entry.belief}
                consequence={entry.consequence ?? ''}
-               style={contextBoxStyle ?? styles.contextBox}
             />
             {/* {onShowInsights ? (
                <Pressable style={styles.contextAction} onPress={onShowInsights}>
@@ -122,7 +114,7 @@ export default function DisputeSteps({
          <View
             style={[
                styles.inputWrapper,
-               { paddingBottom: !isKeyboardVisible ? insetsPadding : 0 },
+               { paddingBottom: !isKeyboardVisible ? 24 : 0 },
             ]}
          >
             <InputBox
@@ -131,6 +123,7 @@ export default function DisputeSteps({
                onChangeText={setField(currKey)}
                dims={inputBoxDims}
                scrollEnabled
+               compact
                onFocus={() => scrollToBottom(true)}
             />
             <StepperButton
@@ -159,15 +152,7 @@ const styles = StyleSheet.create({
       justifyContent: 'space-evenly',
    },
    inputWrapper: {
-      paddingHorizontal: 16,
-   },
-   contextBox: {
-      backgroundColor: '#F3F4F6',
-      padding: 12,
-      borderRadius: 12,
-      gap: 10,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#E5E7EB',
+      // paddingHorizontal: 16,
    },
    contextAction: {
       marginTop: 8,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { AiInsightCard } from '@/components/entries/AiIngsightCard';
+import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
 import ThreeDotsLoader from '@/components/ThreeDotLoader';
 import { HighlightMap, HighlightedText } from '@/components/entries/highlightUtils';
 import { Entry } from '@/models/entry';
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   },
   contextBox: {
     ...compactCard,
-    backgroundColor: palette.surfaceMuted,
+    backgroundColor: palette.cardGrey,
     gap: 10,
   },
   contextRow: { gap: 4 },

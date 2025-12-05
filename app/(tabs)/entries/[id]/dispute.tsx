@@ -16,6 +16,7 @@ import React, {
    useState,
 } from 'react';
 import {
+   KeyboardAvoidingView,
    NativeScrollEvent,
    NativeSyntheticEvent,
    ScrollView,
@@ -34,13 +35,12 @@ import {
    useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import {
-   KeyboardAvoidingView,
    KeyboardEvents,
 } from 'react-native-keyboard-controller';
 import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
 import { useAbcAi } from '@/features/hooks/useAbcAi';
-import DisputeSteps from '@/components/entries/DisputeSteps';
-import ABCAnalysis from '@/components/entries/ABCAnalysis';
+import DisputeSteps from '@/components/entries/dispute/DisputeSteps';
+import ABCAnalysis from '@/components/entries/dispute/ABCAnalysis';
 import { HighlightMap, buildHighlightMap } from '@/components/entries/highlightUtils';
 
 const STEP_ORDER = [
@@ -400,7 +400,6 @@ export default function DisputeScreen() {
                   inputRef={inputRef}
                   isKeyboardVisible={isKeyboardVisible}
                   inputBoxDims={inputBoxDims}
-                  insetsPadding={insets.bottom + 24}
                   promptContainerStyle={styles.promptContainer}
                   contextBoxStyle={styles.contextBox}
                   onShowInsights={() => setViewMode('analysis')}
@@ -439,12 +438,7 @@ export const styles = StyleSheet.create({
       flex: 1,
       position: 'relative',
    },
-   scroll: { flex: 1 },
-   scrollContent: {
-      flexGrow: 1,
-      justifyContent: 'space-between',
-      gap: 16,
-   },
+
    promptContainer: {
       flexGrow: 1,
       justifyContent: 'space-evenly',

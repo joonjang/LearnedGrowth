@@ -1,4 +1,6 @@
-import { forwardRef } from 'react';
+import { palette } from '@/theme/colors';
+import { shadowSoft } from '@/theme/shadows';
+import { forwardRef, useState } from 'react';
 import {
    Pressable,
    StyleSheet,
@@ -15,8 +17,10 @@ type Props = {
    dims?: Dims;
    containerStyle?: ViewStyle;
    scrollEnabled?: boolean;
-   onFocus?: () => void;
+   onFocus?: TextInputProps['onFocus'];
+   onBlur?: TextInputProps['onBlur'];
    placeholder?: string;
+   compact?: boolean;
 } & Omit<TextInputProps, 'style' | 'value' | 'onChangeText' | 'multiline'>;
 
 const InputBox = forwardRef<TextInput, Props>(function InputBox(
@@ -27,26 +31,42 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
       containerStyle,
       placeholder = 'Enter here',
       scrollEnabled = true,
+      compact = false,
       ...rest
    },
    ref
 ) {
+   const [focused, setFocused] = useState(false);
    return (
       <Pressable
          onPress={() =>
             typeof ref === 'object' && ref?.current ? ref.current.focus() : null
          }
-         style={[styles.inputBox, dims, containerStyle]}
+         style={[
+            styles.inputBox,
+            focused && styles.inputBoxFocused,
+            dims,
+            containerStyle,
+         ]}
       >
          <TextInput
             ref={ref}
             placeholder={placeholder}
             value={value}
             onChangeText={onChangeText}
-            style={styles.inputText}
+            style={compact ? styles.inputTextCompact : styles.inputText}
             multiline
             scrollEnabled={scrollEnabled}
             textAlignVertical="top"
+            placeholderTextColor="#9ca3af"
+            onFocus={(e) => {
+               setFocused(true);
+               rest.onFocus?.(e);
+            }}
+            onBlur={(e) => {
+               setFocused(false);
+               rest.onBlur?.(e);
+            }}
             {...rest}
          />
       </Pressable>
@@ -57,15 +77,31 @@ export default InputBox;
 
 const styles = StyleSheet.create({
    inputBox: {
-      borderRadius: 10,
-      backgroundColor: '#e3e3e3ff',
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      overflow: 'hidden',
+      borderRadius: 14,
+      backgroundColor: palette.cardInput,
+      borderWidth: 1,
+      borderColor: palette.cardInputBorder,
+      ...shadowSoft,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 3 },
+      elevation: 2,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+   },
+   inputBoxFocused: {
+      shadowOpacity: 0.16,
+      shadowRadius: 2,
+      elevation: 3,
    },
    inputText: {
-      fontSize: 18,
+      fontSize: 22,
       lineHeight: 24,
+      color: '#111',
+      includeFontPadding: false as any,
+   },
+   inputTextCompact: {
+      fontSize: 18,
+      lineHeight: 21,
       color: '#111',
       includeFontPadding: false as any,
    },

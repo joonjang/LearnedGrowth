@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
 
    contextBox: { marginHorizontal: 16 },
    inputWrapper: {
-      paddingHorizontal: 16,
+      // paddingHorizontal: 16,
    },
 
    centered: {

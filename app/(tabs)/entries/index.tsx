@@ -1,5 +1,5 @@
 import EntryRow, { UndoRow } from '@/components/entries/EntryRow';
-import { type MenuBounds } from '@/components/entries/EntryCard';
+import { type MenuBounds } from '@/components/entries/entry/EntryCard';
 import { getDateParts, getTimeLabel } from '@/lib/date';
 import { useEntries } from '@/features/hooks/useEntries';
 import { Entry } from '@/models/entry';
@@ -237,7 +237,7 @@ function buildSections(rows: RowItem[]): EntrySection[] {
 const styles = StyleSheet.create({
    container: {
       flex: 1,
-      backgroundColor: '#F9FAFB',
+      backgroundColor: '#f5f5f5ff',
    },
    sectionHeaderWrapper: {
       paddingVertical: 12,

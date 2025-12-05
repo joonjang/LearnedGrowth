@@ -18,7 +18,7 @@ import Animated, {
    useAnimatedStyle,
    withTiming,
 } from 'react-native-reanimated';
-import EntryCard, { type MenuBounds } from './EntryCard';
+import EntryCard, { type MenuBounds } from './entry/EntryCard';
 import { Entry } from '@/models/entry';
 
 type EntryRowProps = {

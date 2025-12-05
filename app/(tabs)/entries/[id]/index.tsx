@@ -22,7 +22,8 @@ import {
    KeyboardController,
 } from 'react-native-keyboard-controller';
 import { palette } from '@/theme/colors';
-import AnalyzeButton from '@/components/entries/AnalyzeButton';
+import AnalyzeButton from '@/components/entries/dispute/AnalyzeButton';
+import { shadowSoft } from '@/theme/shadows';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
 
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
       marginTop: 16,
       padding: 12,
       borderRadius: 12,
-      backgroundColor: palette.surfaceMuted,
+      backgroundColor: palette.cardGrey,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: palette.border,
    },
@@ -357,7 +358,7 @@ const styles = StyleSheet.create({
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 8,
-      backgroundColor: palette.surfaceMuted,
+      backgroundColor: palette.cardGrey,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: palette.border,
       fontSize: 12,
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
       marginTop: 10,
       padding: 12,
       borderRadius: 12,
-      backgroundColor: palette.surfaceMuted,
+      backgroundColor: palette.cardGrey,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: palette.border,
       gap: 6,
@@ -456,6 +457,7 @@ const styles = StyleSheet.create({
    section: {
       marginBottom: 16,
       gap: 4,
+      ...shadowSoft
    },
    label: {
       fontSize: 15,
@@ -477,7 +479,7 @@ const styles = StyleSheet.create({
       lineHeight: 20,
 
       borderRadius: 12,
-      backgroundColor: palette.surfaceMuted,
+      backgroundColor: palette.cardGrey,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: palette.border,
    },

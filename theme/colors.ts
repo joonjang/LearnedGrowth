@@ -1,6 +1,8 @@
 export const palette = {
    cardBg: '#FFFFFF',
-   surfaceMuted: '#F3F4F6',
+   cardGrey: '#F5F5F5',
+   cardInput: '#FAFAFA',
+   cardInputBorder: '#d5d9e2',
    border: '#E5E7EB',
    text: '#111827',
    hint: '#6B7280',
