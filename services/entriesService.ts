@@ -16,6 +16,7 @@ export function createEntry(
     const entry: Entry = {
         ...data,
         analysis: null,
+        counterBelief: null,
         id: Crypto.randomUUID(),
         createdAt: now,
         updatedAt: now,

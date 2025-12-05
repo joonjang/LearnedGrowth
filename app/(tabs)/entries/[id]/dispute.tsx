@@ -169,9 +169,10 @@ export default function DisputeScreen() {
       const incomingKey = JSON.stringify(lastResult.data.analysis);
       if (storedKey === incomingKey) return;
 
-      updateEntry(entry.id, { analysis: lastResult.data.analysis }).catch(
-         (e) => console.warn('Failed to store analysis', e)
-      );
+      updateEntry(entry.id, {
+         analysis: lastResult.data.analysis,
+         counterBelief: lastResult.data.suggestions?.counterBelief ?? null,
+      }).catch((e) => console.warn('Failed to store analysis', e));
    }, [entry, lastResult?.data?.analysis, updateEntry]);
 
    const permanenceHighlights = useMemo<HighlightMap>(
@@ -233,10 +234,10 @@ export default function DisputeScreen() {
             evidenceQuestion: null,
             alternativesQuestion: null,
             usefulnessQuestion: null,
-            counterBelief: null,
+            counterBelief: entry.counterBelief ?? null,
          },
       };
-   }, [entry?.analysis, lastResult?.data]);
+   }, [entry?.analysis, entry?.counterBelief, lastResult?.data]);
 
    const handleDimensionPressIn = useCallback(
       (field: 'permanence' | 'pervasiveness' | 'personalization') => {

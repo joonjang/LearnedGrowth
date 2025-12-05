@@ -1,6 +1,21 @@
 import * as SQLite from "expo-sqlite";
 
-const LATEST = 2; // bump this when schema changes
+const LATEST = 3; // bump this when schema changes
+
+async function ensureColumn(
+   db: SQLite.SQLiteDatabase,
+   table: string,
+   column: string,
+   ddl: string
+) {
+   const cols = await db.getAllAsync<{ name: string }>(
+      `PRAGMA table_info(${table})`
+   );
+   const exists = cols.some((c) => c.name === column);
+   if (!exists) {
+      await db.execAsync(ddl);
+   }
+}
 
 export async function createDb(dbName = "entries.db"): Promise<SQLite.SQLiteDatabase> {
    const db = await SQLite.openDatabaseAsync(dbName);
@@ -24,6 +39,8 @@ export async function createDb(dbName = "entries.db"): Promise<SQLite.SQLiteData
           id TEXT PRIMARY KEY,
           adversity TEXT NOT NULL,
           belief TEXT NOT NULL,
+          analysis TEXT,
+          counter_belief TEXT,
           consequence TEXT,
           dispute TEXT,
           energy TEXT,
@@ -42,6 +59,20 @@ export async function createDb(dbName = "entries.db"): Promise<SQLite.SQLiteData
          await db.execAsync(`
           ALTER TABLE entries ADD COLUMN analysis TEXT;
         `);
+      }
+
+      // ensure counter_belief exists even if past versions were out-of-sync
+      if (current < 3) {
+         await db.execAsync(`
+          ALTER TABLE entries ADD COLUMN counter_belief TEXT;
+        `);
+      } else {
+         await ensureColumn(
+            db,
+            "entries",
+            "counter_belief",
+            `ALTER TABLE entries ADD COLUMN counter_belief TEXT;`
+         );
       }
 
       // finally, set to latest

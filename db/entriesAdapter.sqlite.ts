@@ -8,6 +8,7 @@ interface Row {
    adversity: string;
    belief: string;
    analysis: string | null;
+   counter_belief: string | null;
    consequence: string | null;
    dispute: string | null;
    energy: string | null;
@@ -50,6 +51,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
       return {
          ...entry,
          analysis: cloneAnalysis(entry.analysis ?? null),
+         counterBelief: entry.counterBelief ?? null,
       };
    }
 
@@ -59,6 +61,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          adversity: row.adversity,
          belief: row.belief,
          analysis: parseAnalysis(row.analysis),
+         counterBelief: row.counter_belief ?? null,
          consequence: row.consequence ?? undefined,
          dispute: row.dispute ?? undefined,
          energy: row.energy ?? undefined,
@@ -81,7 +84,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
 
       try {
          const rows = await this.db.getAllAsync<Row>(`
-            SELECT id, adversity, belief, analysis, consequence, dispute, energy,
+            SELECT id, adversity, belief, analysis, counter_belief, consequence, dispute, energy,
               created_at, updated_at, account_id, dirty_since, is_deleted
             FROM entries
             WHERE is_deleted = 0
@@ -102,7 +105,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
       try {
          const row = await this.db.getFirstAsync<Row>(
             `
-          SELECT id, adversity, belief, analysis, consequence, dispute, energy,
+          SELECT id, adversity, belief, analysis, counter_belief, consequence, dispute, energy,
               created_at, updated_at, account_id, dirty_since, is_deleted
             FROM entries
             WHERE id = $id
@@ -133,16 +136,17 @@ export class SQLEntriesAdapter implements EntriesAdapter {
       try {
          await this.db.runAsync(
             `INSERT INTO entries
-       (id, adversity, belief, analysis, consequence, dispute, energy,
+       (id, adversity, belief, analysis, counter_belief, consequence, dispute, energy,
         created_at, updated_at, account_id, dirty_since, is_deleted)
        VALUES
-       ($id, $adversity, $belief, $analysis, $consequence, $dispute, $energy,
+       ($id, $adversity, $belief, $analysis, $counter_belief, $consequence, $dispute, $energy,
         $created_at, $updated_at, $account_id, $dirty_since, $is_deleted)`,
             {
                $id: entry.id,
                $adversity: entry.adversity,
                $belief: entry.belief,
                $analysis: serializeAnalysis(entry.analysis ?? null),
+               $counter_belief: entry.counterBelief ?? null,
                $consequence: entry.consequence ?? null,
                $dispute: entry.dispute ?? null,
                $energy: entry.energy ?? null,
@@ -155,7 +159,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          );
 
          const row = await this.db.getFirstAsync<Row>(
-            `SELECT id, adversity, belief, analysis, consequence, dispute, energy,
+            `SELECT id, adversity, belief, analysis, counter_belief, consequence, dispute, energy,
               created_at, updated_at, account_id, dirty_since, is_deleted
          FROM entries
         WHERE id = $id
@@ -188,10 +192,17 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          )
             ? cloneAnalysis(patch.analysis ?? null)
             : cloneAnalysis(current.analysis ?? null);
+         const nextCounter = Object.prototype.hasOwnProperty.call(
+            patch,
+            "counterBelief"
+         )
+            ? patch.counterBelief ?? null
+            : current.counterBelief ?? null;
          const merged: Entry = {
             ...current,
             ...patch,
             analysis: nextAnalysis,
+            counterBelief: nextCounter,
             dirtySince: current.dirtySince ?? now,
             updatedAt: now,
          };
@@ -211,11 +222,18 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          )
             ? cloneAnalysis(patch.analysis ?? null)
             : cloneAnalysis(current.analysis ?? null);
+         const nextCounter = Object.prototype.hasOwnProperty.call(
+            patch,
+            "counterBelief"
+         )
+            ? patch.counterBelief ?? null
+            : current.counterBelief ?? null;
 
          const merged: Entry = {
             ...current,
             ...patch, // patch fields; createdAt/id stay from current
             analysis: nextAnalysis,
+            counterBelief: nextCounter,
             dirtySince: current.dirtySince ?? now,
             updatedAt: now,
          };
@@ -225,6 +243,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          SET adversity   = $adversity,
               belief      = $belief,
               analysis    = $analysis,
+              counter_belief = $counter_belief,
               consequence = $consequence,
               dispute     = $dispute,
               energy      = $energy,
@@ -238,6 +257,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
                $adversity: merged.adversity,
                $belief: merged.belief,
                $analysis: serializeAnalysis(merged.analysis ?? null),
+               $counter_belief: merged.counterBelief ?? null,
                $consequence: merged.consequence ?? null,
                $dispute: merged.dispute ?? null,
                $energy: merged.energy ?? null,
@@ -250,7 +270,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          );
 
          const row = await this.db.getFirstAsync<Row>(
-            `SELECT id, adversity, belief, analysis, consequence, dispute, energy,
+            `SELECT id, adversity, belief, analysis, counter_belief, consequence, dispute, energy,
               created_at, updated_at, account_id, dirty_since, is_deleted
          FROM entries
         WHERE id = $id

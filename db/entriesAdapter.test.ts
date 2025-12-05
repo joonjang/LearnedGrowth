@@ -27,6 +27,7 @@ describe.each([
             adversity: 'Test adversity',
             belief: 'Test belief',
             analysis: null,
+            counterBelief: null,
             createdAt: clock.nowIso(),
             updatedAt: clock.nowIso(),
             dirtySince: null,
@@ -100,9 +101,11 @@ describe.each([
                id: 'u',
                adversity: '仕事🙂',
                belief: 'café',
+               counterBelief: 'cb',
             });
             const got = await db.getById('u');
             expect(got!.adversity).toBe('仕事🙂');
+            expect(got!.counterBelief).toBe('cb');
          });
          it('persists analysis JSON and returns clones', async () => {
             const analysis = {
@@ -126,16 +129,24 @@ describe.each([
                emotionalLogic: 'sample logic',
             };
 
-            await db.add({ ...entry, id: 'an1', analysis });
+            await db.add({
+               ...entry,
+               id: 'an1',
+               analysis,
+               counterBelief: 'cb1',
+            });
             const saved = await db.getById('an1');
             expect(saved?.analysis).toEqual(analysis);
+            expect(saved?.counterBelief).toBe('cb1');
 
             if (saved?.analysis) {
                saved.analysis.emotionalLogic = 'changed';
             }
+            if (saved) saved.counterBelief = 'changed';
 
             const again = await db.getById('an1');
             expect(again?.analysis?.emotionalLogic).toBe('sample logic');
+            expect(again?.counterBelief).toBe('cb1');
          });
          it('getAll excludes deleted but getById still returns them', async () => {
             await db.add(entry);

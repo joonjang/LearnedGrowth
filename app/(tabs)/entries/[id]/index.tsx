@@ -26,6 +26,7 @@ import AnalyzeButton from '@/components/entries/dispute/AnalyzeButton';
 import { shadowSoft } from '@/theme/shadows';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
+type DimensionKey = 'permanence' | 'pervasiveness' | 'personalization';
 
 const FIELD_META = [
    {
@@ -118,23 +119,19 @@ export default function EntryDetailScreen() {
       [entry]
    );
 
+   const analysis = entry?.analysis ?? null;
+
    const hasChanges = useMemo(
       () => FIELD_KEYS.some((key) => trimmed[key] !== baseline[key]),
       [baseline, trimmed]
    );
 
    const visibleFields = useMemo(() => {
-      const hasConsequence = Boolean(baseline.consequence || trimmed.consequence);
       const showDispute = Boolean(baseline.dispute || trimmed.dispute);
-
       return FIELD_META.filter((field) => {
-        if (field.key === 'dispute') {
-          return showDispute;
-        }
-        if (field.key === 'energy') {
-          return hasConsequence && showDispute;
-        }
-        return true;
+         if (field.key === 'dispute') return showDispute;
+         if (field.key === 'energy') return showDispute;
+         return true;
       });
    }, [baseline, trimmed]);
 
@@ -271,6 +268,62 @@ export default function EntryDetailScreen() {
                      ]}
                      textAlignVertical="top"
                   />
+                  {field.key === 'consequence' && analysis ? (
+                     <View style={styles.inlineAnalysis}>
+                        <Text style={styles.inlineHeading}>AI Analysis</Text>
+                        {analysis.emotionalLogic ? (
+                           <Text style={styles.inlineBody}>
+                              {analysis.emotionalLogic}
+                           </Text>
+                        ) : null}
+
+                        {entry.counterBelief ? (
+                           <View style={styles.inlineStyleRow}>
+                              <Text style={styles.inlineStyleLabel}>
+                                 Counter belief
+                              </Text>
+                              <Text style={styles.inlineBody}>
+                                 {entry.counterBelief}
+                              </Text>
+                           </View>
+                        ) : null}
+
+                        <View style={styles.inlineStyleGroup}>
+                           {(
+                              [
+                                 ['permanence', 'How long it feels'],
+                                 ['pervasiveness', 'How big it feels'],
+                                 ['personalization', 'Where blame goes'],
+                              ] as [DimensionKey, string][]
+                           ).map(([key, label]) => {
+                              const dim = analysis.dimensions[key];
+                              if (!dim) return null;
+                              return (
+                                 <View style={styles.inlineStyleRow} key={key}>
+                                    <Text style={styles.inlineStyleLabel}>
+                                       {label}
+                                    </Text>
+                                    {dim.score ? (
+                                       <Text style={styles.inlineStyleChip}>
+                                          {dim.score}
+                                       </Text>
+                                    ) : null}
+                                    {dim.insight ? (
+                                       <Text style={styles.inlineBody}>
+                                          {dim.insight}
+                                       </Text>
+                                    ) : null}
+                                    {dim.detectedPhrase ? (
+                                       <Text style={styles.inlineSubtle}>
+                                          Phrase: "{dim.detectedPhrase}"
+                                       </Text>
+                                    ) : null}
+                                 </View>
+                              );
+                           })}
+                        </View>
+                     </View>
+                  ) : null}
                </View>
             ))}
 

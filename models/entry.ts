@@ -10,6 +10,7 @@ export interface Entry {
    dispute?: string;
    energy?: string;
    analysis?: EntryAnalysis | null;
+   counterBelief?: string | null;
    createdAt: string;
    updatedAt: string;
    accountId?: string | null;
