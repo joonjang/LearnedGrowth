@@ -1,6 +1,3 @@
-import EntryContextView from '@/components/newEntry/EntryContextView';
-import StepperButton from '@/components/newEntry/StepperButton';
-import StepperHeader from '@/components/newEntry/StepperHeader';
 import rawAbcde from '@/assets/data/abcde.json';
 import { usePrompts } from '@/features/hooks/usePrompts';
 import { useVisitedSet } from '@/features/hooks/useVisitedSet';
@@ -20,7 +17,6 @@ import React, {
 import {
    NativeScrollEvent,
    NativeSyntheticEvent,
-   Platform,
    ScrollView,
    StyleSheet,
    Text,
@@ -35,13 +31,11 @@ import {
    KeyboardAvoidingView,
    KeyboardEvents,
 } from 'react-native-keyboard-controller';
-import PromptDisplay from '@/components/newEntry/PromptDisplay';
-import InputBox from '@/components/newEntry/InputBox';
 import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
 import { useAbcAi } from '@/features/hooks/useAbcAi';
-import ThreeDotsLoader from '@/components/ThreeDotLoader';
-import { AiInsightCard } from '@/components/entries/AiIngsightCard';
-import Animated from 'react-native-reanimated';
+import DisputeSteps from '@/components/entries/DisputeSteps';
+import ABCAnalysis from '@/components/entries/ABCAnalysis';
+import { HighlightMap, buildHighlightMap } from '@/components/entries/highlightUtils';
 
 const STEP_ORDER = [
    'evidence',
@@ -54,13 +48,6 @@ const DIMENSION_COLORS = {
    pervasiveness: '#93C5FD', // stronger blue
    personalization: '#C4B5FD', // stronger violet
 };
-const STEP_LABEL: Record<NewInputDisputeType, string> = {
-   evidence: 'Evidence',
-   alternatives: 'Alternatives',
-   usefulness: 'Usefulness',
-   energy: 'Energy',
-};
-
 function endWithPeriod(text: string) {
    const trimmed = text.trim();
    if (!trimmed) return '';
@@ -76,101 +63,6 @@ function buildDisputeText(form: Record<NewInputDisputeType, string>) {
    ].filter(Boolean);
 
    return sentences.join(' ');
-}
-
-type Highlight = { phrase: string; color?: string };
-type HighlightMap = {
-   adversity: Highlight[];
-   belief: Highlight[];
-   consequence: Highlight[];
-};
-
-function findMatches(text: string, phrase: string, color?: string) {
-   const hay = text.toLowerCase();
-   const needle = phrase.toLowerCase();
-   const spans: { start: number; end: number; color?: string }[] = [];
-   let idx = hay.indexOf(needle);
-   while (idx !== -1) {
-      spans.push({ start: idx, end: idx + needle.length, color });
-      idx = hay.indexOf(needle, idx + needle.length);
-   }
-   return spans;
-}
-
-function buildSegments(text: string, highlights: Highlight[]) {
-   if (!highlights.length) return [text];
-
-   const matches = highlights.flatMap((h) =>
-      findMatches(text, h.phrase, h.color)
-   );
-   if (!matches.length) return [text];
-
-   const boundaries = new Set<number>([0, text.length]);
-   matches.forEach(({ start, end }) => {
-      boundaries.add(start);
-      boundaries.add(end);
-   });
-   const points = Array.from(boundaries).sort((a, b) => a - b);
-
-   const segments: Array<string | { text: string; color?: string }> = [];
-   let overlapStripe = 0;
-
-   for (let i = 0; i < points.length - 1; i++) {
-      const start = points[i];
-      const end = points[i + 1];
-      if (end <= start) continue;
-      const slice = text.slice(start, end);
-      const active = matches.filter((m) => m.start < end && m.end > start);
-
-      if (!active.length) {
-         segments.push(slice);
-         continue;
-      }
-
-      let color: string | undefined;
-      if (active.length === 1) {
-         color = active[0].color;
-      } else {
-         color = active[overlapStripe % active.length].color || active[0].color;
-         overlapStripe += 1;
-      }
-      segments.push({ text: slice, color });
-   }
-
-   return segments;
-}
-
-function HighlightedText({
-   text,
-   highlights,
-}: {
-   text: string;
-   highlights: Highlight[];
-}) {
-   const segments = useMemo(
-      () => buildSegments(text, highlights),
-      [text, highlights]
-   );
-
-   return (
-      <Text style={styles.contextText}>
-         {segments.map((seg, i) =>
-            typeof seg === 'string' ? (
-               <Text key={i}>{seg}</Text>
-            ) : (
-               <Text
-                  key={i}
-                  style={[
-                     styles.highlight,
-                     seg.color ? { backgroundColor: seg.color } : null,
-                  ]}
-               >
-                  {seg.text}
-               </Text>
-            )
-         )}
-      </Text>
-   );
 }
 
 export default function DisputeScreen() {
@@ -200,11 +92,8 @@ export default function DisputeScreen() {
       useState(false);
    const [showPersonalizationHighlight, setShowPersonalizationHighlight] =
       useState(false);
-   const [permanencePressed, setPermanencePressed] = useState(false);
-   const [pervasivenessPressed, setPervasivenessPressed] = useState(false);
-   const [personalizationPressed, setPersonalizationPressed] = useState(false);
 
-   const { analyze, lastResult, loading, error, ready, streamText, streaming } =
+   const { analyze, lastResult, loading, error, ready, streamText } =
       useAbcAi();
 
    useEffect(() => {
@@ -256,63 +145,59 @@ export default function DisputeScreen() {
       );
    }, [entry?.dispute, entry?.energy, trimmedForm]);
 
-   const permanenceHighlights = useMemo<HighlightMap>(() => {
-      const phrase = lastResult?.data?.analysis?.dimensions?.permanence?.detectedPhrase;
-      if (!entry || !phrase) return { adversity: [], belief: [], consequence: [] };
-      const needle = phrase.trim();
-      if (!needle) return { adversity: [], belief: [], consequence: [] };
-      const lower = needle.toLowerCase();
-      const map: HighlightMap = { adversity: [], belief: [], consequence: [] };
-      if (entry.adversity?.toLowerCase().includes(lower)) {
-         map.adversity.push({ phrase: needle, color: DIMENSION_COLORS.permanence });
-      }
-      if (entry.belief?.toLowerCase().includes(lower)) {
-         map.belief.push({ phrase: needle, color: DIMENSION_COLORS.permanence });
-      }
-      if (entry.consequence?.toLowerCase().includes(lower)) {
-         map.consequence.push({ phrase: needle, color: DIMENSION_COLORS.permanence });
-      }
-      return map;
-   }, [entry, lastResult?.data]);
+   const permanenceHighlights = useMemo<HighlightMap>(
+      () =>
+         buildHighlightMap(
+            entry,
+            lastResult?.data?.analysis?.dimensions?.permanence?.detectedPhrase,
+            DIMENSION_COLORS.permanence
+         ),
+      [entry, lastResult?.data]
+   );
 
-   const pervasivenessHighlights = useMemo<HighlightMap>(() => {
-      const phrase = lastResult?.data?.analysis?.dimensions?.pervasiveness?.detectedPhrase;
-      if (!entry || !phrase) return { adversity: [], belief: [], consequence: [] };
-      const needle = phrase.trim();
-      if (!needle) return { adversity: [], belief: [], consequence: [] };
-      const lower = needle.toLowerCase();
-      const map: HighlightMap = { adversity: [], belief: [], consequence: [] };
-      if (entry.adversity?.toLowerCase().includes(lower)) {
-         map.adversity.push({ phrase: needle, color: DIMENSION_COLORS.pervasiveness });
-      }
-      if (entry.belief?.toLowerCase().includes(lower)) {
-         map.belief.push({ phrase: needle, color: DIMENSION_COLORS.pervasiveness });
-      }
-      if (entry.consequence?.toLowerCase().includes(lower)) {
-         map.consequence.push({ phrase: needle, color: DIMENSION_COLORS.pervasiveness });
-      }
-      return map;
-   }, [entry, lastResult?.data]);
+   const pervasivenessHighlights = useMemo<HighlightMap>(
+      () =>
+         buildHighlightMap(
+            entry,
+            lastResult?.data?.analysis?.dimensions?.pervasiveness?.detectedPhrase,
+            DIMENSION_COLORS.pervasiveness
+         ),
+      [entry, lastResult?.data]
+   );
 
-   const personalizationHighlights = useMemo<HighlightMap>(() => {
-      const phrase =
-         lastResult?.data?.analysis?.dimensions?.personalization?.detectedPhrase;
-      if (!entry || !phrase) return { adversity: [], belief: [], consequence: [] };
-      const needle = phrase.trim();
-      if (!needle) return { adversity: [], belief: [], consequence: [] };
-      const lower = needle.toLowerCase();
-      const map: HighlightMap = { adversity: [], belief: [], consequence: [] };
-      if (entry.adversity?.toLowerCase().includes(lower)) {
-         map.adversity.push({ phrase: needle, color: DIMENSION_COLORS.personalization });
-      }
-      if (entry.belief?.toLowerCase().includes(lower)) {
-         map.belief.push({ phrase: needle, color: DIMENSION_COLORS.personalization });
-      }
-      if (entry.consequence?.toLowerCase().includes(lower)) {
-         map.consequence.push({ phrase: needle, color: DIMENSION_COLORS.personalization });
-      }
-      return map;
-   }, [entry, lastResult?.data]);
+   const personalizationHighlights = useMemo<HighlightMap>(
+      () =>
+         buildHighlightMap(
+            entry,
+            lastResult?.data?.analysis?.dimensions?.personalization?.detectedPhrase,
+            DIMENSION_COLORS.personalization
+         ),
+      [entry, lastResult?.data]
+   );
+
+   const highlightSets = useMemo(
+      () => ({
+         permanence: permanenceHighlights,
+         pervasiveness: pervasivenessHighlights,
+         personalization: personalizationHighlights,
+      }),
+      [permanenceHighlights, pervasivenessHighlights, personalizationHighlights]
+   );
+
+   const handleDimensionPressIn = useCallback(
+      (field: 'permanence' | 'pervasiveness' | 'personalization') => {
+         setShowPermanenceHighlight(field === 'permanence');
+         setShowPervasivenessHighlight(field === 'pervasiveness');
+         setShowPersonalizationHighlight(field === 'personalization');
+      },
+      []
+   );
+
+   const handleDimensionPressOut = useCallback(() => {
+      setShowPermanenceHighlight(false);
+      setShowPervasivenessHighlight(false);
+      setShowPersonalizationHighlight(false);
+   }, []);
 
    const currentEmpty = !trimmedForm[currKey];
 
@@ -386,21 +271,8 @@ export default function DisputeScreen() {
       };
    }, [scrollToBottom]);
 
+   const showAnalysis = analysisTriggered || !!lastResult;
 
-   useEffect(() => {
-      const t1 = setTimeout(() => {
-         setPermanencePressed(true);
-         setShowPermanenceHighlight(true);
-      }, 800);
-      const t2 = setTimeout(() => {
-         setPermanencePressed(false);
-         setShowPermanenceHighlight(false);
-      }, 1300);
-      return () => {
-         clearTimeout(t1);
-         clearTimeout(t2);
-      };
-   }, []);
 
    if (!entry) {
       return (
@@ -417,206 +289,55 @@ export default function DisputeScreen() {
          keyboardVerticalOffset={insets.bottom + 24}
       >
          <View style={styles.page}>
-            {!analysisTriggered && (
-               <>
-                  <ScrollView
-                     ref={scrollRef}
-                     style={styles.scroll}
-                     contentContainerStyle={[
-                        styles.scrollContent,
-                        { paddingTop: 24 },
-                     ]}
-                     keyboardShouldPersistTaps="handled"
-                     showsVerticalScrollIndicator={false}
-                     onScroll={handleScroll}
-                     scrollEventThrottle={16}
-                     onContentSizeChange={() => {
-                        if (stickToBottom.current) {
-                           requestAnimationFrame(() => scrollToBottom(true));
-                        }
-                     }}
-                  >
-                     <StepperHeader
-                        step={idx + 1}
-                        total={STEP_ORDER.length}
-                        label={STEP_LABEL[currKey]}
-                     />
-
-                     <EntryContextView
-                        adversity={entry.adversity}
-                        belief={entry.belief}
-                        consequence={entry.consequence ?? ''}
-                        style={styles.contextBox}
-                     />
-
-                     <PromptDisplay
-                        text={prompts[currKey]}
-                        visited={hasVisited(currKey)}
-                        onVisited={() => markVisited(currKey)}
-                        textStyle={promptTextStyle}
-                        maxHeight={promptMaxHeight}
-                        scrollEnabled
-                        numberOfLines={6}
-                        containerStyle={styles.promptContainer}
-                     />
-                  </ScrollView>
-                  <View
-                     style={[
-                        styles.inputWrapper,
-                        { paddingBottom: !isKeyboardVisible ? 24 : 0 },
-                     ]}
-                  >
-                     <InputBox
-                        ref={inputRef}
-                        value={form[currKey]}
-                        onChangeText={setField(currKey)}
-                        dims={inputBoxDims}
-                        scrollEnabled
-                        onFocus={() => scrollToBottom(true)}
-                     />
-                     <StepperButton
-                        idx={idx}
-                        totalSteps={STEP_ORDER.length}
-                        setIdx={setIdx}
-                        onSubmit={submit}
-                        onExit={() => router.back()}
-                        hasUnsavedChanges={hasUnsavedChanges}
-                        disableNext={currentEmpty}
-                     />
-                  </View>
-               </>
-            )}
-            {analysisTriggered && (
-               <>
-                  <ScrollView
-                     ref={scrollRef}
-                     style={styles.scroll}
-                     contentContainerStyle={[
-                        styles.scrollContent,
-                        { paddingTop: 24 },
-                     ]}
-                     keyboardShouldPersistTaps="handled"
-                     showsVerticalScrollIndicator={false}
-                     onScroll={handleScroll}
-                     scrollEventThrottle={16}
-                     onContentSizeChange={() => {
-                        if (stickToBottom.current) {
-                           requestAnimationFrame(() => scrollToBottom(true));
-                        }
-                     }}
-                  >
-                     <View style={[styles.container]}>
-                        <Text style={styles.text}>AI Insight</Text>
-                     </View>
-                     <View style={{ flex: 1 }}>
-                        <View style={[styles.contextBox]}>
-                           <View style={styles.contextRow}>
-                              <Text style={styles.contextLabel}>Adversity</Text>
-                             <HighlightedText
-                                text={entry.adversity}
-                                highlights={
-                                    [
-                                       ...(showPermanenceHighlight
-                                          ? permanenceHighlights.adversity
-                                          : []),
-                                       ...(showPervasivenessHighlight
-                                          ? pervasivenessHighlights.adversity
-                                          : []),
-                                       ...(showPersonalizationHighlight
-                                          ? personalizationHighlights.adversity
-                                          : []),
-                                    ]
-                                 }
-                             />
-                           </View>
-                           <View style={styles.contextDivider} />
-                           <View style={styles.contextRow}>
-                              <Text style={styles.contextLabel}>Belief</Text>
-                             <HighlightedText
-                                text={entry.belief}
-                                highlights={
-                                    [
-                                       ...(showPermanenceHighlight
-                                          ? permanenceHighlights.belief
-                                          : []),
-                                       ...(showPervasivenessHighlight
-                                          ? pervasivenessHighlights.belief
-                                          : []),
-                                       ...(showPersonalizationHighlight
-                                          ? personalizationHighlights.belief
-                                          : []),
-                                    ]
-                                 }
-                             />
-                           </View>
-                           {entry.consequence && (
-                              <>
-                                 <View style={styles.contextDivider} />
-                                 <View style={styles.contextRow}>
-                                    <Text style={styles.contextLabel}>
-                                       Consequence
-                                    </Text>
-                                    <HighlightedText
-                                       text={entry.consequence}
-                                       highlights={
-                                          [
-                                             ...(showPermanenceHighlight
-                                                ? permanenceHighlights.consequence
-                                                : []),
-                                             ...(showPervasivenessHighlight
-                                                ? pervasivenessHighlights.consequence
-                                                : []),
-                                             ...(showPersonalizationHighlight
-                                                ? personalizationHighlights.consequence
-                                                : []),
-                                          ]
-                                       }
-                                    />
-                                 </View>
-                              </>
-                           )}
-                        </View>
-                     </View>
-
-                     <View style={{ flex: 1 }}>
-                        <AiInsightCard
-                           data={lastResult?.data}
-                           streamingText={streaming ? streamText : undefined}
-                           loading={loading}
-                           error={error}
-                           onPressIn={(field) => {
-                              if (field === 'permanence') {
-                                 setShowPermanenceHighlight(true);
-                              }
-                              if (field === 'pervasiveness') {
-                                 setShowPervasivenessHighlight(true);
-                              }
-                              if (field === 'personalization') {
-                                 setShowPersonalizationHighlight(true);
-                              }
-                           }}
-                           onPressOut={(field) => {
-                              if (field === 'permanence') {
-                                 setShowPermanenceHighlight(false);
-                              }
-                              if (field === 'pervasiveness') {
-                                 setShowPervasivenessHighlight(false);
-                              }
-                              if (field === 'personalization') {
-                                 setShowPersonalizationHighlight(false);
-                              }
-                           }}
-                        />
-                     </View>
-                  </ScrollView>
-               </>
+            {!showAnalysis ? (
+               <DisputeSteps
+                  entry={entry}
+                  idx={idx}
+                  currKey={currKey}
+                  prompts={prompts}
+                  promptTextStyle={promptTextStyle}
+                  promptMaxHeight={promptMaxHeight}
+                  hasVisited={hasVisited}
+                  markVisited={markVisited}
+                  form={form}
+                  setField={setField}
+                  setIdx={setIdx}
+                  onSubmit={submit}
+                  onExit={() => router.back()}
+                  disableNext={currentEmpty}
+                  hasUnsavedChanges={hasUnsavedChanges}
+                  scrollRef={scrollRef}
+                  handleScroll={handleScroll}
+                  scrollToBottom={scrollToBottom}
+                  inputRef={inputRef}
+                  isKeyboardVisible={isKeyboardVisible}
+                  inputBoxDims={inputBoxDims}
+                  insetsPadding={insets.bottom + 24}
+                  promptContainerStyle={styles.promptContainer}
+                  contextBoxStyle={styles.contextBox}
+               />
+            ) : (
+               <ABCAnalysis
+                  entry={entry}
+                  highlights={highlightSets}
+                  highlightColors={DIMENSION_COLORS}
+                  showPermanenceHighlight={showPermanenceHighlight}
+                  showPervasivenessHighlight={showPervasivenessHighlight}
+                  showPersonalizationHighlight={showPersonalizationHighlight}
+                  aiData={lastResult?.data}
+                  loading={loading}
+                  error={error}
+                  streamingText={streamText}
+                  onPressIn={handleDimensionPressIn}
+                  onPressOut={handleDimensionPressOut}
+               />
             )}
          </View>
       </KeyboardAvoidingView>
    );
 }
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
    root: { flex: 1, backgroundColor: '#fff' },
 
    page: {

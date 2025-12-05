@@ -8,6 +8,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2025-12-04
 - Implemented AI response UI/UX
+- dipuste.tsx plumbing change
 
 ### 2025-12-03
 - Refactored entry-new and dispute

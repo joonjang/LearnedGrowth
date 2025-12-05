@@ -7,11 +7,28 @@ type Props = {
   streamingText?: string;
   loading?: boolean;
   error?: string | null;
+  highlightColors?: {
+    permanence?: string;
+    pervasiveness?: string;
+    personalization?: string;
+  };
   onPressIn?: (field: 'permanence' | 'pervasiveness' | 'personalization') => void;
   onPressOut?: (field: 'permanence' | 'pervasiveness' | 'personalization') => void;
 };
 
-type Score = 'optimistic' | 'mixed' | 'pessimistic' | null | undefined;
+type Score = 'optimistic' | 'mixed' | 'pessimistic' | null | undefined | string;
+
+function lightenHex(hex: string, amount = 0.2) {
+  const clean = hex.replace('#', '');
+  const num = parseInt(clean.length === 3
+    ? clean.split('').map((c) => c + c).join('')
+    : clean, 16);
+  const r = Math.min(255, Math.round(((num >> 16) & 255) + 255 * amount));
+  const g = Math.min(255, Math.round(((num >> 8) & 255) + 255 * amount));
+  const b = Math.min(255, Math.round((num & 255) + 255 * amount));
+  const toHex = (v: number) => v.toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
 
 function getScoreChip(score: Score) {
   switch (score) {
@@ -42,7 +59,15 @@ function getScoreChip(score: Score) {
   }
 }
 
-export function AiInsightCard({ data, streamingText, loading, error, onPressIn, onPressOut }: Props) {
+export function AiInsightCard({
+  data,
+  streamingText,
+  loading,
+  error,
+  highlightColors,
+  onPressIn,
+  onPressOut,
+}: Props) {
   if (loading) {
     return (
       <View style={styles.card}>
@@ -83,6 +108,34 @@ export function AiInsightCard({ data, streamingText, loading, error, onPressIn, 
   const pervasivenessChip = getScoreChip(dims.pervasiveness.score);
   const personalizationChip = getScoreChip(dims.personalization.score);
 
+  const permanenceLabelStyle = highlightColors?.permanence
+    ? {
+        backgroundColor: lightenHex(highlightColors.permanence, 0.12),
+        color: '#111',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+      }
+    : null;
+  const pervasivenessLabelStyle = highlightColors?.pervasiveness
+    ? {
+        backgroundColor: lightenHex(highlightColors.pervasiveness, 0.12),
+        color: '#111',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+      }
+    : null;
+  const personalizationLabelStyle = highlightColors?.personalization
+    ? {
+        backgroundColor: lightenHex(highlightColors.personalization, 0.12),
+        color: '#111',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+      }
+    : null;
+
   return (
     <View style={styles.card}>
       {/* Crisis banner */}
@@ -119,7 +172,11 @@ export function AiInsightCard({ data, streamingText, loading, error, onPressIn, 
           style={({ pressed }) => [styles.dimensionRow, pressed && styles.dimensionRowPressed]}
         >
           <View style={styles.dimensionHeaderRow}>
-            <Text style={styles.dimensionLabel}>Time</Text>
+            <Text
+              style={[styles.dimensionLabel, permanenceLabelStyle]}
+            >
+              Time
+            </Text>
             <View style={[styles.chip, permanenceChip.containerStyle]}>
               <Text style={permanenceChip.textStyle}>
                 {permanenceChip.label}
@@ -138,7 +195,11 @@ export function AiInsightCard({ data, streamingText, loading, error, onPressIn, 
           style={({ pressed }) => [styles.dimensionRow, pressed && styles.dimensionRowPressed]}
         >
           <View style={styles.dimensionHeaderRow}>
-            <Text style={styles.dimensionLabel}>How big it feels</Text>
+            <Text
+              style={[styles.dimensionLabel, pervasivenessLabelStyle]}
+            >
+              How big it feels
+            </Text>
             <View style={[styles.chip, pervasivenessChip.containerStyle]}>
               <Text style={pervasivenessChip.textStyle}>
                 {pervasivenessChip.label}
@@ -157,7 +218,11 @@ export function AiInsightCard({ data, streamingText, loading, error, onPressIn, 
           style={({ pressed }) => [styles.dimensionRow, pressed && styles.dimensionRowPressed]}
         >
           <View style={styles.dimensionHeaderRow}>
-            <Text style={styles.dimensionLabel}>Who gets the blame</Text>
+            <Text
+              style={[styles.dimensionLabel, personalizationLabelStyle]}
+            >
+              Who gets the blame
+            </Text>
             <View style={[styles.chip, personalizationChip.containerStyle]}>
               <Text style={personalizationChip.textStyle}>
                 {personalizationChip.label}
