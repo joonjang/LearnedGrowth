@@ -100,13 +100,13 @@ export default function DisputeSteps({
                consequence={entry.consequence ?? ''}
                style={contextBoxStyle ?? styles.contextBox}
             />
-            {onShowInsights ? (
+            {/* {onShowInsights ? (
                <Pressable style={styles.contextAction} onPress={onShowInsights}>
                   <View style={styles.contextActionInner}>
                      <Text style={styles.contextActionText}>View AI insight</Text>
                   </View>
                </Pressable>
-            ) : null}
+            ) : null} */}
 
             <PromptDisplay
                text={prompts[currKey]}

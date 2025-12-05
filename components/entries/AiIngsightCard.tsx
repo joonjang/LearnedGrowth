@@ -56,7 +56,7 @@ function getScoreChip(score: Score) {
          };
       case 'mixed':
          return {
-            label: 'Mixed view”',
+            label: 'Mixed view',
             containerStyle: styles.chipMixed,
             textStyle: styles.chipTextMixed,
          };
