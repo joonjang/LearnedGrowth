@@ -316,12 +316,30 @@ const styles = StyleSheet.create({
   dimensionRow: {
     marginTop: 8,
     gap: 2,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#f8fafc',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    
+  },
+  dimensionRowDisabled: {
+    opacity: 0.7,
   },
   dimensionRowPressed: {
     transform: [{ scale: 0.97 }, { translateY: 1 }],
-    backgroundColor: '#f0f4ff',
-    borderRadius: 10,
-    padding: 6,
+    // backgroundColor: '#eef2ff',
+    borderColor: '#cbd5e1',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 1,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   dimensionHeaderRow: {
     flexDirection: 'row',
@@ -399,7 +417,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   chipOptimistic: {
-    backgroundColor: '#e3f8ea',
+    backgroundColor: '#b7faccff',
     borderWidth: 0,
   },
   chipTextOptimistic: {
