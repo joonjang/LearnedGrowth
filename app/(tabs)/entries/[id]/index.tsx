@@ -142,16 +142,20 @@ export default function EntryDetailScreen() {
       [baseline, trimmed]
    );
 
-   const visibleFields = useMemo(
-      () =>
-         FIELD_META.filter((field) => {
-            if (field.key === 'dispute' || field.key === 'energy') {
-               return Boolean(baseline[field.key] || trimmed[field.key]);
-            }
-            return true;
-         }),
-      [baseline, trimmed]
-   );
+   const visibleFields = useMemo(() => {
+      const hasConsequence = Boolean(baseline.consequence || trimmed.consequence);
+      const showDispute = Boolean(baseline.dispute || trimmed.dispute);
+
+      return FIELD_META.filter((field) => {
+        if (field.key === 'dispute') {
+          return showDispute;
+        }
+        if (field.key === 'energy') {
+          return hasConsequence && showDispute;
+        }
+        return true;
+      });
+   }, [baseline, trimmed]);
 
    const setField = useCallback(
       (key: FieldKey) => (value: string) => {
@@ -197,18 +201,7 @@ export default function EntryDetailScreen() {
       [hasScrolled]
    );
 
-   const {
-      lastResult,
-      error: aiError,
-      streamText,
-   } = useAbcAi();
 
-   useEffect(() => {
-      if (!streamText) return;
-      const ref = streamScrollRef.current;
-      if (!ref) return;
-      ref.scrollToEnd({ animated: true });
-   }, [streamText]);
 
    if (!entry) {
       return (
@@ -305,110 +298,7 @@ export default function EntryDetailScreen() {
                </>
             )}
 
-            {/* {(streaming || streamText) && (
-              <View style={styles.aiResultContainer}>
-                 <Text style={styles.aiResultTitle}>
-                    {streaming ? "Streaming response" : "Last streamed response"}
-                 </Text>
-                 <ScrollView
-                    ref={streamScrollRef}
-                    style={styles.aiResultScroll}
-                    nestedScrollEnabled
-                    showsVerticalScrollIndicator={false}
-                >
-                   <Text style={styles.aiResultText}>
-                      {streamText || "(waiting for data...)"}
-                   </Text>
-                </ScrollView>
-             </View>
-           )} */}
 
-            {lastResult && (
-               <View style={styles.aiResultContainer}>
-                  <Text style={styles.aiResultTitle}>AI insights</Text>
-
-                  <View style={styles.aiSection}>
-                     <Text style={styles.aiSectionHeading}>Analysis</Text>
-                     {lastResult.data.analysis.emotionalLogic ? (
-                        <Text style={styles.aiBody}>
-                           {lastResult.data.analysis.emotionalLogic}
-                        </Text>
-                     ) : null}
-                     <View style={styles.aiStyleGroup}>
-                        {renderStyleRow(
-                           'Permanence',
-                           lastResult.data.analysis.dimensions.permanence.score,
-                           lastResult.data.analysis.dimensions.permanence
-                              .detectedPhrase,
-                           lastResult.data.analysis.dimensions.permanence
-                              .insight
-                        )}
-                        {renderStyleRow(
-                           'Pervasiveness',
-                           lastResult.data.analysis.dimensions.pervasiveness
-                              .score,
-                           lastResult.data.analysis.dimensions.pervasiveness
-                              .detectedPhrase,
-                           lastResult.data.analysis.dimensions.pervasiveness
-                              .insight
-                        )}
-                        {renderStyleRow(
-                           'Personalization',
-                           lastResult.data.analysis.dimensions.personalization
-                              .score,
-                           lastResult.data.analysis.dimensions.personalization
-                              .detectedPhrase,
-                           lastResult.data.analysis.dimensions.personalization
-                              .insight
-                        )}
-                     </View>
-                  </View>
-
-                  <View style={styles.aiSection}>
-                     <Text style={styles.aiSectionHeading}>Suggestions</Text>
-                     {lastResult.data.suggestions.evidenceQuestion ? (
-                        <Text style={styles.aiBody}>
-                           Evidence:{' '}
-                           {lastResult.data.suggestions.evidenceQuestion}
-                        </Text>
-                     ) : null}
-                     {lastResult.data.suggestions.alternativesQuestion ? (
-                        <Text style={styles.aiBody}>
-                           Alternatives:{' '}
-                           {lastResult.data.suggestions.alternativesQuestion}
-                        </Text>
-                     ) : null}
-                     {lastResult.data.suggestions.usefulnessQuestion ? (
-                        <Text style={styles.aiBody}>
-                           Usefulness:{' '}
-                           {lastResult.data.suggestions.usefulnessQuestion}
-                        </Text>
-                     ) : null}
-                     {lastResult.data.suggestions.counterBelief ? (
-                        <Text style={styles.aiSubtle}>
-                           Counter belief:{' '}
-                           {lastResult.data.suggestions.counterBelief}
-                        </Text>
-                     ) : null}
-                  </View>
-
-                  {lastResult.data.safety.isCrisis && (
-                     <View style={styles.aiSection}>
-                        <Text style={styles.aiSectionHeading}>Safety</Text>
-                        <Text style={styles.aiBody}>
-                           {lastResult.data.safety.crisisMessage ??
-                              'The AI detected crisis language. Please seek immediate help from local emergency services or a crisis line.'}
-                        </Text>
-                     </View>
-                  )}
-               </View>
-            )}
-            {aiError && (
-               <View style={styles.aiResultContainer}>
-                  <Text style={styles.aiResultTitle}>AI error</Text>
-                  <Text style={styles.aiResultText}>{aiError}</Text>
-               </View>
-            )}
          </KeyboardAwareScrollView>
       </View>
    );
