@@ -1,4 +1,7 @@
 import { LearnedGrowthResponse } from '@/models/aiService';
+import { cardBase, chipBase, sectionBlock as sectionBase } from '@/theme/components';
+import { palette } from '@/theme/colors';
+import { typography } from '@/theme/typography';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import ThreeDotsLoader from '../ThreeDotLoader';
 
@@ -309,33 +312,27 @@ export function AiInsightCard({
 
 const styles = StyleSheet.create({
    card: {
-      padding: 16,
-      borderRadius: 16,
+      ...cardBase,
       backgroundColor: '#f5f5f7',
       gap: 12,
    },
    title: {
-      fontSize: 18,
-      fontWeight: '700',
+      ...typography.title,
       marginBottom: 4,
    },
    subText: {
-      fontSize: 14,
+      ...typography.body,
       color: '#666',
       marginTop: 4,
    },
    sectionBlock: {
-      marginTop: 4,
-      gap: 6,
+      ...sectionBase,
    },
    sectionTitle: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: '#444',
+      ...typography.subtitle,
    },
    bodyText: {
-      fontSize: 14,
-      color: '#333',
+      ...typography.body,
    },
    dimensionRow: {
       marginTop: 8,
@@ -343,7 +340,7 @@ const styles = StyleSheet.create({
       padding: 10,
       borderRadius: 10,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#e5e7eb',
+      borderColor: palette.border,
       backgroundColor: '#f8fafc',
       shadowColor: '#000',
       shadowOpacity: 0.06,
@@ -356,7 +353,6 @@ const styles = StyleSheet.create({
    },
    dimensionRowPressed: {
       transform: [{ scale: 0.97 }, { translateY: 1 }],
-      // backgroundColor: '#eef2ff',
       borderColor: '#cbd5e1',
       shadowColor: '#000',
       shadowOpacity: 0.06,
@@ -370,12 +366,12 @@ const styles = StyleSheet.create({
       justifyContent: 'space-between',
    },
    dimensionLabel: {
-      fontSize: 12,
+      ...typography.caption,
       fontWeight: '600',
       color: '#666',
    },
    dimensionText: {
-      fontSize: 14,
+      ...typography.body,
       color: '#333',
    },
    questionRow: {
@@ -391,29 +387,29 @@ const styles = StyleSheet.create({
    },
    questionText: {
       flex: 1,
-      fontSize: 14,
+      ...typography.body,
       color: '#333',
    },
    counterBubble: {
       marginTop: 4,
       padding: 10,
       borderRadius: 12,
-      backgroundColor: '#ffffffff',
+      backgroundColor: palette.cardBg,
    },
    counterText: {
-      fontSize: 14,
+      ...typography.body,
       color: '#222',
    },
    helperText: {
       marginTop: 4,
-      fontSize: 12,
+      ...typography.caption,
       color: '#777',
    },
    errorCard: {
       backgroundColor: '#ffe6e6',
    },
    errorText: {
-      fontSize: 14,
+      ...typography.body,
       color: '#a00',
    },
    crisisBanner: {
@@ -423,29 +419,26 @@ const styles = StyleSheet.create({
       marginBottom: 4,
    },
    crisisTitle: {
-      fontSize: 14,
-      fontWeight: '700',
+      ...typography.subtitle,
       color: '#a00000',
       marginBottom: 2,
    },
    crisisText: {
-      fontSize: 13,
+      ...typography.body,
       color: '#a00000',
+      fontSize: 13,
    },
 
    // chips
    chip: {
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-      borderRadius: 999,
+      ...chipBase,
    },
    chipOptimistic: {
       backgroundColor: '#b7faccff',
       borderWidth: 0,
    },
    chipTextOptimistic: {
-      fontSize: 11,
-      fontWeight: '600',
+      ...typography.chip,
       color: '#1b7b3c',
    },
    chipPessimistic: {
@@ -453,8 +446,7 @@ const styles = StyleSheet.create({
       borderWidth: 0,
    },
    chipTextPessimistic: {
-      fontSize: 11,
-      fontWeight: '600',
+      ...typography.chip,
       color: '#a00000',
    },
    chipMixed: {
@@ -462,8 +454,7 @@ const styles = StyleSheet.create({
       borderWidth: 0,
    },
    chipTextMixed: {
-      fontSize: 11,
-      fontWeight: '600',
+      ...typography.chip,
       color: '#b46a00',
    },
    chipNeutral: {
@@ -471,8 +462,7 @@ const styles = StyleSheet.create({
       borderWidth: 0,
    },
    chipTextNeutral: {
-      fontSize: 11,
-      fontWeight: '600',
+      ...typography.chip,
       color: '#585870',
    },
 });

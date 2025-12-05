@@ -6,6 +6,9 @@ import ThreeDotsLoader from '@/components/ThreeDotLoader';
 import { HighlightMap, HighlightedText } from '@/components/entries/highlightUtils';
 import { Entry } from '@/models/entry';
 import { LearnedGrowthResponse } from '@/models/aiService';
+import { cardBase, compactCard } from '@/theme/components';
+import { palette } from '@/theme/colors';
+import { typography } from '@/theme/typography';
 
 type Props = {
   entry: Entry;
@@ -149,7 +152,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  text: { fontSize: 16, fontWeight: '500' },
+  text: { ...typography.body, fontSize: 16, fontWeight: '500' },
   switchButton: {
     marginTop: 16,
     paddingVertical: 10,
@@ -160,21 +163,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   switchButtonText: {
+    ...typography.body,
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   contextBox: {
-    backgroundColor: '#F3F4F6',
-    padding: 12,
-    borderRadius: 12,
+    ...compactCard,
+    backgroundColor: palette.surfaceMuted,
     gap: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#E5E7EB',
   },
   contextRow: { gap: 4 },
   contextLabel: {
-    fontSize: 13,
+    ...typography.caption,
     fontWeight: '700',
     color: '#374151',
     textTransform: 'uppercase',
@@ -182,22 +183,20 @@ const styles = StyleSheet.create({
   },
   contextDivider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: palette.border,
     marginVertical: 2,
   },
   card: {
-    padding: 16,
-    borderRadius: 16,
+    ...cardBase,
     backgroundColor: '#f5f5f7',
     gap: 12,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
+    ...typography.title,
     marginBottom: 4,
   },
   subText: {
-    fontSize: 14,
+    ...typography.body,
     color: '#666',
     marginTop: 4,
   },
@@ -205,7 +204,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffe6e6',
   },
   errorText: {
-    fontSize: 14,
+    ...typography.body,
     color: '#a00',
   },
 });
