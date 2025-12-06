@@ -6,6 +6,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-05
+- Extended database to hold 'counterBelief' JSON text
+- Cached AI JSON data now displays in respective [id]/index
+
 ### 2025-12-04
 - Implemented AI response UI/UX
 - dispute.tsx plumbing change
@@ -167,7 +171,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
-- Abstract card dimension and sizes
+- Circle back and assess the edit/cancel/save button flow of [id]/index header
 - Add test to for API
 - Disable editing of ABC once dispute has been made
 - Make UI/UX that integrates AI response
