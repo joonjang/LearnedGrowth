@@ -1,3 +1,5 @@
+// DisputeScreen.tsx
+
 import rawAbcde from '@/assets/data/abcde.json';
 import { usePrompts } from '@/features/hooks/usePrompts';
 import { useVisitedSet } from '@/features/hooks/useVisitedSet';
@@ -34,14 +36,15 @@ import {
    SafeAreaView,
    useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import {
-   KeyboardEvents,
-} from 'react-native-keyboard-controller';
+import { KeyboardEvents } from 'react-native-keyboard-controller';
 import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
 import { useAbcAi } from '@/features/hooks/useAbcAi';
 import DisputeSteps from '@/components/entries/dispute/DisputeSteps';
 import ABCAnalysis from '@/components/entries/dispute/ABCAnalysis';
-import { HighlightMap, buildHighlightMap } from '@/components/entries/highlightUtils';
+import {
+   HighlightMap,
+   buildHighlightMap,
+} from '@/components/entries/highlightUtils';
 
 const STEP_ORDER = [
    'evidence',
@@ -49,11 +52,13 @@ const STEP_ORDER = [
    'usefulness',
    'energy',
 ] as const;
+
 const DIMENSION_COLORS = {
    permanence: '#FCA5A5', // stronger rose
    pervasiveness: '#93C5FD', // stronger blue
    personalization: '#C4B5FD', // stronger violet
 };
+
 function endWithPeriod(text: string) {
    const trimmed = text.trim();
    if (!trimmed) return '';
@@ -72,12 +77,17 @@ function buildDisputeText(form: Record<NewInputDisputeType, string>) {
 }
 
 export default function DisputeScreen() {
-   const { id, analyze: analyzeParam } = useLocalSearchParams<{
+   const params = useLocalSearchParams<{
       id?: string | string[];
       analyze?: string | string[];
    }>();
 
-   const entryId = Array.isArray(id) ? id[0] : id;
+   const entryId = Array.isArray(params.id) ? params.id[0] : params.id;
+   const analyzeQuery = Array.isArray(params.analyze)
+      ? params.analyze[0]
+      : params.analyze;
+   const shouldAnalyze = analyzeQuery === '1' || analyzeQuery === 'true';
+
    const { getEntryById, updateEntry } = useEntries();
    const entry = entryId ? getEntryById(entryId) : undefined;
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
@@ -93,32 +103,36 @@ export default function DisputeScreen() {
    });
 
    const [analysisTriggered, setAnalysisTriggered] = useState(false);
-   const [showPermanenceHighlight, setShowPermanenceHighlight] = useState(false);
+
+   const [showPermanenceHighlight, setShowPermanenceHighlight] =
+      useState(false);
    const [showPervasivenessHighlight, setShowPervasivenessHighlight] =
       useState(false);
    const [showPersonalizationHighlight, setShowPersonalizationHighlight] =
       useState(false);
-   const [viewMode, setViewMode] = useState<'steps' | 'analysis'>('steps');
+
+   const [viewMode, setViewMode] = useState<'steps' | 'analysis'>(
+      shouldAnalyze ? 'analysis' : 'steps'
+   );
    const [hasAutoOpenedAnalysis, setHasAutoOpenedAnalysis] = useState(false);
-   const stepsProgress = useSharedValue(1);
-   const analysisProgress = useSharedValue(0);
+   const stepsProgress = useSharedValue(shouldAnalyze ? 0 : 1);
+   const analysisProgress = useSharedValue(shouldAnalyze ? 1 : 0);
 
    const { analyze, lastResult, loading, error, ready, streamText } =
       useAbcAi();
 
    useEffect(() => {
       if (!entry || !ready) return;
-      const shouldAnalyze = analyzeParam === '1' || analyzeParam === 'true';
       if (!shouldAnalyze || analysisTriggered || lastResult) return;
+
       setAnalysisTriggered(true);
       analyze({
          adversity: entry.adversity,
          belief: entry.belief,
          consequence: entry.consequence ?? undefined,
-      }).catch((e) => console.log(e)); // optionally reset or surface error
-   }, [ready, analyzeParam, analysisTriggered, entry, lastResult, analyze]);
+      }).catch((e) => console.log(e));
+   }, [ready, shouldAnalyze, analysisTriggered, entry, lastResult, analyze]);
 
-   // dispute should have all empty fields, return if either are filled or if entry doesnt exist
    useEffect(() => {
       if (!entry) return;
       if (entry.dispute || entry.energy) return;
@@ -163,17 +177,22 @@ export default function DisputeScreen() {
    useEffect(() => {
       if (!entry || !lastResult?.data?.analysis) return;
 
-      const storedKey = entry.analysis
-         ? JSON.stringify(entry.analysis)
-         : null;
+      const storedKey = entry.analysis ? JSON.stringify(entry.analysis) : null;
       const incomingKey = JSON.stringify(lastResult.data.analysis);
+
+      // If analysis is the same, we assume counterBelief is also the same.
       if (storedKey === incomingKey) return;
 
       updateEntry(entry.id, {
          analysis: lastResult.data.analysis,
          counterBelief: lastResult.data.suggestions?.counterBelief ?? null,
       }).catch((e) => console.warn('Failed to store analysis', e));
-   }, [entry, lastResult?.data?.analysis, updateEntry]);
+   }, [
+      entry,
+      lastResult?.data?.analysis,
+      lastResult?.data?.suggestions?.counterBelief, // 🔐 added for ESLint
+      updateEntry,
+   ]);
 
    const permanenceHighlights = useMemo<HighlightMap>(
       () =>
@@ -239,6 +258,7 @@ export default function DisputeScreen() {
       };
    }, [entry?.analysis, entry?.counterBelief, lastResult?.data]);
 
+   // Turn highlight ON when user starts pressing
    const handleDimensionPressIn = useCallback(
       (field: 'permanence' | 'pervasiveness' | 'personalization') => {
          setShowPermanenceHighlight(field === 'permanence');
@@ -248,7 +268,8 @@ export default function DisputeScreen() {
       []
    );
 
-   const handleDimensionPressOut = useCallback(() => {
+   // Turn highlight OFF (used by tap release OR scroll end)
+   const clearDimensionHighlight = useCallback(() => {
       setShowPermanenceHighlight(false);
       setShowPervasivenessHighlight(false);
       setShowPersonalizationHighlight(false);
@@ -359,7 +380,6 @@ export default function DisputeScreen() {
 
    const showAnalysis = viewMode === 'analysis';
 
-
    if (!entry) {
       return (
          <SafeAreaView style={styles.centered}>
@@ -402,7 +422,6 @@ export default function DisputeScreen() {
                   isKeyboardVisible={isKeyboardVisible}
                   inputBoxDims={inputBoxDims}
                   promptContainerStyle={styles.promptContainer}
-                  contextBoxStyle={styles.contextBox}
                   onShowInsights={() => setViewMode('analysis')}
                />
             </Animated.View>
@@ -424,7 +443,7 @@ export default function DisputeScreen() {
                   streamingText={streamText}
                   onGoToSteps={() => setViewMode('steps')}
                   onPressIn={handleDimensionPressIn}
-                  onPressOut={handleDimensionPressOut}
+                  onPressOut={clearDimensionHighlight}
                />
             </Animated.View>
          </View>
@@ -461,7 +480,7 @@ export const styles = StyleSheet.create({
       paddingBottom: 4,
       flexDirection: 'row',
       justifyContent: 'flex-end',
-      position: 'absolute'
+      position: 'absolute',
    },
    switchButton: {
       paddingHorizontal: 10,

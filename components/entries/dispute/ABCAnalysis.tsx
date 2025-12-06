@@ -1,9 +1,14 @@
+// ABCAnalysis.tsx
+
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
 import ThreeDotsLoader from '@/components/ThreeDotLoader';
-import { HighlightMap, HighlightedText } from '@/components/entries/highlightUtils';
+import {
+  HighlightMap,
+  HighlightedText,
+} from '@/components/entries/highlightUtils';
 import { Entry } from '@/models/entry';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { cardBase, compactCard } from '@/theme/components';
@@ -30,8 +35,11 @@ type Props = {
     personalization?: string;
   };
   onGoToSteps?: () => void;
-  onPressIn?: (field: 'permanence' | 'pervasiveness' | 'personalization') => void;
-  onPressOut?: (field: 'permanence' | 'pervasiveness' | 'personalization') => void;
+  onPressIn?: (
+    field: 'permanence' | 'pervasiveness' | 'personalization'
+  ) => void;
+  // now just a "clear" callback
+  onPressOut?: () => void;
 };
 
 export default function ABCAnalysis({
@@ -53,17 +61,25 @@ export default function ABCAnalysis({
     adversity: [
       ...(showPermanenceHighlight ? highlights.permanence.adversity : []),
       ...(showPervasivenessHighlight ? highlights.pervasiveness.adversity : []),
-      ...(showPersonalizationHighlight ? highlights.personalization.adversity : []),
+      ...(showPersonalizationHighlight
+        ? highlights.personalization.adversity
+        : []),
     ],
     belief: [
       ...(showPermanenceHighlight ? highlights.permanence.belief : []),
       ...(showPervasivenessHighlight ? highlights.pervasiveness.belief : []),
-      ...(showPersonalizationHighlight ? highlights.personalization.belief : []),
+      ...(showPersonalizationHighlight
+        ? highlights.personalization.belief
+        : []),
     ],
     consequence: [
       ...(showPermanenceHighlight ? highlights.permanence.consequence : []),
-      ...(showPervasivenessHighlight ? highlights.pervasiveness.consequence : []),
-      ...(showPersonalizationHighlight ? highlights.personalization.consequence : []),
+      ...(showPervasivenessHighlight
+        ? highlights.pervasiveness.consequence
+        : []),
+      ...(showPersonalizationHighlight
+        ? highlights.personalization.consequence
+        : []),
     ],
   };
 
@@ -71,24 +87,32 @@ export default function ABCAnalysis({
     <ScrollView
       style={styles.scroll}
       contentContainerStyle={[styles.scrollContent, { paddingTop: 24 }]}
-      keyboardShouldPersistTaps="handled"
+      keyboardShouldPersistTaps="always"
       showsVerticalScrollIndicator={false}
+      // when scrolling gesture ends, clear the highlight
+      onScrollEndDrag={() => onPressOut?.()}
+      onMomentumScrollEnd={() => onPressOut?.()}
     >
       <View style={styles.container}>
         <Text style={styles.text}>AI Insight</Text>
-        
       </View>
 
       <View style={{ flex: 1 }}>
         <View style={[styles.contextBox]}>
           <View style={styles.contextRow}>
             <Text style={styles.contextLabel}>Adversity</Text>
-            <HighlightedText text={entry.adversity} highlights={activeHighlights.adversity} />
+            <HighlightedText
+              text={entry.adversity}
+              highlights={activeHighlights.adversity}
+            />
           </View>
           <View style={styles.contextDivider} />
           <View style={styles.contextRow}>
             <Text style={styles.contextLabel}>Belief</Text>
-            <HighlightedText text={entry.belief} highlights={activeHighlights.belief} />
+            <HighlightedText
+              text={entry.belief}
+              highlights={activeHighlights.belief}
+            />
           </View>
           {entry.consequence && (
             <>
@@ -122,6 +146,9 @@ export default function ABCAnalysis({
             highlightColors={highlightColors}
             onPressIn={onPressIn}
             onPressOut={onPressOut}
+            showPermanenceHighlight={showPermanenceHighlight}
+            showPervasivenessHighlight={showPervasivenessHighlight}
+            showPersonalizationHighlight={showPersonalizationHighlight}
           />
         ) : (
           <Text style={styles.subText}>Waiting for AI insight…</Text>

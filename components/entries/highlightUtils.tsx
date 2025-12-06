@@ -138,7 +138,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FACC15',
     borderColor: '#D97706',
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 4,
-    paddingHorizontal: 2,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
 });
