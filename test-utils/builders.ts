@@ -3,8 +3,7 @@ import { Entry } from '@/models/entry';
 export const baseEntry: Omit<Entry, 'id' | 'createdAt' | 'updatedAt'> = {
    adversity: 'Test adversity',
    belief: 'Test belief',
-   analysis: null,
-   counterBelief: null,
+   aiResponse: null,
    consequence: undefined,
    dispute: undefined,
    energy: undefined,

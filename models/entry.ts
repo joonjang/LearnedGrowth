@@ -1,7 +1,5 @@
 import { LearnedGrowthResponse } from "./aiService";
 
-export type EntryAnalysis = LearnedGrowthResponse["analysis"];
-
 export interface Entry {
    id: string;
    adversity: string;
@@ -9,8 +7,7 @@ export interface Entry {
    consequence?: string;
    dispute?: string;
    energy?: string;
-   analysis?: EntryAnalysis | null;
-   counterBelief?: string | null;
+   aiResponse?: LearnedGrowthResponse | null;
    createdAt: string;
    updatedAt: string;
    accountId?: string | null;

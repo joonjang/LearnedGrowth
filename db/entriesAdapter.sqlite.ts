@@ -1,5 +1,6 @@
 import { Clock } from "@/lib/clock";
-import { Entry, EntryAnalysis } from "@/models/entry";
+import { LearnedGrowthResponse } from "@/models/aiService";
+import { Entry } from "@/models/entry";
 import * as SQLite from "expo-sqlite";
 import { EntriesAdapter } from "../models/entriesAdapter";
 
@@ -7,8 +8,7 @@ interface Row {
    id: string;
    adversity: string;
    belief: string;
-   analysis: string | null;
-   counter_belief: string | null;
+   ai_response: string | null;
    consequence: string | null;
    dispute: string | null;
    energy: string | null;
@@ -19,21 +19,23 @@ interface Row {
    is_deleted: number;
 }
 
-function serializeAnalysis(analysis?: EntryAnalysis | null) {
-   return analysis ? JSON.stringify(analysis) : null;
+function serializeAiResponse(aiResponse?: LearnedGrowthResponse | null) {
+   return aiResponse ? JSON.stringify(aiResponse) : null;
 }
 
-function parseAnalysis(raw: string | null): EntryAnalysis | null {
+function parseAiResponse(raw: string | null): LearnedGrowthResponse | null {
    if (!raw) return null;
    try {
-      return JSON.parse(raw) as EntryAnalysis;
+      return JSON.parse(raw) as LearnedGrowthResponse;
    } catch (e: any) {
-      throw new Error(`Failed to parse analysis JSON`, { cause: e });
+      throw new Error(`Failed to parse ai_response JSON`, { cause: e });
    }
 }
 
-function cloneAnalysis(analysis?: EntryAnalysis | null): EntryAnalysis | null {
-   return analysis ? JSON.parse(JSON.stringify(analysis)) : null;
+function cloneAiResponse(
+   aiResponse?: LearnedGrowthResponse | null
+): LearnedGrowthResponse | null {
+   return aiResponse ? JSON.parse(JSON.stringify(aiResponse)) : null;
 }
 
 export class SQLEntriesAdapter implements EntriesAdapter {
@@ -50,8 +52,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
    private copyEntry(entry: Entry): Entry {
       return {
          ...entry,
-         analysis: cloneAnalysis(entry.analysis ?? null),
-         counterBelief: entry.counterBelief ?? null,
+         aiResponse: cloneAiResponse(entry.aiResponse ?? null),
       };
    }
 
@@ -60,8 +61,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          id: row.id,
          adversity: row.adversity,
          belief: row.belief,
-         analysis: parseAnalysis(row.analysis),
-         counterBelief: row.counter_belief ?? null,
+         aiResponse: parseAiResponse(row.ai_response),
          consequence: row.consequence ?? undefined,
          dispute: row.dispute ?? undefined,
          energy: row.energy ?? undefined,
@@ -84,7 +84,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
 
       try {
          const rows = await this.db.getAllAsync<Row>(`
-            SELECT id, adversity, belief, analysis, counter_belief, consequence, dispute, energy,
+            SELECT id, adversity, belief, ai_response, consequence, dispute, energy,
               created_at, updated_at, account_id, dirty_since, is_deleted
             FROM entries
             WHERE is_deleted = 0
@@ -105,7 +105,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
       try {
          const row = await this.db.getFirstAsync<Row>(
             `
-          SELECT id, adversity, belief, analysis, counter_belief, consequence, dispute, energy,
+          SELECT id, adversity, belief, ai_response, consequence, dispute, energy,
               created_at, updated_at, account_id, dirty_since, is_deleted
             FROM entries
             WHERE id = $id
@@ -136,17 +136,16 @@ export class SQLEntriesAdapter implements EntriesAdapter {
       try {
          await this.db.runAsync(
             `INSERT INTO entries
-       (id, adversity, belief, analysis, counter_belief, consequence, dispute, energy,
+       (id, adversity, belief, ai_response, consequence, dispute, energy,
         created_at, updated_at, account_id, dirty_since, is_deleted)
        VALUES
-       ($id, $adversity, $belief, $analysis, $counter_belief, $consequence, $dispute, $energy,
+       ($id, $adversity, $belief, $ai_response, $consequence, $dispute, $energy,
         $created_at, $updated_at, $account_id, $dirty_since, $is_deleted)`,
             {
                $id: entry.id,
                $adversity: entry.adversity,
                $belief: entry.belief,
-               $analysis: serializeAnalysis(entry.analysis ?? null),
-               $counter_belief: entry.counterBelief ?? null,
+               $ai_response: serializeAiResponse(entry.aiResponse ?? null),
                $consequence: entry.consequence ?? null,
                $dispute: entry.dispute ?? null,
                $energy: entry.energy ?? null,
@@ -159,7 +158,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          );
 
          const row = await this.db.getFirstAsync<Row>(
-            `SELECT id, adversity, belief, analysis, counter_belief, consequence, dispute, energy,
+            `SELECT id, adversity, belief, ai_response, consequence, dispute, energy,
               created_at, updated_at, account_id, dirty_since, is_deleted
          FROM entries
         WHERE id = $id
@@ -186,23 +185,16 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          if (i === -1) throw new Error(`Entry ${id} not found`);
 
          const current = this.entries![i];
-         const nextAnalysis = Object.prototype.hasOwnProperty.call(
+         const nextAiResponse = Object.prototype.hasOwnProperty.call(
             patch,
-            "analysis"
+            "aiResponse"
          )
-            ? cloneAnalysis(patch.analysis ?? null)
-            : cloneAnalysis(current.analysis ?? null);
-         const nextCounter = Object.prototype.hasOwnProperty.call(
-            patch,
-            "counterBelief"
-         )
-            ? patch.counterBelief ?? null
-            : current.counterBelief ?? null;
+            ? cloneAiResponse(patch.aiResponse ?? null)
+            : cloneAiResponse(current.aiResponse ?? null);
          const merged: Entry = {
             ...current,
             ...patch,
-            analysis: nextAnalysis,
-            counterBelief: nextCounter,
+            aiResponse: nextAiResponse,
             dirtySince: current.dirtySince ?? now,
             updatedAt: now,
          };
@@ -216,24 +208,17 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          const current = await this.getById(id);
          if (!current) throw new Error(`Entry ${id} not found`);
 
-         const nextAnalysis = Object.prototype.hasOwnProperty.call(
+         const nextAiResponse = Object.prototype.hasOwnProperty.call(
             patch,
-            "analysis"
+            "aiResponse"
          )
-            ? cloneAnalysis(patch.analysis ?? null)
-            : cloneAnalysis(current.analysis ?? null);
-         const nextCounter = Object.prototype.hasOwnProperty.call(
-            patch,
-            "counterBelief"
-         )
-            ? patch.counterBelief ?? null
-            : current.counterBelief ?? null;
+            ? cloneAiResponse(patch.aiResponse ?? null)
+            : cloneAiResponse(current.aiResponse ?? null);
 
          const merged: Entry = {
             ...current,
             ...patch, // patch fields; createdAt/id stay from current
-            analysis: nextAnalysis,
-            counterBelief: nextCounter,
+            aiResponse: nextAiResponse,
             dirtySince: current.dirtySince ?? now,
             updatedAt: now,
          };
@@ -242,8 +227,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
             `UPDATE entries
          SET adversity   = $adversity,
               belief      = $belief,
-              analysis    = $analysis,
-              counter_belief = $counter_belief,
+              ai_response = $ai_response,
               consequence = $consequence,
               dispute     = $dispute,
               energy      = $energy,
@@ -256,8 +240,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
                $id: merged.id,
                $adversity: merged.adversity,
                $belief: merged.belief,
-               $analysis: serializeAnalysis(merged.analysis ?? null),
-               $counter_belief: merged.counterBelief ?? null,
+               $ai_response: serializeAiResponse(merged.aiResponse ?? null),
                $consequence: merged.consequence ?? null,
                $dispute: merged.dispute ?? null,
                $energy: merged.energy ?? null,
@@ -270,7 +253,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          );
 
          const row = await this.db.getFirstAsync<Row>(
-            `SELECT id, adversity, belief, analysis, counter_belief, consequence, dispute, energy,
+            `SELECT id, adversity, belief, ai_response, consequence, dispute, energy,
               created_at, updated_at, account_id, dirty_since, is_deleted
          FROM entries
         WHERE id = $id

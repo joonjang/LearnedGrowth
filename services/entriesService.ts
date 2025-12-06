@@ -15,8 +15,7 @@ export function createEntry(
     const now = clock.nowIso();
     const entry: Entry = {
         ...data,
-        analysis: null,
-        counterBelief: null,
+        aiResponse: null,
         id: Crypto.randomUUID(),
         createdAt: now,
         updatedAt: now,

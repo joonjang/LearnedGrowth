@@ -170,29 +170,24 @@ export default function DisputeScreen() {
    }, [entry?.dispute, entry?.energy, trimmedForm]);
 
    const analysisData = useMemo(
-      () => lastResult?.data?.analysis ?? entry?.analysis ?? null,
-      [entry?.analysis, lastResult?.data?.analysis]
+      () => lastResult?.data?.analysis ?? entry?.aiResponse?.analysis ?? null,
+      [entry?.aiResponse?.analysis, lastResult?.data?.analysis]
    );
 
    useEffect(() => {
-      if (!entry || !lastResult?.data?.analysis) return;
+      if (!entry || !lastResult?.data) return;
 
-      const storedKey = entry.analysis ? JSON.stringify(entry.analysis) : null;
-      const incomingKey = JSON.stringify(lastResult.data.analysis);
+      const storedKey = entry.aiResponse
+         ? JSON.stringify(entry.aiResponse)
+         : null;
+      const incomingKey = JSON.stringify(lastResult.data);
 
-      // If analysis is the same, we assume counterBelief is also the same.
       if (storedKey === incomingKey) return;
 
       updateEntry(entry.id, {
-         analysis: lastResult.data.analysis,
-         counterBelief: lastResult.data.suggestions?.counterBelief ?? null,
-      }).catch((e) => console.warn('Failed to store analysis', e));
-   }, [
-      entry,
-      lastResult?.data?.analysis,
-      lastResult?.data?.suggestions?.counterBelief, // 🔐 added for ESLint
-      updateEntry,
-   ]);
+         aiResponse: lastResult.data,
+      }).catch((e) => console.warn('Failed to store AI response', e));
+   }, [entry, lastResult?.data, updateEntry]);
 
    const permanenceHighlights = useMemo<HighlightMap>(
       () =>
@@ -234,29 +229,20 @@ export default function DisputeScreen() {
    );
 
    const suggestionPrompts = useMemo(() => {
-      const sug = lastResult?.data?.suggestions;
+      const sug =
+         lastResult?.data?.suggestions ?? entry?.aiResponse?.suggestions;
       return {
          evidence: sug?.evidenceQuestion ?? prompts.evidence,
          alternatives: sug?.alternativesQuestion ?? prompts.alternatives,
          usefulness: sug?.usefulnessQuestion ?? prompts.usefulness,
          energy: prompts.energy,
       } as Record<NewInputDisputeType, string>;
-   }, [lastResult?.data?.suggestions, prompts]);
+   }, [entry?.aiResponse?.suggestions, lastResult?.data?.suggestions, prompts]);
 
    const aiData: LearnedGrowthResponse | null = useMemo(() => {
       if (lastResult?.data) return lastResult.data;
-      if (!entry?.analysis) return null;
-      return {
-         analysis: entry.analysis,
-         safety: { isCrisis: false, crisisMessage: null },
-         suggestions: {
-            evidenceQuestion: null,
-            alternativesQuestion: null,
-            usefulnessQuestion: null,
-            counterBelief: entry.counterBelief ?? null,
-         },
-      };
-   }, [entry?.analysis, entry?.counterBelief, lastResult?.data]);
+      return entry?.aiResponse ?? null;
+   }, [entry?.aiResponse, lastResult?.data]);
 
    // Turn highlight ON when user starts pressing
    const handleDimensionPressIn = useCallback(

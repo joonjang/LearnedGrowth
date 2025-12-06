@@ -136,20 +136,8 @@ export default function EntryDetailScreen() {
       [entry]
    );
 
-   const analysis = entry?.analysis ?? null;
-   const aiDisplayData = useMemo(() => {
-      if (!analysis) return null;
-      return {
-         analysis,
-         safety: { isCrisis: false, crisisMessage: null },
-         suggestions: {
-            evidenceQuestion: null,
-            alternativesQuestion: null,
-            usefulnessQuestion: null,
-            counterBelief: entry?.counterBelief ?? null,
-         },
-      };
-   }, [analysis, entry?.counterBelief]);
+   const aiDisplayData = entry?.aiResponse ?? null;
+   const analysis = aiDisplayData?.analysis ?? null;
 
    const hasChanges = useMemo(
       () => FIELD_KEYS.some((key) => trimmed[key] !== baseline[key]),

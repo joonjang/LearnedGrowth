@@ -7,9 +7,14 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-06
+- Consolidated AI storage into a single `aiResponse` JSON column in SQLite
+
+
 ### 2025-12-05
 - Extended database to hold 'counterBelief' JSON text
 - Cached AI JSON data now displays in respective [id]/index
+
 
 ## Supabase Setup (Edge AI + Auth)
 - Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the Expo app (add them as EAS secrets for TestFlight).
@@ -26,7 +31,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2025-12-04
 - Implemented AI response UI/UX
 - dispute.tsx plumbing change
-- Extended database to hold 'analysis' JSON field items
 
 ### 2025-12-03
 - Refactored entry-new and dispute
@@ -189,3 +193,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Disable editing of ABC once dispute has been made
 - Make UI/UX that integrates AI response
 - Set up Supabase
+
+- If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is cached
+- Do not call API again if an aiResponse already exists locally
+- Change to entry should enable a refreshed AI response to be possible

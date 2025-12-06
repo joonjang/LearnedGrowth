@@ -1,7 +1,41 @@
 import { SQLEntriesAdapter } from '@/db/entriesAdapter.sqlite';
+import { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { makeMemory, makeSqlite } from '@/test-utils/adapterFactory';
 import { TestClock } from '@/test-utils/testClock';
+
+const baseAiResponse: LearnedGrowthResponse = {
+   safety: { isCrisis: false, crisisMessage: null },
+   analysis: {
+      dimensions: {
+         permanence: {
+            score: 'optimistic',
+            detectedPhrase: 'phrase a',
+            insight: 'insight a',
+         },
+         pervasiveness: {
+            score: 'pessimistic',
+            detectedPhrase: 'phrase b',
+            insight: 'insight b',
+         },
+         personalization: {
+            score: 'mixed',
+            detectedPhrase: 'phrase c',
+            insight: 'insight c',
+         },
+      },
+      emotionalLogic: 'sample logic',
+   },
+   suggestions: {
+      evidenceQuestion: null,
+      alternativesQuestion: null,
+      usefulnessQuestion: null,
+      counterBelief: 'cb1',
+   },
+};
+
+const makeAiResponse = () =>
+   JSON.parse(JSON.stringify(baseAiResponse)) as LearnedGrowthResponse;
 
 describe.each([
    ['memory', makeMemory],
@@ -26,8 +60,7 @@ describe.each([
             id: '123',
             adversity: 'Test adversity',
             belief: 'Test belief',
-            analysis: null,
-            counterBelief: null,
+            aiResponse: null,
             createdAt: clock.nowIso(),
             updatedAt: clock.nowIso(),
             dirtySince: null,
@@ -96,57 +129,39 @@ describe.each([
          });
 
          it('text data robustness', async () => {
+            const aiResponse = makeAiResponse();
+            aiResponse.suggestions.counterBelief = 'cb';
+
             await db.add({
                ...entry,
                id: 'u',
                adversity: '仕事🙂',
                belief: 'café',
-               counterBelief: 'cb',
+               aiResponse,
             });
             const got = await db.getById('u');
             expect(got!.adversity).toBe('仕事🙂');
-            expect(got!.counterBelief).toBe('cb');
+            expect(got!.aiResponse?.suggestions.counterBelief).toBe('cb');
          });
-         it('persists analysis JSON and returns clones', async () => {
-            const analysis = {
-               dimensions: {
-                  permanence: {
-                     score: 'optimistic',
-                     detectedPhrase: 'phrase a',
-                     insight: 'insight a',
-                  },
-                  pervasiveness: {
-                     score: 'pessimistic',
-                     detectedPhrase: 'phrase b',
-                     insight: 'insight b',
-                  },
-                  personalization: {
-                     score: 'mixed',
-                     detectedPhrase: 'phrase c',
-                     insight: 'insight c',
-                  },
-               },
-               emotionalLogic: 'sample logic',
-            };
+         it('persists aiResponse JSON and returns clones', async () => {
+            const aiResponse = makeAiResponse();
 
             await db.add({
                ...entry,
                id: 'an1',
-               analysis,
-               counterBelief: 'cb1',
+               aiResponse,
             });
             const saved = await db.getById('an1');
-            expect(saved?.analysis).toEqual(analysis);
-            expect(saved?.counterBelief).toBe('cb1');
+            expect(saved?.aiResponse).toEqual(aiResponse);
 
-            if (saved?.analysis) {
-               saved.analysis.emotionalLogic = 'changed';
+            if (saved?.aiResponse) {
+               saved.aiResponse.analysis.emotionalLogic = 'changed';
+               saved.aiResponse.suggestions.counterBelief = 'changed';
             }
-            if (saved) saved.counterBelief = 'changed';
 
             const again = await db.getById('an1');
-            expect(again?.analysis?.emotionalLogic).toBe('sample logic');
-            expect(again?.counterBelief).toBe('cb1');
+            expect(again?.aiResponse?.analysis.emotionalLogic).toBe('sample logic');
+            expect(again?.aiResponse?.suggestions.counterBelief).toBe('cb1');
          });
          it('getAll excludes deleted but getById still returns them', async () => {
             await db.add(entry);
