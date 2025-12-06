@@ -9,6 +9,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2025-12-06
 - Consolidated AI storage into a single `aiResponse` JSON column in SQLite
+- AI Response questions are the dispute queestions if they exist
 
 
 ### 2025-12-05

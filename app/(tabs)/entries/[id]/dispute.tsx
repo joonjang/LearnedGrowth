@@ -229,12 +229,14 @@ export default function DisputeScreen() {
    );
 
    const suggestionPrompts = useMemo(() => {
+      const pick = (val?: string | null, fallback?: string) =>
+         val && val.trim() ? val : fallback ?? '';
       const sug =
          lastResult?.data?.suggestions ?? entry?.aiResponse?.suggestions;
       return {
-         evidence: sug?.evidenceQuestion ?? prompts.evidence,
-         alternatives: sug?.alternativesQuestion ?? prompts.alternatives,
-         usefulness: sug?.usefulnessQuestion ?? prompts.usefulness,
+         evidence: pick(sug?.evidenceQuestion, prompts.evidence),
+         alternatives: pick(sug?.alternativesQuestion, prompts.alternatives),
+         usefulness: pick(sug?.usefulnessQuestion, prompts.usefulness),
          energy: prompts.energy,
       } as Record<NewInputDisputeType, string>;
    }, [entry?.aiResponse?.suggestions, lastResult?.data?.suggestions, prompts]);
