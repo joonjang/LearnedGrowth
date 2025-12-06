@@ -2,6 +2,7 @@
 
 An offline-first journaling app (ABCDE method from _Learned Optimism_) with cloud sync and AI-assisted disputation.
 
+
 ---
 
 ## Development Journal
@@ -9,6 +10,18 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2025-12-05
 - Extended database to hold 'counterBelief' JSON text
 - Cached AI JSON data now displays in respective [id]/index
+
+## Supabase Setup (Edge AI + Auth)
+- Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the Expo app (add them as EAS secrets for TestFlight).
+- Optional overrides: `EXPO_PUBLIC_SUPABASE_AI_FUNCTION` (defaults to `learned-growth`) and `EXPO_PUBLIC_SUPABASE_AI_STREAM_FUNCTION` (defaults to the same function).
+- Keep `EXPO_PUBLIC_API_BASE_URL` only if you want to hit a non-Supabase API; otherwise the app will target `https://<supabase>/functions/v1/{function}` automatically.
+- Cloud AI requests now send Supabase auth headers (Bearer session token when signed in, anon key otherwise) and persist sessions in `AsyncStorage` for mobile builds.
+- Edge Function lives at `api/supabase/functions/learned-growth/index.ts`.
+  - Local: from `api/`, run `supabase functions serve learned-growth --env-file .env` (needs `OPENAI_API_KEY` in `.env`).
+  - Deploy: `supabase functions deploy learned-growth --project-ref <your-project-ref>`.
+  - Set secrets in Supabase: `supabase secrets set OPENAI_API_KEY=... [OPENAI_MODEL=gpt-5-mini]`.
+  - Confirm the function returns the LearnedGrowth JSON contract before switching the app env to Supabase.
+
 
 ### 2025-12-04
 - Implemented AI response UI/UX

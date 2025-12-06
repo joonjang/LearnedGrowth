@@ -7,8 +7,28 @@ import {
   LearnedGrowthResult,
   normalizeLearnedGrowthResponse,
 } from "@/models/aiService";
+import { getSupabaseAccessToken, supabaseConfig } from "@/lib/supabase";
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+const SUPABASE_FUNCTION_NAME =
+  process.env.EXPO_PUBLIC_SUPABASE_AI_FUNCTION ?? "learned-growth";
+const SUPABASE_STREAM_FUNCTION =
+  process.env.EXPO_PUBLIC_SUPABASE_AI_STREAM_FUNCTION ?? SUPABASE_FUNCTION_NAME;
+
+const RAW_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL ??
+  supabaseConfig.functionsUrl ??
+  null;
+const NORMALIZED_BASE_URL = RAW_BASE_URL?.replace(/\/+$/, "") ?? null;
+const NORMALIZED_SUPABASE_BASE = supabaseConfig.functionsUrl?.replace(/\/+$/, "") ?? null;
+const USING_SUPABASE =
+  Boolean(NORMALIZED_SUPABASE_BASE && supabaseConfig.anonKey) &&
+  NORMALIZED_BASE_URL === NORMALIZED_SUPABASE_BASE;
+const BASE_URL = NORMALIZED_BASE_URL;
+const JSON_PATH = USING_SUPABASE ? SUPABASE_FUNCTION_NAME : "ai/learned-growth";
+const STREAM_PATH = USING_SUPABASE
+  ? SUPABASE_STREAM_FUNCTION
+  : "ai/learned-growth/stream";
+
 const STREAMING_ENABLED = process.env.EXPO_PUBLIC_AI_STREAM !== "false";
 const STREAM_TIMEOUT_MS = Number(process.env.EXPO_PUBLIC_AI_STREAM_TIMEOUT_MS ?? "4000");
 const STREAM_EMULATE = process.env.EXPO_PUBLIC_AI_STREAM_EMULATE !== "false";
@@ -34,7 +54,10 @@ export class CloudAiService implements AbcAiService {
     opts?: RequestOpts
   ): Promise<LearnedGrowthResult> {
     if (!BASE_URL) {
-      throw new AiError("config", "EXPO_PUBLIC_API_BASE_URL is not set");
+      throw new AiError(
+        "config",
+        "AI endpoint is not configured. Set EXPO_PUBLIC_API_BASE_URL or EXPO_PUBLIC_SUPABASE_URL/EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY."
+      );
     }
 
     const started = Date.now();
@@ -89,12 +112,9 @@ export class CloudAiService implements AbcAiService {
 
     let res: Response;
     try {
-      res = await fetch(`${BASE_URL}/ai/learned-growth/stream`, {
+      res = await fetch(`${BASE_URL}/${STREAM_PATH}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "text/event-stream",
-        },
+        headers: await this.buildHeaders({ acceptStream: true }),
         body: JSON.stringify(input),
         signal: controller?.signal ?? opts?.signal,
       });
@@ -237,12 +257,15 @@ export class CloudAiService implements AbcAiService {
     opts?: RequestOpts
   ): Promise<LearnedGrowthResponse> {
     if (!BASE_URL) {
-      throw new AiError("config", "EXPO_PUBLIC_API_BASE_URL is not set");
+      throw new AiError(
+        "config",
+        "AI endpoint is not configured. Set EXPO_PUBLIC_API_BASE_URL or EXPO_PUBLIC_SUPABASE_URL/EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY."
+      );
     }
 
-    const res = await fetch(`${BASE_URL}/ai/learned-growth`, {
+    const res = await fetch(`${BASE_URL}/${JSON_PATH}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await this.buildHeaders(),
       body: JSON.stringify(input),
       signal: opts?.signal,
     });
@@ -257,6 +280,24 @@ export class CloudAiService implements AbcAiService {
     const normalized = normalizeLearnedGrowthResponse(json);
     await this.emitFakeStream(JSON.stringify(normalized), opts);
     return normalized;
+  }
+
+  private async buildHeaders(opts?: { acceptStream?: boolean }) {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (opts?.acceptStream) {
+      headers.Accept = "text/event-stream";
+    }
+
+    if (USING_SUPABASE && supabaseConfig.anonKey) {
+      const token = (await getSupabaseAccessToken()) ?? supabaseConfig.anonKey;
+      headers.apikey = supabaseConfig.anonKey;
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    return headers;
   }
 
   private async emitFakeStream(text: string, opts?: RequestOpts) {

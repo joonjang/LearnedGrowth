@@ -1,21 +1,43 @@
-import "expo-sqlite/localStorage/install";
-import { createClient } from "@supabase/supabase-js";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SupabaseClient, createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("Supabase env vars are missing");
-}
-if (typeof localStorage === "undefined") {
-  throw new Error("localStorage shim not initialized (expo-sqlite install)");
+const isConfigured = Boolean(supabaseUrl && supabaseKey);
+
+export const supabase: SupabaseClient | null = isConfigured
+  ? createClient(supabaseUrl as string, supabaseKey as string, {
+      auth: {
+        storage: AsyncStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    })
+  : null;
+
+export const supabaseConfig = {
+  url: supabaseUrl ?? null,
+  anonKey: supabaseKey ?? null,
+  functionsUrl: supabaseUrl ? `${supabaseUrl}/functions/v1` : null,
+};
+
+export function getSupabaseClient(): SupabaseClient {
+  if (!supabase) {
+    throw new Error("Supabase env vars are missing");
+  }
+  return supabase;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    storage: localStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+export async function getSupabaseAccessToken(): Promise<string | null> {
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    console.warn("Failed to read Supabase session", error);
+    return null;
+  }
+
+  return data.session?.access_token ?? null;
+}
