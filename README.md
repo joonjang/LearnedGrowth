@@ -10,6 +10,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2025-12-06
 - Consolidated AI storage into a single `aiResponse` JSON column in SQLite
 - AI Response questions are the dispute queestions if they exist
+- Dispute questions source from ai cached response first before going to standard prompts
+- Analyze button now checks if cached response exists
+- Streaming data text now displays to show user of progress
+- To build in preview: `eas build -p ios --profile preview`
 
 
 ### 2025-12-05

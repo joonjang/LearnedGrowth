@@ -124,6 +124,7 @@ export default function DisputeScreen() {
    useEffect(() => {
       if (!entry || !ready) return;
       if (!shouldAnalyze || analysisTriggered || lastResult) return;
+      if (entry?.aiResponse) return;
 
       setAnalysisTriggered(true);
       analyze({

@@ -26,6 +26,7 @@ import {
 import { palette } from '@/theme/colors';
 import AnalyzeButton from '@/components/entries/dispute/AnalyzeButton';
 import { shadowSoft } from '@/theme/shadows';
+import { typography } from '@/theme/typography';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
 type DimensionKey = 'permanence' | 'pervasiveness' | 'personalization';
@@ -394,7 +395,7 @@ export default function EntryDetailScreen() {
                                              { backgroundColor: color + '55' },
                                           ]}
                                        >
-                                          {dim.detectedPhrase}
+                                          &quot;{dim.detectedPhrase}&quot;
                                        </Text>
                                     ) : null}
                                     {dim?.insight ? (
@@ -405,6 +406,24 @@ export default function EntryDetailScreen() {
                                  </View>
                               );
                            })}
+                        </View>
+
+                        {/* //TODO: add another way to see it here */}
+                        <View style={styles.counterSection}>
+                           <Text style={styles.counterTitle}>
+                              Another way to see it
+                           </Text>
+                           {aiDisplayData.suggestions.counterBelief ? (
+                              <View style={styles.counterBox}>
+                                 <Text style={styles.counterText}>
+                                    {aiDisplayData.suggestions.counterBelief}
+                                 </Text>
+                              </View>
+                           ) : (
+                              <Text style={styles.counterHint}>
+                                 Tap “Analyze with AI” to get a counter-belief.
+                              </Text>
+                           )}
                         </View>
                      </View>
                   ) : null}
@@ -625,6 +644,36 @@ const styles = StyleSheet.create({
       fontSize: 12,
       color: palette.text,
       textTransform: 'capitalize',
+   },
+   counterSection: {
+      marginTop: 16,
+      gap: 8,
+   },
+   counterTitle: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: palette.text,
+   },
+   counterBox: {
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: palette.border,
+      backgroundColor: palette.cardBg,
+      shadowColor: '#000',
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 1,
+   },
+   counterText: {
+      ...typography.body,
+      color: palette.text,
+      lineHeight: 20,
+   },
+   counterHint: {
+      ...typography.body,
+      color: palette.hint,
    },
 
    container: {
