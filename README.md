@@ -198,11 +198,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 - Circle back and assess the edit/cancel/save button flow of [id]/index header
+- Re-look at the integration of AI info for the UI, consider changing the highlight
+- Address the UX flow of ABC then to analysis, instead of two buttons make a 'Next' and then options to enable/disable AI
 - Add test to for API
 - Disable editing of ABC once dispute has been made
-- Make UI/UX that integrates AI response
-- Set up Supabase
-
 - If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is cached
-- Do not call API again if an aiResponse already exists locally
 - Change to entry should enable a refreshed AI response to be possible
