@@ -8,6 +8,8 @@ import {
   normalizeLearnedGrowthResponse,
 } from "@/models/aiService";
 import { getSupabaseAccessToken, supabaseConfig } from "@/lib/supabase";
+import { Platform } from "react-native";
+import EventSource from "react-native-sse";
 
 const SUPABASE_FUNCTION_NAME =
   process.env.EXPO_PUBLIC_SUPABASE_AI_FUNCTION ?? "learned-growth";
@@ -30,7 +32,10 @@ const STREAM_PATH = USING_SUPABASE
   : "ai/learned-growth/stream";
 
 const STREAMING_ENABLED = process.env.EXPO_PUBLIC_AI_STREAM !== "false";
-const STREAM_TIMEOUT_MS = Number(process.env.EXPO_PUBLIC_AI_STREAM_TIMEOUT_MS ?? "4000");
+const DEFAULT_STREAM_TIMEOUT = USING_SUPABASE ? 12000 : 4000;
+const STREAM_TIMEOUT_MS = Number(
+  process.env.EXPO_PUBLIC_AI_STREAM_TIMEOUT_MS ?? String(DEFAULT_STREAM_TIMEOUT)
+);
 const STREAM_EMULATE = process.env.EXPO_PUBLIC_AI_STREAM_EMULATE !== "false";
 const STREAM_EMULATE_CHUNK_SIZE = Math.max(
   1,
@@ -90,6 +95,18 @@ export class CloudAiService implements AbcAiService {
     opts?: RequestOpts
   ): Promise<LearnedGrowthResponse | null> {
     if (!BASE_URL) return null;
+
+    // On native (non-web) with Supabase, use EventSource because fetch streams are not exposed.
+    if (USING_SUPABASE && Platform.OS !== "web") {
+      try {
+        return await this.tryStreamWithEventSource(input, opts);
+      } catch (err) {
+        if (err instanceof AiError && err.code === "streaming-unsupported") {
+          return null;
+        }
+        throw err;
+      }
+    }
 
     const canAbort = typeof AbortController !== "undefined";
     const controller = canAbort ? new AbortController() : null;
@@ -280,6 +297,106 @@ export class CloudAiService implements AbcAiService {
     const normalized = normalizeLearnedGrowthResponse(json);
     await this.emitFakeStream(JSON.stringify(normalized), opts);
     return normalized;
+  }
+
+  private async tryStreamWithEventSource(
+    input: AbcInput,
+    opts?: RequestOpts
+  ): Promise<LearnedGrowthResponse | null> {
+    if (!BASE_URL) return null;
+
+    const url = `${BASE_URL}/${STREAM_PATH}`;
+    const headers = await this.buildHeaders({ acceptStream: true });
+
+    return new Promise((resolve, reject) => {
+      let tokenContent = "";
+      let assembled = "";
+      let sawOpenAiChunks = false;
+      const es = new EventSource(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(input),
+        withCredentials: false,
+      });
+
+      const cleanAbort = () => {
+        es.close();
+      };
+
+      const abortListener = () => {
+        cleanAbort();
+        reject(new DOMException("aborted", "AbortError"));
+      };
+
+      if (opts?.signal) {
+        if (opts.signal.aborted) {
+          abortListener();
+          return;
+        }
+        opts.signal.addEventListener("abort", abortListener, { once: true });
+      }
+
+      es.addEventListener("message", (event) => {
+        const raw = String((event as any).data ?? "").trim();
+        if (!raw) return;
+        if (raw === "[DONE]") {
+          const finalText = (sawOpenAiChunks ? tokenContent : assembled).trim();
+          cleanAbort();
+          if (!finalText) {
+            reject(new AiError("invalid-response", "Stream ended without any data"));
+            return;
+          }
+          try {
+            const parsed = JSON.parse(finalText);
+            const normalized = normalizeLearnedGrowthResponse(parsed);
+            resolve(normalized);
+          } catch (err) {
+            reject(
+              new AiError(
+                "invalid-response",
+                err instanceof Error ? err.message : "Unable to parse stream response"
+              )
+            );
+          }
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(raw);
+          const isChunk =
+            parsed &&
+            parsed.object === "chat.completion.chunk" &&
+            Array.isArray(parsed.choices) &&
+            parsed.choices.length > 0 &&
+            "delta" in parsed.choices[0];
+
+          if (isChunk) {
+            sawOpenAiChunks = true;
+            const content = parsed.choices?.[0]?.delta?.content ?? "";
+            if (content) {
+              tokenContent += content;
+              opts?.onChunk?.(tokenContent);
+            }
+            return;
+          }
+        } catch (_err) {
+          // fall through to assembled buffer
+        }
+
+        assembled += raw;
+        opts?.onChunk?.(assembled);
+      });
+
+      es.addEventListener("error", (event) => {
+        cleanAbort();
+        reject(
+          new AiError(
+            "http",
+            (event as any)?.message ?? "Streaming connection failed"
+          )
+        );
+      });
+    });
   }
 
   private async buildHeaders(opts?: { acceptStream?: boolean }) {
