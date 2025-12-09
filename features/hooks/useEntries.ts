@@ -1,9 +1,11 @@
 import { useEntriesStore } from '@/providers/EntriesStoreProvider';
 import { useCallback, useMemo } from 'react';
 import { Entry } from '@/models/entry';
+import { useAuth } from '@/providers/AuthProvider';
 
 export function useEntries() {
    const store = useEntriesStore();
+   const { user } = useAuth();
 
    // subscribe to slices separately (no object literals)
    const allIds = store((s) => s.allIds);
@@ -44,7 +46,7 @@ export function useEntries() {
          energy: '',
             createdAt: '',
             updatedAt: '',
-            accountId: null,
+            accountId: user?.id ?? null,
             dirtySince: null,
             isDeleted: false,
          };
@@ -52,7 +54,7 @@ export function useEntries() {
 
          return newEntry;
       },
-      [store]
+      [store, user?.id]
    );
 
    const getEntryById = useCallback(

@@ -1,5 +1,7 @@
 import { AdapterGuard } from '@/components/AdapterGuard';
+import { AuthGate } from '@/components/AuthGate';
 import { AdapterProvider } from '@/providers/AdapterProvider';
+import { AuthProvider } from '@/providers/AuthProvider';
 import { EntriesStoreProvider } from '@/providers/EntriesStoreProvider';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -10,17 +12,22 @@ export default function RootLayout() {
    return (
       <GestureHandlerRootView style={{ flex: 1 }}>
          <KeyboardProvider>
-            <AdapterProvider>
-               <EntriesStoreProvider>
-                  <SafeAreaProvider>
-                     <AdapterGuard>
-                        <Stack screenOptions={{ headerShown: false }}>
-                        <Stack.Screen name="(tabs)" />
-                     </Stack>
-                  </AdapterGuard>
-               </SafeAreaProvider>
-            </EntriesStoreProvider>
-            </AdapterProvider>
+            <AuthProvider>
+               <AdapterProvider>
+                  <EntriesStoreProvider>
+                     <SafeAreaProvider>
+                        <AuthGate>
+                           <AdapterGuard>
+                              <Stack screenOptions={{ headerShown: false }}>
+                                 <Stack.Screen name="login" />
+                                 <Stack.Screen name="(tabs)" />
+                              </Stack>
+                           </AdapterGuard>
+                        </AuthGate>
+                     </SafeAreaProvider>
+                  </EntriesStoreProvider>
+               </AdapterProvider>
+            </AuthProvider>
          </KeyboardProvider>
       </GestureHandlerRootView>
    );

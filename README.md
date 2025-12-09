@@ -2,6 +2,22 @@
 
 An offline-first journaling app (ABCDE method from _Learned Optimism_) with cloud sync and AI-assisted disputation.
 
+## Supabase Setup (Edge AI + Auth)
+- Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the Expo app (add them as EAS secrets for TestFlight).
+- Optional overrides: `EXPO_PUBLIC_SUPABASE_AI_FUNCTION` (defaults to `learned-growth`) and `EXPO_PUBLIC_SUPABASE_AI_STREAM_FUNCTION` (defaults to the same function).
+- Keep `EXPO_PUBLIC_API_BASE_URL` only if you want to hit a non-Supabase API; otherwise the app will target `https://<supabase>/functions/v1/{function}` automatically.
+- Cloud AI requests now send Supabase auth headers (Bearer session token when signed in, anon key otherwise) and persist sessions in `AsyncStorage` for mobile builds.
+- Edge Function lives at `api/supabase/functions/learned-growth/index.ts`.
+  - Local: from `api/`, run `supabase functions serve learned-growth --env-file .env` (needs `OPENAI_API_KEY` in `.env`).
+  - Deploy: `supabase functions deploy learned-growth --project-ref <your-project-ref>`.
+  - Set secrets in Supabase: `supabase secrets set OPENAI_API_KEY=... [OPENAI_MODEL=gpt-5-mini]`.
+  - Confirm the function returns the LearnedGrowth JSON contract before switching the app env to Supabase.
+  - Dev without OpenAI: set `MOCK_AI=true` (or `DEV_MOCK_AI=true`) in `api/supabase/.env` when serving locally to return a canned JSON response from the Supabase function without calling OpenAI.
+- Auth & AI limits:
+  - Run the migration at `api/supabase/migrations/20251209001_profiles_ai_limit.sql` (`cd api/supabase && supabase db push`).
+  - This creates `profiles` with `plan` (`free|invested`), `ai_calls_used`, `ai_cycle_start`, `stripe_customer_id`, plus RLS (owner-only).
+  - Adds `use_ai_call(limit_free int default 5)` RPC (security definer) that increments usage and raises `ai-limit-exceeded` for free users beyond 5 per month (resets monthly). The app calls this before every cloud AI request. Override the RPC name with `EXPO_PUBLIC_SUPABASE_AI_USAGE_RPC` if needed.
+  - Adds optional RLS policies on `entries` (if table exists) to scope by `account_id = auth.uid()`.
 
 ---
 
@@ -9,6 +25,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2025-12-08
 - Streaming API data now displays on app from supabase
+- Supabase docker established
+- Auth guard implemented
+  - 5 free analysis given
+  - local entries become associated to account
 
 
 ### 2025-12-06
@@ -23,19 +43,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2025-12-05
 - Extended database to hold 'counterBelief' JSON text
 - Cached AI JSON data now displays in respective [id]/index
-
-
-## Supabase Setup (Edge AI + Auth)
-- Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the Expo app (add them as EAS secrets for TestFlight).
-- Optional overrides: `EXPO_PUBLIC_SUPABASE_AI_FUNCTION` (defaults to `learned-growth`) and `EXPO_PUBLIC_SUPABASE_AI_STREAM_FUNCTION` (defaults to the same function).
-- Keep `EXPO_PUBLIC_API_BASE_URL` only if you want to hit a non-Supabase API; otherwise the app will target `https://<supabase>/functions/v1/{function}` automatically.
-- Cloud AI requests now send Supabase auth headers (Bearer session token when signed in, anon key otherwise) and persist sessions in `AsyncStorage` for mobile builds.
-- Edge Function lives at `api/supabase/functions/learned-growth/index.ts`.
-  - Local: from `api/`, run `supabase functions serve learned-growth --env-file .env` (needs `OPENAI_API_KEY` in `.env`).
-  - Deploy: `supabase functions deploy learned-growth --project-ref <your-project-ref>`.
-  - Set secrets in Supabase: `supabase secrets set OPENAI_API_KEY=... [OPENAI_MODEL=gpt-5-mini]`.
-  - Confirm the function returns the LearnedGrowth JSON contract before switching the app env to Supabase.
-
 
 ### 2025-12-04
 - Implemented AI response UI/UX
@@ -204,3 +211,21 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Disable editing of ABC once dispute has been made
 - If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is cached
 - Change to entry should enable a refreshed AI response to be possible
+- Refactor abstract view with insets top
+
+## Steps
+- Offline first x
+- AI analysis x
+- API integration x
+- Auth guard
+  - entry associated to account_id x
+  - all offline entries get their account_id updated to supabase id x
+  - login UI stack x
+  - associated account field of: x
+    * plan: 'free' or 'invested' x
+    * ai_analysis_calls x
+    * stripe_customer_id x
+- Cloud database sync
+- Stripe billing integration
+- Account screen/Setting
+- UI

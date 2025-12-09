@@ -64,6 +64,9 @@ export default function DevScreen() {
                      />
                      <Button color="red" title="Delete" onPress={() => deleteEntry(item.id)} />
                   </View>
+                  <Text>
+                     {JSON.stringify(item, null, 4)}
+                  </Text>
                </View>
             )}
             ListEmptyComponent={<Text>No entries yet.</Text>}

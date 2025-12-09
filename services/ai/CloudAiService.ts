@@ -7,7 +7,7 @@ import {
   LearnedGrowthResult,
   normalizeLearnedGrowthResponse,
 } from "@/models/aiService";
-import { getSupabaseAccessToken, supabaseConfig } from "@/lib/supabase";
+import { getSupabaseAccessToken, supabase, supabaseConfig } from "@/lib/supabase";
 import { Platform } from "react-native";
 import EventSource from "react-native-sse";
 
@@ -46,6 +46,9 @@ const STREAM_EMULATE_DELAY_MS = Math.max(
   Number(process.env.EXPO_PUBLIC_AI_STREAM_EMULATE_DELAY_MS ?? "15")
 );
 type RequestOpts = { signal?: AbortSignal; onChunk?: (partial: string) => void };
+const AI_USAGE_RPC =
+  process.env.EXPO_PUBLIC_SUPABASE_AI_USAGE_RPC ?? "use_ai_call";
+const AI_USAGE_ENABLED = USING_SUPABASE && Boolean(AI_USAGE_RPC);
 
 export class CloudAiService implements AbcAiService {
   mode: AiSource = "cloud";
@@ -67,6 +70,7 @@ export class CloudAiService implements AbcAiService {
 
     const started = Date.now();
     let data: LearnedGrowthResponse | null = null;
+    await this.guardAiUsage();
 
     if (STREAMING_ENABLED) {
       try {
@@ -169,6 +173,30 @@ export class CloudAiService implements AbcAiService {
     const normalized = normalizeLearnedGrowthResponse(json);
     await this.emitFakeStream(JSON.stringify(normalized), opts);
     return normalized;
+  }
+
+  private async guardAiUsage() {
+    if (!AI_USAGE_ENABLED || !supabase) return;
+    try {
+      const { error } = await supabase.rpc(AI_USAGE_RPC);
+      if (error) {
+        const fingerprint = `${error.code ?? ""}:${error.message ?? ""}`.toLowerCase();
+        if (fingerprint.includes("ai-limit-exceeded")) {
+          throw new AiError(
+            "ai-limit",
+            "Monthly AI limit reached for the free plan.",
+            429
+          );
+        }
+        if (error.code === "PGRST301" || error.code === "401") {
+          throw new AiError("auth", "Sign in to use AI.");
+        }
+        console.warn("AI usage RPC error", error);
+      }
+    } catch (err: any) {
+      if (err instanceof AiError) throw err;
+      console.warn("AI usage check failed", err);
+    }
   }
 
   private async readEventStream(
