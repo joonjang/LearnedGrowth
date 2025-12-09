@@ -23,10 +23,21 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Coupons/credits:
   - Run `api/supabase/migrations/20251210001_coupons_and_profile_credits.sql` (`supabase db push --local` or `--project-ref <ref>`). This adds `extra_ai_credits`, `stripe_subscription_status`, coupon tables, `redeem_coupon` RPC, and updates `use_ai_call` to consume credits before the free pool.
   - Redeem edge function: `api/supabase/functions/redeem` proxies authenticated requests to `redeem_coupon`. Serve locally with `supabase functions serve redeem --env-file .env`.
+- Stripe:
+  - Edge functions:
+    - `stripe-checkout`: creates checkout sessions (subscription or one-time credits). Env: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_SUBSCRIPTION`, `STRIPE_PRICE_CREDITS`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
+    - `stripe-webhook`: syncs subscription status and credits on Stripe events. Env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_CREDITS`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
+  - Serve locally: `supabase functions serve stripe-checkout --env-file .env` and `supabase functions serve stripe-webhook --env-file .env`.
 
 ---
 
 ## Development Journal
+
+### 2025-12-09
+- Added more edge functions
+  - Stripe
+  - Coupons
+  - run with `supabase functions serve --env-file .env`
 
 ### 2025-12-08
 - Streaming API data now displays on app from supabase
@@ -218,6 +229,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is cached
 - Change to entry should enable a refreshed AI response to be possible
 - Refactor abstract view with insets top
+- Encrypt entries when in cloud
 
 ## Steps
 - Offline first x

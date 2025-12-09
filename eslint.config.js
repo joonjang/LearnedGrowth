@@ -7,4 +7,7 @@ module.exports = defineConfig([
   {
     ignores: ['dist/*'],
   },
+  {
+    ignores: ["supabase/functions/**"] // Ignore Deno files
+  },
 ]);

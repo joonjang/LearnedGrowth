@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSupabaseClient } from '@/lib/supabase';
+import * as Linking from 'expo-linking';
 
 export default function SettingsScreen() {
    const {
@@ -25,6 +26,7 @@ export default function SettingsScreen() {
    const [coupon, setCoupon] = useState('');
    const [redeeming, setRedeeming] = useState(false);
    const [redeemMessage, setRedeemMessage] = useState<string | null>(null);
+   const [checkoutLoading, setCheckoutLoading] = useState<null | 'sub' | 'credits'>(null);
 
    const redeemCoupon = async () => {
       if (!coupon.trim()) {
@@ -48,6 +50,34 @@ export default function SettingsScreen() {
          setRedeemMessage(err?.message ?? 'Redeem failed');
       } finally {
          setRedeeming(false);
+      }
+   };
+
+   const startCheckout = async (mode: 'subscription' | 'payment') => {
+      setCheckoutLoading(mode === 'subscription' ? 'sub' : 'credits');
+      try {
+         const supabase = getSupabaseClient();
+         const { data, error } = await supabase.functions.invoke(
+            'stripe-checkout',
+            {
+               body: {
+                  mode,
+                  quantity: mode === 'payment' ? 1 : undefined,
+                  successUrl: 'https://example.com/success',
+                  cancelUrl: 'https://example.com/cancel',
+               },
+            }
+         );
+         if (error) {
+            throw new Error(error.message ?? 'Checkout failed');
+         }
+         const url = (data as any)?.url;
+         if (!url) throw new Error('Missing checkout url');
+         Linking.openURL(url);
+      } catch (err: any) {
+         setRedeemMessage(err?.message ?? 'Checkout failed');
+      } finally {
+         setCheckoutLoading(null);
       }
    };
 
@@ -104,6 +134,37 @@ export default function SettingsScreen() {
                   </Pressable>
                   <Pressable style={styles.secondary} onPress={signOut}>
                      <Text style={styles.secondaryLabel}>Sign out</Text>
+                  </Pressable>
+               </View>
+
+               <View style={styles.actions}>
+                  <Pressable
+                     style={[
+                        styles.button,
+                        checkoutLoading === 'sub' && styles.buttonDisabled,
+                     ]}
+                     onPress={() => startCheckout('subscription')}
+                     disabled={checkoutLoading !== null}
+                  >
+                     <Text style={styles.buttonLabel}>
+                        {checkoutLoading === 'sub'
+                           ? 'Opening…'
+                           : 'Go Invested'}
+                     </Text>
+                  </Pressable>
+                  <Pressable
+                     style={[
+                        styles.secondary,
+                        checkoutLoading === 'credits' && styles.buttonDisabled,
+                     ]}
+                     onPress={() => startCheckout('payment')}
+                     disabled={checkoutLoading !== null}
+                  >
+                     <Text style={styles.secondaryLabel}>
+                        {checkoutLoading === 'credits'
+                           ? 'Opening…'
+                           : 'Buy credits'}
+                     </Text>
                   </Pressable>
                </View>
 
