@@ -20,6 +20,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - Adds optional RLS policies on `entries` (if table exists) to scope by `account_id = auth.uid()`.
 - Entries sync:
   - Run `api/supabase/migrations/20251209002_entries_table.sql` to create the `entries` table (matching the app schema) with RLS on `account_id`. Push with `cd api/supabase && supabase db push`.
+- Coupons/credits:
+  - Run `api/supabase/migrations/20251210001_coupons_and_profile_credits.sql` (`supabase db push --local` or `--project-ref <ref>`). This adds `extra_ai_credits`, `stripe_subscription_status`, coupon tables, `redeem_coupon` RPC, and updates `use_ai_call` to consume credits before the free pool.
+  - Redeem edge function: `api/supabase/functions/redeem` proxies authenticated requests to `redeem_coupon`. Serve locally with `supabase functions serve redeem --env-file .env`.
 
 ---
 

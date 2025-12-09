@@ -1,11 +1,10 @@
 import { useAuth } from '@/providers/AuthProvider';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import {
-   SafeAreaView,
-   useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getSupabaseClient } from '@/lib/supabase';
 
 export default function SettingsScreen() {
    const {
@@ -20,6 +19,37 @@ export default function SettingsScreen() {
    const router = useRouter();
    const plan = profile?.plan ?? 'free';
    const aiUsed = profile?.aiCallsUsed ?? 0;
+   const extraCredits = profile?.extraAiCredits ?? 0;
+   const subStatus = profile?.stripeSubscriptionStatus ?? 'inactive';
+
+   const [coupon, setCoupon] = useState('');
+   const [redeeming, setRedeeming] = useState(false);
+   const [redeemMessage, setRedeemMessage] = useState<string | null>(null);
+
+   const redeemCoupon = async () => {
+      if (!coupon.trim()) {
+         setRedeemMessage('Enter a code');
+         return;
+      }
+      setRedeemMessage(null);
+      setRedeeming(true);
+      try {
+         const supabase = getSupabaseClient();
+         const { data, error } = await supabase.functions.invoke('redeem', {
+            body: { code: coupon.trim() },
+         });
+         if (error) {
+            throw new Error(error.message ?? 'Redeem failed');
+         }
+         setRedeemMessage('Redeemed! Credits added');
+         setCoupon('');
+         await refreshProfile();
+      } catch (err: any) {
+         setRedeemMessage(err?.message ?? 'Redeem failed');
+      } finally {
+         setRedeeming(false);
+      }
+   };
 
    return (
       <SafeAreaView style={styles.container}>
@@ -53,6 +83,12 @@ export default function SettingsScreen() {
                <Text style={styles.label}>AI calls this month</Text>
                <Text style={styles.value}>{aiUsed} / 5</Text>
 
+               <Text style={styles.label}>Extra credits</Text>
+               <Text style={styles.value}>{extraCredits}</Text>
+
+               <Text style={styles.label}>Subscription status</Text>
+               <Text style={styles.value}>{subStatus}</Text>
+
                <View style={styles.actions}>
                   <Pressable
                      style={[
@@ -70,10 +106,43 @@ export default function SettingsScreen() {
                      <Text style={styles.secondaryLabel}>Sign out</Text>
                   </Pressable>
                </View>
+
+               <View style={styles.couponRow}>
+                  <Text style={styles.label}>Redeem coupon</Text>
+                  <View style={styles.couponForm}>
+                     <TextInput
+                        style={styles.input}
+                        value={coupon}
+                        onChangeText={setCoupon}
+                        placeholder="Code"
+                        autoCapitalize="characters"
+                        editable={!redeeming}
+                     />
+                     <Pressable
+                        style={[
+                           styles.button,
+                           styles.couponButton,
+                           redeeming && styles.buttonDisabled,
+                        ]}
+                        onPress={redeemCoupon}
+                        disabled={redeeming}
+                     >
+                        <Text style={styles.buttonLabel}>
+                           {redeeming ? 'Redeeming…' : 'Apply'}
+                        </Text>
+                     </Pressable>
+                  </View>
+                  {redeemMessage ? (
+                     <Text style={styles.redeemMessage}>{redeemMessage}</Text>
+                  ) : null}
+               </View>
             </View>
          )}
 
-         <ScrollView><Text>{JSON.stringify(profile, null, 4)}</Text><Text>{JSON.stringify(user, null, 4)}</Text></ScrollView>
+         <ScrollView>
+            <Text>{JSON.stringify(profile, null, 4)}</Text>
+            <Text>{JSON.stringify(user, null, 4)}</Text>
+         </ScrollView>
       </SafeAreaView>
    );
 }
@@ -145,5 +214,32 @@ const styles = StyleSheet.create({
       padding: 12,
       borderRadius: 10,
       marginBottom: 12,
+   },
+   input: {
+      borderWidth: 1,
+      borderColor: '#e5e7eb',
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 16,
+      backgroundColor: '#f8fafc',
+      flex: 1,
+   },
+   couponRow: {
+      marginTop: 12,
+      gap: 8,
+   },
+   couponForm: {
+      flexDirection: 'row',
+      gap: 8,
+      alignItems: 'center',
+   },
+   couponButton: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+   },
+   redeemMessage: {
+      color: '#0f172a',
+      fontSize: 12,
    },
 });
