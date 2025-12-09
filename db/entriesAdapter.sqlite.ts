@@ -136,19 +136,19 @@ export class SQLEntriesAdapter implements EntriesAdapter {
       try {
          await this.db.runAsync(
             `INSERT INTO entries
-       (id, adversity, belief, ai_response, consequence, dispute, energy,
+       (id, adversity, belief, consequence, dispute, energy, ai_response,
         created_at, updated_at, account_id, dirty_since, is_deleted)
        VALUES
-       ($id, $adversity, $belief, $ai_response, $consequence, $dispute, $energy,
+       ($id, $adversity, $belief, $consequence, $dispute, $energy, $ai_response,
         $created_at, $updated_at, $account_id, $dirty_since, $is_deleted)`,
             {
                $id: entry.id,
                $adversity: entry.adversity,
                $belief: entry.belief,
-               $ai_response: serializeAiResponse(entry.aiResponse ?? null),
                $consequence: entry.consequence ?? null,
                $dispute: entry.dispute ?? null,
                $energy: entry.energy ?? null,
+               $ai_response: serializeAiResponse(entry.aiResponse ?? null),
                $created_at: entry.createdAt,
                $updated_at: entry.updatedAt,
                $account_id: entry.accountId ?? null,

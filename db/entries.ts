@@ -1,6 +1,6 @@
 import * as SQLite from "expo-sqlite";
 
-const LATEST = 4; // bump this when schema changes
+const LATEST = 5; // bump this when schema changes
 
 async function getColumns(
    db: SQLite.SQLiteDatabase,
@@ -110,10 +110,10 @@ async function rebuildWithoutLegacyColumns(db: SQLite.SQLiteDatabase) {
          id TEXT PRIMARY KEY,
          adversity TEXT NOT NULL,
          belief TEXT NOT NULL,
-         ai_response TEXT,
          consequence TEXT,
          dispute TEXT,
          energy TEXT,
+         ai_response TEXT,
          created_at TEXT NOT NULL,
          updated_at TEXT NOT NULL,
          account_id TEXT,
@@ -121,9 +121,9 @@ async function rebuildWithoutLegacyColumns(db: SQLite.SQLiteDatabase) {
          is_deleted INTEGER NOT NULL DEFAULT 0 CHECK (is_deleted IN (0,1))
       );
       INSERT INTO entries_new
-         (id, adversity, belief, ai_response, consequence, dispute, energy, created_at, updated_at, account_id, dirty_since, is_deleted)
+         (id, adversity, belief, consequence, dispute, energy, ai_response, created_at, updated_at, account_id, dirty_since, is_deleted)
       SELECT
-         id, adversity, belief, ai_response, consequence, dispute, energy, created_at, updated_at, account_id, dirty_since, is_deleted
+         id, adversity, belief, consequence, dispute, energy, ai_response, created_at, updated_at, account_id, dirty_since, is_deleted
       FROM entries;
       DROP TABLE entries;
       ALTER TABLE entries_new RENAME TO entries;
@@ -146,6 +146,11 @@ async function migrateToV4(db: SQLite.SQLiteDatabase) {
    if (needsRebuild) {
       await rebuildWithoutLegacyColumns(db);
    }
+}
+
+async function migrateToV5(db: SQLite.SQLiteDatabase) {
+   // Rebuild to position ai_response after energy for clarity.
+   await rebuildWithoutLegacyColumns(db);
 }
 
 export async function createDb(dbName = "entries.db"): Promise<SQLite.SQLiteDatabase> {
@@ -187,6 +192,10 @@ export async function createDb(dbName = "entries.db"): Promise<SQLite.SQLiteData
 
       if (current < 4) {
          await migrateToV4(db);
+      }
+
+      if (current < 5) {
+         await migrateToV5(db);
       }
 
       // finally, set to latest

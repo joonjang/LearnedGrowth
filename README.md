@@ -18,6 +18,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - This creates `profiles` with `plan` (`free|invested`), `ai_calls_used`, `ai_cycle_start`, `stripe_customer_id`, plus RLS (owner-only).
   - Adds `use_ai_call(limit_free int default 5)` RPC (security definer) that increments usage and raises `ai-limit-exceeded` for free users beyond 5 per month (resets monthly). The app calls this before every cloud AI request. Override the RPC name with `EXPO_PUBLIC_SUPABASE_AI_USAGE_RPC` if needed.
   - Adds optional RLS policies on `entries` (if table exists) to scope by `account_id = auth.uid()`.
+- Entries sync:
+  - Run `api/supabase/migrations/20251209002_entries_table.sql` to create the `entries` table (matching the app schema) with RLS on `account_id`. Push with `cd api/supabase && supabase db push`.
 
 ---
 
@@ -29,6 +31,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Auth guard implemented
   - 5 free analysis given
   - local entries become associated to account
+- Cloud database established
 
 
 ### 2025-12-06
@@ -225,7 +228,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
     * plan: 'free' or 'invested' x
     * ai_analysis_calls x
     * stripe_customer_id x
-- Cloud database sync
+- Cloud database sync x
 - Stripe billing integration
 - Account screen/Setting
+- Account delete mechanics
 - UI

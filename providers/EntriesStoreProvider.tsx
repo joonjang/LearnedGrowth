@@ -11,6 +11,7 @@ import { makeEntriesService } from '@/services/makeEntriesService';
 import { systemClock } from '@/lib/clock';
 import { createEntriesStore, EntriesStore, placeholderEntriesStore } from '@/store/useEntriesStore';
 import { useAuth } from './AuthProvider';
+import { createSupabaseEntriesClient } from '@/services/supabaseEntries';
 
 const EntriesStoreContext = createContext<EntriesStore | null>(null);
 
@@ -19,10 +20,15 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
    const { user } = useAuth();
    const lastLinkedAccountId = useRef<string | null>(null);
 
+   const cloud = useMemo(() => {
+      if (!user?.id) return null;
+      return createSupabaseEntriesClient(user.id);
+   }, [user?.id]);
+
    const service = useMemo(() => {
       if (!adapter) return null;
-      return makeEntriesService(adapter, systemClock);
-   }, [adapter]);
+      return makeEntriesService(adapter, systemClock, cloud);
+   }, [adapter, cloud]);
 
    const store = useMemo<EntriesStore>(() => {
       if (!service) return placeholderEntriesStore;
@@ -33,6 +39,38 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
       if (!ready || store === placeholderEntriesStore) return;
       store.getState().hydrate();
    }, [ready, store]);
+
+   useEffect(() => {
+      if (!cloud || !adapter || !ready) return;
+      if (store === placeholderEntriesStore) return;
+
+      (async () => {
+         try {
+            // Pull remote changes first.
+            const remote = await cloud.fetchAll();
+            for (const entry of remote) {
+               const local = await adapter.getById(entry.id);
+               if (!local) {
+                  await adapter.add(entry);
+               } else if (entry.updatedAt > local.updatedAt) {
+                  await adapter.update(entry.id, entry);
+               }
+            }
+
+            // Push local entries that are not yet in Supabase.
+            const locals = await adapter.getAll();
+            for (const entry of locals) {
+               // Only push entries associated to the current user.
+               if (entry.accountId !== user?.id) continue;
+               await cloud.upsert(entry);
+            }
+
+            await store.getState().hydrate();
+         } catch (e) {
+            console.warn('Failed to sync entries from Supabase', e);
+         }
+      })();
+   }, [adapter, cloud, ready, store, user?.id]);
 
    useEffect(() => {
       if (!adapter || !ready || !user?.id) return;

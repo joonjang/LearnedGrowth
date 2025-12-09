@@ -148,7 +148,7 @@ describe('entries service tests', () => {
 
          // first remove
          clock.advanceMs(1000);
-         await removeEntry(db, id);
+         await removeEntry(db, id, clock);
 
          const byId1 = await db.getById(id);
          const list1 = await listEntries(db);
@@ -159,7 +159,7 @@ describe('entries service tests', () => {
          // second remove (no throw, same dirtySince)
          const firstDirty = byId1?.dirtySince;
          clock.advanceMs(1000);
-         await expect(removeEntry(db, id)).resolves.toBeUndefined();
+         await expect(removeEntry(db, id, clock)).resolves.toBeUndefined();
          const byId2 = await db.getById(id);
          expect(byId2?.dirtySince).toBe(firstDirty);
       });
