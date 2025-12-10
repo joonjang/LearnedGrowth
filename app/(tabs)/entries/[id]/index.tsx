@@ -1,6 +1,7 @@
 import { formatDateTimeWithWeekday } from '@/lib/date';
 import { useEntries } from '@/features/hooks/useEntries';
 import type { Entry } from '@/models/entry';
+import { usePreferences } from '@/providers/PreferencesProvider';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -104,6 +105,8 @@ export default function EntryDetailScreen() {
    const entryId = Array.isArray(id) ? id[0] : id;
    const store = useEntries();
    const entry = entryId ? store.getEntryById(entryId) : undefined;
+   const { showAiAnalysis: aiVisible, hapticsEnabled, hapticsAvailable, triggerHaptic } =
+      usePreferences();
    const insets = useSafeAreaInsets();
    const keyboardOffset = insets.bottom + 32;
 
@@ -126,6 +129,12 @@ export default function EntryDetailScreen() {
       setEditSnapshot(null);
       setShowAnalysis(false);
    }, [entry]);
+
+   useEffect(() => {
+      if (!aiVisible) {
+         setShowAnalysis(false);
+      }
+   }, [aiVisible]);
 
    const trimmed = useMemo(
       () => buildFieldRecord((key) => form[key].trim()),
@@ -195,12 +204,15 @@ export default function EntryDetailScreen() {
       }, {} as Partial<Entry>);
 
       await store.updateEntry(entry.id, patch);
+      if (hapticsEnabled && hapticsAvailable) {
+         triggerHaptic();
+      }
       setJustSaved(true);
       setIsEditing(false);
       setEditSnapshot(null);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       KeyboardController.dismiss();
-   }, [baseline, entry, hasChanges, store, trimmed]);
+   }, [baseline, entry, hapticsEnabled, hasChanges, store, trimmed]);
 
    const handleCancel = useCallback(() => {
       if (!isEditing) return;
@@ -316,7 +328,7 @@ export default function EntryDetailScreen() {
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
          >
-            {aiDisplayData ? (
+            {aiVisible && aiDisplayData ? (
                <View style={styles.inlineAnalysis}>
                   <Pressable
                      style={styles.inlineHeaderRow}
@@ -458,7 +470,7 @@ export default function EntryDetailScreen() {
             {!entry.dispute?.trim() && (
                <>
                   <CTAButton id={entry.id} />
-                  <AnalyzeButton id={entry.id} />
+                  {aiVisible ? <AnalyzeButton id={entry.id} /> : null}
                </>
             )}
 

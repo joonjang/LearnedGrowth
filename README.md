@@ -26,7 +26,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - RevenueCat:
   - Set `EXPO_PUBLIC_REVENUECAT_API_KEY` in `.env` / EAS secrets.
   - Configure your Offering + Paywall + Customer Center in the RevenueCat dashboard (`growth_plus` entitlement, `monthly` package, optional `consumable` product).
-  - Webhook sync (optional but recommended so Supabase shows plan/credits): deploy `api/supabase/functions/revenuecat-webhook` and add its URL in the RevenueCat dashboard. Env: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `REVENUECAT_WEBHOOK_SECRET` (for signature verification). Maps `growth_plus` to `plan='invested'` on purchase/renewal, back to `plan='free'` on cancellation/expiration, and adds credits for the `consumable` product via the `add_ai_credits` RPC.
 
 ---
 
@@ -35,6 +34,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2025-12-09
 - Added more edge functions
   - Coupons
+- Stripe checkout/webhooks were removed after moving to RevenueCat
 - run with `supabase functions serve --env-file .env`
 
 ### 2025-12-08
@@ -228,6 +228,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Change to entry should enable a refreshed AI response to be possible
 - Refactor abstract view with insets top
 - Encrypt entries when in cloud
+- Guard ai analysis, it is usable for logged in users only
+- Have a distinction for production tables and edge functions and development versions
 
 ## Steps
 - Offline first x
@@ -242,7 +244,24 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
     * ai_analysis_calls x
     * extra_ai_credits x
 - Cloud database sync x
-- RevenueCat billing integration
+- RevenueCat billing integration x
 - Account screen/Setting
-- Account delete mechanics
+  - Add a gentle banner in the Settings: "Your data is only on this phone. Sign in to back it up."
+  - display free or growth plus status
+  - if free user, display available use for the month + extra credit
+  - if free, show a CTA to upgrade to growth plus or buy more analysis
+  - if subscribed, manage subscription. links to app store management sheet
+  - restore purchases to re-sync active subscription of reinstall app
+    - webhook should update with the supabase database to match
+  - enable biometric security
+  - toggle to show/hide ai use
+  - light/dark theme mode
+  - tactile haptic feedback when completing an entry
+  - display current logged in email
+  - standard sign-out action
+  - delete account
+    - delete user entry in supabase and existence of user on the cloud
+    - delete the auth user
+  - send feedback button, goes to a table in supabase
+  - if user is offline, grey out manage subscription and delete account and indiciate offline
 - UI

@@ -45,6 +45,7 @@ import {
    HighlightMap,
    buildHighlightMap,
 } from '@/components/entries/highlightUtils';
+import { usePreferences } from '@/providers/PreferencesProvider';
 
 const STEP_ORDER = [
    'evidence',
@@ -87,6 +88,13 @@ export default function DisputeScreen() {
       ? params.analyze[0]
       : params.analyze;
    const shouldAnalyze = analyzeQuery === '1' || analyzeQuery === 'true';
+   const {
+      showAiAnalysis: aiVisible,
+      hapticsEnabled,
+      hapticsAvailable,
+      triggerHaptic,
+   } = usePreferences();
+   const allowAnalysis = aiVisible;
 
    const { getEntryById, updateEntry } = useEntries();
    const entry = entryId ? getEntryById(entryId) : undefined;
@@ -111,18 +119,22 @@ export default function DisputeScreen() {
    const [showPersonalizationHighlight, setShowPersonalizationHighlight] =
       useState(false);
 
+   const initialViewMode: 'steps' | 'analysis' =
+      allowAnalysis && shouldAnalyze ? 'analysis' : 'steps';
    const [viewMode, setViewMode] = useState<'steps' | 'analysis'>(
-      shouldAnalyze ? 'analysis' : 'steps'
+      initialViewMode
    );
    const [hasAutoOpenedAnalysis, setHasAutoOpenedAnalysis] = useState(false);
-   const stepsProgress = useSharedValue(shouldAnalyze ? 0 : 1);
-   const analysisProgress = useSharedValue(shouldAnalyze ? 1 : 0);
+   const stepsProgress = useSharedValue(initialViewMode === 'steps' ? 1 : 0);
+   const analysisProgress = useSharedValue(
+      initialViewMode === 'analysis' ? 1 : 0
+   );
 
    const { analyze, lastResult, loading, error, ready, streamText } =
       useAbcAi();
 
    useEffect(() => {
-      if (!entry || !ready) return;
+      if (!entry || !ready || !allowAnalysis) return;
       if (!shouldAnalyze || analysisTriggered || lastResult) return;
       if (entry?.aiResponse) return;
 
@@ -132,12 +144,26 @@ export default function DisputeScreen() {
          belief: entry.belief,
          consequence: entry.consequence ?? undefined,
       }).catch((e) => console.log(e));
-   }, [ready, shouldAnalyze, analysisTriggered, entry, lastResult, analyze]);
+   }, [
+      allowAnalysis,
+      ready,
+      shouldAnalyze,
+      analysisTriggered,
+      entry,
+      lastResult,
+      analyze,
+   ]);
 
    useEffect(() => {
       if (!entry) return;
       if (entry.dispute || entry.energy) return;
    }, [entry]);
+
+   useEffect(() => {
+      if (!allowAnalysis && viewMode === 'analysis') {
+         setViewMode('steps');
+      }
+   }, [allowAnalysis, viewMode]);
 
    const data = rawAbcde as AbcdeJson;
    const promptListGetter = useCallback(
@@ -294,8 +320,11 @@ export default function DisputeScreen() {
       if (Object.keys(patch).length) {
          await updateEntry(entry.id, patch);
       }
+      if (hapticsEnabled && hapticsAvailable) {
+         triggerHaptic();
+      }
       router.back();
-   }, [entry, trimmedForm, updateEntry]);
+   }, [entry, hapticsAvailable, hapticsEnabled, triggerHaptic, trimmedForm, updateEntry]);
 
    const scrollToBottom = useCallback((animated = true) => {
       const ref = scrollRef.current;
@@ -337,11 +366,12 @@ export default function DisputeScreen() {
    }, [scrollToBottom]);
 
    useEffect(() => {
+      if (!allowAnalysis) return;
       if (!hasAutoOpenedAnalysis && (analysisTriggered || lastResult)) {
          setViewMode('analysis');
          setHasAutoOpenedAnalysis(true);
       }
-   }, [analysisTriggered, hasAutoOpenedAnalysis, lastResult]);
+   }, [allowAnalysis, analysisTriggered, hasAutoOpenedAnalysis, lastResult]);
 
    const stepsAnimatedStyle = useAnimatedStyle(() => ({
       opacity: stepsProgress.value,
@@ -362,12 +392,17 @@ export default function DisputeScreen() {
    }));
 
    useEffect(() => {
+      if (!allowAnalysis) {
+         stepsProgress.value = 1;
+         analysisProgress.value = 0;
+         return;
+      }
       const toSteps = viewMode === 'steps';
       stepsProgress.value = withTiming(toSteps ? 1 : 0, { duration: 220 });
       analysisProgress.value = withTiming(toSteps ? 0 : 1, { duration: 220 });
-   }, [analysisProgress, stepsProgress, viewMode]);
+   }, [allowAnalysis, analysisProgress, stepsProgress, viewMode]);
 
-   const showAnalysis = viewMode === 'analysis';
+   const showAnalysis = allowAnalysis && viewMode === 'analysis';
 
    if (!entry) {
       return (
@@ -415,26 +450,28 @@ export default function DisputeScreen() {
                />
             </Animated.View>
 
-            <Animated.View
-               pointerEvents={showAnalysis ? 'auto' : 'none'}
-               style={[styles.layer, analysisAnimatedStyle]}
-            >
-               <ABCAnalysis
-                  entry={entry}
-                  highlights={highlightSets}
-                  highlightColors={DIMENSION_COLORS}
-                  showPermanenceHighlight={showPermanenceHighlight}
-                  showPervasivenessHighlight={showPervasivenessHighlight}
-                  showPersonalizationHighlight={showPersonalizationHighlight}
-                  aiData={aiData}
-                  loading={loading}
-                  error={error}
-                  streamingText={streamText}
-                  onGoToSteps={() => setViewMode('steps')}
-                  onPressIn={handleDimensionPressIn}
-                  onPressOut={clearDimensionHighlight}
-               />
-            </Animated.View>
+            {allowAnalysis ? (
+               <Animated.View
+                  pointerEvents={showAnalysis ? 'auto' : 'none'}
+                  style={[styles.layer, analysisAnimatedStyle]}
+               >
+                  <ABCAnalysis
+                     entry={entry}
+                     highlights={highlightSets}
+                     highlightColors={DIMENSION_COLORS}
+                     showPermanenceHighlight={showPermanenceHighlight}
+                     showPervasivenessHighlight={showPervasivenessHighlight}
+                     showPersonalizationHighlight={showPersonalizationHighlight}
+                     aiData={aiData}
+                     loading={loading}
+                     error={error}
+                     streamingText={streamText}
+                     onGoToSteps={() => setViewMode('steps')}
+                     onPressIn={handleDimensionPressIn}
+                     onPressOut={clearDimensionHighlight}
+                  />
+               </Animated.View>
+            ) : null}
          </View>
       </KeyboardAvoidingView>
    );
