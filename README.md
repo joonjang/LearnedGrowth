@@ -15,19 +15,18 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - Dev without OpenAI: set `MOCK_AI=true` (or `DEV_MOCK_AI=true`) in `api/supabase/.env` when serving locally to return a canned JSON response from the Supabase function without calling OpenAI.
 - Auth & AI limits:
   - Run the migration at `api/supabase/migrations/20251209001_profiles_ai_limit.sql` (`cd api/supabase && supabase db push`).
-  - This creates `profiles` with `plan` (`free|invested`), `ai_calls_used`, `ai_cycle_start`, `stripe_customer_id`, plus RLS (owner-only).
+  - This creates `profiles` with `plan` (`free|invested`), `ai_calls_used`, `ai_cycle_start`, plus RLS (owner-only).
   - Adds `use_ai_call(limit_free int default 5)` RPC (security definer) that increments usage and raises `ai-limit-exceeded` for free users beyond 5 per month (resets monthly). The app calls this before every cloud AI request. Override the RPC name with `EXPO_PUBLIC_SUPABASE_AI_USAGE_RPC` if needed.
   - Adds optional RLS policies on `entries` (if table exists) to scope by `account_id = auth.uid()`.
 - Entries sync:
   - Run `api/supabase/migrations/20251209002_entries_table.sql` to create the `entries` table (matching the app schema) with RLS on `account_id`. Push with `cd api/supabase && supabase db push`.
 - Coupons/credits:
-  - Run `api/supabase/migrations/20251210001_coupons_and_profile_credits.sql` (`supabase db push --local` or `--project-ref <ref>`). This adds `extra_ai_credits`, `stripe_subscription_status`, coupon tables, `redeem_coupon` RPC, and updates `use_ai_call` to consume credits before the free pool.
+  - Run `api/supabase/migrations/20251210001_coupons_and_profile_credits.sql` (`supabase db push --local` or `--project-ref <ref>`). This adds `extra_ai_credits`, coupon tables, `redeem_coupon` RPC, and updates `use_ai_call` to consume credits before the free pool.
   - Redeem edge function: `api/supabase/functions/redeem` proxies authenticated requests to `redeem_coupon`. Serve locally with `supabase functions serve redeem --env-file .env`.
-- Stripe:
-  - Edge functions:
-    - `stripe-checkout`: creates checkout sessions (subscription or one-time credits). Env: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_SUBSCRIPTION`, `STRIPE_PRICE_CREDITS`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
-    - `stripe-webhook`: syncs subscription status and credits on Stripe events. Env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_CREDITS`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
-  - Serve locally: `supabase functions serve stripe-checkout --env-file .env` and `supabase functions serve stripe-webhook --env-file .env`.
+- RevenueCat:
+  - Set `EXPO_PUBLIC_REVENUECAT_API_KEY` in `.env` / EAS secrets.
+  - Configure your Offering + Paywall + Customer Center in the RevenueCat dashboard (`growth_plus` entitlement, `monthly` package, optional `consumable` product).
+  - Webhook sync (optional but recommended so Supabase shows plan/credits): deploy `api/supabase/functions/revenuecat-webhook` and add its URL in the RevenueCat dashboard. Env: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `REVENUECAT_WEBHOOK_SECRET` (for signature verification). Maps `growth_plus` to `plan='invested'` on purchase/renewal, back to `plan='free'` on cancellation/expiration, and adds credits for the `consumable` product via the `add_ai_credits` RPC.
 
 ---
 
@@ -35,9 +34,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2025-12-09
 - Added more edge functions
-  - Stripe
   - Coupons
-  - run with `supabase functions serve --env-file .env`
+- run with `supabase functions serve --env-file .env`
 
 ### 2025-12-08
 - Streaming API data now displays on app from supabase
@@ -242,9 +240,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - associated account field of: x
     * plan: 'free' or 'invested' x
     * ai_analysis_calls x
-    * stripe_customer_id x
+    * extra_ai_credits x
 - Cloud database sync x
-- Stripe billing integration
+- RevenueCat billing integration
 - Account screen/Setting
 - Account delete mechanics
 - UI

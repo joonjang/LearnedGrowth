@@ -20,9 +20,7 @@ export type AccountProfile = {
   plan: AccountPlan;
   aiCallsUsed: number;
   aiCycleStart: string | null;
-  stripeCustomerId: string | null;
   extraAiCredits: number;
-  stripeSubscriptionStatus: string | null;
 };
 
 type AuthStatus = "checking" | "signedOut" | "signedIn";
@@ -47,9 +45,7 @@ const EMPTY_PROFILE: AccountProfile = {
   plan: "free",
   aiCallsUsed: 0,
   aiCycleStart: null,
-  stripeCustomerId: null,
   extraAiCredits: 0,
-  stripeSubscriptionStatus: null,
 };
 
 const isSupabaseConfigured = Boolean(supabase);
@@ -62,22 +58,14 @@ function normalizeProfile(
     plan,
     ai_calls_used,
     ai_cycle_start,
-    stripe_customer_id,
     extra_ai_credits,
-    stripe_subscription_status,
   } = res.data;
   return {
     plan: plan === "invested" ? "invested" : "free",
     aiCallsUsed: Number.isFinite(ai_calls_used) ? ai_calls_used : 0,
     aiCycleStart:
       typeof ai_cycle_start === "string" ? ai_cycle_start : ai_cycle_start ?? null,
-    stripeCustomerId:
-      typeof stripe_customer_id === "string" ? stripe_customer_id : null,
     extraAiCredits: Number.isFinite(extra_ai_credits) ? extra_ai_credits : 0,
-    stripeSubscriptionStatus:
-      typeof stripe_subscription_status === "string"
-        ? stripe_subscription_status
-        : null,
   };
 }
 
@@ -109,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await supabase
         .from("profiles")
         .select(
-          "plan, ai_calls_used, ai_cycle_start, stripe_customer_id, extra_ai_credits, stripe_subscription_status"
+          "plan, ai_calls_used, ai_cycle_start, extra_ai_credits"
         )
         .eq("id", session.user.id)
         .single();

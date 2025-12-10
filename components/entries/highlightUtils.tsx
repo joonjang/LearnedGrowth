@@ -75,7 +75,7 @@ export function buildSegments(text: string, highlights: Highlight[]) {
   const points = Array.from(boundaries).sort((a, b) => a - b);
 
   const segments: (string | { text: string; color?: string })[] = [];
-  let overlapStripe = 0;
+  let overlapIndex = 0;
 
   for (let i = 0; i < points.length - 1; i++) {
     const start = points[i];
@@ -93,8 +93,8 @@ export function buildSegments(text: string, highlights: Highlight[]) {
     if (active.length === 1) {
       color = active[0].color;
     } else {
-      color = active[overlapStripe % active.length].color || active[0].color;
-      overlapStripe += 1;
+      color = active[overlapIndex % active.length].color || active[0].color;
+      overlapIndex += 1;
     }
       segments.push({ text: slice, color });
   }

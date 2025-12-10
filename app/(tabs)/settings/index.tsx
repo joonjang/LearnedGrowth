@@ -1,11 +1,13 @@
+import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
+import { useRevenueCat } from '@/providers/RevenueCatProvider';
+import { GROWTH_PLUS_ENTITLEMENT } from '@/services/revenuecat';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getSupabaseClient } from '@/lib/supabase';
-import * as Linking from 'expo-linking';
 
 export default function SettingsScreen() {
    const {
@@ -17,16 +19,31 @@ export default function SettingsScreen() {
       loadingProfile,
       isConfigured,
    } = useAuth();
+   const {
+      loading: rcLoading,
+      error: rcError,
+      customerInfo,
+      isGrowthPlusActive,
+      showPaywall,
+      showCustomerCenter,
+      buyConsumable,
+      restorePurchases,
+      refreshCustomerInfo: refreshRevenueCat,
+   } = useRevenueCat();
    const router = useRouter();
    const plan = profile?.plan ?? 'free';
    const aiUsed = profile?.aiCallsUsed ?? 0;
    const extraCredits = profile?.extraAiCredits ?? 0;
-   const subStatus = profile?.stripeSubscriptionStatus ?? 'inactive';
+   const growthEntitlement =
+      customerInfo?.entitlements?.active?.[GROWTH_PLUS_ENTITLEMENT] ?? null;
 
    const [coupon, setCoupon] = useState('');
    const [redeeming, setRedeeming] = useState(false);
    const [redeemMessage, setRedeemMessage] = useState<string | null>(null);
-   const [checkoutLoading, setCheckoutLoading] = useState<null | 'sub' | 'credits'>(null);
+   const [billingMessage, setBillingMessage] = useState<string | null>(null);
+   const [billingAction, setBillingAction] = useState<
+      null | 'paywall' | 'customer-center' | 'consumable' | 'restore' | 'refresh'
+   >(null);
 
    const redeemCoupon = async () => {
       if (!coupon.trim()) {
@@ -53,36 +70,83 @@ export default function SettingsScreen() {
       }
    };
 
-   const startCheckout = async (mode: 'subscription' | 'payment') => {
-      setCheckoutLoading(mode === 'subscription' ? 'sub' : 'credits');
+   const refreshEntitlements = async () => {
+      setBillingAction('refresh');
+      setBillingMessage(null);
       try {
-         const supabase = getSupabaseClient();
-         const { data, error } = await supabase.functions.invoke(
-            'stripe-checkout',
-            {
-               body: {
-                  mode,
-                  quantity: mode === 'payment' ? 1 : undefined,
-                  successUrl: 'https://example.com/success',
-                  cancelUrl: 'https://example.com/cancel',
-               },
-            }
-         );
-         if (error) {
-            throw new Error(error.message ?? 'Checkout failed');
-         }
-         const url = (data as any)?.url;
-         if (!url) throw new Error('Missing checkout url');
-         Linking.openURL(url);
+         await refreshRevenueCat();
+         setBillingMessage('Entitlements refreshed');
       } catch (err: any) {
-         setRedeemMessage(err?.message ?? 'Checkout failed');
+         setBillingMessage(err?.message ?? 'Refresh failed');
       } finally {
-         setCheckoutLoading(null);
+         setBillingAction(null);
+      }
+   };
+
+   const openPaywall = async () => {
+      setBillingAction('paywall');
+      setBillingMessage(null);
+      try {
+         const result = await showPaywall();
+         if (result === PAYWALL_RESULT.PURCHASED) {
+            setBillingMessage('Growth Plus unlocked!');
+         } else {
+            setBillingMessage(`Paywall closed (${result})`);
+         }
+         await refreshProfile();
+      } catch (err: any) {
+         setBillingMessage(err?.message ?? 'Paywall failed');
+      } finally {
+         setBillingAction(null);
+      }
+   };
+
+   const openCustomerCenter = async () => {
+      setBillingAction('customer-center');
+      setBillingMessage(null);
+      try {
+         await showCustomerCenter();
+         setBillingMessage('Customer Center closed');
+      } catch (err: any) {
+         setBillingMessage(err?.message ?? 'Unable to open Customer Center');
+      } finally {
+         setBillingAction(null);
+      }
+   };
+
+   const buyOneConsumable = async () => {
+      setBillingAction('consumable');
+      setBillingMessage(null);
+      try {
+         const result = await buyConsumable();
+         setBillingMessage(
+            `Consumable purchased (${result.customerInfo.allPurchasedProductIdentifiers.join(
+               ', '
+            )})`
+         );
+      } catch (err: any) {
+         setBillingMessage(err?.message ?? 'Purchase failed');
+      } finally {
+         setBillingAction(null);
+      }
+   };
+
+   const handleRestore = async () => {
+      setBillingAction('restore');
+      setBillingMessage(null);
+      try {
+         await restorePurchases();
+         setBillingMessage('Purchases restored');
+      } catch (err: any) {
+         setBillingMessage(err?.message ?? 'Restore failed');
+      } finally {
+         setBillingAction(null);
       }
    };
 
    return (
       <SafeAreaView style={styles.container}>
+         <ScrollView>
          <Text style={styles.title}>Account</Text>
 
          {!isConfigured && (
@@ -116,8 +180,12 @@ export default function SettingsScreen() {
                <Text style={styles.label}>Extra credits</Text>
                <Text style={styles.value}>{extraCredits}</Text>
 
-               <Text style={styles.label}>Subscription status</Text>
-               <Text style={styles.value}>{subStatus}</Text>
+               <Text style={styles.label}>Growth Plus entitlement</Text>
+               <Text style={styles.value}>
+                  {isGrowthPlusActive
+                     ? `Active${growthEntitlement?.expirationDate ? ` (renews ${growthEntitlement.expirationDate})` : ''}`
+                     : 'Inactive'}
+               </Text>
 
                <View style={styles.actions}>
                   <Pressable
@@ -141,32 +209,91 @@ export default function SettingsScreen() {
                   <Pressable
                      style={[
                         styles.button,
-                        checkoutLoading === 'sub' && styles.buttonDisabled,
+                        (billingAction === 'paywall' || rcLoading) &&
+                           styles.buttonDisabled,
                      ]}
-                     onPress={() => startCheckout('subscription')}
-                     disabled={checkoutLoading !== null}
+                     onPress={openPaywall}
+                     disabled={billingAction !== null || rcLoading}
                   >
                      <Text style={styles.buttonLabel}>
-                        {checkoutLoading === 'sub'
+                        {billingAction === 'paywall'
                            ? 'Opening…'
-                           : 'Go Invested'}
+                           : 'Open paywall'}
                      </Text>
                   </Pressable>
                   <Pressable
                      style={[
                         styles.secondary,
-                        checkoutLoading === 'credits' && styles.buttonDisabled,
+                        (billingAction === 'customer-center' || rcLoading) &&
+                           styles.buttonDisabled,
                      ]}
-                     onPress={() => startCheckout('payment')}
-                     disabled={checkoutLoading !== null}
+                     onPress={openCustomerCenter}
+                     disabled={billingAction !== null || rcLoading}
                   >
                      <Text style={styles.secondaryLabel}>
-                        {checkoutLoading === 'credits'
+                        {billingAction === 'customer-center'
                            ? 'Opening…'
-                           : 'Buy credits'}
+                           : 'Customer Center'}
                      </Text>
                   </Pressable>
                </View>
+               <View style={styles.actions}>
+                  <Pressable
+                     style={[
+                        styles.secondary,
+                        (billingAction === 'restore' || rcLoading) &&
+                           styles.buttonDisabled,
+                     ]}
+                     onPress={handleRestore}
+                     disabled={billingAction !== null || rcLoading}
+                  >
+                     <Text style={styles.secondaryLabel}>
+                        {billingAction === 'restore'
+                           ? 'Restoring…'
+                           : 'Restore purchases'}
+                     </Text>
+                  </Pressable>
+                  <Pressable
+                     style={[
+                        styles.button,
+                        (billingAction === 'consumable' || rcLoading) &&
+                           styles.buttonDisabled,
+                     ]}
+                     onPress={buyOneConsumable}
+                     disabled={billingAction !== null || rcLoading}
+                  >
+                     <Text style={styles.buttonLabel}>
+                        {billingAction === 'consumable'
+                           ? 'Purchasing…'
+                           : 'Buy consumable'}
+                     </Text>
+                  </Pressable>
+               </View>
+               <View style={styles.actions}>
+                  <Pressable
+                     style={[
+                        styles.secondary,
+                        (billingAction === 'refresh' || rcLoading) &&
+                           styles.buttonDisabled,
+                     ]}
+                     onPress={refreshEntitlements}
+                     disabled={billingAction !== null || rcLoading}
+                  >
+                     <Text style={styles.secondaryLabel}>
+                        {billingAction === 'refresh'
+                           ? 'Refreshing…'
+                           : 'Refresh entitlements'}
+                     </Text>
+                  </Pressable>
+               </View>
+               {billingMessage ? (
+                  <Text style={styles.redeemMessage}>{billingMessage}</Text>
+               ) : null}
+               {rcError ? (
+                  <Text style={styles.redeemMessage}>
+                     RevenueCat error: {rcError}
+                  </Text>
+               ) : null}
 
                <View style={styles.couponRow}>
                   <Text style={styles.label}>Redeem coupon</Text>
@@ -200,9 +327,10 @@ export default function SettingsScreen() {
             </View>
          )}
 
-         <ScrollView>
+         
             <Text>{JSON.stringify(profile, null, 4)}</Text>
             <Text>{JSON.stringify(user, null, 4)}</Text>
+            <Text>{JSON.stringify(customerInfo, null, 4)}</Text>
          </ScrollView>
       </SafeAreaView>
    );
