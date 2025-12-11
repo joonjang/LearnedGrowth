@@ -47,6 +47,7 @@ export function UndoRow({
    durationMs: number;
    onUndo: () => void;
 }) {
+   const styles = useStyles();
    const progress = useSharedValue(1);
    const [textWidth, setTextWidth] = useState(0);
 

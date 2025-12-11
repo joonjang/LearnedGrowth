@@ -76,7 +76,6 @@ export default function AccountScreen() {
    const router = useRouter();
 
    const insets = useSafeAreaInsets();
-   const [bannerDismissed, setBannerDismissed] = useState(false);
    const [isOffline, setIsOffline] = useState(false);
    const [billingNote, setBillingNote] = useState<string | null>(null);
    const [billingAction, setBillingAction] = useState<
