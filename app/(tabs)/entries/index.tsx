@@ -1,7 +1,7 @@
-import EntryRow, { UndoRow } from '@/components/entries/EntryRow';
 import { type MenuBounds } from '@/components/entries/entry/EntryCard';
-import { getDateParts, getTimeLabel } from '@/lib/date';
+import EntryRow, { UndoRow } from '@/components/entries/entry/EntryRow';
 import { useEntries } from '@/features/hooks/useEntries';
+import { getDateParts, getTimeLabel } from '@/lib/date';
 import { Entry } from '@/models/entry';
 import { makeThemedStyles } from '@/theme/theme';
 import { Link, router } from 'expo-router';
@@ -10,8 +10,8 @@ import {
    Pressable,
    SectionList,
    StyleSheet,
-   View,
    Text,
+   View,
    type GestureResponderEvent,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

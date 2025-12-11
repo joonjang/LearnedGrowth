@@ -19,6 +19,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Feedback table implemented
 - Account delete feature + webhook implemented
 - Subscription changes user state
+- Implemented Google and Apple log in
 
 ### 2025-12-09
 - Added more edge functions

@@ -1,31 +1,31 @@
-import { formatDateTimeWithWeekday } from '@/lib/date';
+import AnalyzeButton from '@/components/buttons/AnalyzeButton';
+import CTAButton from '@/components/buttons/CTAButton';
 import { useEntries } from '@/features/hooks/useEntries';
+import { formatDateTimeWithWeekday } from '@/lib/date';
 import type { Entry } from '@/models/entry';
 import { usePreferences } from '@/providers/PreferencesProvider';
+import { makeThemedStyles, useTheme } from '@/theme/theme';
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-   StyleSheet,
-   View,
-   Text,
-   Pressable,
-   TextInput,
-   Platform,
    LayoutAnimation,
+   Platform,
+   Pressable,
+   StyleSheet,
+   Text,
+   TextInput,
    UIManager,
+   View,
 } from 'react-native';
-import CTAButton from '@/components/entries/CTAButton';
-import { Ionicons } from '@expo/vector-icons';
-import {
-   SafeAreaView,
-   useSafeAreaInsets,
-} from 'react-native-safe-area-context';
 import {
    KeyboardAwareScrollView,
    KeyboardController,
 } from 'react-native-keyboard-controller';
-import AnalyzeButton from '@/components/entries/dispute/AnalyzeButton';
-import { makeThemedStyles, useTheme } from '@/theme/theme';
+import {
+   SafeAreaView,
+   useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
 type DimensionKey = 'permanence' | 'pervasiveness' | 'personalization';

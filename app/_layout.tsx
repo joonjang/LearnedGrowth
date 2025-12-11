@@ -23,8 +23,13 @@ export default function RootLayout() {
                               <AuthGate>
                                  <AdapterGuard>
                                     <Stack screenOptions={{ headerShown: false }}>
-                                       <Stack.Screen name="login" />
                                        <Stack.Screen name="(tabs)" />
+                                       <Stack.Screen
+                                          name="(modal)"
+                                          options={{
+                                             presentation: 'modal',
+                                          }}
+                                       />
                                     </Stack>
                                  </AdapterGuard>
                               </AuthGate>

@@ -17,8 +17,8 @@ import Animated, {
    useSharedValue,
    withTiming,
 } from 'react-native-reanimated';
-import CTAButton from '../CTAButton';
-import AnalyzeButton from '../dispute/AnalyzeButton';
+import AnalyzeButton from '../../buttons/AnalyzeButton';
+import CTAButton from '../../buttons/CTAButton';
 
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);

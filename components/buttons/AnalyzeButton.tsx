@@ -1,6 +1,6 @@
-import { router, usePathname } from 'expo-router';
-import { Text, Pressable, StyleSheet } from 'react-native';
 import { makeThemedStyles } from '@/theme/theme';
+import { router, usePathname } from 'expo-router';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
 type Prop = {
    id: string;
@@ -20,7 +20,7 @@ export default function AnalyzeButton({ id }: Prop) {
    }
    return (
       <Pressable style={styles.button} onPress={aiAnalysis}>
-         <Text style={styles.buttonText}>Analyze with AI</Text>
+         <Text style={styles.buttonText}>Analyze My Thinking</Text>
       </Pressable>
    );
 }

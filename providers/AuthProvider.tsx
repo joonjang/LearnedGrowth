@@ -4,6 +4,9 @@ import {
   User,
   type PostgrestSingleResponse,
 } from "@supabase/supabase-js";
+import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
+import * as AppleAuthentication from "expo-apple-authentication";
+import { Platform } from "react-native";
 import {
   createContext,
   useCallback,
@@ -37,6 +40,8 @@ type AuthContextShape = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signInWithApple: () => Promise<boolean>;
+  signInWithGoogle: () => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextShape | null>(null);
@@ -201,6 +206,112 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   }, [handleSession]);
 
+  const signInWithApple = useCallback(async () => {
+    if (!supabase) throw new Error("Supabase is not configured");
+
+    setAuthError(null);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (!credential.identityToken) {
+        throw new Error("Apple Sign-In did not return an identity token");
+      }
+
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: "apple",
+        token: credential.identityToken,
+      });
+
+      if (error) {
+        setAuthError(error.message);
+        throw error;
+      }
+
+      handleSession(data.session ?? null);
+
+      const { givenName, familyName } = credential.fullName ?? {};
+      const fullName = [givenName, familyName].filter(Boolean).join(" ").trim();
+
+      if (fullName) {
+        try {
+          await supabase.auth.updateUser({
+            data: {
+              full_name: fullName,
+              ...(givenName ? { first_name: givenName } : {}),
+              ...(familyName ? { last_name: familyName } : {}),
+            },
+          });
+        } catch (updateErr) {
+          console.warn("Failed to persist Apple full name to Supabase", updateErr);
+        }
+      }
+
+      return true;
+    } catch (err: any) {
+      if (
+        err?.code === "ERR_CANCELED" ||
+        err?.code === AppleAuthentication.AppleAuthenticationError?.CANCELED
+      ) {
+        return false;
+      }
+      setAuthError(err?.message ?? "Apple sign-in failed");
+      throw err;
+    }
+  }, [handleSession]);
+
+  const signInWithGoogle = useCallback(async () => {
+    if (!supabase) throw new Error("Supabase is not configured");
+
+    const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+
+    if (!webClientId) {
+      throw new Error("Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID");
+    }
+
+    setAuthError(null);
+
+    try {
+      GoogleSignin.configure({
+        webClientId,
+        iosClientId: iosClientId || undefined,
+      });
+
+      if (Platform.OS === "android") {
+        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      }
+
+      const { idToken } = await GoogleSignin.signIn();
+      if (!idToken) {
+        throw new Error("Google sign-in did not return an ID token");
+      }
+
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: idToken,
+      });
+
+      if (error) {
+        setAuthError(error.message);
+        throw error;
+      }
+
+      handleSession(data.session ?? null);
+      return true;
+    } catch (err: any) {
+      if (err?.code === statusCodes.SIGN_IN_CANCELLED) {
+        return false;
+      }
+      setAuthError(err?.message ?? "Google sign-in failed");
+      throw err;
+    }
+  }, [handleSession]);
+
   const value = useMemo<AuthContextShape>(
     () => ({
       status,
@@ -214,6 +325,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      signInWithApple,
+      signInWithGoogle,
     }),
     [
       authError,
@@ -221,6 +334,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       refreshProfile,
       session,
+      signInWithApple,
+      signInWithGoogle,
       signIn,
       signOut,
       signUp,

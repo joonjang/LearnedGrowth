@@ -291,7 +291,7 @@ export default function AccountScreen() {
          const { error } = await supabase.functions.invoke('delete-account');
          if (error) throw new Error(error.message);
          await signOut();
-         router.replace('/login');
+         router.push('/(modal)/login');
       } catch (err: any) {
          Alert.alert('Delete account', err?.message ?? 'Delete failed.');
       } finally {
@@ -395,7 +395,7 @@ export default function AccountScreen() {
                   </View>
                   <Pressable
                      style={styles.signInButton}
-                     onPress={() => router.replace('/login')}
+                     onPress={() => router.push('/(modal)/login')}
                   >
                      <Text style={styles.signInLabel}>Sign in</Text>
                   </Pressable>

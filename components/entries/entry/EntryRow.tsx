@@ -20,7 +20,7 @@ import Animated, {
    useSharedValue,
    withTiming,
 } from 'react-native-reanimated';
-import EntryCard, { type MenuBounds } from './entry/EntryCard';
+import EntryCard, { type MenuBounds } from './EntryCard';
 
 type EntryRowProps = {
    entry: Entry;
