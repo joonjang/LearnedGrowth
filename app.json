@@ -35,6 +35,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-local-authentication",
       [
         "expo-build-properties",
         {
