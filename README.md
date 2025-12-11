@@ -2,34 +2,23 @@
 
 An offline-first journaling app (ABCDE method from _Learned Optimism_) with cloud sync and AI-assisted disputation.
 
-## Supabase Setup (Edge AI + Auth)
+## Supabase Setup
 - Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the Expo app (add them as EAS secrets for TestFlight).
 - Optional overrides: `EXPO_PUBLIC_SUPABASE_AI_FUNCTION` (defaults to `learned-growth`) and `EXPO_PUBLIC_SUPABASE_AI_STREAM_FUNCTION` (defaults to the same function).
 - Keep `EXPO_PUBLIC_API_BASE_URL` only if you want to hit a non-Supabase API; otherwise the app will target `https://<supabase>/functions/v1/{function}` automatically.
-- Cloud AI requests now send Supabase auth headers (Bearer session token when signed in, anon key otherwise) and persist sessions in `AsyncStorage` for mobile builds.
-- Edge Function lives at `api/supabase/functions/learned-growth/index.ts`.
-  - Local: from `api/`, run `supabase functions serve learned-growth --env-file .env` (needs `OPENAI_API_KEY` in `.env`).
-  - Deploy: `supabase functions deploy learned-growth --project-ref <your-project-ref>`.
-  - Set secrets in Supabase: `supabase secrets set OPENAI_API_KEY=... [OPENAI_MODEL=gpt-5-mini]`.
-  - Confirm the function returns the LearnedGrowth JSON contract before switching the app env to Supabase.
-  - Dev without OpenAI: set `MOCK_AI=true` (or `DEV_MOCK_AI=true`) in `api/supabase/.env` when serving locally to return a canned JSON response from the Supabase function without calling OpenAI.
-- Auth & AI limits:
-  - Run the migration at `api/supabase/migrations/20251209001_profiles_ai_limit.sql` (`cd api/supabase && supabase db push`).
-  - This creates `profiles` with `plan` (`free|invested`), `ai_calls_used`, `ai_cycle_start`, plus RLS (owner-only).
-  - Adds `use_ai_call(limit_free int default 5)` RPC (security definer) that increments usage and raises `ai-limit-exceeded` for free users beyond 5 per month (resets monthly). The app calls this before every cloud AI request. Override the RPC name with `EXPO_PUBLIC_SUPABASE_AI_USAGE_RPC` if needed.
-  - Adds optional RLS policies on `entries` (if table exists) to scope by `account_id = auth.uid()`.
-- Entries sync:
-  - Run `api/supabase/migrations/20251209002_entries_table.sql` to create the `entries` table (matching the app schema) with RLS on `account_id`. Push with `cd api/supabase && supabase db push`.
-- Coupons/credits:
-  - Run `api/supabase/migrations/20251210001_coupons_and_profile_credits.sql` (`supabase db push --local` or `--project-ref <ref>`). This adds `extra_ai_credits`, coupon tables, `redeem_coupon` RPC, and updates `use_ai_call` to consume credits before the free pool.
-  - Redeem edge function: `api/supabase/functions/redeem` proxies authenticated requests to `redeem_coupon`. Serve locally with `supabase functions serve redeem --env-file .env`.
+- Dev without OpenAI: set `MOCK_AI=true` (or `DEV_MOCK_AI=true`) in `api/supabase/.env` when serving locally to return a canned JSON response from the Supabase function without calling OpenAI.
 - RevenueCat:
   - Set `EXPO_PUBLIC_REVENUECAT_API_KEY` in `.env` / EAS secrets.
-  - Configure your Offering + Paywall + Customer Center in the RevenueCat dashboard (`growth_plus` entitlement, `monthly` package, optional `consumable` product).
+  - Configure your Offering + Paywall + Customer Center in the RevenueCat dashboard (`Growth Plus` entitlement, `monthly` package, optional `consumable` product).
 
 ---
 
 ## Development Journal
+
+### 2025-12-10
+- Feedback table implemented
+- Account delete feature + webhook implemented
+- Subscription changes user state
 
 ### 2025-12-09
 - Added more edge functions
@@ -45,7 +34,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - local entries become associated to account
 - Cloud database established
 
-
 ### 2025-12-06
 - Consolidated AI storage into a single `aiResponse` JSON column in SQLite
 - AI Response questions are the dispute queestions if they exist
@@ -53,7 +41,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Analyze button now checks if cached response exists
 - Streaming data text now displays to show user of progress
 - To build in preview: `eas build -p ios --profile preview`
-
 
 ### 2025-12-05
 - Extended database to hold 'counterBelief' JSON text
@@ -74,9 +61,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Removed `api` from this repo and made private
 - API now communicates with openAi
 - Updated abcde JSON prompts to flow better when mixed and matched
-
-## Phase 1: Make the offline mode + database (Complete)
-## Starting Phase 2: The AI layer
 
 ### 2025-11-30
 - EntryCard now can do undo delete
@@ -201,7 +185,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Implement `entriesAdapter.sqlite` using Expo SQLite (named params, `COALESCE`, soft delete)
 - Run SQLite tests via `expo-sqlite-mock` (Jest transform allowlist + setup)
 - Refactor tests to use backend factories (memory + sqlite)
-- ✅ Unit + integration tests passing
+- Unit + integration tests passing
 
 ### 2025-09-11
 - Define `Entry` model and `EntriesAdapter` interface
@@ -230,6 +214,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Encrypt entries when in cloud
 - Guard ai analysis, it is usable for logged in users only
 - Have a distinction for production tables and edge functions and development versions
+- Biometric lock disables the app from all screens until unlocked
+- Implement app wide dark/light mode
+- Warn if they are still subscribed, give an alert
+- Revenuecat failed purchase screens
 
 ## Steps
 - Offline first x
@@ -247,21 +235,22 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - RevenueCat billing integration x
 - Account screen/Setting
   - Add a gentle banner in the Settings: "Your data is only on this phone. Sign in to back it up."
-  - display free or growth plus status
-  - if free user, display available use for the month + extra credit
-  - if free, show a CTA to upgrade to growth plus or buy more analysis
-  - if subscribed, manage subscription. links to app store management sheet
+  - display free or growth plus status x
+  - if free user, display available use for the month + extra credit x
+  - if free, show a CTA to upgrade to growth plus or buy more analysis x
+  - if subscribed, manage subscription. links to app store management sheet 
   - restore purchases to re-sync active subscription of reinstall app
     - webhook should update with the supabase database to match
-  - enable biometric security
-  - toggle to show/hide ai use
+  - enable biometric security x
+  - toggle to show/hide ai use x
   - light/dark theme mode
-  - tactile haptic feedback when completing an entry
-  - display current logged in email
-  - standard sign-out action
-  - delete account
-    - delete user entry in supabase and existence of user on the cloud
-    - delete the auth user
-  - send feedback button, goes to a table in supabase
+  - tactile haptic feedback when completing an entry x
+  - display current logged in email x
+  - standard sign-out action x
+  - delete account x
+    - delete user entry in supabase and existence of user on the cloud x
+    - delete the auth user x
+    - warn if they are still subscribed, give an alert
+  - send feedback button, goes to a table in supabase x
   - if user is offline, grey out manage subscription and delete account and indiciate offline
 - UI

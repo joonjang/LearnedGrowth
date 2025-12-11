@@ -6,7 +6,8 @@ import Purchases, {
 } from "react-native-purchases";
 import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 
-export const GROWTH_PLUS_ENTITLEMENT = "growth_plus";
+// Entitlement identifier as configured in RevenueCat dashboard.
+export const GROWTH_PLUS_ENTITLEMENT = "Growth Plus";
 export const MONTHLY_PACKAGE_IDENTIFIER = "monthly";
 export const CONSUMABLE_PRODUCT_IDENTIFIER = "consumable";
 

@@ -115,6 +115,15 @@ export default function LoginScreen() {
           </Pressable>
 
           <Pressable
+            style={styles.secondaryButton}
+            onPress={() => router.replace("/(tabs)/entries")}
+            disabled={submitting}
+          >
+            <Text style={styles.secondaryLabel}>Skip for now</Text>
+            <Text style={styles.secondaryHint}>Continue offline; data stays on this device</Text>
+          </Pressable>
+
+          <Pressable
             style={styles.switcher}
             onPress={() => setMode((m) => (m === "signUp" ? "signIn" : "signUp"))}
             disabled={submitting}
@@ -193,6 +202,24 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "700",
+  },
+  secondaryButton: {
+    marginTop: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#cbd5e1",
+  },
+  secondaryLabel: {
+    color: "#0f172a",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  secondaryHint: {
+    color: "#475569",
+    fontSize: 12,
+    marginTop: 2,
   },
   switcher: {
     alignItems: "center",

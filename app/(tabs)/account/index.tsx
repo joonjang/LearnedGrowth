@@ -1,13 +1,19 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
-import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
+import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { palette } from '@/theme/colors';
-import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useRouter } from 'expo-router';
+import {
+   useCallback,
+   useEffect,
+   useMemo,
+   useState,
+   type ReactNode,
+} from 'react';
 import {
    ActivityIndicator,
    Alert,
@@ -21,8 +27,8 @@ import {
    TextInput,
    View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const FREE_MONTHLY_LIMIT = 5;
 const STORAGE_KEYS = {
@@ -93,8 +99,9 @@ export default function AccountScreen() {
    const aiUsed = profile?.aiCallsUsed ?? 0;
    const extraCredits = profile?.extraAiCredits ?? 0;
    const monthlyRemaining = Math.max(FREE_MONTHLY_LIMIT - aiUsed, 0);
-   const totalAvailable =
-      hasGrowth ? 'Unlimited' : `${monthlyRemaining + extraCredits}`;
+   const totalAvailable = hasGrowth
+      ? 'Unlimited'
+      : `${monthlyRemaining + extraCredits}`;
    const darkMode = theme === 'dark';
 
    useEffect(() => {
@@ -113,7 +120,9 @@ export default function AccountScreen() {
    useEffect(() => {
       AsyncStorage.getItem(STORAGE_KEYS.biometric)
          .then((val) => setBiometricEnabled(val === 'true'))
-         .catch((err) => console.warn('Failed to load biometric preference', err));
+         .catch((err) =>
+            console.warn('Failed to load biometric preference', err)
+         );
    }, []);
 
    const refreshBiometricInfo = useCallback(async () => {
@@ -196,13 +205,18 @@ export default function AccountScreen() {
          }
          const supported = await Linking.canOpenURL(MANAGE_SUBSCRIPTION_URL);
          if (!supported) {
-            throw new Error('Unable to open subscription settings on this device.');
+            throw new Error(
+               'Unable to open subscription settings on this device.'
+            );
          }
          await Linking.openURL(MANAGE_SUBSCRIPTION_URL);
          setBillingNote('Opening subscription settings...');
       } catch (err: any) {
          setBillingNote(err?.message ?? 'Manage subscription failed.');
-         Alert.alert('Manage subscription', err?.message ?? 'Unable to open settings.');
+         Alert.alert(
+            'Manage subscription',
+            err?.message ?? 'Unable to open settings.'
+         );
       } finally {
          setBillingAction(null);
       }
@@ -290,7 +304,9 @@ export default function AccountScreen() {
          setFeedback('');
          setFeedbackMessage('Thanks for the feedback.');
       } catch (err: any) {
-         setFeedbackMessage(err?.message ?? 'Unable to send feedback right now.');
+         setFeedbackMessage(
+            err?.message ?? 'Unable to send feedback right now.'
+         );
       } finally {
          setFeedbackSending(false);
       }
@@ -331,7 +347,8 @@ export default function AccountScreen() {
       return plan === 'invested' ? 'Growth Plus (database only)' : 'Free';
    }, [entitlementActive, plan]);
    const biometricUnavailable = !biometricInfo.hasHardware;
-   const biometricNeedsEnroll = biometricInfo.hasHardware && !biometricInfo.isEnrolled;
+   const biometricNeedsEnroll =
+      biometricInfo.hasHardware && !biometricInfo.isEnrolled;
 
    return (
       <SafeAreaView style={styles.safeArea}>
@@ -354,10 +371,12 @@ export default function AccountScreen() {
 
             {!isConfigured && (
                <View style={styles.warningCard}>
-                  <Text style={styles.warningTitle}>Supabase not configured</Text>
+                  <Text style={styles.warningTitle}>
+                     Supabase not configured
+                  </Text>
                   <Text style={styles.warningText}>
-                     Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-                     to enable sync.
+                     Add EXPO_PUBLIC_SUPABASE_URL and
+                     EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY to enable sync.
                   </Text>
                </View>
             )}
@@ -381,6 +400,15 @@ export default function AccountScreen() {
                </View>
             )}
 
+            {!user && (
+               <Pressable
+                  style={styles.signInButton}
+                  onPress={() => router.replace('/login')}
+               >
+                  <Text style={styles.signInLabel}>Sign in</Text>
+               </Pressable>
+            )}
+
             <View style={styles.card}>
                <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>Subscription</Text>
@@ -399,7 +427,8 @@ export default function AccountScreen() {
                         </Text>
                      ) : (
                         <Text style={styles.hint}>
-                           {monthlyRemaining} monthly uses left + {extraCredits} extra credits
+                           {monthlyRemaining} monthly uses left + {extraCredits}{' '}
+                           extra credits
                         </Text>
                      )}
                   </View>
@@ -419,7 +448,9 @@ export default function AccountScreen() {
 
                <View style={styles.metricsRow}>
                   <View style={styles.metric}>
-                     <Text style={styles.metricLabel}>Monthly uses remaining</Text>
+                     <Text style={styles.metricLabel}>
+                        Monthly uses remaining
+                     </Text>
                      <Text style={styles.metricValue}>
                         {hasGrowth ? 'Unlimited' : monthlyRemaining}
                      </Text>
@@ -455,7 +486,8 @@ export default function AccountScreen() {
                      <Pressable
                         style={[
                            styles.secondaryButton,
-                           billingAction === 'consumable' && styles.buttonDisabled,
+                           billingAction === 'consumable' &&
+                              styles.buttonDisabled,
                         ]}
                         onPress={handleBuyConsumable}
                         disabled={billingAction !== null}
@@ -511,7 +543,9 @@ export default function AccountScreen() {
             <View style={styles.card}>
                <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>App preferences</Text>
-                  {prefsLoading && <ActivityIndicator size="small" color="#111827" />}
+                  {prefsLoading && (
+                     <ActivityIndicator size="small" color="#111827" />
+                  )}
                </View>
 
                <SettingRow
@@ -534,7 +568,8 @@ export default function AccountScreen() {
                )}
                {biometricNeedsEnroll && (
                   <Text style={styles.noteText}>
-                     Add a fingerprint or face profile in system settings to turn this on.
+                     Add a fingerprint or face profile in system settings to
+                     turn this on.
                   </Text>
                )}
 
@@ -739,6 +774,19 @@ const styles = StyleSheet.create({
       paddingVertical: 6,
       backgroundColor: '#0ea5e9',
       borderRadius: 10,
+   },
+   signInButton: {
+      marginTop: 10,
+      backgroundColor: '#0ea5e9',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      alignSelf: 'flex-start',
+   },
+   signInLabel: {
+      color: 'white',
+      fontWeight: '700',
+      fontSize: 14,
    },
    bannerDismissText: {
       color: 'white',

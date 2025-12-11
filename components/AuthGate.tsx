@@ -16,9 +16,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isConfigured) return;
-    if (status === "signedOut" && !isAuthRoute) {
-      router.replace("/login");
-    } else if (status === "signedIn" && isAuthRoute) {
+    if (status === "signedIn" && isAuthRoute) {
       router.replace("/(tabs)/entries");
     }
   }, [isAuthRoute, isConfigured, router, status]);

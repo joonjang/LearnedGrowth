@@ -148,7 +148,14 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
   );
 
   const isGrowthPlusActive = useMemo(
-    () => Boolean(customerInfo?.entitlements?.active?.[GROWTH_PLUS_ENTITLEMENT]),
+    () => {
+      const active = customerInfo?.entitlements?.active ?? {};
+      return Boolean(
+        active[GROWTH_PLUS_ENTITLEMENT] ||
+          active["growth_plus"] ||
+          active["Growth Plus"]
+      );
+    },
     [customerInfo?.entitlements?.active]
   );
 
