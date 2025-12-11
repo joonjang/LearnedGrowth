@@ -1,18 +1,30 @@
+import rawAbcde from '@/assets/data/abcde.json';
 import InputBox from '@/components/newEntry/InputBox';
+import PromptDisplay from '@/components/newEntry/PromptDisplay';
 import StepperButton from '@/components/newEntry/StepperButton';
+import StepperHeader from '@/components/newEntry/StepperHeader';
 import { useEntries } from '@/features/hooks/useEntries';
+import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
+import { usePromptLayout } from '@/features/hooks/usePromptLayout';
 import { usePrompts } from '@/features/hooks/usePrompts';
 import { useVisitedSet } from '@/features/hooks/useVisitedSet';
-import { usePromptLayout } from '@/features/hooks/usePromptLayout';
-import rawAbcde from '@/assets/data/abcde.json';
 import { NewInputEntryType } from '@/models/newInputEntryType';
+import { useTheme } from '@/theme/theme';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, ScrollView, TextInput, View, StyleSheet } from 'react-native';
+import {
+   Alert,
+   KeyboardAvoidingView,
+   Platform,
+   Pressable,
+   ScrollView,
+   StyleSheet,
+   TextInput,
+   View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import PromptDisplay from '@/components/newEntry/PromptDisplay';
-import StepperHeader from '@/components/newEntry/StepperHeader';
-import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
 
 const STEP_ORDER = ['adversity', 'belief', 'consequence'] as const;
 const STEP_LABEL: Record<NewInputEntryType, string> = {
@@ -24,10 +36,13 @@ const STEP_LABEL: Record<NewInputEntryType, string> = {
 export default function NewEntryModal() {
    const store = useEntries();
    const insets = useSafeAreaInsets();
+   const { mode, colors } = useTheme();
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
    const { promptTextStyle, inputBoxDims, promptMaxHeight } = usePromptLayout();
    const isKeyboardVisible = useKeyboardVisible();
+   
+   const topPadding = Platform.OS === 'android' ? insets.top + 12 : 20; 
 
    const [form, setForm] = useState<Record<NewInputEntryType, string>>({
       adversity: '',
@@ -40,16 +55,13 @@ export default function NewEntryModal() {
       []
    );
    const prompts = usePrompts(STEP_ORDER, promptListGetter);
-
    const [idx, setIdx] = useState(0);
    const currKey = STEP_ORDER[idx] as NewInputEntryType;
-
    const setField = useCallback(
       (k: NewInputEntryType) => (v: string) =>
          setForm((f) => ({ ...f, [k]: v })),
       []
    );
-
    const trimmedForm = useMemo(
       () => ({
          adversity: form.adversity.trim(),
@@ -58,12 +70,10 @@ export default function NewEntryModal() {
       }),
       [form]
    );
-
    const hasAnyContent = useMemo(
       () => Object.values(trimmedForm).some(Boolean),
       [trimmedForm]
    );
-
    const currentEmpty = !trimmedForm[currKey];
 
     const submit = useCallback(async () => {
@@ -79,39 +89,67 @@ export default function NewEntryModal() {
 
       const newEntry = await store.createEntry(adversity, belief, consequence);
 
-      // Replace the modal with detail on the entries stack so back returns to the list.
       router.replace({
          pathname: '/(tabs)/entries/[id]',
          params: { id: newEntry.id, animateInstant: '1' },
       });
    }, [store, trimmedForm]);
 
-
-   // TODO: save entry if gesture swiped down and there is an input, or provide an alert to confirm closing
-
    return (
+      <>
+         <StatusBar
+            translucent
+            backgroundColor="transparent"
+            style={mode === 'dark' ? 'light' : 'dark'}
+         />
          <KeyboardAvoidingView
             style={styles.root}
             behavior={'padding'}
             keyboardVerticalOffset={insets.bottom + 24}
          >
             <View style={styles.page}>
+               
                <ScrollView
                   style={styles.scroll}
                   contentContainerStyle={[
                      styles.scrollContent,
-                     { paddingTop: 24 },
+                     { paddingTop: topPadding},
                   ]}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
-                  
                >
-                  <StepperHeader
-                     step={idx + 1}
-                     total={STEP_ORDER.length}
-                     label={STEP_LABEL[currKey]}
-                  />
+                  {/* HEADER ROW CONTAINER */}
+                  <View style={styles.headerRow}>
+                     
+                     {/* 1. Stepper takes available space */}
+                     <View style={styles.stepperContainer}>
+                        <StepperHeader
+                           step={idx + 1}
+                           total={STEP_ORDER.length}
+                           label={STEP_LABEL[currKey]}
+                        />
+                     </View>
 
+                     {/* 2. Close button sits to the right */}
+                     <Pressable
+                        accessibilityRole="button"
+                        onPress={() => router.back()}
+                        hitSlop={12}
+                        style={[
+                           styles.closeButton,
+                           {
+                              backgroundColor: colors.cardBg,
+                              borderColor: colors.border,
+                           },
+                        ]}
+                     >
+                        <Ionicons
+                           name="close"
+                           size={22}
+                           color={colors.text}
+                        />
+                     </Pressable>
+                  </View>
 
                   <PromptDisplay
                      text={prompts[currKey]}
@@ -124,9 +162,8 @@ export default function NewEntryModal() {
                      containerStyle={styles.promptContainer}
                   />
                </ScrollView>
-               <View style={[styles.inputWrapper, 
-                                 {paddingBottom: !isKeyboardVisible ? 24 : 0}
-                              ]}>
+
+               <View style={[styles.inputWrapper, {paddingBottom: !isKeyboardVisible ? 24 : 0}]}>
                   <InputBox
                      ref={inputRef}
                      value={form[currKey]}
@@ -135,48 +172,56 @@ export default function NewEntryModal() {
                      scrollEnabled
                   />
                   <StepperButton
-                  idx={idx}
-                  totalSteps={STEP_ORDER.length}
-                  setIdx={setIdx}
-                  onSubmit={submit}
-                  onExit={() => router.back()}
-                  hasUnsavedChanges={hasAnyContent}
-                  disableNext={currentEmpty}
-               />
+                     idx={idx}
+                     totalSteps={STEP_ORDER.length}
+                     setIdx={setIdx}
+                     onSubmit={submit}
+                     onExit={() => router.back()}
+                     hasUnsavedChanges={hasAnyContent}
+                     disableNext={currentEmpty}
+                  />
                </View>
                
             </View>
          </KeyboardAvoidingView>
+      </>
    );
 }
 
 const styles = StyleSheet.create({
-   root: { flex: 1,  backgroundColor: '#fff' },
-
+   root: { flex: 1, backgroundColor: '#fff' },
    page: {
       flex: 1,
       paddingHorizontal: 20,
    },
+   // NEW STYLES
+   headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center', // Aligns the text and button vertically
+      marginBottom: 16,
+      // If StepperHeader has its own top padding, you might want to reduce it there
+   },
+   stepperContainer: {
+      flex: 1, // Takes up all remaining width
+      marginRight: 8, // Ensures text doesn't hit the close button
+   },
+   closeButton: {
+      padding: 8,
+      borderRadius: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      alignItems: 'center',
+      justifyContent: 'center',
+   },
    scroll: { flex: 1 },
    scrollContent: {
       flexGrow: 1,
-      justifyContent: 'space-between',
       gap: 16,
    },
    promptContainer: {
       flexGrow: 1,
       justifyContent: 'space-evenly',
    },
-
-   contextBox: { marginHorizontal: 16 },
    inputWrapper: {
       // paddingHorizontal: 16,
-   },
-
-   centered: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: 8,
    },
 });

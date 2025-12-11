@@ -1,5 +1,4 @@
-// ABCAnalysis.tsx
-
+import { Ionicons } from '@expo/vector-icons'; // <--- Added
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -8,9 +7,9 @@ import {
    HighlightMap,
    HighlightedText,
 } from '@/components/entries/highlightUtils';
-import { Entry } from '@/models/entry';
 import { LearnedGrowthResponse } from '@/models/aiService';
-import { makeThemedStyles } from '@/theme/theme';
+import { Entry } from '@/models/entry';
+import { makeThemedStyles, useTheme } from '@/theme/theme'; // <--- Added useTheme
 
 type Props = {
    entry: Entry;
@@ -35,8 +34,9 @@ type Props = {
    onPressIn?: (
       field: 'permanence' | 'pervasiveness' | 'personalization'
    ) => void;
-   // now just a "clear" callback
    onPressOut?: () => void;
+   contentTopPadding?: number;
+   onExit?: () => void; // <--- Added onExit prop
 };
 
 export default function ABCAnalysis({
@@ -53,8 +53,12 @@ export default function ABCAnalysis({
    onGoToSteps,
    onPressIn,
    onPressOut,
+   contentTopPadding,
+   onExit, // <--- Destructure prop
 }: Props) {
    const styles = useStyles();
+   const { colors } = useTheme(); // <--- Hook for colors
+
    const activeHighlights: HighlightMap = {
       adversity: [
          ...(showPermanenceHighlight ? highlights.permanence.adversity : []),
@@ -86,15 +90,28 @@ export default function ABCAnalysis({
    return (
       <ScrollView
          style={styles.scroll}
-         contentContainerStyle={[styles.scrollContent, { paddingTop: 24 }]}
+         contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: contentTopPadding ?? 24 },
+         ]}
          keyboardShouldPersistTaps="always"
          showsVerticalScrollIndicator={false}
-         // when scrolling gesture ends, clear the highlight
          onScrollEndDrag={() => onPressOut?.()}
          onMomentumScrollEnd={() => onPressOut?.()}
       >
+         {/* HEADER ROW (Title + Close Button) */}
          <View style={styles.container}>
             <Text style={styles.text}>AI Insight</Text>
+            
+            {onExit && (
+               <Pressable
+                  onPress={onExit}
+                  hitSlop={12}
+                  style={styles.closeButton}
+               >
+                  <Ionicons name="close" size={22} color={colors.text} />
+               </Pressable>
+            )}
          </View>
 
          <View style={styles.contentCard}>
@@ -130,20 +147,18 @@ export default function ABCAnalysis({
          </View>
 
          <View style={styles.contentCard}>
-
-               <AiInsightCard
-                  data={aiData}
-                  streamingText={streamingText}
-                  loading={loading}
-                  error={error}
-                  highlightColors={highlightColors}
-                  onPressIn={onPressIn}
-                  onPressOut={onPressOut}
-                  showPermanenceHighlight={showPermanenceHighlight}
-                  showPervasivenessHighlight={showPervasivenessHighlight}
-                  showPersonalizationHighlight={showPersonalizationHighlight}
-               />
-     
+            <AiInsightCard
+               data={aiData}
+               streamingText={streamingText}
+               loading={loading}
+               error={error}
+               highlightColors={highlightColors}
+               onPressIn={onPressIn}
+               onPressOut={onPressOut}
+               showPermanenceHighlight={showPermanenceHighlight}
+               showPervasivenessHighlight={showPervasivenessHighlight}
+               showPersonalizationHighlight={showPersonalizationHighlight}
+            />
 
             {onGoToSteps && aiData ? (
                <Pressable style={styles.switchButton} onPress={onGoToSteps}>
@@ -168,11 +183,21 @@ const useStyles = makeThemedStyles(
             paddingBottom: 48,
          },
          container: {
-            paddingHorizontal: 20,
+            // This acts as the Header Row now
+            paddingHorizontal: 0, // Removed padding since parent layer has it
             paddingVertical: 8,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
+         },
+         closeButton: {
+            padding: 8,
+            borderRadius: 16,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+            backgroundColor: colors.cardBg,
+            alignItems: 'center',
+            justifyContent: 'center',
          },
          contentCard: {
             flex: 1,

@@ -1,4 +1,6 @@
-import { Stack, Tabs } from "expo-router";
+import { Stack, Tabs, usePathname } from "expo-router";
+import { useMemo } from "react";
+import { Platform } from "react-native";
 import { useTheme } from "./theme";
 
 const stackScreenOptions = {
@@ -12,14 +14,29 @@ export const ThemedStack = (props: any) => (
 export const ThemedTabs = (props: any) => {
   const { colors } = useTheme();
 
+  const pathname = usePathname();
+
+  const shouldHideTabs = useMemo(() => {
+    if (!pathname) return false;
+    // Use the regex for cleaner matching (New or Dispute)
+    return /\/entries\/(new|.*\/dispute)$/.test(pathname);
+  }, [pathname]);
+
+  const baseTabBarStyle = {
+    backgroundColor: colors.cardBg,
+    borderTopColor: colors.border,
+  };
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.cardBg,
-          borderTopColor: colors.border,
-        },
+        tabBarStyle: [
+            baseTabBarStyle,
+            shouldHideTabs && Platform.OS === 'android' 
+               ? { display: 'none' } 
+               : {}
+        ],
         tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.hint,
       }}

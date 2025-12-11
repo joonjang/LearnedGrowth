@@ -19,7 +19,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Working on Android
   - Sticky header now works as it does for apple
   - Content view shifted down for camera as it did for apple 
+  - Edge-to-edge design
 - Status bar color is uniform, black during light mode and white during dark mode
+- Input screen modals now have a close button and inset if android and none if apple
+
 
 ### 2025-12-10
 - Feedback table implemented
