@@ -24,10 +24,8 @@ import {
    KeyboardAwareScrollView,
    KeyboardController,
 } from 'react-native-keyboard-controller';
-import { palette } from '@/theme/colors';
 import AnalyzeButton from '@/components/entries/dispute/AnalyzeButton';
-import { shadowSoft } from '@/theme/shadows';
-import { typography } from '@/theme/typography';
+import { makeThemedStyles, useTheme } from '@/theme/theme';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
 type DimensionKey = 'permanence' | 'pervasiveness' | 'personalization';
@@ -44,10 +42,6 @@ const FIELD_META = [
       label: 'Belief',
       hint: 'What were you telling yourself?',
       placeholder: 'Capture the core thought',
-      accent: {
-         backgroundColor: palette.accentBeliefBg,
-         borderColor: palette.accentBeliefBorder,
-      },
    },
    {
       key: 'consequence',
@@ -60,10 +54,6 @@ const FIELD_META = [
       label: 'Dispute',
       hint: 'Argument against negative belief.',
       placeholder: 'Collect the key sentences you used to dispute',
-      accent: {
-         backgroundColor: palette.accentDisputeBg,
-         borderColor: palette.accentDisputeBorder,
-      },
    },
    {
       key: 'energy',
@@ -76,10 +66,6 @@ const FIELD_META = [
    label: string;
    hint: string;
    placeholder: string;
-   accent?: {
-      backgroundColor: string;
-      borderColor: string;
-   };
 }[];
 const FIELD_KEYS: FieldKey[] = FIELD_META.map((f) => f.key);
 
@@ -109,6 +95,8 @@ export default function EntryDetailScreen() {
       usePreferences();
    const insets = useSafeAreaInsets();
    const keyboardOffset = insets.bottom + 32;
+   const { colors } = useTheme();
+   const styles = useStyles();
 
    const [form, setForm] = useState<Record<FieldKey, string>>(() =>
       buildFieldRecord((key) => entry?.[key] ?? '')
@@ -163,18 +151,40 @@ export default function EntryDetailScreen() {
       });
    }, [baseline, trimmed]);
 
-   const getChipStyle = useCallback((score?: string | null) => {
-      switch (score) {
-         case 'optimistic':
-            return { bg: '#b7faccff', text: '#1b7b3c' };
-         case 'pessimistic':
-            return { bg: '#ffe5e5', text: '#a00000' };
-         case 'mixed':
-            return { bg: '#fff4e0', text: '#b46a00' };
-         default:
-            return { bg: '#ececf0', text: '#585870' };
-      }
-   }, []);
+   const getAccentStyle = useCallback(
+      (key: FieldKey) => {
+         if (key === 'belief') {
+            return {
+               backgroundColor: colors.accentBeliefBg,
+               borderColor: colors.accentBeliefBorder,
+            };
+         }
+         if (key === 'dispute') {
+            return {
+               backgroundColor: colors.accentDisputeBg,
+               borderColor: colors.accentDisputeBorder,
+            };
+         }
+         return null;
+      },
+      [colors]
+   );
+
+   const getChipStyle = useCallback(
+      (score?: string | null) => {
+         switch (score) {
+            case 'optimistic':
+               return { bg: colors.accentDisputeBg, text: colors.accentDisputeText };
+            case 'pessimistic':
+               return { bg: colors.accentBeliefBg, text: colors.accentBeliefText };
+            case 'mixed':
+               return { bg: colors.cardInput, text: colors.text };
+            default:
+               return { bg: colors.cardGrey, text: colors.textSubtle };
+         }
+      },
+      [colors]
+   );
 
    const setField = useCallback(
       (key: FieldKey) => (value: string) => {
@@ -446,6 +456,9 @@ export default function EntryDetailScreen() {
                <View style={styles.section} key={field.key}>
                   <Text style={styles.label}>{field.label}</Text>
                   <Text style={styles.subLabel}>{field.hint}</Text>
+                  {/** Accent background for belief/dispute in read-only mode */}
+                  {/** Keep editing and read-only styles below */}
+                  {/** accentStyle computed from theme */}
                   <TextInput
                      multiline
                      editable={isEditing}
@@ -455,11 +468,7 @@ export default function EntryDetailScreen() {
                      style={[
                         styles.input,
                         isEditing ? styles.inputEdit : styles.inputReadOnly,
-                        !isEditing &&
-                           field.accent && {
-                              backgroundColor: field.accent.backgroundColor,
-                              borderColor: field.accent.borderColor,
-                           },
+                        !isEditing && getAccentStyle(field.key),
                      ]}
                      scrollEnabled={isEditing}
                      textAlignVertical="top"
@@ -480,327 +489,328 @@ export default function EntryDetailScreen() {
    );
 }
 
-const styles = StyleSheet.create({
-   aiResultContainer: {
-      marginTop: 16,
-      padding: 12,
-      borderRadius: 12,
-      backgroundColor: palette.cardGrey,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-   },
-   aiResultTitle: {
-      fontSize: 14,
-      fontWeight: '700',
-      marginBottom: 8,
-      color: palette.text,
-   },
-   aiResultText: {
-      fontSize: 12,
-      lineHeight: 16,
-      color: palette.text,
-      // optional: make it feel more "code-ish"
-      fontFamily: Platform.select({
-         ios: 'Menlo',
-         android: 'monospace',
-         default: 'System',
-      }),
-   },
-   aiResultScroll: {
-      maxHeight: 240,
-   },
-   aiSection: {
-      gap: 6,
-      marginBottom: 12,
-   },
-   aiSectionHeading: {
-      fontSize: 13,
-      fontWeight: '700',
-      color: palette.text,
-   },
-   aiBody: {
-      fontSize: 13,
-      lineHeight: 18,
-      color: palette.text,
-   },
-   aiSubtle: {
-      fontSize: 12,
-      lineHeight: 16,
-      color: palette.hint,
-   },
-   aiBullet: {
-      marginLeft: 2,
-   },
-   aiStyleGroup: {
-      marginTop: 6,
-      gap: 8,
-   },
-   aiStyleRow: {
-      gap: 4,
-   },
-   aiStyleLabel: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: palette.text,
-   },
-   aiStyleContent: {
-      gap: 2,
-   },
-   aiStyleChip: {
-      alignSelf: 'flex-start',
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 8,
-      backgroundColor: palette.cardGrey,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-      fontSize: 12,
-      color: palette.text,
-      textTransform: 'capitalize',
-   },
-   inlineAnalysis: {
-      marginBottom: 20,
-      padding: 12,
-      borderRadius: 12,
-      backgroundColor: palette.cardGrey,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-      gap: 6,
-   },
-   inlineAnalysisBody: {
-      gap: 8,
-   },
-   dimensionBlock: {
-      gap: 6,
-      paddingVertical: 4,
-   },
-   dimensionHeaderRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 8,
-   },
-   dimensionLabel: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: palette.text,
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 6,
-   },
-   chip: {
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 999,
-   },
-   chipText: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: palette.text,
-      textTransform: 'capitalize',
-   },
-   inlinePhrase: {
-      marginTop: 2,
-      paddingHorizontal: 8,
-      paddingVertical: 6,
-      borderRadius: 8,
-      fontSize: 12,
-      color: palette.text,
-   },
-   inlineHeading: {
-      fontSize: 13,
-      fontWeight: '700',
-      color: palette.text,
-   },
-   inlineHeaderRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 4,
-   },
-   inlineToggle: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: palette.hint,
-   },
-   inlineBody: {
-      fontSize: 13,
-      lineHeight: 18,
-      color: palette.text,
-   },
-   inlineSubtle: {
-      fontSize: 12,
-      lineHeight: 16,
-      color: palette.hint,
-   },
-   inlineStyleGroup: {
-      marginTop: 4,
-      gap: 8,
-   },
-   inlineStyleRow: {
-      gap: 4,
-   },
-   inlineStyleLabel: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: palette.text,
-   },
-   inlineStyleChip: {
-      alignSelf: 'flex-start',
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 8,
-      backgroundColor: palette.cardGrey,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-      fontSize: 12,
-      color: palette.text,
-      textTransform: 'capitalize',
-   },
-   counterSection: {
-      marginTop: 16,
-      gap: 8,
-   },
-   counterTitle: {
-      fontSize: 13,
-      fontWeight: '700',
-      color: palette.text,
-   },
-   counterBox: {
-      padding: 12,
-      borderRadius: 12,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-      backgroundColor: palette.cardBg,
-      shadowColor: '#000',
-      shadowOpacity: 0.04,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 1,
-   },
-   counterText: {
-      ...typography.body,
-      color: palette.text,
-      lineHeight: 20,
-   },
-   counterHint: {
-      ...typography.body,
-      color: palette.hint,
-   },
+const useStyles = makeThemedStyles(({ colors, typography, shadows }) =>
+   StyleSheet.create({
+      aiResultContainer: {
+         marginTop: 16,
+         padding: 12,
+         borderRadius: 12,
+         backgroundColor: colors.cardGrey,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+      },
+      aiResultTitle: {
+         fontSize: 14,
+         fontWeight: '700',
+         marginBottom: 8,
+         color: colors.text,
+      },
+      aiResultText: {
+         fontSize: 12,
+         lineHeight: 16,
+         color: colors.text,
+         fontFamily: Platform.select({
+            ios: 'Menlo',
+            android: 'monospace',
+            default: 'System',
+         }),
+      },
+      aiResultScroll: {
+         maxHeight: 240,
+      },
+      aiSection: {
+         gap: 6,
+         marginBottom: 12,
+      },
+      aiSectionHeading: {
+         fontSize: 13,
+         fontWeight: '700',
+         color: colors.text,
+      },
+      aiBody: {
+         fontSize: 13,
+         lineHeight: 18,
+         color: colors.text,
+      },
+      aiSubtle: {
+         fontSize: 12,
+         lineHeight: 16,
+         color: colors.hint,
+      },
+      aiBullet: {
+         marginLeft: 2,
+      },
+      aiStyleGroup: {
+         marginTop: 6,
+         gap: 8,
+      },
+      aiStyleRow: {
+         gap: 4,
+      },
+      aiStyleLabel: {
+         fontSize: 12,
+         fontWeight: '700',
+         color: colors.text,
+      },
+      aiStyleContent: {
+         gap: 2,
+      },
+      aiStyleChip: {
+         alignSelf: 'flex-start',
+         paddingHorizontal: 8,
+         paddingVertical: 4,
+         borderRadius: 8,
+         backgroundColor: colors.cardGrey,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         fontSize: 12,
+         color: colors.text,
+         textTransform: 'capitalize',
+      },
+      inlineAnalysis: {
+         marginBottom: 20,
+         padding: 12,
+         borderRadius: 12,
+         backgroundColor: colors.cardGrey,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         gap: 6,
+      },
+      inlineAnalysisBody: {
+         gap: 8,
+      },
+      dimensionBlock: {
+         gap: 6,
+         paddingVertical: 4,
+      },
+      dimensionHeaderRow: {
+         flexDirection: 'row',
+         alignItems: 'center',
+         justifyContent: 'space-between',
+         gap: 8,
+      },
+      dimensionLabel: {
+         fontSize: 12,
+         fontWeight: '700',
+         color: colors.text,
+         paddingHorizontal: 6,
+         paddingVertical: 2,
+         borderRadius: 6,
+      },
+      chip: {
+         paddingHorizontal: 8,
+         paddingVertical: 4,
+         borderRadius: 999,
+      },
+      chipText: {
+         fontSize: 12,
+         fontWeight: '700',
+         color: colors.text,
+         textTransform: 'capitalize',
+      },
+      inlinePhrase: {
+         marginTop: 2,
+         paddingHorizontal: 8,
+         paddingVertical: 6,
+         borderRadius: 8,
+         fontSize: 12,
+         color: colors.text,
+      },
+      inlineHeading: {
+         fontSize: 13,
+         fontWeight: '700',
+         color: colors.text,
+      },
+      inlineHeaderRow: {
+         flexDirection: 'row',
+         alignItems: 'center',
+         justifyContent: 'space-between',
+         marginBottom: 4,
+      },
+      inlineToggle: {
+         fontSize: 12,
+         fontWeight: '600',
+         color: colors.hint,
+      },
+      inlineBody: {
+         fontSize: 13,
+         lineHeight: 18,
+         color: colors.text,
+      },
+      inlineSubtle: {
+         fontSize: 12,
+         lineHeight: 16,
+         color: colors.hint,
+      },
+      inlineStyleGroup: {
+         marginTop: 4,
+         gap: 8,
+      },
+      inlineStyleRow: {
+         gap: 4,
+      },
+      inlineStyleLabel: {
+         fontSize: 12,
+         fontWeight: '700',
+         color: colors.text,
+      },
+      inlineStyleChip: {
+         alignSelf: 'flex-start',
+         paddingHorizontal: 8,
+         paddingVertical: 4,
+         borderRadius: 8,
+         backgroundColor: colors.cardGrey,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         fontSize: 12,
+         color: colors.text,
+         textTransform: 'capitalize',
+      },
+      counterSection: {
+         marginTop: 16,
+         gap: 8,
+      },
+      counterTitle: {
+         fontSize: 13,
+         fontWeight: '700',
+         color: colors.text,
+      },
+      counterBox: {
+         padding: 12,
+         borderRadius: 12,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         backgroundColor: colors.cardBg,
+         shadowColor: colors.shadowColor,
+         shadowOpacity: 0.04,
+         shadowRadius: 8,
+         shadowOffset: { width: 0, height: 2 },
+         elevation: 1,
+      },
+      counterText: {
+         ...typography.body,
+         color: colors.text,
+         lineHeight: 20,
+      },
+      counterHint: {
+         ...typography.body,
+         color: colors.hint,
+      },
 
-   container: {
-      flex: 1,
-      paddingHorizontal: 16,
-      backgroundColor: palette.cardBg,
-   },
-   header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 16,
-      position: 'relative',
-   },
-   backButton: {
-      padding: 8,
-      position: 'absolute',
-      left: 0,
-   },
-   titleMeta: {
-      flex: 1,
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 4,
-   },
-   saveButton: {
-      padding: 8,
-      borderRadius: 999,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-      backgroundColor: palette.cardGrey,
-   },
-   saveLabel: {
-      fontSize: 14,
-      color: palette.text,
-   },
-   actions: {
-      position: 'absolute',
-      right: 0,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-   },
-   cancelButton: {
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 999,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-      backgroundColor: palette.cardGrey,
-   },
-   cancelLabel: {
-      fontSize: 14,
-      color: palette.text,
-   },
-   timeStamp: {
-      fontSize: 16,
-      color: palette.text,
-   },
-   divider: {
-      height: 1,
-      backgroundColor: palette.border,
-      marginBottom: 0,
-   },
-   statusText: {
-      fontSize: 13,
-      color: palette.hint,
-      position: 'absolute',
-      marginTop: 24,
-   },
-   statusTextHidden: {
-      opacity: 0,
-   },
-   scroll: {
-      paddingTop: 24,
-      flex: 1,
-   },
-   section: {
-      marginBottom: 16,
-      gap: 4,
-      ...shadowSoft
-   },
-   label: {
-      fontSize: 15,
-      fontWeight: '700',
-      color: palette.text,
-   },
-   subLabel: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: palette.hint,
-   },
-   input: {
-      marginTop: 6,
-      paddingHorizontal: 12,
-      color: palette.text,
-      fontSize: 14,
-      lineHeight: 20,
-      borderRadius: 12,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-   },
-   inputEdit: {
-      backgroundColor: palette.cardInput,
-      minHeight: 80,
-      paddingVertical: 12,
-   },
-   inputReadOnly: {
-      backgroundColor: palette.cardGrey,
-      paddingVertical: 6,
-      minHeight: undefined,
-      height: undefined,
-   },
-   text: {
-      fontSize: 14,
-      color: palette.text,
-   },
-});
+      container: {
+         flex: 1,
+         paddingHorizontal: 16,
+         backgroundColor: colors.background,
+      },
+      header: {
+         flexDirection: 'row',
+         alignItems: 'center',
+         justifyContent: 'center',
+         marginBottom: 16,
+         position: 'relative',
+      },
+      backButton: {
+         padding: 8,
+         position: 'absolute',
+         left: 0,
+      },
+      titleMeta: {
+         flex: 1,
+         flexDirection: 'column',
+         alignItems: 'center',
+         gap: 4,
+      },
+      saveButton: {
+         padding: 8,
+         borderRadius: 999,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         backgroundColor: colors.cardGrey,
+      },
+      saveLabel: {
+         fontSize: 14,
+         color: colors.text,
+      },
+      actions: {
+         position: 'absolute',
+         right: 0,
+         flexDirection: 'row',
+         alignItems: 'center',
+         gap: 8,
+      },
+      cancelButton: {
+         paddingHorizontal: 10,
+         paddingVertical: 6,
+         borderRadius: 999,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         backgroundColor: colors.cardGrey,
+      },
+      cancelLabel: {
+         fontSize: 14,
+         color: colors.text,
+      },
+      timeStamp: {
+         fontSize: 16,
+         color: colors.text,
+      },
+      divider: {
+         height: 1,
+         backgroundColor: colors.border,
+         marginBottom: 0,
+      },
+      statusText: {
+         fontSize: 13,
+         color: colors.hint,
+         position: 'absolute',
+         marginTop: 24,
+      },
+      statusTextHidden: {
+         opacity: 0,
+      },
+      scroll: {
+         paddingTop: 24,
+         flex: 1,
+      },
+      section: {
+         marginBottom: 16,
+         gap: 4,
+         ...shadows.shadowSoft,
+      },
+      label: {
+         fontSize: 15,
+         fontWeight: '700',
+         color: colors.text,
+      },
+      subLabel: {
+         fontSize: 13,
+         fontWeight: '600',
+         color: colors.hint,
+      },
+      input: {
+         marginTop: 6,
+         paddingHorizontal: 12,
+         color: colors.text,
+         fontSize: 14,
+         lineHeight: 20,
+         borderRadius: 12,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+      },
+      inputEdit: {
+         backgroundColor: colors.cardInput,
+         minHeight: 80,
+         paddingVertical: 12,
+      },
+      inputReadOnly: {
+         backgroundColor: colors.cardGrey,
+         paddingVertical: 6,
+         minHeight: undefined,
+         height: undefined,
+      },
+      text: {
+         fontSize: 14,
+         color: colors.text,
+      },
+   })
+);

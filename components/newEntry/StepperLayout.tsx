@@ -14,6 +14,7 @@ import StepperHeader from './StepperHeader';
 import PromptDisplay from './PromptDisplay';
 import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { makeThemedStyles } from '@/theme/theme';
 
 type PromptContentProps = {
    text: string;
@@ -52,6 +53,7 @@ export default function StepperLayout({
 }: StepperLayoutProps) {
    const { contentContainerStyle, ...restScrollProps } = scrollProps ?? {};
    const insets = useSafeAreaInsets();
+   const styles = useStyles();
    const pageContent = (
       <View style={styles.page}>
          <ScrollView
@@ -107,6 +109,7 @@ export function KeyboardAwareInputWrapper({
    style,
 }: InputWrapperProps) {
    const isKeyboardVisible = useKeyboardVisible();
+   const styles = useStyles();
 
    return (
       <View
@@ -121,23 +124,25 @@ export function KeyboardAwareInputWrapper({
    );
 }
 
-const styles = StyleSheet.create({
-   root: { flex: 1, backgroundColor: '#fff' },
-   page: {
-      flex: 1,
-      paddingHorizontal: 20,
-   },
-   scroll: { flex: 1 },
-   scrollContent: {
-      flexGrow: 1,
-      justifyContent: 'space-between',
-      gap: 16,
-   },
-   promptContainer: {
-      flexGrow: 1,
-      justifyContent: 'space-evenly',
-   },
-   inputWrapper: {
-      paddingHorizontal: 16,
-   },
-});
+const useStyles = makeThemedStyles(({ colors }) =>
+   StyleSheet.create({
+      root: { flex: 1, backgroundColor: colors.background },
+      page: {
+         flex: 1,
+         paddingHorizontal: 20,
+      },
+      scroll: { flex: 1 },
+      scrollContent: {
+         flexGrow: 1,
+         justifyContent: 'space-between',
+         gap: 16,
+      },
+      promptContainer: {
+         flexGrow: 1,
+         justifyContent: 'space-evenly',
+      },
+      inputWrapper: {
+         paddingHorizontal: 16,
+      },
+   })
+);

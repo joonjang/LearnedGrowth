@@ -1,8 +1,10 @@
+import SendFeedback from '@/components/SendFeedback';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
-import { palette } from '@/theme/colors';
+import { makeThemedStyles, useTheme } from '@/theme/theme';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -24,11 +26,10 @@ import {
    StyleSheet,
    Switch,
    Text,
-   TextInput,
    View,
 } from 'react-native';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const FREE_MONTHLY_LIMIT = 5;
 const STORAGE_KEYS = {
@@ -74,6 +75,7 @@ export default function AccountScreen() {
    } = usePreferences();
    const router = useRouter();
 
+   const insets = useSafeAreaInsets();
    const [bannerDismissed, setBannerDismissed] = useState(false);
    const [isOffline, setIsOffline] = useState(false);
    const [billingNote, setBillingNote] = useState<string | null>(null);
@@ -86,10 +88,7 @@ export default function AccountScreen() {
       hasHardware: false,
       isEnrolled: false,
    });
-
-   const [feedback, setFeedback] = useState('');
-   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-   const [feedbackSending, setFeedbackSending] = useState(false);
+   const [actionsCollapsed, setActionsCollapsed] = useState(true);
 
    const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -99,10 +98,9 @@ export default function AccountScreen() {
    const aiUsed = profile?.aiCallsUsed ?? 0;
    const extraCredits = profile?.extraAiCredits ?? 0;
    const monthlyRemaining = Math.max(FREE_MONTHLY_LIMIT - aiUsed, 0);
-   const totalAvailable = hasGrowth
-      ? 'Unlimited'
-      : `${monthlyRemaining + extraCredits}`;
    const darkMode = theme === 'dark';
+   const { colors } = useTheme();
+   const { styles, switchTrack, switchThumb } = useStyles();
 
    useEffect(() => {
       const unsubscribe = NetInfo.addEventListener((state) => {
@@ -286,32 +284,6 @@ export default function AccountScreen() {
       }
    };
 
-   const handleSendFeedback = async () => {
-      if (!feedback.trim()) {
-         setFeedbackMessage('Add a quick note before sending.');
-         return;
-      }
-      setFeedbackSending(true);
-      setFeedbackMessage(null);
-      try {
-         const supabase = getSupabaseClient();
-         const { error } = await supabase.from('feedback').insert({
-            message: feedback.trim(),
-            user_id: user?.id ?? null,
-            email: user?.email ?? null,
-         });
-         if (error) throw new Error(error.message);
-         setFeedback('');
-         setFeedbackMessage('Thanks for the feedback.');
-      } catch (err: any) {
-         setFeedbackMessage(
-            err?.message ?? 'Unable to send feedback right now.'
-         );
-      } finally {
-         setFeedbackSending(false);
-      }
-   };
-
    const handleDeleteAccount = async () => {
       if (isOffline) return;
       setDeleteLoading(true);
@@ -328,17 +300,28 @@ export default function AccountScreen() {
       }
    };
 
-   const confirmDelete = () =>
+   const confirmDelete = () => {
+      const warning = entitlementActive
+         ? 'This will delete your account and synced data. Active subscriptions will NOT be canceled automatically.'
+         : 'This will remove your account and synced data. This cannot be undone.';
+
+      Alert.alert('Delete account', warning, [
+         { text: 'Cancel', style: 'cancel' },
+         {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: handleDeleteAccount,
+         },
+      ]);
+   };
+
+   const confirmSignOut = () =>
       Alert.alert(
-         'Delete account',
-         'This will remove your account and synced data. This cannot be undone.',
+         'Sign out',
+         'You will be signed out.',
          [
             { text: 'Cancel', style: 'cancel' },
-            {
-               text: 'Delete',
-               style: 'destructive',
-               onPress: handleDeleteAccount,
-            },
+            { text: 'Sign out', style: 'destructive', onPress: signOut },
          ]
       );
 
@@ -346,18 +329,38 @@ export default function AccountScreen() {
       if (entitlementActive) return 'Growth Plus (RevenueCat)';
       return plan === 'invested' ? 'Growth Plus (database only)' : 'Free';
    }, [entitlementActive, plan]);
+   const refillLabel = useMemo(() => {
+      if (!profile?.aiCycleStart) return null;
+      const date = new Date(profile.aiCycleStart);
+      // robust next-month calculation
+      const currentDay = date.getDate();
+      date.setMonth(date.getMonth() + 1);
+      if (date.getDate() !== currentDay) {
+         // If day changed (e.g. Jan 31 -> Mar 2), set to last day of prev month (Feb 28)
+         date.setDate(0);
+      }
+
+      return date.toLocaleDateString(undefined, {
+         month: 'short',
+         day: 'numeric',
+      });
+   }, [profile?.aiCycleStart]);
    const biometricUnavailable = !biometricInfo.hasHardware;
    const biometricNeedsEnroll =
       biometricInfo.hasHardware && !biometricInfo.isEnrolled;
 
    return (
-      <SafeAreaView style={styles.safeArea}>
-         <ScrollView contentContainerStyle={styles.scroll}>
+      <View style={styles.safeArea}>
+         <ScrollView
+            contentContainerStyle={styles.scroll}
+            contentInset={{ top: insets.top }}
+            contentOffset={{ y: -insets.top, x: 0 }}
+            showsVerticalScrollIndicator={false}
+         >
             <View style={styles.headerRow}>
                <View>
-                  <Text style={styles.title}>Account</Text>
-                  <Text style={styles.subtitle}>
-                     {user?.email ?? 'Guest data stays on this device'}
+                  <Text style={styles.title}>
+                     {user?.email ?? 'Not Logged In'}
                   </Text>
                </View>
                <View style={styles.badgeRow}>
@@ -381,170 +384,158 @@ export default function AccountScreen() {
                </View>
             )}
 
-            {!user && !bannerDismissed && (
+            {!user && (
                <View style={styles.banner}>
                   <View style={{ flex: 1 }}>
                      <Text style={styles.bannerTitle}>
                         Your data is only on this phone.
                      </Text>
                      <Text style={styles.bannerText}>
-                        Sign in to back it up and sync across installs.
+                        Sign in to back it up.
                      </Text>
                   </View>
                   <Pressable
-                     onPress={() => setBannerDismissed(true)}
-                     style={styles.bannerDismiss}
+                     style={styles.signInButton}
+                     onPress={() => router.replace('/login')}
                   >
-                     <Text style={styles.bannerDismissText}>Dismiss</Text>
+                     <Text style={styles.signInLabel}>Sign in</Text>
                   </Pressable>
                </View>
             )}
 
-            {!user && (
-               <Pressable
-                  style={styles.signInButton}
-                  onPress={() => router.replace('/login')}
-               >
-                  <Text style={styles.signInLabel}>Sign in</Text>
-               </Pressable>
-            )}
-
-            <View style={styles.card}>
-               <View style={styles.cardHeader}>
+            {user && (
+               <View style={styles.card}>
+                  <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>Subscription</Text>
                   {(loadingProfile || rcLoading) && (
-                     <ActivityIndicator size="small" color="#111827" />
+                     <ActivityIndicator size="small" color={colors.text} />
                   )}
                </View>
 
-               <View style={styles.planRow}>
-                  <View style={{ flex: 1 }}>
-                     <Text style={styles.label}>Current plan</Text>
-                     <Text style={styles.value}>{planLabel}</Text>
-                     {hasGrowth ? (
-                        <Text style={styles.hint}>
-                           Growth Plus active via RevenueCat.
-                        </Text>
-                     ) : (
-                        <Text style={styles.hint}>
-                           {monthlyRemaining} monthly uses left + {extraCredits}{' '}
-                           extra credits
-                        </Text>
-                     )}
-                  </View>
-                  <Pressable
-                     style={[
-                        styles.ghostButton,
-                        loadingProfile && styles.buttonDisabled,
-                     ]}
-                     onPress={refreshProfile}
-                     disabled={loadingProfile}
-                  >
-                     <Text style={styles.ghostButtonText}>
-                        {loadingProfile ? 'Refreshing...' : 'Refresh'}
-                     </Text>
-                  </Pressable>
-               </View>
-
-               <View style={styles.metricsRow}>
-                  <View style={styles.metric}>
-                     <Text style={styles.metricLabel}>
-                        Monthly uses remaining
-                     </Text>
-                     <Text style={styles.metricValue}>
-                        {hasGrowth ? 'Unlimited' : monthlyRemaining}
-                     </Text>
-                  </View>
-                  <View style={styles.metric}>
-                     <Text style={styles.metricLabel}>Extra credits</Text>
-                     <Text style={styles.metricValue}>
-                        {hasGrowth ? 'N/A' : extraCredits}
-                     </Text>
-                  </View>
-                  <View style={styles.metric}>
-                     <Text style={styles.metricLabel}>Total available</Text>
-                     <Text style={styles.metricValue}>{totalAvailable}</Text>
-                  </View>
-               </View>
-
-               {!entitlementActive ? (
-                  <View style={styles.actionStack}>
+                  <View style={styles.planRow}>
+                     <View style={{ flex: 1 }}>
+                        <Text style={styles.label}>Current plan</Text>
+                        <Text style={styles.value}>{planLabel}</Text>
+                     </View>
                      <Pressable
                         style={[
-                           styles.primaryButton,
-                           billingAction === 'upgrade' && styles.buttonDisabled,
+                           styles.ghostButton,
+                           loadingProfile && styles.buttonDisabled,
                         ]}
-                        onPress={handleUpgrade}
-                        disabled={billingAction !== null}
+                        onPress={refreshProfile}
+                        disabled={loadingProfile}
                      >
-                        <Text style={styles.primaryLabel}>
-                           {billingAction === 'upgrade'
-                              ? 'Opening...'
-                              : 'Upgrade to Growth Plus'}
+                        <Text style={styles.ghostButtonText}>
+                           {loadingProfile ? '…' : '↻'}
                         </Text>
                      </Pressable>
+                  </View>
+
+                  {!hasGrowth && (
+                     <>
+                        <Text style={styles.subtitle}>
+                           {refillLabel ? `Refills next on ${refillLabel}` : ''}
+                        </Text>
+                        <View style={styles.metricsRow}>
+                           <View style={styles.metric}>
+                              <Text style={styles.metricLabel}>
+                                 Monthly uses remaining
+                              </Text>
+
+                              <Text style={styles.metricValue}>
+                                 {monthlyRemaining}
+                              </Text>
+                           </View>
+                           <Pressable
+                              style={[
+                                 styles.metric,
+                                 billingAction === 'consumable' &&
+                                    styles.buttonDisabled,
+                              ]}
+                              onPress={handleBuyConsumable}
+                              disabled={billingAction !== null}
+                           >
+                              <Text style={styles.metricLabel}>
+                                 Extra Analysis
+                              </Text>
+                              <Text style={styles.metricValue}>
+                                 {extraCredits}
+                              </Text>
+                              <Text style={styles.metricButtonLabel}>
+                                 {billingAction === 'consumable'
+                                    ? 'Adding...'
+                                    : 'Add more'}
+                              </Text>
+                           </Pressable>
+                        </View>
+                     </>
+                  )}
+
+                  {!entitlementActive ? (
+                     <View style={styles.actionStack}>
+                        <Pressable
+                           style={[
+                              styles.primaryButton,
+                              billingAction === 'upgrade' &&
+                                 styles.buttonDisabled,
+                           ]}
+                           onPress={handleUpgrade}
+                           disabled={billingAction !== null}
+                        >
+                           <Text style={styles.primaryLabel}>
+                              {billingAction === 'upgrade'
+                                 ? 'Opening...'
+                                 : 'Upgrade to Growth Plus'}
+                           </Text>
+                        </Pressable>
+                     </View>
+                  ) : (
                      <Pressable
                         style={[
                            styles.secondaryButton,
-                           billingAction === 'consumable' &&
+                           (isOffline || billingAction === 'manage') &&
                               styles.buttonDisabled,
                         ]}
-                        onPress={handleBuyConsumable}
-                        disabled={billingAction !== null}
+                        onPress={handleManageSubscription}
+                        disabled={isOffline || billingAction !== null}
                      >
                         <Text style={styles.secondaryLabel}>
-                           {billingAction === 'consumable'
-                              ? 'Purchasing...'
-                              : 'Buy 10 More Analysis'}
+                           {billingAction === 'manage'
+                              ? 'Opening...'
+                              : 'Manage Subscription'}
                         </Text>
                      </Pressable>
-                  </View>
-               ) : (
+                  )}
+
                   <Pressable
                      style={[
-                        styles.secondaryButton,
-                        (isOffline || billingAction === 'manage') &&
+                        styles.restoreButton,
+                        (isOffline || billingAction === 'restore') &&
                            styles.buttonDisabled,
                      ]}
-                     onPress={handleManageSubscription}
+                     onPress={handleRestore}
                      disabled={isOffline || billingAction !== null}
                   >
-                     <Text style={styles.secondaryLabel}>
-                        {billingAction === 'manage'
-                           ? 'Opening...'
-                           : 'Manage Subscription'}
+                     <Text style={styles.ghostButtonText}>
+                        {billingAction === 'restore'
+                           ? 'Restoring...'
+                           : 'Restore Purchases'}
                      </Text>
                   </Pressable>
-               )}
 
-               <Pressable
-                  style={[
-                     styles.ghostButton,
-                     (isOffline || billingAction === 'restore') &&
-                        styles.buttonDisabled,
-                  ]}
-                  onPress={handleRestore}
-                  disabled={isOffline || billingAction !== null}
-               >
-                  <Text style={styles.ghostButtonText}>
-                     {billingAction === 'restore'
-                        ? 'Restoring...'
-                        : 'Restore Purchases'}
-                  </Text>
-               </Pressable>
-
-               {(billingNote || rcError) && (
-                  <Text style={styles.noteText}>
-                     {billingNote ?? `RevenueCat: ${rcError}`}
-                  </Text>
-               )}
-            </View>
+                  {(billingNote || rcError) && (
+                     <Text style={styles.noteText}>
+                        {billingNote ?? `RevenueCat: ${rcError}`}
+                     </Text>
+                  )}
+               </View>
+            )}
 
             <View style={styles.card}>
                <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>App preferences</Text>
                   {prefsLoading && (
-                     <ActivityIndicator size="small" color="#111827" />
+                     <ActivityIndicator size="small" color={colors.text} />
                   )}
                </View>
 
@@ -552,13 +543,14 @@ export default function AccountScreen() {
                   title="Enable Biometric Lock"
                   description="Require Face ID / Touch ID on launch."
                   disabled={prefsLoading || biometricUnavailable}
+                  styles={styles}
                >
                   <Switch
                      value={biometricEnabled}
                      onValueChange={handleToggleBiometric}
                      disabled={prefsLoading || biometricUnavailable}
-                     trackColor={{ true: '#111827', false: '#d1d5db' }}
-                     thumbColor="white"
+                     trackColor={switchTrack}
+                     thumbColor={switchThumb}
                   />
                </SettingRow>
                {biometricUnavailable && (
@@ -576,96 +568,104 @@ export default function AccountScreen() {
                <SettingRow
                   title="Show AI Analysis"
                   description="Hide or show AI insights in the UI."
+                  styles={styles}
                >
                   <Switch
                      value={showAiAnalysis}
                      onValueChange={handleToggleAnalysis}
                      disabled={prefsLoading}
-                     trackColor={{ true: '#111827', false: '#d1d5db' }}
-                     thumbColor="white"
+                     trackColor={switchTrack}
+                     thumbColor={switchThumb}
                   />
                </SettingRow>
 
                <SettingRow
-                  title="Dark mode"
+                  title="Dark Mode"
                   description="Switch between light and dark surfaces."
+                  styles={styles}
                >
                   <Switch
                      value={darkMode}
                      onValueChange={handleToggleTheme}
                      disabled={prefsLoading}
-                     trackColor={{ true: '#111827', false: '#d1d5db' }}
-                     thumbColor="white"
+                     trackColor={switchTrack}
+                     thumbColor={switchThumb}
                   />
                </SettingRow>
 
                <SettingRow
-                  title="Tactile feedback"
+                  title="Tactile Feedback"
                   description="Use haptics when finishing an entry."
+                  styles={styles}
                >
                   <Switch
                      value={hapticsEnabled}
                      onValueChange={handleToggleHaptics}
                      disabled={prefsLoading || !hapticsAvailable}
-                     trackColor={{ true: '#111827', false: '#d1d5db' }}
-                     thumbColor="white"
+                     trackColor={switchTrack}
+                     thumbColor={switchThumb}
                   />
                </SettingRow>
 
                {prefsError && <Text style={styles.noteText}>{prefsError}</Text>}
             </View>
 
+            {status === 'signedIn' && (
+               <>
+                  <View style={styles.card}>
+                     <Pressable
+                        style={styles.cardHeader}
+                        onPress={() => setActionsCollapsed((c) => !c)}
+                     >
+                        <Text style={styles.cardTitle}>Account actions</Text>
+                        <Ionicons
+                           name={
+                              actionsCollapsed
+                                 ? 'chevron-forward'
+                                 : 'chevron-down'
+                           }
+                           size={18}
+                           color={colors.mutedIcon}
+                        />
+                     </Pressable>
+
+                     {!actionsCollapsed && (
+                        <>
+                           <Pressable
+                              style={styles.restoreButton}
+                              onPress={confirmSignOut}
+                           >
+                              <Text style={styles.ghostButtonText}>
+                                 Sign out
+                              </Text>
+                           </Pressable>
+
+                           <Pressable
+                              style={[
+                                 styles.dangerButton,
+                                 (isOffline || deleteLoading) &&
+                                    styles.buttonDisabled,
+                              ]}
+                              onPress={confirmDelete}
+                              disabled={isOffline || deleteLoading}
+                           >
+                              <Text style={styles.dangerLabel}>
+                                 {deleteLoading
+                                    ? 'Deleting...'
+                                    : 'Delete account'}
+                              </Text>
+                           </Pressable>
+                        </>
+                     )}
+                  </View>
+               </>
+            )}
+
             <View style={styles.card}>
-               <Text style={styles.cardTitle}>Account actions</Text>
-
-               <View style={styles.feedbackBlock}>
-                  <Text style={styles.label}>Send feedback</Text>
-                  <TextInput
-                     style={styles.input}
-                     placeholder="Tell us what is working or what is rough"
-                     multiline
-                     value={feedback}
-                     onChangeText={setFeedback}
-                     editable={!feedbackSending}
-                  />
-                  <Pressable
-                     style={[
-                        styles.secondaryButton,
-                        feedbackSending && styles.buttonDisabled,
-                     ]}
-                     onPress={handleSendFeedback}
-                     disabled={feedbackSending}
-                  >
-                     <Text style={styles.secondaryLabel}>
-                        {feedbackSending ? 'Sending...' : 'Send Feedback'}
-                     </Text>
-                  </Pressable>
-                  {feedbackMessage && (
-                     <Text style={styles.noteText}>{feedbackMessage}</Text>
-                  )}
-               </View>
-
-               {status === 'signedIn' && (
-                  <Pressable style={styles.ghostButton} onPress={signOut}>
-                     <Text style={styles.ghostButtonText}>Sign out</Text>
-                  </Pressable>
-               )}
-
-               <Pressable
-                  style={[
-                     styles.dangerButton,
-                     (isOffline || deleteLoading) && styles.buttonDisabled,
-                  ]}
-                  onPress={confirmDelete}
-                  disabled={isOffline || deleteLoading}
-               >
-                  <Text style={styles.dangerLabel}>
-                     {deleteLoading ? 'Deleting...' : 'Delete account'}
-                  </Text>
-               </Pressable>
+               <SendFeedback />
             </View>
          </ScrollView>
-      </SafeAreaView>
+      </View>
    );
 }
 
@@ -674,11 +674,13 @@ function SettingRow({
    description,
    children,
    disabled,
+   styles,
 }: {
    title: string;
    description: string;
    children: ReactNode;
    disabled?: boolean;
+   styles: ReturnType<typeof useStyles>['styles'];
 }) {
    return (
       <View style={[styles.settingRow, disabled && styles.settingDisabled]}>
@@ -691,257 +693,290 @@ function SettingRow({
    );
 }
 
-const styles = StyleSheet.create({
-   safeArea: {
-      flex: 1,
-      backgroundColor: '#f6f7fb',
-   },
-   scroll: {
-      padding: 16,
-      gap: 14,
-   },
-   headerRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-   },
-   badgeRow: {
-      flexDirection: 'row',
-      gap: 8,
-      alignItems: 'center',
-   },
-   title: {
-      fontSize: 26,
-      fontWeight: '800',
-      color: palette.text,
-   },
-   subtitle: {
-      fontSize: 14,
-      color: palette.hint,
-      marginTop: 2,
-   },
-   offlineBadge: {
-      backgroundColor: '#e5e7eb',
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 999,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#cbd5e1',
-   },
-   offlineText: {
-      fontSize: 12,
-      color: '#374151',
-      fontWeight: '700',
-   },
-   warningCard: {
-      backgroundColor: '#fef3c7',
-      borderColor: '#f59e0b',
-      borderWidth: StyleSheet.hairlineWidth,
-      borderRadius: 12,
-      padding: 12,
-      gap: 4,
-   },
-   warningTitle: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: '#92400e',
-   },
-   warningText: {
-      fontSize: 13,
-      color: '#92400e',
-   },
-   banner: {
-      backgroundColor: '#ecfeff',
-      borderColor: '#06b6d4',
-      borderWidth: StyleSheet.hairlineWidth,
-      borderRadius: 12,
-      padding: 12,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-   },
-   bannerTitle: {
-      fontSize: 15,
-      fontWeight: '700',
-      color: '#0f172a',
-   },
-   bannerText: {
-      fontSize: 13,
-      color: '#0ea5e9',
-   },
-   bannerDismiss: {
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      backgroundColor: '#0ea5e9',
-      borderRadius: 10,
-   },
-   signInButton: {
-      marginTop: 10,
-      backgroundColor: '#0ea5e9',
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: 10,
-      alignSelf: 'flex-start',
-   },
-   signInLabel: {
-      color: 'white',
-      fontWeight: '700',
-      fontSize: 14,
-   },
-   bannerDismissText: {
-      color: 'white',
-      fontWeight: '700',
-   },
-   card: {
-      backgroundColor: palette.cardBg,
-      borderRadius: 16,
-      padding: 14,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-      gap: 12,
-   },
-   cardHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-   },
-   cardTitle: {
-      fontSize: 18,
-      fontWeight: '800',
-      color: palette.text,
-   },
-   planRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: 12,
-   },
-   label: {
-      fontSize: 12,
-      textTransform: 'uppercase',
-      color: palette.hint,
-      letterSpacing: 0.5,
-   },
-   value: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: palette.text,
-      marginTop: 2,
-   },
-   hint: {
-      fontSize: 13,
-      color: palette.hint,
-      marginTop: 2,
-   },
-   metricsRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 10,
-   },
-   metric: {
-      flex: 1,
-      minWidth: '30%',
-      backgroundColor: '#f8fafc',
-      borderRadius: 12,
-      padding: 12,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#e5e7eb',
-   },
-   metricLabel: {
-      fontSize: 12,
-      color: palette.hint,
-      marginBottom: 6,
-   },
-   metricValue: {
-      fontSize: 18,
-      fontWeight: '800',
-      color: palette.text,
-   },
-   actionStack: {
-      gap: 8,
-   },
-   primaryButton: {
-      backgroundColor: '#111827',
-      paddingVertical: 12,
-      borderRadius: 12,
-      alignItems: 'center',
-   },
-   primaryLabel: {
-      color: 'white',
-      fontWeight: '700',
-      fontSize: 15,
-   },
-   secondaryButton: {
-      backgroundColor: '#e5e7eb',
-      paddingVertical: 12,
-      borderRadius: 12,
-      alignItems: 'center',
-   },
-   secondaryLabel: {
-      color: '#111827',
-      fontWeight: '700',
-      fontSize: 15,
-   },
-   ghostButton: {
-      paddingVertical: 12,
-      borderRadius: 12,
-      alignItems: 'center',
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#d1d5db',
-   },
-   ghostButtonText: {
-      color: '#111827',
-      fontWeight: '700',
-      fontSize: 14,
-   },
-   dangerButton: {
-      paddingVertical: 12,
-      borderRadius: 12,
-      alignItems: 'center',
-      backgroundColor: '#fee2e2',
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#ef4444',
-   },
-   dangerLabel: {
-      color: '#b91c1c',
-      fontWeight: '800',
-      fontSize: 15,
-   },
-   buttonDisabled: {
-      opacity: 0.5,
-   },
-   noteText: {
-      fontSize: 12,
-      color: '#334155',
-   },
-   settingRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-   },
-   settingDisabled: {
-      opacity: 0.6,
-   },
-   settingTitle: {
-      fontSize: 15,
-      fontWeight: '700',
-      color: palette.text,
-   },
-   settingDescription: {
-      fontSize: 13,
-      color: palette.hint,
-      marginTop: 2,
-   },
-   feedbackBlock: {
-      gap: 8,
-   },
-   input: {
-      minHeight: 80,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#e5e7eb',
-      borderRadius: 12,
-      padding: 12,
-      fontSize: 14,
-      backgroundColor: '#f8fafc',
-      textAlignVertical: 'top',
-   },
-});
+const useStyles = makeThemedStyles(({ colors, typography, components, shadows }) => ({
+   styles: StyleSheet.create({
+      safeArea: {
+         flex: 1,
+         backgroundColor: colors.background,
+      },
+      scroll: {
+         padding: 16,
+         gap: 14,
+      },
+      headerRow: {
+         flexDirection: 'row',
+         justifyContent: 'space-between',
+         alignItems: 'center',
+      },
+      badgeRow: {
+         flexDirection: 'row',
+         gap: 8,
+         alignItems: 'center',
+      },
+      title: {
+         fontSize: 26,
+         fontWeight: '800',
+         color: colors.text,
+      },
+      subtitle: {
+         fontSize: 14,
+         color: colors.hint,
+         marginTop: 2,
+      },
+      offlineBadge: {
+         backgroundColor: colors.cardGrey,
+         paddingHorizontal: 10,
+         paddingVertical: 6,
+         borderRadius: 999,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+      },
+      offlineText: {
+         fontSize: 12,
+         color: colors.text,
+         fontWeight: '700',
+      },
+      warningCard: {
+         backgroundColor: colors.accentBeliefBg,
+         borderColor: colors.accentBeliefBorder,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderRadius: 12,
+         padding: 12,
+         gap: 4,
+         ...shadows.shadowSoft,
+      },
+      warningTitle: {
+         fontSize: 14,
+         fontWeight: '700',
+         color: colors.accentBeliefText,
+      },
+      warningText: {
+         fontSize: 13,
+         color: colors.accentBeliefText,
+      },
+      banner: {
+         backgroundColor: colors.cardGrey,
+         borderColor: colors.disputeCTA,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderRadius: 12,
+         padding: 12,
+         flexDirection: 'row',
+         alignItems: 'center',
+         gap: 10,
+         ...shadows.shadowSoft,
+      },
+      bannerTitle: {
+         fontSize: 15,
+         fontWeight: '700',
+         color: colors.text,
+      },
+      bannerText: {
+         fontSize: 13,
+         color: colors.textSubtle,
+      },
+      bannerDismiss: {
+         paddingHorizontal: 10,
+         paddingVertical: 6,
+         backgroundColor: colors.disputeCTA,
+         borderRadius: 10,
+      },
+      signInButton: {
+         marginTop: 10,
+         backgroundColor: colors.disputeCTA,
+         paddingVertical: 8,
+         paddingHorizontal: 12,
+         borderRadius: 10,
+         alignSelf: 'flex-start',
+      },
+      signInLabel: {
+         color: colors.ctaText,
+         fontWeight: '700',
+         fontSize: 14,
+      },
+      bannerDismissText: {
+         color: colors.ctaText,
+         fontWeight: '700',
+      },
+      card: {
+         backgroundColor: colors.cardBg,
+         borderRadius: 16,
+         padding: 14,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         gap: 12,
+         ...shadows.shadowSoft,
+      },
+      cardHeader: {
+         flexDirection: 'row',
+         justifyContent: 'space-between',
+         alignItems: 'center',
+      },
+      cardTitle: {
+         fontSize: 18,
+         fontWeight: '800',
+         color: colors.text,
+      },
+      planRow: {
+         flexDirection: 'row',
+         alignItems: 'flex-start',
+         gap: 12,
+      },
+      label: {
+         ...typography.caption,
+         letterSpacing: 0.5,
+      },
+      value: {
+         fontSize: 16,
+         fontWeight: '700',
+         color: colors.text,
+         marginTop: 2,
+      },
+      hint: {
+         fontSize: 13,
+         color: colors.hint,
+         marginTop: 2,
+      },
+      metricsRow: {
+         flexDirection: 'row',
+         flexWrap: 'wrap',
+         gap: 10,
+      },
+      metric: {
+         flex: 1,
+         minWidth: '30%',
+         backgroundColor: colors.cardInput,
+         borderRadius: 12,
+         padding: 12,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         gap: 6,
+         ...shadows.shadowSoft,
+      },
+      metricLabel: {
+         fontSize: 12,
+         color: colors.hint,
+         marginBottom: 6,
+      },
+      metricValue: {
+         fontSize: 18,
+         fontWeight: '800',
+         color: colors.text,
+      },
+      metricButton: {
+         alignSelf: 'flex-start',
+         paddingHorizontal: 10,
+         paddingVertical: 6,
+         borderRadius: 10,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         backgroundColor: colors.cardBg,
+      },
+      metricButtonLabel: {
+         fontSize: 12,
+         fontWeight: '700',
+         color: colors.text,
+      },
+      actionStack: {
+         gap: 8,
+      },
+      primaryButton: {
+         backgroundColor: colors.disputeCTA,
+         paddingVertical: 12,
+         borderRadius: 12,
+         alignItems: 'center',
+         ...shadows.shadowSoft,
+      },
+      primaryLabel: {
+         color: colors.ctaText,
+         fontWeight: '700',
+         fontSize: 15,
+      },
+      secondaryButton: {
+         backgroundColor: colors.cardGrey,
+         paddingVertical: 12,
+         borderRadius: 12,
+         alignItems: 'center',
+         ...shadows.shadowSoft,
+      },
+      secondaryLabel: {
+         color: colors.text,
+         fontWeight: '700',
+         fontSize: 15,
+      },
+      ghostButton: {
+         width: 40,
+         height: 40,
+         borderRadius: 20,
+         alignItems: 'center',
+         justifyContent: 'center',
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+      },
+      restoreButton: {
+         paddingVertical: 12,
+         borderRadius: 12,
+         alignItems: 'center',
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         ...shadows.shadowSoft,
+      },
+      ghostButtonText: {
+         color: colors.text,
+         fontWeight: '700',
+         fontSize: 14,
+      },
+      dangerButton: {
+         paddingVertical: 12,
+         borderRadius: 12,
+         alignItems: 'center',
+         backgroundColor: colors.accentBeliefBg,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.accentBeliefBorder,
+         marginTop: 12,
+         ...shadows.shadowSoft,
+      },
+      dangerLabel: {
+         color: colors.accentBeliefText,
+         fontWeight: '800',
+         fontSize: 15,
+      },
+      buttonDisabled: {
+         opacity: 0.5,
+      },
+      noteText: {
+         fontSize: 12,
+         color: colors.textSubtle,
+      },
+      settingRow: {
+         flexDirection: 'row',
+         alignItems: 'center',
+         gap: 8,
+      },
+      settingDisabled: {
+         opacity: 0.6,
+      },
+      settingTitle: {
+         fontSize: 15,
+         fontWeight: '700',
+         color: colors.text,
+      },
+      settingDescription: {
+         fontSize: 13,
+         color: colors.hint,
+         marginTop: 2,
+      },
+      input: {
+         minHeight: 80,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         borderRadius: 12,
+         padding: 12,
+         fontSize: 14,
+         backgroundColor: colors.cardGrey,
+         textAlignVertical: 'top',
+         color: colors.text,
+      },
+   }),
+   switchTrack: { true: colors.text, false: colors.borderStrong },
+   switchThumb: colors.cardBg,
+}));

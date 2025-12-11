@@ -219,6 +219,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Warn if they are still subscribed, give an alert
 - Revenuecat failed purchase screens
 
+
 ## Steps
 - Offline first x
 - AI analysis x

@@ -15,6 +15,7 @@ import StepperButton from '@/components/newEntry/StepperButton';
 import StepperHeader from '@/components/newEntry/StepperHeader';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { Entry } from '@/models/entry';
+import { makeThemedStyles } from '@/theme/theme';
 
 type Props = {
    entry: Entry;
@@ -66,6 +67,7 @@ export default function DisputeSteps({
    inputBoxDims,
    promptContainerStyle,
 }: Props) {
+   const styles = useStyles();
    return (
       <>
          <ScrollView
@@ -140,35 +142,37 @@ export default function DisputeSteps({
    );
 }
 
-const styles = StyleSheet.create({
-   scroll: { flex: 1 },
-   scrollContent: {
-      flexGrow: 1,
-      justifyContent: 'space-between',
-      gap: 16,
-   },
-   promptContainer: {
-      flexGrow: 1,
-      justifyContent: 'space-evenly',
-   },
-   inputWrapper: {
-      // paddingHorizontal: 16,
-   },
-   contextAction: {
-      marginTop: 8,
-   },
-   contextActionInner: {
-      alignSelf: 'flex-end',
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 999,
-      backgroundColor: '#e5edff',
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#cbd5ff',
-   },
-   contextActionText: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: '#1e3a8a',
-   },
-});
+const useStyles = makeThemedStyles(({ colors }) =>
+   StyleSheet.create({
+      scroll: { flex: 1 },
+      scrollContent: {
+         flexGrow: 1,
+         justifyContent: 'space-between',
+         gap: 16,
+      },
+      promptContainer: {
+         flexGrow: 1,
+         justifyContent: 'space-evenly',
+      },
+      inputWrapper: {
+         // paddingHorizontal: 16,
+      },
+      contextAction: {
+         marginTop: 8,
+      },
+      contextActionInner: {
+         alignSelf: 'flex-end',
+         paddingHorizontal: 12,
+         paddingVertical: 8,
+         borderRadius: 999,
+         backgroundColor: colors.cardInput,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+      },
+      contextActionText: {
+         fontSize: 12,
+         fontWeight: '600',
+         color: colors.text,
+      },
+   })
+);

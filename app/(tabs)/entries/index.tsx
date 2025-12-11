@@ -3,6 +3,7 @@ import { type MenuBounds } from '@/components/entries/entry/EntryCard';
 import { getDateParts, getTimeLabel } from '@/lib/date';
 import { useEntries } from '@/features/hooks/useEntries';
 import { Entry } from '@/models/entry';
+import { makeThemedStyles } from '@/theme/theme';
 import { Link, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -31,6 +32,7 @@ const UNDO_TIMEOUT_MS = 5500;
 export default function EntriesScreen() {
    const store = useEntries();
    const insets = useSafeAreaInsets();
+   const styles = useStyles();
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
    const [openMenuBounds, setOpenMenuBounds] = useState<MenuBounds | null>(null);
    const [undoSlots, setUndoSlots] = useState<Entry[]>([]);
@@ -234,46 +236,50 @@ function buildSections(rows: RowItem[]): EntrySection[] {
    return sections;
 }
 
-const styles = StyleSheet.create({
-   container: {
-      flex: 1,
-      backgroundColor: '#f5f5f5ff',
-   },
-   sectionHeaderWrapper: {
-      paddingVertical: 12,
-      alignItems: 'center',
-   },
-   sectionHeaderPill: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 999,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#D1D5DB',
-      backgroundColor: 'rgba(219, 219, 219, 0.66)',
-   },
-   sectionHeader: {
-      textAlign: 'center',
-      fontSize: 14,
-      fontWeight: '700',
-      color: '#374151',
-   },
-   newButtonWrapper: {
-      position: 'absolute',
-      right: 24,
-      bottom: 18,
-   },
-   newButton: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      backgroundColor: '#F39C12',
-      alignItems: 'center',
-      justifyContent: 'center',
-   },
-   newButtonText: {
-      fontSize: 28,
-      fontWeight: '600',
-      color: '#FFFFFF',
-      lineHeight: 30,
-   },
-});
+const useStyles = makeThemedStyles(
+   ({ colors, typography, components, shadows }) =>
+      StyleSheet.create({
+         container: {
+            flex: 1,
+            backgroundColor: colors.background,
+         },
+         sectionHeaderWrapper: {
+            paddingVertical: 12,
+            alignItems: 'center',
+         },
+         sectionHeaderPill: {
+            ...components.compactCard,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderColor: colors.borderStrong,
+            backgroundColor: colors.cardGrey,
+            ...shadows.shadowSoft,
+         },
+         sectionHeader: {
+            ...typography.subtitle,
+            textAlign: 'center',
+            fontWeight: '700',
+         },
+         newButtonWrapper: {
+            position: 'absolute',
+            right: 24,
+            bottom: 18,
+         },
+         newButton: {
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: colors.cta,
+            alignItems: 'center',
+            justifyContent: 'center',
+            ...shadows.shadowSoft,
+         },
+         newButtonText: {
+            ...typography.title,
+            fontSize: 28,
+            lineHeight: 30,
+            color: colors.ctaText,
+            textAlign: 'center',
+         },
+      })
+);

@@ -1,21 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Entry } from '@/models/entry';
+import { makeThemedStyles, useTheme } from '@/theme/theme';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+   Pressable,
+   StyleSheet,
    Text,
    View,
-   StyleSheet,
-   Pressable,
    type TextLayoutEvent,
 } from 'react-native';
-import { palette } from '@/theme/colors';
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Animated, {
-   useSharedValue,
-   useAnimatedStyle,
-   withTiming,
    Easing,
+   useAnimatedStyle,
+   useSharedValue,
+   withTiming,
 } from 'react-native-reanimated';
 import CTAButton from '../CTAButton';
 import AnalyzeButton from '../dispute/AnalyzeButton';
@@ -90,6 +90,8 @@ export default function EntryCard({
    onMenuLayout,
 }: Prop) {
    const menuRef = useRef<View | null>(null);
+   const { colors } = useTheme();
+   const styles = useStyles();
 
    const [expanded, setExpanded] = useState(false);
    const { truncateState, onLayout, reset } = useTruncations();
@@ -140,7 +142,8 @@ export default function EntryCard({
          },
       ],
       shadowOpacity: 0.06 + expandProgress.value * 0.04,
-      borderColor: `rgba(17, 24, 39, ${0.05 + pressProgress.value * 0.25})`,
+      borderColor: colors.elevatedBorder,
+      shadowColor: colors.shadowColor,
    }));
 
    useEffect(() => {
@@ -228,7 +231,11 @@ export default function EntryCard({
                style={styles.menuButton}
                onPress={onToggleMenu}
             >
-               <Ionicons name="ellipsis-horizontal" size={18} color="#6B7280" />
+               <Ionicons
+                  name="ellipsis-horizontal"
+                  size={18}
+                  color={colors.hint}
+               />
             </Pressable>
             <Animated.View
                ref={menuRef}
@@ -247,7 +254,11 @@ export default function EntryCard({
                   accessibilityRole="button"
                   accessibilityLabel="Edit entry"
                >
-                  <Ionicons name="pencil-outline" size={16} color="#1F2937" />
+                  <Ionicons
+                     name="pencil-outline"
+                     size={16}
+                     color={colors.menuText}
+                  />
                   <Text style={styles.menuText}>Edit</Text>
                </Pressable>
                <Pressable
@@ -256,7 +267,11 @@ export default function EntryCard({
                   accessibilityRole="button"
                   accessibilityLabel="Delete entry"
                >
-                  <Ionicons name="trash-outline" size={16} color="#B91C1C" />
+                  <Ionicons
+                     name="trash-outline"
+                     size={16}
+                     color={colors.delete}
+                  />
                   <Text style={[styles.menuText, styles.deleteText]}>
                      Delete
                   </Text>
@@ -377,135 +392,131 @@ export default function EntryCard({
    );
 }
 
-const styles = StyleSheet.create({
-   card: {
-      paddingTop: 22,
-      paddingHorizontal: 18,
-      paddingBottom: 18,
-
-      borderRadius: 18,
-      backgroundColor: palette.cardBg,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-      overflow: 'hidden',
-
-      shadowColor: '#000',
-      shadowOpacity: 0.06,
-      shadowRadius: 10,
-      shadowOffset: { width: 0, height: 4 },
-
-      elevation: 4,
-   },
-   menuRow: {
-      position: 'absolute',
-      top: 8,
-      right: 16,
-      flexDirection: 'row',
-      zIndex: 30,
-   },
-   menuButton: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-   },
-   menu: {
-      position: 'absolute',
-      top: 8,
-      right: 0,
-      backgroundColor: palette.cardBg,
-      borderRadius: 12,
-      paddingVertical: 6,
-      shadowColor: '#000',
-      shadowOpacity: 0.1,
-      shadowRadius: 6,
-      shadowOffset: { width: 0, height: 4 },
-      elevation: 6,
-      minWidth: 140,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-      zIndex: 20,
-   },
-   menuItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-   },
-   menuText: {
-      fontSize: 14,
-      color: palette.menuText,
-      fontWeight: '500',
-   },
-   deleteText: {
-      color: palette.delete,
-   },
-   section: {
-      marginBottom: 12,
-      gap: 6,
-   },
-   label: {
-      fontSize: 11,
-      fontWeight: '600',
-      letterSpacing: 0.4,
-      color: palette.hint,
-      textTransform: 'uppercase',
-   },
-   text: {
-      fontSize: 15,
-      lineHeight: 22,
-      color: palette.text,
-   },
-   sectionCard: {
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-      borderRadius: 12,
-      backgroundColor: palette.cardGrey,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-   },
-   accentBoxBase: {
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-      borderRadius: 12,
-      borderWidth: StyleSheet.hairlineWidth,
-   },
-   beliefBox: {
-      backgroundColor: palette.accentBeliefBg,
-      borderColor: palette.accentBeliefBorder,
-   },
-   beliefText: {
-      fontSize: 15,
-      fontWeight: '600',
-      color: palette.accentBeliefText,
-   },
-   disputeBox: {
-      backgroundColor: palette.accentDisputeBg,
-      borderColor: palette.accentDisputeBorder,
-   },
-   disputeText: {
-      fontSize: 15,
-      fontWeight: '600',
-      color: palette.accentDisputeText,
-   },
-   expandHint: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      paddingTop: 10,
-      paddingBottom: 4,
-   },
-   expandText: {
-      fontSize: 12,
-      color: palette.hint,
-      letterSpacing: 0.2,
-   },
-   divider: {
-      height: 0.5,
-      backgroundColor: '#9E9E9E',
-      marginVertical: 8,
-   },
-});
+const useStyles = makeThemedStyles(
+   ({ colors, shadows }) =>
+      StyleSheet.create({
+         card: {
+            paddingTop: 22,
+            paddingHorizontal: 18,
+            paddingBottom: 18,
+            borderRadius: 18,
+            backgroundColor: colors.cardBg,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+            // overflow: 'hidden',
+            ...shadows.shadowSoft,
+         },
+         menuRow: {
+            position: 'absolute',
+            top: 8,
+            right: 16,
+            flexDirection: 'row',
+            zIndex: 30,
+         },
+         menuButton: {
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            alignItems: 'center',
+            justifyContent: 'center',
+         },
+         menu: {
+            position: 'absolute',
+            top: 8,
+            right: 0,
+            backgroundColor: colors.cardBg,
+            borderRadius: 12,
+            paddingVertical: 6,
+            shadowColor: colors.shadowColor,
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 6,
+            minWidth: 140,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+            zIndex: 20,
+         },
+         menuItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            paddingVertical: 8,
+            paddingHorizontal: 12,
+         },
+         menuText: {
+            fontSize: 14,
+            color: colors.menuText,
+            fontWeight: '500',
+         },
+         deleteText: {
+            color: colors.delete,
+         },
+         section: {
+            marginBottom: 12,
+            gap: 6,
+         },
+         label: {
+            fontSize: 11,
+            fontWeight: '600',
+            letterSpacing: 0.4,
+            color: colors.hint,
+            textTransform: 'uppercase',
+         },
+         text: {
+            fontSize: 15,
+            lineHeight: 22,
+            color: colors.text,
+         },
+         sectionCard: {
+            paddingVertical: 12,
+            paddingHorizontal: 12,
+            borderRadius: 12,
+            backgroundColor: colors.cardGrey,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+         },
+         accentBoxBase: {
+            paddingVertical: 12,
+            paddingHorizontal: 12,
+            borderRadius: 12,
+            borderWidth: StyleSheet.hairlineWidth,
+         },
+         beliefBox: {
+            backgroundColor: colors.accentBeliefBg,
+            borderColor: colors.accentBeliefBorder,
+         },
+         beliefText: {
+            fontSize: 15,
+            fontWeight: '600',
+            color: colors.accentBeliefText,
+         },
+         disputeBox: {
+            backgroundColor: colors.accentDisputeBg,
+            borderColor: colors.accentDisputeBorder,
+         },
+         disputeText: {
+            fontSize: 15,
+            fontWeight: '600',
+            color: colors.accentDisputeText,
+         },
+         expandHint: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            paddingTop: 10,
+            paddingBottom: 4,
+         },
+         expandText: {
+            fontSize: 12,
+            color: colors.hint,
+            letterSpacing: 0.2,
+         },
+         divider: {
+            height: 0.5,
+            backgroundColor: colors.border,
+            marginVertical: 8,
+         },
+      })
+);

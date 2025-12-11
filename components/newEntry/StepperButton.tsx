@@ -7,6 +7,7 @@ import {
    View,
    ViewStyle,
 } from 'react-native';
+import { makeThemedStyles, useTheme } from '@/theme/theme';
 
 type Props = {
    idx: number;
@@ -32,6 +33,8 @@ export default function StepperButton({
    disableNext,
    style,
 }: Props) {
+   const { colors } = useTheme();
+   const styles = useStyles();
    const isLast = useMemo(() => idx === totalSteps - 1, [idx, totalSteps]);
    const canGoBack = useMemo(() => idx > 0, [idx]);
 
@@ -73,7 +76,7 @@ export default function StepperButton({
             <Button
                title={!canGoBack ? 'Close' : 'Back'}
                onPress={handleBack}
-               color={!canGoBack ? 'red' : undefined}
+               color={!canGoBack ? colors.delete : colors.text}
             />
          </View>
          <View style={styles.divider} />
@@ -82,26 +85,29 @@ export default function StepperButton({
                title={isLast ? 'Submit' : 'Next'}
                onPress={handleNext}
                disabled={disableNext}
-               color={isLast ? 'red' : undefined}
+               color={isLast ? colors.disputeCTA : colors.cta}
             />
          </View>
       </View>
    );
 }
 
-const styles = StyleSheet.create({
-   container: {
-      flexDirection: 'row',
-      minHeight: 48,
-      alignItems: 'center',
-      paddingHorizontal: 16,
-      gap: 12,
-   },
-   divider: {
-      width: 1,
-      marginVertical: 8,
-      alignSelf: 'stretch',
-      backgroundColor: '#e5e5e5',
-   },
-   actionCol: { flex: 1 },
-});
+const useStyles = makeThemedStyles(({ colors }) =>
+   StyleSheet.create({
+      container: {
+         flexDirection: 'row',
+         minHeight: 48,
+         alignItems: 'center',
+         paddingHorizontal: 16,
+         gap: 12,
+         backgroundColor: colors.cardBg,
+      },
+      divider: {
+         width: 1,
+         marginVertical: 8,
+         alignSelf: 'stretch',
+         backgroundColor: colors.border,
+      },
+      actionCol: { flex: 1 },
+   })
+);

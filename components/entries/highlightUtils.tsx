@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Text, StyleSheet } from 'react-native';
+import { makeThemedStyles } from '@/theme/theme';
 
 export type Highlight = { phrase: string; color?: string };
 export type HighlightMap = {
@@ -109,6 +110,7 @@ export function HighlightedText({
   text: string;
   highlights: Highlight[];
 }) {
+  const styles = useStyles();
   const segments = useMemo(() => buildSegments(text, highlights), [text, highlights]);
 
   return (
@@ -121,7 +123,12 @@ export function HighlightedText({
             key={i}
             style={[
               styles.highlight,
-              seg.color ? { backgroundColor: lightenHex(seg.color, 0.12) } : null,
+              seg.color
+                ? {
+                    backgroundColor: lightenHex(seg.color, 0.12),
+                    borderColor: seg.color,
+                  }
+                : styles.highlightDefault,
             ]}
           >
             {seg.text}
@@ -132,14 +139,18 @@ export function HighlightedText({
   );
 }
 
-const styles = StyleSheet.create({
-  contextText: { fontSize: 14, color: '#111827' },
-  highlight: {
-    backgroundColor: '#FACC15',
-    borderColor: '#D97706',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-});
+const useStyles = makeThemedStyles(({ colors }) =>
+  StyleSheet.create({
+    contextText: { fontSize: 14, color: colors.text },
+    highlight: {
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: 6,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    highlightDefault: {
+      backgroundColor: colors.cardInput,
+      borderColor: colors.borderStrong,
+    },
+  })
+);

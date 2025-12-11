@@ -1,25 +1,26 @@
+import { Entry } from '@/models/entry';
+import { makeThemedStyles, useTheme } from '@/theme/theme';
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import {
-   View,
-   Text,
-   StyleSheet,
    Pressable,
+   StyleSheet,
+   Text,
+   View,
    type StyleProp,
    type ViewStyle,
 } from 'react-native';
 import Swipeable, {
    type SwipeableMethods,
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
-import { Ionicons } from '@expo/vector-icons';
 import Animated, {
    FadeIn,
    FadeOut,
-   useSharedValue,
    useAnimatedStyle,
+   useSharedValue,
    withTiming,
 } from 'react-native-reanimated';
 import EntryCard, { type MenuBounds } from './entry/EntryCard';
-import { Entry } from '@/models/entry';
 
 type EntryRowProps = {
    entry: Entry;
@@ -106,6 +107,8 @@ export default function EntryRow({
    onSwipeClose,
 }: EntryRowProps) {
    const swipeableRef = useRef<SwipeableMethods | null>(null);
+   const { colors } = useTheme();
+   const styles = useStyles();
 
    const handleEdit = () => {
       swipeableRef.current?.close();
@@ -135,12 +138,12 @@ export default function EntryRow({
             renderRightActions={() => (
                <View style={styles.actionsContainer}>
                   <View style={styles.actionWrapper}>
-                     <Pressable
-                        accessibilityLabel="Edit entry"
-                        style={[styles.actionButton, styles.editButton]}
-                        onPress={handleEdit}
-                     >
-                        <Ionicons name="pencil-outline" size={22} color="#FFFFFF" />
+                    <Pressable
+                       accessibilityLabel="Edit entry"
+                       style={[styles.actionButton, styles.editButton]}
+                       onPress={handleEdit}
+                    >
+                        <Ionicons name="pencil-outline" size={22} color={colors.ctaText} />
                      </Pressable>
                      <Text style={styles.actionLabel}>Edit</Text>
                   </View>
@@ -150,14 +153,14 @@ export default function EntryRow({
                         style={[styles.actionButton, styles.deleteButton]}
                         onPress={handleDelete}
                      >
-                        <Ionicons name="trash-outline" size={22} color="#FFFFFF" />
+                        <Ionicons name="trash-outline" size={22} color={colors.ctaText} />
                      </Pressable>
                      <Text style={styles.actionLabel}>Delete</Text>
                   </View>
                </View>
             )}
          >
-            <View>
+            <View style={{padding: 16}}>
                <Text style={styles.sectionHeaderText}>{timeLabel}</Text>
                <EntryCard
                   entry={entry}
@@ -173,71 +176,74 @@ export default function EntryRow({
    );
 }
 
-const styles = StyleSheet.create({
-   listContent: {
-      paddingHorizontal: 16,
-      paddingTop: 16,
-      paddingBottom: 40,
-   },
-   sectionHeaderText: {
-      fontSize: 13,
-      fontWeight: '700',
-      color: '#6B7280',
-      paddingBottom: 8,
-      paddingLeft: 8,
-   },
-   actionsContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      height: '100%',
-      marginLeft: 12,
-   },
-   actionWrapper: {
-      alignItems: 'center',
-      marginLeft: 8,
-      gap: 4,
-   },
-   actionButton: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      alignItems: 'center',
-      justifyContent: 'center',
-   },
-   editButton: {
-      backgroundColor: '#2563EB',
-   },
-   deleteButton: {
-      backgroundColor: '#DC2626',
-   },
-   actionLabel: {
-      fontSize: 12,
-      color: '#6B7280',
-   },
-   undoPlaceholder: {
-      minHeight: 80,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingVertical: 4,
-      paddingHorizontal: 8,
-      gap: 2,
-   },
-   undoLink: {
-      color: '#2563EB',
-      fontSize: 15,
-      paddingVertical: 6,
-      textAlign: 'center',
-   },
-   undoTimerTrack: {
-      height: 2,
-      backgroundColor: '#E5E7EB',
-      borderRadius: 999,
-      overflow: 'hidden',
-      marginTop: 2,
-   },
-   undoTimerFill: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: '#2563EB',
-      transformOrigin: 'left center',
-   },
-});
+const useStyles = makeThemedStyles(({ colors }) =>
+   StyleSheet.create({
+      listContent: {
+         paddingHorizontal: 0,
+         paddingTop: 16,
+         paddingBottom: 40,
+      },
+      sectionHeaderText: {
+         fontSize: 13,
+         fontWeight: '700',
+         color: colors.hint,
+         paddingBottom: 8,
+         paddingLeft: 8,
+      },
+      actionsContainer: {
+         flexDirection: 'row',
+         alignItems: 'center',
+         height: '100%',
+         marginLeft: 12,
+         marginRight: 16,
+      },
+      actionWrapper: {
+         alignItems: 'center',
+         marginLeft: 8,
+         gap: 4,
+      },
+      actionButton: {
+         width: 48,
+         height: 48,
+         borderRadius: 24,
+         alignItems: 'center',
+         justifyContent: 'center',
+      },
+      editButton: {
+         backgroundColor: colors.cta,
+      },
+      deleteButton: {
+         backgroundColor: colors.delete,
+      },
+      actionLabel: {
+         fontSize: 12,
+         color: colors.hint,
+      },
+      undoPlaceholder: {
+         minHeight: 80,
+         justifyContent: 'center',
+         alignItems: 'center',
+         paddingVertical: 4,
+         paddingHorizontal: 8,
+         gap: 2,
+      },
+      undoLink: {
+         color: colors.cta,
+         fontSize: 15,
+         paddingVertical: 6,
+         textAlign: 'center',
+      },
+      undoTimerTrack: {
+         height: 2,
+         backgroundColor: colors.border,
+         borderRadius: 999,
+         overflow: 'hidden',
+         marginTop: 2,
+      },
+      undoTimerFill: {
+         ...StyleSheet.absoluteFillObject,
+         backgroundColor: colors.cta,
+         transformOrigin: 'left center',
+      },
+   })
+);

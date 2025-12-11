@@ -4,17 +4,13 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
-import ThreeDotsLoader from '@/components/ThreeDotLoader';
 import {
    HighlightMap,
    HighlightedText,
 } from '@/components/entries/highlightUtils';
 import { Entry } from '@/models/entry';
 import { LearnedGrowthResponse } from '@/models/aiService';
-import { cardBase, compactCard } from '@/theme/components';
-import { palette } from '@/theme/colors';
-import { typography } from '@/theme/typography';
-import { shadowSoft } from '@/theme/shadows';
+import { makeThemedStyles } from '@/theme/theme';
 
 type Props = {
    entry: Entry;
@@ -58,6 +54,7 @@ export default function ABCAnalysis({
    onPressIn,
    onPressOut,
 }: Props) {
+   const styles = useStyles();
    const activeHighlights: HighlightMap = {
       adversity: [
          ...(showPermanenceHighlight ? highlights.permanence.adversity : []),
@@ -160,78 +157,84 @@ export default function ABCAnalysis({
    );
 }
 
-const styles = StyleSheet.create({
-   scroll: { flex: 1 },
-   scrollContent: {
-      flexGrow: 1,
-      justifyContent: 'space-between',
-      gap: 16,
-      paddingBottom: 48,
-   },
-   container: {
-      paddingHorizontal: 20,
-      paddingVertical: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-   },
-   contentCard: {
-      flex: 1,
-      ...shadowSoft
-   },
-   text: { ...typography.body, fontSize: 16, fontWeight: '500' },
-   switchButton: {
-      marginTop: 16,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      borderRadius: 999,
-      backgroundColor: '#2ECC71',
-      alignItems: 'center',
-      justifyContent: 'center',
-   },
-   switchButtonText: {
-      ...typography.body,
-      fontSize: 16,
-      fontWeight: '600',
-      color: '#FFFFFF',
-   },
-   contextBox: {
-      ...compactCard,
-      backgroundColor: palette.cardGrey,
-      gap: 10,
-   },
-   contextRow: { gap: 4 },
-   contextLabel: {
-      ...typography.caption,
-      fontWeight: '700',
-      color: '#374151',
-      textTransform: 'uppercase',
-      letterSpacing: 0.4,
-   },
-   contextDivider: {
-      height: 1,
-      backgroundColor: palette.border,
-      marginVertical: 2,
-   },
-   card: {
-      ...cardBase,
-      backgroundColor: '#f5f5f7',
-      gap: 12,
-   },
-   title: {
-      ...typography.title,
-      marginBottom: 4,
-   },
-   subText: {
-      ...typography.body,
-      color: '#666',
-      marginTop: 4,
-   },
-   errorCard: {
-      backgroundColor: '#ffe6e6',
-   },
-   errorText: {
-      ...typography.body,
-      color: '#a00',
-   },
-});
+const useStyles = makeThemedStyles(
+   ({ colors, typography, components, shadows }) =>
+      StyleSheet.create({
+         scroll: { flex: 1 },
+         scrollContent: {
+            flexGrow: 1,
+            justifyContent: 'space-between',
+            gap: 16,
+            paddingBottom: 48,
+         },
+         container: {
+            paddingHorizontal: 20,
+            paddingVertical: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+         },
+         contentCard: {
+            flex: 1,
+            ...shadows.shadowSoft,
+         },
+         text: { ...typography.body, fontSize: 16, fontWeight: '500' },
+         switchButton: {
+            marginTop: 16,
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            borderRadius: 999,
+            backgroundColor: colors.disputeCTA,
+            alignItems: 'center',
+            justifyContent: 'center',
+            ...shadows.shadowSoft,
+         },
+         switchButtonText: {
+            ...typography.body,
+            fontSize: 16,
+            fontWeight: '600',
+            color: colors.ctaText,
+         },
+         contextBox: {
+            ...components.compactCard,
+            backgroundColor: colors.cardGrey,
+            gap: 10,
+         },
+         contextRow: { gap: 4 },
+         contextLabel: {
+            ...typography.caption,
+            fontWeight: '700',
+            color: colors.textSubtle,
+            textTransform: 'uppercase',
+            letterSpacing: 0.4,
+         },
+         contextDivider: {
+            height: 1,
+            backgroundColor: colors.border,
+            marginVertical: 2,
+         },
+         card: {
+            ...components.cardBase,
+            backgroundColor: colors.cardGrey,
+            gap: 12,
+         },
+         title: {
+            ...typography.title,
+            marginBottom: 4,
+         },
+         subText: {
+            ...typography.body,
+            color: colors.textSubtle,
+            marginTop: 4,
+         },
+         errorCard: {
+            backgroundColor: colors.accentBeliefBg,
+            borderColor: colors.accentBeliefBorder,
+            borderWidth: StyleSheet.hairlineWidth,
+         },
+         errorText: {
+            ...typography.body,
+            color: colors.accentBeliefText,
+         },
+      })
+);

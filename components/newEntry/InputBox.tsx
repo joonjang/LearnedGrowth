@@ -1,5 +1,3 @@
-import { palette } from '@/theme/colors';
-import { shadowSoft } from '@/theme/shadows';
 import { forwardRef, useState } from 'react';
 import {
    Pressable,
@@ -8,6 +6,7 @@ import {
    TextInputProps,
    ViewStyle,
 } from 'react-native';
+import { makeThemedStyles } from '@/theme/theme';
 
 type Dims = { minHeight?: number; maxHeight?: number };
 
@@ -37,6 +36,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
    ref
 ) {
    const [focused, setFocused] = useState(false);
+   const { styles, placeholderColor } = useStyles();
    return (
       <Pressable
          onPress={() =>
@@ -58,7 +58,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
             multiline
             scrollEnabled={scrollEnabled}
             textAlignVertical="top"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={placeholderColor}
             onFocus={(e) => {
                setFocused(true);
                rest.onFocus?.(e);
@@ -75,34 +75,43 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
 
 export default InputBox;
 
-const styles = StyleSheet.create({
-   inputBox: {
+const useStyles = makeThemedStyles(({ colors, shadows }) => {
+   const inputBase = {
       borderRadius: 14,
-      backgroundColor: palette.cardInput,
+      backgroundColor: colors.cardInput,
       borderWidth: 1,
-      borderColor: palette.cardInputBorder,
-      ...shadowSoft,
+      borderColor: colors.cardInputBorder,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      ...shadows.shadowSoft,
       shadowRadius: 4,
       shadowOffset: { width: 0, height: 3 },
       elevation: 2,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-   },
-   inputBoxFocused: {
-      shadowOpacity: 0.16,
-      shadowRadius: 2,
-      elevation: 3,
-   },
-   inputText: {
-      fontSize: 22,
-      lineHeight: 24,
-      color: '#111',
-      includeFontPadding: false as any,
-   },
-   inputTextCompact: {
-      fontSize: 18,
-      lineHeight: 21,
-      color: '#111',
-      includeFontPadding: false as any,
-   },
+   } as const;
+
+   return {
+      styles: StyleSheet.create({
+         inputBox: inputBase,
+         inputBoxFocused: {
+            ...inputBase,
+            borderColor: colors.borderStrong,
+            shadowOpacity: 0.16,
+            shadowRadius: 2,
+            elevation: 3,
+         },
+         inputText: {
+            fontSize: 22,
+            lineHeight: 24,
+            color: colors.text,
+            includeFontPadding: false as any,
+         },
+         inputTextCompact: {
+            fontSize: 18,
+            lineHeight: 21,
+            color: colors.text,
+            includeFontPadding: false as any,
+         },
+      }),
+      placeholderColor: colors.hint,
+   };
 });

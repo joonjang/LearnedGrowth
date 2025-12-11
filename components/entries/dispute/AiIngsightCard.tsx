@@ -1,15 +1,10 @@
 // AiIngsightCard.tsx (AiInsightCard)
 
 import { LearnedGrowthResponse } from '@/models/aiService';
-import {
-   cardBase,
-   chipBase,
-   sectionBlock as sectionBase,
-} from '@/theme/components';
-import { palette } from '@/theme/colors';
-import { typography } from '@/theme/typography';
+import { makeThemedStyles } from '@/theme/theme';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import ThreeDotsLoader from '../../ThreeDotLoader';
+import { useTheme } from '@/theme/theme';
 
 type Props = {
    data?: LearnedGrowthResponse | null;
@@ -92,6 +87,8 @@ export function AiInsightCard({
    showPervasivenessHighlight,
    showPersonalizationHighlight,
 }: Props) {
+   const { colors } = useTheme();
+   const styles = useStyles();
 
    if (error) {
       return (
@@ -132,7 +129,7 @@ export function AiInsightCard({
    const permanenceLabelStyle = highlightColors?.permanence
       ? {
            backgroundColor: lightenHex(highlightColors.permanence, 0.12),
-           color: '#111',
+           color: colors.text,
            paddingHorizontal: 6,
            paddingVertical: 2,
            borderRadius: 6,
@@ -141,7 +138,7 @@ export function AiInsightCard({
    const pervasivenessLabelStyle = highlightColors?.pervasiveness
       ? {
            backgroundColor: lightenHex(highlightColors.pervasiveness, 0.12),
-           color: '#111',
+           color: colors.text,
            paddingHorizontal: 6,
            paddingVertical: 2,
            borderRadius: 6,
@@ -150,7 +147,7 @@ export function AiInsightCard({
    const personalizationLabelStyle = highlightColors?.personalization
       ? {
            backgroundColor: lightenHex(highlightColors.personalization, 0.12),
-           color: '#111',
+           color: colors.text,
            paddingHorizontal: 6,
            paddingVertical: 2,
            borderRadius: 6,
@@ -286,166 +283,182 @@ export function AiInsightCard({
    );
 }
 
-const styles = StyleSheet.create({
-   card: {
-      ...cardBase,
-      backgroundColor: '#f5f5f7',
-      gap: 12,
-   },
-   title: {
-      ...typography.title,
-      marginBottom: 4,
-   },
-   subText: {
-      ...typography.body,
-      color: '#31ba3fff',
-      height: 20,
-      margin: 8,
-      overflow: 'hidden',
-      marginTop: 4,
-   },
-   streamingPreview: {
-      backgroundColor: '#1f2937',
-      borderRadius: 12,
-      padding: 10,
-      marginTop: 8,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#111827',
-
-   },
-   streamingLabel: {
-      ...typography.caption,
-      letterSpacing: 0.5,
-      color: '#d1d5db',
-      marginBottom: 4,
-   },
-   streamingCode: {
-      fontFamily: Platform.select({
-         ios: 'Menlo',
-         android: 'monospace',
-         default: 'Courier',
-      }),
-      fontSize: 12,
-      color: '#e5e7eb',
-      lineHeight: 18,
-   },
-   sectionBlock: {
-      ...sectionBase,
-   },
-   sectionTitle: {
-      ...typography.subtitle,
-   },
-   bodyText: {
-      ...typography.body,
-   },
-   dimensionRow: {
-      marginTop: 8,
-      gap: 2,
-      padding: 10,
-      borderRadius: 10,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: palette.border,
-      backgroundColor: '#f8fafc',
-      shadowColor: '#000',
-      shadowOpacity: 0.06,
-      shadowRadius: 6,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 2,
-   },
-   dimensionRowDisabled: {
-      opacity: 0.7,
-   },
-   dimensionRowPressed: {
-      transform: [{ scale: 0.97 }, { translateY: 1 }],
-      borderColor: '#cbd5e1',
-      shadowColor: '#000',
-      shadowOpacity: 0.06,
-      shadowRadius: 4,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 2,
-   },
-   dimensionHeaderRow: {
-      flexDirection: 'row',
+const useStyles = makeThemedStyles(({ colors, typography, components }) => {
+   const chipBase = {
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 999,
+      alignSelf: 'flex-start',
       alignItems: 'center',
-      justifyContent: 'space-between',
-   },
-   dimensionLabel: {
-      ...typography.caption,
-      fontWeight: '600',
-      color: '#666',
-   },
-   dimensionText: {
-      ...typography.body,
-      color: '#333',
-   },
-   counterBubble: {
-      marginTop: 4,
-      padding: 10,
-      borderRadius: 12,
-      backgroundColor: palette.cardBg,
-   },
-   counterText: {
-      ...typography.body,
-      color: '#222',
-   },
-   errorCard: {
-      backgroundColor: '#ffe6e6',
-   },
-   errorText: {
-      ...typography.body,
-      color: '#a00',
-   },
-   crisisBanner: {
-      borderRadius: 12,
-      padding: 10,
-      backgroundColor: '#ffe5e5',
-      marginBottom: 4,
-   },
-   crisisTitle: {
-      ...typography.subtitle,
-      color: '#a00000',
-      marginBottom: 2,
-   },
-   crisisText: {
-      ...typography.body,
-      color: '#a00000',
-      fontSize: 13,
-   },
+      flexDirection: 'row',
+      gap: 6,
+      borderWidth: StyleSheet.hairlineWidth,
+   } as const;
 
-   // chips
-   chip: {
-      ...chipBase,
-   },
-   chipOptimistic: {
-      backgroundColor: '#b7faccff',
-      borderWidth: 0,
-   },
-   chipTextOptimistic: {
-      ...typography.chip,
-      color: '#1b7b3c',
-   },
-   chipPessimistic: {
-      backgroundColor: '#ffe5e5',
-      borderWidth: 0,
-   },
-   chipTextPessimistic: {
-      ...typography.chip,
-      color: '#a00000',
-   },
-   chipMixed: {
-      backgroundColor: '#fff4e0',
-      borderWidth: 0,
-   },
-   chipTextMixed: {
-      ...typography.chip,
-      color: '#b46a00',
-   },
-   chipNeutral: {
-      backgroundColor: '#ececf0',
-      borderWidth: 0,
-   },
-   chipTextNeutral: {
-      ...typography.chip,
-      color: '#585870',
-   },
+   return StyleSheet.create({
+      card: {
+         ...components.cardBase,
+         backgroundColor: colors.cardGrey,
+         gap: 12,
+      },
+      title: {
+         ...typography.title,
+         marginBottom: 4,
+      },
+      subText: {
+         ...typography.body,
+         color: colors.textSubtle,
+         height: 20,
+         margin: 8,
+         overflow: 'hidden',
+         marginTop: 4,
+      },
+      streamingPreview: {
+         backgroundColor: colors.surface,
+         borderRadius: 12,
+         padding: 10,
+         marginTop: 8,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+      },
+      streamingLabel: {
+         ...typography.caption,
+         letterSpacing: 0.5,
+         color: colors.textSubtle,
+         marginBottom: 4,
+      },
+      streamingCode: {
+         fontFamily: Platform.select({
+            ios: 'Menlo',
+            android: 'monospace',
+            default: 'Courier',
+         }),
+         fontSize: 12,
+         color: colors.text,
+         lineHeight: 18,
+      },
+      sectionBlock: {
+         ...components.sectionBlock,
+      },
+      sectionTitle: {
+         ...typography.subtitle,
+      },
+      bodyText: {
+         ...typography.body,
+      },
+      dimensionRow: {
+         marginTop: 8,
+         gap: 6,
+         padding: 12,
+         borderRadius: 10,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         backgroundColor: colors.cardBg,
+         shadowColor: colors.shadowColor,
+         shadowOpacity: 0.06,
+         shadowRadius: 6,
+         shadowOffset: { width: 0, height: 2 },
+         elevation: 2,
+      },
+      dimensionRowDisabled: {
+         opacity: 0.7,
+      },
+      dimensionRowPressed: {
+         transform: [{ scale: 0.97 }, { translateY: 1 }],
+         borderColor: colors.disputeCTA,
+         shadowColor: colors.shadowColor,
+         shadowOpacity: 0.08,
+         shadowRadius: 4,
+         shadowOffset: { width: 0, height: 2 },
+         elevation: 2,
+      },
+      dimensionHeaderRow: {
+         flexDirection: 'row',
+         alignItems: 'center',
+         justifyContent: 'space-between',
+      },
+      dimensionLabel: {
+         ...typography.caption,
+         fontWeight: '600',
+         color: colors.textSubtle,
+      },
+      dimensionText: {
+         ...typography.body,
+         color: colors.text,
+      },
+      counterBubble: {
+         marginTop: 4,
+         padding: 10,
+         borderRadius: 12,
+         backgroundColor: colors.cardInput,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+      },
+      counterText: {
+         ...typography.body,
+         color: colors.text,
+      },
+      errorCard: {
+         backgroundColor: colors.accentBeliefBg,
+         borderColor: colors.accentBeliefBorder,
+      },
+      errorText: {
+         ...typography.body,
+         color: colors.accentBeliefText,
+      },
+      crisisBanner: {
+         borderRadius: 12,
+         padding: 10,
+         backgroundColor: colors.accentBeliefBg,
+         marginBottom: 4,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.accentBeliefBorder,
+      },
+      crisisTitle: {
+         ...typography.subtitle,
+         color: colors.accentBeliefText,
+         marginBottom: 2,
+      },
+      crisisText: {
+         ...typography.body,
+         color: colors.accentBeliefText,
+         fontSize: 13,
+      },
+      // chips
+      chip: {
+         ...chipBase,
+      },
+      chipOptimistic: {
+         backgroundColor: colors.accentDisputeBg,
+         borderColor: colors.accentDisputeBorder,
+      },
+      chipTextOptimistic: {
+         ...typography.chip,
+         color: colors.accentDisputeText,
+      },
+      chipPessimistic: {
+         backgroundColor: colors.accentBeliefBg,
+         borderColor: colors.accentBeliefBorder,
+      },
+      chipTextPessimistic: {
+         ...typography.chip,
+         color: colors.accentBeliefText,
+      },
+      chipMixed: {
+         backgroundColor: colors.cardInput,
+         borderColor: colors.border,
+      },
+      chipTextMixed: {
+         ...typography.chip,
+         color: colors.text,
+      },
+      chipNeutral: {
+         backgroundColor: colors.cardGrey,
+         borderColor: colors.border,
+      },
+      chipTextNeutral: {
+         ...typography.chip,
+         color: colors.textSubtle,
+      },
+   });
 });

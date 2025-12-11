@@ -1,7 +1,6 @@
-import { palette } from '@/theme/colors';
-import { shadowSoft } from '@/theme/shadows';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { makeThemedStyles } from '@/theme/theme';
 
 type Props = {
    adversity: string;
@@ -14,6 +13,7 @@ export default function EntryContextView({
    belief,
    consequence,
 }: Props) {
+   const styles = useStyles();
    return (
       <View style={[styles.contextBox]}>
          <View style={styles.contextRow}>
@@ -38,29 +38,30 @@ export default function EntryContextView({
    );
 }
 
-const styles = StyleSheet.create({
-   contextBox: {
-      backgroundColor: palette.cardGrey,
-      padding: 12,
-      borderRadius: 12,
-      gap: 10,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: '#E5E7EB',
-
-      ...shadowSoft
-   },
-   contextRow: { gap: 4 },
-   contextLabel: {
-      fontSize: 13,
-      fontWeight: '700',
-      color: '#374151',
-      textTransform: 'uppercase',
-      letterSpacing: 0.4,
-   },
-   contextText: { fontSize: 14, color: '#111827' },
-   contextDivider: {
-      height: 1,
-      backgroundColor: '#E5E7EB',
-      marginVertical: 2,
-   },
-});
+const useStyles = makeThemedStyles(({ colors, typography, components, shadows }) =>
+   StyleSheet.create({
+      contextBox: {
+         backgroundColor: colors.cardGrey,
+         padding: 12,
+         borderRadius: 12,
+         gap: 10,
+         borderWidth: StyleSheet.hairlineWidth,
+         borderColor: colors.border,
+         ...shadows.shadowSoft,
+      },
+      contextRow: { gap: 4 },
+      contextLabel: {
+         ...typography.caption,
+         fontWeight: '700',
+         color: colors.textSubtle,
+         textTransform: 'uppercase',
+         letterSpacing: 0.4,
+      },
+      contextText: { ...typography.body },
+      contextDivider: {
+         height: 1,
+         backgroundColor: colors.border,
+         marginVertical: 2,
+      },
+   })
+);
