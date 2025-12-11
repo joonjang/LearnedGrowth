@@ -15,6 +15,12 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-11
+- Working on Android
+  - Sticky header now works as it does for apple
+  - Content view shifted down for camera as it did for apple 
+- Status bar color is uniform, black during light mode and white during dark mode
+
 ### 2025-12-10
 - Feedback table implemented
 - Account delete feature + webhook implemented

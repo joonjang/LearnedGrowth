@@ -46,35 +46,6 @@ function lightenHex(hex: string, amount = 0.2) {
    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-function getScoreChip(score: Score) {
-   switch (score) {
-      case 'optimistic':
-         return {
-            label: 'Optimstic',
-            containerStyle: styles.chipOptimistic,
-            textStyle: styles.chipTextOptimistic,
-         };
-      case 'pessimistic':
-         return {
-            label: 'Pessimistic',
-            containerStyle: styles.chipPessimistic,
-            textStyle: styles.chipTextPessimistic,
-         };
-      case 'mixed':
-         return {
-            label: 'Mixed view',
-            containerStyle: styles.chipMixed,
-            textStyle: styles.chipTextMixed,
-         };
-      default:
-         return {
-            label: 'No clear pattern',
-            containerStyle: styles.chipNeutral,
-            textStyle: styles.chipTextNeutral,
-         };
-   }
-}
-
 export function AiInsightCard({
    data,
    streamingText,
@@ -89,6 +60,35 @@ export function AiInsightCard({
 }: Props) {
    const { colors } = useTheme();
    const styles = useStyles();
+
+   const getScoreChip = (score: Score) => {
+      switch (score) {
+         case 'optimistic':
+            return {
+               label: 'Optimstic',
+               containerStyle: styles.chipOptimistic,
+               textStyle: styles.chipTextOptimistic,
+            };
+         case 'pessimistic':
+            return {
+               label: 'Pessimistic',
+               containerStyle: styles.chipPessimistic,
+               textStyle: styles.chipTextPessimistic,
+            };
+         case 'mixed':
+            return {
+               label: 'Mixed view',
+               containerStyle: styles.chipMixed,
+               textStyle: styles.chipTextMixed,
+            };
+         default:
+            return {
+               label: 'No clear pattern',
+               containerStyle: styles.chipNeutral,
+               textStyle: styles.chipTextNeutral,
+            };
+      }
+   };
 
    if (error) {
       return (

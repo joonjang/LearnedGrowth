@@ -5,6 +5,7 @@ import { AuthProvider } from '@/providers/AuthProvider';
 import { EntriesStoreProvider } from '@/providers/EntriesStoreProvider';
 import { PreferencesProvider } from '@/providers/PreferencesProvider';
 import { RevenueCatProvider } from '@/providers/RevenueCatProvider';
+import { ThemedStatusBar } from '@/theme/StatusBar';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -22,6 +23,7 @@ export default function RootLayout() {
                            <SafeAreaProvider>
                               <AuthGate>
                                  <AdapterGuard>
+                                    <ThemedStatusBar />
                                     <Stack
                                        screenOptions={{ headerShown: false }}
                                     >

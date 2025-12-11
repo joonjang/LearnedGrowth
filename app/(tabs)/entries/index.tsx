@@ -136,9 +136,27 @@ export default function EntriesScreen() {
          <SectionList
             sections={sections}
             keyExtractor={(item) => `${item.kind}-${item.entry.id}`}
-            contentInset={{ top: insets.top }}
-            contentOffset={{ y: -insets.top, x: 0 }}
-            scrollIndicatorInsets={{ top: insets.top }}
+            // 1. Apply top inset to the VIEW style.
+            // This moves the "ceiling" that headers stick to.
+            style={{ 
+               flex: 1, 
+               paddingTop: insets.top 
+            }}
+            // 2. Adjust content container.
+            // Move the extra 8px spacing here.
+            contentContainerStyle={{
+               paddingBottom: insets.bottom + 16,
+               paddingTop: 8, 
+            }}
+            // 3. Adjust scroll indicators.
+            // Top is 0 because the list frame is already pushed down.
+            scrollIndicatorInsets={{
+               top: 0,
+               bottom: insets.bottom,
+            }}
+            // 4. Remove the spacer component.
+            ListHeaderComponent={null}
+            stickySectionHeadersEnabled
             onScrollBeginDrag={closeMenu}
             renderSectionHeader={({ section }) => (
                <View style={styles.sectionHeaderWrapper}>

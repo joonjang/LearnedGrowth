@@ -351,9 +351,17 @@ export default function AccountScreen() {
    return (
       <View style={styles.safeArea}>
          <ScrollView
-            contentContainerStyle={styles.scroll}
-            contentInset={{ top: insets.top }}
-            contentOffset={{ y: -insets.top, x: 0 }}
+            contentContainerStyle={[
+               styles.scroll,
+               {
+                  paddingTop: insets.top + 8,
+                  paddingBottom: insets.bottom + 24,
+               },
+            ]}
+            scrollIndicatorInsets={{
+               top: insets.top,
+               bottom: insets.bottom,
+            }}
             showsVerticalScrollIndicator={false}
          >
             <View style={styles.headerRow}>
