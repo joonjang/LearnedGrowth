@@ -13,7 +13,6 @@
       "bundleIdentifier": "com.joonjang.LearnedGrowth",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSFaceIDUsageDescription": "Learned Growth uses Face ID to lock your journal entries."
       },
       "usesAppleSignIn": true
     },
@@ -35,7 +34,12 @@
     },
     "plugins": [
       "expo-router",
-      "expo-local-authentication",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Learned Growth uses Face ID to lock your journal entries."
+        }
+      ],
       [
         "expo-build-properties",
         {

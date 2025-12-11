@@ -22,12 +22,15 @@ export default function RootLayout() {
                            <SafeAreaProvider>
                               <AuthGate>
                                  <AdapterGuard>
-                                    <Stack screenOptions={{ headerShown: false }}>
+                                    <Stack
+                                       screenOptions={{ headerShown: false }}
+                                    >
                                        <Stack.Screen name="(tabs)" />
                                        <Stack.Screen
                                           name="(modal)"
                                           options={{
-                                             presentation: 'modal',
+                                             animation: 'fade',
+                                             presentation: 'transparentModal',
                                           }}
                                        />
                                     </Stack>

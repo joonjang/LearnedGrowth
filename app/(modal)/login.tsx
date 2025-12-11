@@ -1,28 +1,29 @@
 import { useAuth } from '@/providers/AuthProvider';
+import { shadowSoft } from '@/theme/shadows';
 import { useTheme } from '@/theme/theme';
-import { Ionicons } from '@expo/vector-icons'; // Standard in Expo
+import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableWithoutFeedback,
-    View,
+   ActivityIndicator,
+   KeyboardAvoidingView,
+   Platform,
+   Pressable,
+   StyleSheet,
+   Text,
+   TextInput,
+   View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AuthModal() {
    const router = useRouter();
+   const insets = useSafeAreaInsets();
    const { colors, mode } = useTheme();
    const { signIn, signUp, signInWithApple, signInWithGoogle } = useAuth();
 
-   const [isSignUp, setIsSignUp] = useState(false); // Toggle state
+   const [isSignUp, setIsSignUp] = useState(false);
    const [email, setEmail] = useState('');
    const [password, setPassword] = useState('');
    const [submitting, setSubmitting] = useState(false);
@@ -58,9 +59,7 @@ export default function AuthModal() {
       setSocialSubmitting('apple');
       try {
          const success = await signInWithApple();
-         if (success) {
-            router.back();
-         }
+         if (success) router.back();
       } catch (err: any) {
          setLocalError(err?.message ?? 'Apple sign-in failed.');
       } finally {
@@ -73,9 +72,7 @@ export default function AuthModal() {
       setSocialSubmitting('google');
       try {
          const success = await signInWithGoogle();
-         if (success) {
-            router.back();
-         }
+         if (success) router.back();
       } catch (err: any) {
          setLocalError(err?.message ?? 'Google sign-in failed.');
       } finally {
@@ -84,165 +81,179 @@ export default function AuthModal() {
    };
 
    return (
-      <TouchableWithoutFeedback onPress={handleClose}>
-         <SafeAreaView style={styles.overlay}>
-            <KeyboardAvoidingView
-               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-               style={styles.keyboardView}
+      <KeyboardAvoidingView
+         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+         style={{ flex: 1 }}
+      >
+         <Pressable 
+            style={styles.overlayBackdrop} 
+            onPress={handleClose} 
+         />
+
+         <View style={[
+            styles.sheet, 
+            { 
+               backgroundColor: colors.cardBg,
+               paddingBottom: insets.bottom + 20,
+            }
+         ]}>
+            
+            {/* Drag Handle */}
+            <View style={styles.handleContainer}>
+               <View style={[styles.handle, { backgroundColor: colors.border }]} />
+            </View>
+
+            {/* Header */}
+            <View style={styles.header}>
+               <Text style={[styles.title, { color: colors.text }]}>
+                  {isSignUp ? 'Start your Growth' : 'Welcome Back'}
+               </Text>
+               <Text style={[styles.subtitle, { color: colors.textSubtle }]}>
+                  {isSignUp 
+                     ? 'Create an account to save your journal and unlock AI insights.' 
+                     : 'Sign in to sync your entries and continue your journey.'}
+               </Text>
+            </View>
+
+            {/* Social Auth - STACKED */}
+            <View style={styles.socialStack}>
+               {Platform.OS === 'ios' && (
+                  <AppleAuthentication.AppleAuthenticationButton
+                     buttonType={
+                        isSignUp 
+                        ? AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
+                        : AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+                     }
+                     buttonStyle={
+                        mode === 'dark'
+                           ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                           : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                     }
+                     cornerRadius={14}
+                     style={styles.appleBtnFixed}
+                     onPress={handleAppleSignIn}
+                  />
+               )}
+
+               <Pressable
+                  style={({ pressed }) => [
+                     styles.socialBtn,
+                     { 
+                        borderColor: colors.border, 
+                        backgroundColor: pressed ? colors.border : 'transparent',
+                        opacity: socialSubmitting ? 0.8 : 1 
+                     },
+                  ]}
+                  onPress={handleGoogleSignIn}
+                  disabled={submitting || Boolean(socialSubmitting)}
+               >
+                  {socialSubmitting === 'google' ? (
+                     <ActivityIndicator color={colors.text} />
+                  ) : (
+                     <>
+                        <Ionicons name="logo-google" size={20} color={colors.text} />
+                        <Text style={[styles.socialText, { color: colors.text }]}>
+                           Continue with Google
+                        </Text>
+                     </>
+                  )}
+               </Pressable>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+               <View style={[styles.line, { backgroundColor: colors.border }]} />
+               <Text style={[styles.orText, { color: colors.textSubtle }]}>OR</Text>
+               <View style={[styles.line, { backgroundColor: colors.border }]} />
+            </View>
+
+            {/* Inputs */}
+            <View style={styles.form}>
+               <TextInput
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  placeholder="Email address"
+                  placeholderTextColor={colors.hint}
+                  value={email}
+                  onChangeText={setEmail}
+                  style={[styles.input, { 
+                     backgroundColor: colors.cardInput, 
+                     color: colors.text,
+                     borderColor: colors.border // <--- Added dynamic border color
+                  }]}
+               />
+               <TextInput
+                  placeholder="Password"
+                  placeholderTextColor={colors.hint}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  style={[styles.input, { 
+                     backgroundColor: colors.cardInput, 
+                     color: colors.text,
+                     borderColor: colors.border // <--- Added dynamic border color
+                  }]}
+               />
+            </View>
+
+            {localError && (
+               <Text style={[styles.error, { color: colors.delete }]}>{localError}</Text>
+            )}
+
+            {/* Primary Action */}
+            <Pressable
+               style={({ pressed }) => [
+                  styles.primaryBtn,
+                  { 
+                     backgroundColor: colors.disputeCTA, 
+                     opacity: pressed || submitting ? 0.8 : 1,
+                     transform: [{ scale: pressed ? 0.98 : 1 }]
+                  }
+               ]}
+               onPress={handleSubmit}
+               disabled={submitting}
             >
-               {/* Prevent closing when tapping the sheet itself */}
-               <TouchableWithoutFeedback>
-                  <View style={[styles.sheet, { backgroundColor: colors.cardBg }]}>
-                     
-                     {/* 1. The Drag Handle (Visual Polish) */}
-                     <View style={styles.handleContainer}>
-                        <View style={[styles.handle, { backgroundColor: colors.border }]} />
-                     </View>
+               {submitting ? (
+                  <ActivityIndicator color="#FFF" />
+               ) : (
+                  <Text style={styles.primaryBtnText}>
+                     {isSignUp ? 'Create Account' : 'Sign In'}
+                  </Text>
+               )}
+            </Pressable>
 
-                     {/* 2. Header with Warm Copy */}
-                     <View style={styles.header}>
-                        <Text style={[styles.title, { color: colors.text }]}>
-                           {isSignUp ? 'Start your Growth' : 'Welcome Back'}
-                        </Text>
-                        <Text style={[styles.subtitle, { color: colors.textSubtle }]}>
-                           {isSignUp 
-                              ? 'Create an account to save your journal and unlock AI insights.' 
-                              : 'Sign in to sync your entries and continue your journey.'}
-                        </Text>
-                     </View>
+            {/* Footer */}
+            <Pressable 
+               style={styles.footerLink} 
+               onPress={() => setIsSignUp(!isSignUp)}
+            >
+               <Text style={[styles.footerText, { color: colors.textSubtle }]}>
+                  {isSignUp ? 'Already have an account? ' : 'First time here? '}
+                  <Text style={{ color: colors.disputeCTA, fontWeight: '700' }}>
+                     {isSignUp ? 'Sign In' : 'Sign Up'}
+                  </Text>
+               </Text>
+            </Pressable>
 
-                     {/* 3. Social Auth (The Modern Standard) */}
-                     <View style={styles.socialRow}>
-                         {Platform.OS === 'ios' && (
-                            <AppleAuthentication.AppleAuthenticationButton
-                               buttonStyle={
-                                  mode === 'dark'
-                                     ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
-                                     : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-                               }
-                               buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                               cornerRadius={12}
-                               style={styles.appleButton}
-                               onPress={handleAppleSignIn}
-                               disabled={submitting || socialSubmitting === 'apple'}
-                            />
-                         )}
-                         <Pressable
-                            style={[
-                               styles.socialBtn,
-                               { borderColor: colors.border, opacity: socialSubmitting ? 0.8 : 1 },
-                            ]}
-                            onPress={handleGoogleSignIn}
-                            disabled={submitting || Boolean(socialSubmitting)}
-                         >
-                            {socialSubmitting === 'google' ? (
-                               <ActivityIndicator color={colors.text} />
-                            ) : (
-                               <>
-                                  <Ionicons name="logo-google" size={20} color={colors.text} />
-                                  <Text style={[styles.socialText, { color: colors.text }]}>
-                                     Google
-                                  </Text>
-                               </>
-                            )}
-                         </Pressable>
-                     </View>
-
-                     {/* 4. The Divider */}
-                     <View style={styles.dividerContainer}>
-                        <View style={[styles.line, { backgroundColor: colors.border }]} />
-                        <Text style={[styles.orText, { color: colors.textSubtle }]}>OR</Text>
-                        <View style={[styles.line, { backgroundColor: colors.border }]} />
-                     </View>
-
-                     {/* 5. Inputs */}
-                     <View style={styles.form}>
-                        <TextInput
-                           autoCapitalize="none"
-                           keyboardType="email-address"
-                           placeholder="Email address"
-                           placeholderTextColor={colors.hint}
-                           value={email}
-                           onChangeText={setEmail}
-                           style={[styles.input, { 
-                              backgroundColor: colors.cardInput, 
-                              color: colors.text 
-                           }]}
-                        />
-                        <TextInput
-                           placeholder="Password"
-                           placeholderTextColor={colors.hint}
-                           value={password}
-                           onChangeText={setPassword}
-                           secureTextEntry
-                           style={[styles.input, { 
-                              backgroundColor: colors.cardInput, 
-                              color: colors.text 
-                           }]}
-                        />
-                     </View>
-
-                     {localError && (
-                        <Text style={[styles.error, { color: colors.delete }]}>{localError}</Text>
-                     )}
-
-                     {/* 6. Primary Action */}
-                     <Pressable
-                        style={({ pressed }) => [
-                           styles.primaryBtn,
-                           { 
-                              backgroundColor: colors.disputeCTA, 
-                              opacity: pressed || submitting ? 0.8 : 1 
-                           }
-                        ]}
-                        onPress={handleSubmit}
-                        disabled={submitting}
-                     >
-                        {submitting ? (
-                           <ActivityIndicator color="#FFF" />
-                        ) : (
-                           <Text style={styles.primaryBtnText}>
-                              {isSignUp ? 'Create Account' : 'Sign In'}
-                           </Text>
-                        )}
-                     </Pressable>
-
-                     {/* 7. Toggle Mode (Login vs Signup) */}
-                     <Pressable 
-                        style={styles.footerLink} 
-                        onPress={() => setIsSignUp(!isSignUp)}
-                     >
-                        <Text style={[styles.footerText, { color: colors.textSubtle }]}>
-                           {isSignUp ? 'Already have an account? ' : 'First time here? '}
-                           <Text style={{ color: colors.disputeCTA, fontWeight: '700' }}>
-                              {isSignUp ? 'Sign In' : 'Sign Up'}
-                           </Text>
-                        </Text>
-                     </Pressable>
-
-                  </View>
-               </TouchableWithoutFeedback>
-            </KeyboardAvoidingView>
-         </SafeAreaView>
-      </TouchableWithoutFeedback>
+         </View>
+      </KeyboardAvoidingView>
    );
 }
 
 const styles = StyleSheet.create({
-   overlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)', // Dimmed background
-   },
-   keyboardView: {
-      flex: 1,
-      justifyContent: 'flex-end',
+   overlayBackdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+      zIndex: 0,
    },
    sheet: {
+      backgroundColor: 'white',
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       paddingHorizontal: 24,
-      paddingBottom: 40,
       paddingTop: 12,
+      marginTop: 'auto', 
+      zIndex: 1,
    },
    handleContainer: {
       alignItems: 'center',
@@ -266,25 +277,24 @@ const styles = StyleSheet.create({
       fontSize: 15,
       lineHeight: 22,
    },
-   socialRow: {
-      flexDirection: 'row',
-      gap: 12,
+   socialStack: {
+      flexDirection: 'column', 
+      gap: 12, 
       marginBottom: 24,
    },
-   appleButton: {
-      flex: 1,
-      height: 44,
-      borderRadius: 12,
+   appleBtnFixed: {
+       width: '100%', 
+       height: 50, 
    },
    socialBtn: {
-      flex: 1,
+      width: '100%', 
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: 12,
-      borderRadius: 12,
+      borderRadius: 14,
       borderWidth: 1,
       gap: 8,
+      height: 50, 
    },
    socialText: {
       fontWeight: '600',
@@ -312,10 +322,12 @@ const styles = StyleSheet.create({
       marginBottom: 24,
    },
    input: {
-      height: 52,
+      height: 54,
       borderRadius: 14,
       paddingHorizontal: 16,
       fontSize: 16,
+      borderWidth: 1, // <--- Added fixed width (the color is dynamic above)
+      ...shadowSoft
    },
    error: {
       marginBottom: 16,
