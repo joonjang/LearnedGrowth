@@ -13,7 +13,7 @@ import {
    StyleSheet,
    Text,
    TextInput,
-   View
+   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,7 +27,9 @@ export default function AuthModal() {
    const [email, setEmail] = useState('');
    const [password, setPassword] = useState('');
    const [submitting, setSubmitting] = useState(false);
-   const [socialSubmitting, setSocialSubmitting] = useState<'apple' | 'google' | null>(null);
+   const [socialSubmitting, setSocialSubmitting] = useState<
+      'apple' | 'google' | null
+   >(null);
    const [localError, setLocalError] = useState<string | null>(null);
 
    const handleClose = () => router.back();
@@ -85,32 +87,52 @@ export default function AuthModal() {
          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
          style={{ flex: 1 }}
       >
-         <Pressable 
-            style={styles.overlayBackdrop} 
-            onPress={handleClose} 
-         />
+         {/* Backdrop tap still closes */}
+         <Pressable style={styles.overlayBackdrop} onPress={handleClose} />
 
-         <View style={[
-            styles.sheet, 
-            { 
-               backgroundColor: colors.cardBg,
-               paddingBottom: insets.bottom + 20,
-            }
-         ]}>
-            
-            {/* Drag Handle */}
-            <View style={styles.handleContainer}>
-               <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            </View>
-
+         <View
+            style={[
+               styles.sheet,
+               {
+                  backgroundColor: colors.cardBg,
+                  paddingBottom: insets.bottom + 20,
+               },
+            ]}
+         >
             {/* Header */}
             <View style={styles.header}>
-               <Text style={[styles.title, { color: colors.text }]}>
-                  {isSignUp ? 'Start your Growth' : 'Welcome Back'}
-               </Text>
+               <View style={styles.headerRow}>
+                  <Text style={[styles.title, { color: colors.text }]}>
+                     {isSignUp ? 'Start your Growth' : 'Welcome Back'}
+                  </Text>
+
+                  {/* IMPROVED CLOSE BUTTON */}
+                  <Pressable
+                     onPress={handleClose}
+                     hitSlop={15} // Generous touch area
+                     style={({ pressed }) => [
+                        styles.closeButton,
+                        {
+                           // Standard iOS/Android modal close button background
+                           backgroundColor: mode === 'dark' 
+                              ? 'rgba(255,255,255,0.1)' 
+                              : '#F2F2F7', 
+                           opacity: pressed ? 0.7 : 1,
+                        },
+                     ]}
+                  >
+                     <Ionicons
+                        name="close"
+                        size={20}
+                        color={colors.text} 
+                        style={{ fontWeight: 'bold' }}
+                     />
+                  </Pressable>
+               </View>
+
                <Text style={[styles.subtitle, { color: colors.textSubtle }]}>
-                  {isSignUp 
-                     ? 'Create an account to save your journal and unlock AI insights.' 
+                  {isSignUp
+                     ? 'Create an account to save your journal and unlock AI insights.'
                      : 'Sign in to sync your entries and continue your journey.'}
                </Text>
             </View>
@@ -120,14 +142,18 @@ export default function AuthModal() {
                {Platform.OS === 'ios' && (
                   <AppleAuthentication.AppleAuthenticationButton
                      buttonType={
-                        isSignUp 
-                        ? AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
-                        : AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+                        isSignUp
+                           ? AppleAuthentication.AppleAuthenticationButtonType
+                                .SIGN_UP
+                           : AppleAuthentication.AppleAuthenticationButtonType
+                                .SIGN_IN
                      }
                      buttonStyle={
                         mode === 'dark'
-                           ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
-                           : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                           ? AppleAuthentication.AppleAuthenticationButtonStyle
+                                .WHITE
+                           : AppleAuthentication.AppleAuthenticationButtonStyle
+                                .BLACK
                      }
                      cornerRadius={14}
                      style={styles.appleBtnFixed}
@@ -138,10 +164,12 @@ export default function AuthModal() {
                <Pressable
                   style={({ pressed }) => [
                      styles.socialBtn,
-                     { 
-                        borderColor: colors.border, 
-                        backgroundColor: pressed ? colors.border : 'transparent',
-                        opacity: socialSubmitting ? 0.8 : 1 
+                     {
+                        borderColor: colors.border,
+                        backgroundColor: pressed
+                           ? colors.border
+                           : 'transparent',
+                        opacity: socialSubmitting ? 0.8 : 1,
                      },
                   ]}
                   onPress={handleGoogleSignIn}
@@ -151,8 +179,14 @@ export default function AuthModal() {
                      <ActivityIndicator color={colors.text} />
                   ) : (
                      <>
-                        <Ionicons name="logo-google" size={20} color={colors.text} />
-                        <Text style={[styles.socialText, { color: colors.text }]}>
+                        <Ionicons
+                           name="logo-google"
+                           size={20}
+                           color={colors.text}
+                        />
+                        <Text
+                           style={[styles.socialText, { color: colors.text }]}
+                        >
                            Continue with Google
                         </Text>
                      </>
@@ -162,9 +196,15 @@ export default function AuthModal() {
 
             {/* Divider */}
             <View style={styles.dividerContainer}>
-               <View style={[styles.line, { backgroundColor: colors.border }]} />
-               <Text style={[styles.orText, { color: colors.textSubtle }]}>OR</Text>
-               <View style={[styles.line, { backgroundColor: colors.border }]} />
+               <View
+                  style={[styles.line, { backgroundColor: colors.border }]}
+               />
+               <Text style={[styles.orText, { color: colors.textSubtle }]}>
+                  OR
+               </Text>
+               <View
+                  style={[styles.line, { backgroundColor: colors.border }]}
+               />
             </View>
 
             {/* Inputs */}
@@ -176,11 +216,14 @@ export default function AuthModal() {
                   placeholderTextColor={colors.hint}
                   value={email}
                   onChangeText={setEmail}
-                  style={[styles.input, { 
-                     backgroundColor: colors.cardInput, 
-                     color: colors.text,
-                     borderColor: colors.border // <--- Added dynamic border color
-                  }]}
+                  style={[
+                     styles.input,
+                     {
+                        backgroundColor: colors.cardInput,
+                        color: colors.text,
+                        borderColor: colors.border,
+                     },
+                  ]}
                />
                <TextInput
                   placeholder="Password"
@@ -188,27 +231,32 @@ export default function AuthModal() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
-                  style={[styles.input, { 
-                     backgroundColor: colors.cardInput, 
-                     color: colors.text,
-                     borderColor: colors.border // <--- Added dynamic border color
-                  }]}
+                  style={[
+                     styles.input,
+                     {
+                        backgroundColor: colors.cardInput,
+                        color: colors.text,
+                        borderColor: colors.border,
+                     },
+                  ]}
                />
             </View>
 
             {localError && (
-               <Text style={[styles.error, { color: colors.delete }]}>{localError}</Text>
+               <Text style={[styles.error, { color: colors.delete }]}>
+                  {localError}
+               </Text>
             )}
 
             {/* Primary Action */}
             <Pressable
                style={({ pressed }) => [
                   styles.primaryBtn,
-                  { 
-                     backgroundColor: colors.disputeCTA, 
+                  {
+                     backgroundColor: colors.disputeCTA,
                      opacity: pressed || submitting ? 0.8 : 1,
-                     transform: [{ scale: pressed ? 0.98 : 1 }]
-                  }
+                     transform: [{ scale: pressed ? 0.98 : 1 }],
+                  },
                ]}
                onPress={handleSubmit}
                disabled={submitting}
@@ -223,8 +271,8 @@ export default function AuthModal() {
             </Pressable>
 
             {/* Footer */}
-            <Pressable 
-               style={styles.footerLink} 
+            <Pressable
+               style={styles.footerLink}
                onPress={() => setIsSignUp(!isSignUp)}
             >
                <Text style={[styles.footerText, { color: colors.textSubtle }]}>
@@ -234,7 +282,6 @@ export default function AuthModal() {
                   </Text>
                </Text>
             </Pressable>
-
          </View>
       </KeyboardAvoidingView>
    );
@@ -243,7 +290,7 @@ export default function AuthModal() {
 const styles = StyleSheet.create({
    overlayBackdrop: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
       zIndex: 0,
    },
    sheet: {
@@ -251,50 +298,55 @@ const styles = StyleSheet.create({
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       paddingHorizontal: 24,
-      paddingTop: 12,
-      marginTop: 'auto', 
+      paddingTop: 24, // Added more padding to compensate for no drag handle
+      marginTop: 'auto',
       zIndex: 1,
    },
-   handleContainer: {
+   closeButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16, // Makes it a perfect circle
       alignItems: 'center',
-      marginBottom: 20,
-   },
-   handle: {
-      width: 40,
-      height: 4,
-      borderRadius: 2,
-      opacity: 0.3,
+      justifyContent: 'center',
    },
    header: {
       marginBottom: 24,
+   },
+   headerRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start', // Aligns to top if title wraps
+      justifyContent: 'space-between',
+      marginBottom: 8,
    },
    title: {
       fontSize: 28,
       fontWeight: '700',
       marginBottom: 8,
+      flex: 1, // Ensures title wraps before hitting the close button
+      marginRight: 16,
    },
    subtitle: {
       fontSize: 15,
       lineHeight: 22,
    },
    socialStack: {
-      flexDirection: 'column', 
-      gap: 12, 
+      flexDirection: 'column',
+      gap: 12,
       marginBottom: 24,
    },
    appleBtnFixed: {
-       width: '100%', 
-       height: 50, 
+      width: '100%',
+      height: 50,
    },
    socialBtn: {
-      width: '100%', 
+      width: '100%',
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: 14,
       borderWidth: 1,
       gap: 8,
-      height: 50, 
+      height: 50,
    },
    socialText: {
       fontWeight: '600',
@@ -326,8 +378,8 @@ const styles = StyleSheet.create({
       borderRadius: 14,
       paddingHorizontal: 16,
       fontSize: 16,
-      borderWidth: 1, // <--- Added fixed width (the color is dynamic above)
-      ...shadowSoft
+      borderWidth: 1,
+      ...shadowSoft,
    },
    error: {
       marginBottom: 16,
@@ -340,7 +392,7 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 20,
-      shadowColor: "#000",
+      shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.1,
       shadowRadius: 8,
