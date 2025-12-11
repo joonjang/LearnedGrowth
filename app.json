@@ -41,10 +41,10 @@
           "android": {
             "extraMavenRepos": [
               "https://www.jitpack.io"
-            ] // Sometimes needed for specific react-native libs
+            ]
           },
           "ios": {
-            "useFrameworks": "static" // Required by RevenueCat & Google Sign-In usually
+            "useFrameworks": "static"
           }
         }
       ],
