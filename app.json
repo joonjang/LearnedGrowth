@@ -12,7 +12,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.joonjang.LearnedGrowth",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "Learned Growth uses Face ID to lock your journal entries."
       },
       "usesAppleSignIn": true
     },
@@ -35,6 +36,19 @@
     "plugins": [
       "expo-router",
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraMavenRepos": [
+              "https://www.jitpack.io"
+            ] // Sometimes needed for specific react-native libs
+          },
+          "ios": {
+            "useFrameworks": "static" // Required by RevenueCat & Google Sign-In usually
+          }
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
@@ -54,8 +68,7 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.954502195698-qeb31c3ppql4k75bhn5ktc092hf93d6d"
         }
-      ],
-      "expo-build-properties"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
