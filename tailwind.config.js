@@ -17,32 +17,6 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        surface: "var(--surface)",
-        border: "var(--border)",
-        borderStrong: "var(--border-strong)",
-        
-        // Semantic Groups
-        card: {
-          DEFAULT: "var(--card-bg)",
-          grey: "var(--card-grey)",
-          input: "var(--card-input)",
-          border: "var(--card-input-border)",
-        },
-        
-        text: {
-          DEFAULT: "var(--text)",
-          subtle: "var(--text-subtle)",
-          hint: "var(--hint)",
-          menu: "var(--menu-text)",
-          muted: "var(--muted-icon)",
-        },
-
-        // Brand & Actions
-        delete: "var(--delete)",
-        cta: "var(--cta)",
-        ctaText: "var(--cta-text)",
-        
         belief: {
           bg: "var(--accent-belief-bg)",
           border: "var(--accent-belief-border)",
@@ -55,8 +29,6 @@ module.exports = {
           text: "var(--accent-dispute-text)",
           cta: "var(--dispute-cta)",
         },
-
-        overlay: "var(--overlay)",
       },
     },
   },

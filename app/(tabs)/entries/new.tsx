@@ -126,7 +126,7 @@ export default function NewEntryModal() {
             style={isDark ? 'light' : 'dark'}
          />
          <KeyboardAvoidingView
-            className="flex-1 bg-background"
+            className="flex-1 bg-slate-50 dark:bg-slate-900"
             behavior={'padding'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
          >
@@ -160,7 +160,7 @@ export default function NewEntryModal() {
                         accessibilityRole="button"
                         onPress={handleClose}
                         hitSlop={12}
-                        className="p-2 rounded-2xl border border-border bg-card-bg items-center justify-center active:opacity-70"
+                        className="p-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
                      >
                         <Ionicons
                            name="close"

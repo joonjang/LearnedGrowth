@@ -19,10 +19,10 @@ export default function AnalyzeButton({ id }: Prop) {
    
    return (
       <Pressable 
-         className="mt-1 py-2.5 px-3 rounded-full bg-cta items-center justify-center active:opacity-90" 
+         className="mt-1 py-2.5 px-3 rounded-full bg-amber-500 items-center justify-center active:opacity-90" 
          onPress={aiAnalysis}
       >
-         <Text className="text-base font-semibold text-ctaText">
+         <Text className="text-base font-semibold text-white">
             Analyze My Thinking
          </Text>
       </Pressable>

@@ -6,7 +6,7 @@ export default function SummaryScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-background dark:bg-background-dark"
+      className="flex-1 bg-slate-50 dark:bg-slate-900"
       contentContainerStyle={{
         paddingTop: insets.top + 24,
         paddingBottom: insets.bottom + 32,
@@ -15,11 +15,11 @@ export default function SummaryScreen() {
       }}
       showsVerticalScrollIndicator={false}
     >
-      <View className="rounded-2xl bg-card dark:bg-card-dark p-5 border border-border dark:border-border-dark">
-        <Text className="text-lg font-semibold text-primary dark:text-primary-dark">
+      <View className="rounded-2xl bg-white dark:bg-slate-800 p-5 border border-slate-200 dark:border-slate-700">
+        <Text className="text-lg font-semibold text-slate-900 dark:text-slate-100">
           Summary
         </Text>
-        <Text className="mt-2 text-base text-textSubtle dark:text-textSubtle-dark">
+        <Text className="mt-2 text-base text-slate-600 dark:text-slate-300">
           Your insights and progress will appear here. Scroll to explore
           highlights, trends, and quick actions.
         </Text>

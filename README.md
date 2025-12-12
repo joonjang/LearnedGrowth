@@ -215,21 +215,20 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 - Circle back and assess the edit/cancel/save button flow of [id]/index header
-- Re-look at the integration of AI info for the UI, consider changing the highlight
 - Address the UX flow of ABC then to analysis, instead of two buttons make a 'Next' and then options to enable/disable AI
-- Add test to for API
 - Disable editing of ABC once dispute has been made
 - If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is cached
 - Change to entry should enable a refreshed AI response to be possible
-- Refactor abstract view with insets top
 - Encrypt entries when in cloud
 - Guard ai analysis, it is usable for logged in users only
-- Have a distinction for production tables and edge functions and development versions
 - Biometric lock disables the app from all screens until unlocked
-- Implement app wide dark/light mode
 - Warn if they are still subscribed, give an alert
 - Revenuecat failed purchase screens
+- Login keyboard should push everything up and should be able to tap out when pressoued outside
+  - Shold be able to scroll 
 
+- Add test to for API
+- Have a distinction for production tables and edge functions and development versions
 
 ## Steps
 - Offline first x

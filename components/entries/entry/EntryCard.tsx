@@ -178,7 +178,7 @@ export default function EntryCard({
 
    const expandHintView = (
       <View className="flex-row items-center justify-center gap-2 pt-2.5 pb-1">
-         <Text className="text-xs text-hint tracking-wide">Tap to expand details</Text>
+         <Text className="text-xs text-slate-500 dark:text-slate-400 tracking-wide">Tap to expand details</Text>
       </View>
    );
 
@@ -188,17 +188,17 @@ export default function EntryCard({
          ? 'bg-belief-bg border-belief-border border'
          : type === 'dispute'
             ? 'bg-dispute-bg border-dispute-border border'
-            : 'bg-card-grey border-border border';
+            : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700';
       
       const textClass = type === 'belief'
          ? 'text-[15px] font-semibold text-belief-text'
          : type === 'dispute'
             ? 'text-[15px] font-semibold text-dispute-text'
-            : 'text-[15px] text-text leading-[22px]';
+            : 'text-[15px] text-slate-900 dark:text-slate-100 leading-[22px]';
 
       return (
          <View className="mb-3 gap-1.5">
-            <Text className="text-[11px] font-semibold tracking-wider text-hint uppercase">{label}</Text>
+            <Text className="text-[11px] font-semibold tracking-wider text-slate-500 dark:text-slate-400 uppercase">{label}</Text>
             <View className={`px-3 py-3 rounded-xl ${boxClass}`}>
                <Text
                   className={textClass}
@@ -215,7 +215,7 @@ export default function EntryCard({
 
    return (
       <AnimatedPressable
-         className="pt-[22px] px-[18px] pb-[18px] rounded-[18px] bg-card-bg border border-border shadow-sm"
+         className="pt-[22px] px-[18px] pb-[18px] rounded-[18px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm"
          style={cardAnimatedStyle}
          onPress={toggleExpanded}
          onPressIn={() => (pressProgress.value = withTiming(1, { duration: 120 }))}
@@ -234,7 +234,7 @@ export default function EntryCard({
             <Animated.View
                ref={menuRef}
                pointerEvents={isMenuOpen ? 'auto' : 'none'}
-               className="absolute top-2 right-0 bg-card-bg rounded-xl py-1.5 shadow-lg min-w-[140px] border border-border z-20"
+               className="absolute top-2 right-0 bg-white dark:bg-slate-800 rounded-xl py-1.5 shadow-lg min-w-[140px] border border-slate-200 dark:border-slate-700 z-20"
                style={menuStyle}
                onLayout={(e) => {
                   const { width, height } = e.nativeEvent.layout;
@@ -244,18 +244,18 @@ export default function EntryCard({
                }}
             >
                <Pressable
-                  className="flex-row items-center gap-2 py-2 px-3 active:bg-card-grey"
+                  className="flex-row items-center gap-2 py-2 px-3 active:bg-slate-100 dark:active:bg-slate-800"
                   onPress={() => { onCloseMenu(); router.push({ pathname: '/(tabs)/entries/[id]', params: { id: entry.id } }); }}
                >
                   <Ionicons name="pencil-outline" size={16} color={isDark ? '#f8fafc' : '#1e293b'} />
-                  <Text className="text-sm font-medium text-text">Edit</Text>
+                  <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">Edit</Text>
                </Pressable>
                <Pressable
-                  className="flex-row items-center gap-2 py-2 px-3 active:bg-card-grey"
+                  className="flex-row items-center gap-2 py-2 px-3 active:bg-slate-100 dark:active:bg-slate-800"
                   onPress={() => { onCloseMenu(); onDelete(entry); }}
                >
                   <Ionicons name="trash-outline" size={16} color={colors.delete} />
-                  <Text className="text-sm font-medium text-delete">Delete</Text>
+                  <Text className="text-sm font-medium text-rose-600 dark:text-rose-400">Delete</Text>
                </Pressable>
             </Animated.View>
          </View>
@@ -270,7 +270,7 @@ export default function EntryCard({
 
          {!entry.dispute ? (
             <>
-               <View className="h-[0.5px] bg-border my-2" />
+               <View className="h-[0.5px] bg-slate-200 dark:bg-slate-700 my-2" />
                <CTAButton id={entry.id} />
                <AnalyzeButton id={entry.id} />
             </>

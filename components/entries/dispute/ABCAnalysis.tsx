@@ -47,7 +47,7 @@ export default function ABCAnalysis({
          {/* Header */}
          <View className="flex-row items-center justify-between py-2">
             <View className="flex-row items-center py-2">
-               <Text className="text-base font-medium text-text">
+               <Text className="text-base font-medium text-slate-900 dark:text-slate-100">
                   AI Insight
                </Text>
 
@@ -55,7 +55,7 @@ export default function ABCAnalysis({
                   <Pressable
                      onPress={onExit}
                      hitSlop={12}
-                     className="p-2 rounded-2xl border border-border bg-card-bg items-center justify-center active:opacity-70"
+                     className="p-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
                   >
                      <Ionicons name="close" size={22} color={iconColor} />
                   </Pressable>
@@ -65,35 +65,35 @@ export default function ABCAnalysis({
 
          <View className="flex-1 shadow-sm dark:shadow-none">
             {/* Context Box */}
-            <View className="p-3 rounded-xl bg-card-grey border border-border gap-2.5">
+            <View className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 gap-2.5">
                <View className="gap-1">
-                  <Text className="text-xs font-bold text-text-subtle uppercase tracking-widest">
+                  <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
                      Adversity
                   </Text>
-                  <Text className="text-base text-text leading-relaxed">
+                  <Text className="text-base text-slate-900 dark:text-slate-100 leading-relaxed">
                      {entry.adversity}
                   </Text>
                </View>
 
-               <View className="h-[1px] bg-border my-0.5" />
+               <View className="h-[1px] bg-slate-200 dark:bg-slate-700 my-0.5" />
 
                <View className="gap-1">
-                  <Text className="text-xs font-bold text-text-subtle uppercase tracking-widest">
+                  <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
                      Belief
                   </Text>
-                  <Text className="text-base text-text leading-relaxed">
+                  <Text className="text-base text-slate-900 dark:text-slate-100 leading-relaxed">
                      {entry.belief}
                   </Text>
                </View>
 
                {entry.consequence && (
                   <>
-                     <View className="h-[1px] bg-border my-0.5" />
+                     <View className="h-[1px] bg-slate-200 dark:bg-slate-700 my-0.5" />
                      <View className="gap-1">
-                        <Text className="text-xs font-bold text-text-subtle uppercase tracking-widest">
+                        <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
                            Consequence
                         </Text>
-                        <Text className="text-base text-text leading-relaxed">
+                        <Text className="text-base text-slate-900 dark:text-slate-100 leading-relaxed">
                            {entry.consequence}
                         </Text>
                      </View>
@@ -111,10 +111,10 @@ export default function ABCAnalysis({
             />
             {onGoToSteps && aiData ? (
                <Pressable 
-                  className="mt-4 py-2.5 px-3 rounded-full bg-disputeCTA items-center justify-center shadow-sm active:opacity-90"
+                  className="mt-4 py-2.5 px-3 rounded-full bg-dispute-cta items-center justify-center shadow-sm active:opacity-90"
                   onPress={onGoToSteps}
                >
-                  <Text className="text-base font-semibold text-ctaText">
+                  <Text className="text-base font-semibold text-white">
                      Dispute your belief
                   </Text>
                </Pressable>

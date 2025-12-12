@@ -39,14 +39,14 @@ export function AiInsightCard({
          case 'mixed':
             return {
                label: 'Mixed view',
-               container: `${baseContainer} bg-card-input border-border`,
-               text: `${baseText} text-text`,
+               container: `${baseContainer} bg-zinc-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600`,
+               text: `${baseText} text-slate-900 dark:text-slate-100`,
             };
          default:
             return {
                label: 'No clear pattern',
-               container: `${baseContainer} bg-card-grey border-border`,
-               text: `${baseText} text-text-subtle`,
+               container: `${baseContainer} bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700`,
+               text: `${baseText} text-slate-600 dark:text-slate-300`,
             };
       }
    };
@@ -74,14 +74,14 @@ export function AiInsightCard({
 
    if (!data) {
       return (
-         <View className="p-4 rounded-2xl bg-card-grey gap-3">
+         <View className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 gap-3">
             <ThreeDotsLoader />
-            <View className="bg-surface rounded-xl p-3 border border-border">
-               <Text className="text-xs tracking-wider text-text-subtle mb-1 uppercase font-semibold">
+            <View className="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+               <Text className="text-xs tracking-wider text-slate-600 dark:text-slate-300 mb-1 uppercase font-semibold">
                   Received data
                </Text>
                <Text 
-                  className="text-xs text-text leading-5"
+                  className="text-xs text-slate-900 dark:text-slate-100 leading-5"
                   style={{
                      fontFamily: Platform.select({
                         ios: 'Menlo',
@@ -106,7 +106,7 @@ export function AiInsightCard({
    const personalizationChip = getScoreChip(dims.personalization.score);
 
    return (
-      <View className="p-4 rounded-2xl bg-card-grey gap-3">
+      <View className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 gap-3">
          {/* Crisis banner */}
          {showCrisis && (
             <View className="rounded-xl p-3 bg-belief-bg border border-belief-border mb-1">
@@ -121,11 +121,11 @@ export function AiInsightCard({
 
          {/* Emotional validation */}
          <View className="mt-1 gap-1.5">
-            <Text className="text-lg font-bold text-text">
+            <Text className="text-lg font-bold text-slate-900 dark:text-slate-100">
                Your reaction makes sense
             </Text>
             {!!emotionalLogic && (
-               <Text className="text-sm text-text leading-5">
+               <Text className="text-sm text-slate-900 dark:text-slate-100 leading-5">
                   {emotionalLogic}
                </Text>
             )}
@@ -133,14 +133,14 @@ export function AiInsightCard({
 
          {/* How your mind is seeing this */}
          <View className="mt-1 gap-1.5">
-            <Text className="text-base font-semibold text-text-subtle">
+            <Text className="text-base font-semibold text-slate-600 dark:text-slate-300">
                How your mind is seeing this
             </Text>
 
             {/* Permanence */}
-            <View className="p-3 rounded-xl bg-card-bg border border-border shadow-sm gap-1.5">
+            <View className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-1.5">
                <View className="flex-row items-center justify-between">
-                  <Text className="text-xs font-bold text-text-subtle uppercase">
+                  <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase">
                      How long it feels
                   </Text>
                   <View className={permanenceChip.container}>
@@ -149,15 +149,15 @@ export function AiInsightCard({
                      </Text>
                   </View>
                </View>
-               <Text className="text-sm text-text">
+               <Text className="text-sm text-slate-900 dark:text-slate-100">
                   {dims.permanence.insight || 'No clear pattern here.'}
                </Text>
             </View>
 
             {/* Pervasiveness */}
-            <View className="p-3 rounded-xl bg-card-bg border border-border shadow-sm gap-1.5">
+            <View className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-1.5">
                <View className="flex-row items-center justify-between">
-                  <Text className="text-xs font-bold text-text-subtle uppercase">
+                  <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase">
                      How big it feels
                   </Text>
                   <View className={pervasivenessChip.container}>
@@ -166,15 +166,15 @@ export function AiInsightCard({
                      </Text>
                   </View>
                </View>
-               <Text className="text-sm text-text">
+               <Text className="text-sm text-slate-900 dark:text-slate-100">
                   {dims.pervasiveness.insight || 'No clear pattern here.'}
                </Text>
             </View>
 
             {/* Personalization */}
-            <View className="p-3 rounded-xl bg-card-bg border border-border shadow-sm gap-1.5">
+            <View className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-1.5">
                <View className="flex-row items-center justify-between">
-                  <Text className="text-xs font-bold text-text-subtle uppercase">
+                  <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase">
                      Where blame goes
                   </Text>
                   <View className={personalizationChip.container}>
@@ -183,7 +183,7 @@ export function AiInsightCard({
                      </Text>
                   </View>
                </View>
-               <Text className="text-sm text-text">
+               <Text className="text-sm text-slate-900 dark:text-slate-100">
                   {dims.personalization.insight || 'No clear pattern here.'}
                </Text>
             </View>
@@ -192,11 +192,11 @@ export function AiInsightCard({
          {/* Another way to talk to yourself */}
          {suggestions.counterBelief ? (
             <View className="mt-1 gap-1.5">
-               <Text className="text-base font-semibold text-text-subtle">
+               <Text className="text-base font-semibold text-slate-600 dark:text-slate-300">
                   Another way to see it
                </Text>
-               <View className="p-3 rounded-xl bg-card-input border border-border mt-1">
-                  <Text className="text-sm text-text leading-5">
+               <View className="p-3 rounded-xl bg-zinc-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 mt-1">
+                  <Text className="text-sm text-slate-900 dark:text-slate-100 leading-5">
                      {suggestions.counterBelief}
                   </Text>
                </View>

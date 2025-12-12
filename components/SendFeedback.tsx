@@ -15,7 +15,7 @@ export default function SendFeedback() {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
 
-   // Match 'text-hint' or 'text-muted-icon' from your global.css
+   // Hint/placeholder tone pulled from the slate palette
    const iconColor = isDark ? '#64748b' : '#94a3b8'; 
 
    const [feedback, setFeedback] = useState('');
@@ -55,7 +55,7 @@ export default function SendFeedback() {
             className="flex-row items-center justify-between py-1 active:opacity-60" 
             onPress={() => setCollapsed((c) => !c)}
          >
-            <Text className="text-xs uppercase text-hint tracking-wider">
+            <Text className="text-xs uppercase text-slate-500 dark:text-slate-400 tracking-wider">
                Send feedback
             </Text>
             <Ionicons
@@ -68,7 +68,7 @@ export default function SendFeedback() {
          {!collapsed && (
             <>
                <TextInput
-                  className="min-h-[80px] border border-border rounded-xl p-3 text-sm bg-card-grey text-text"
+                  className="min-h-[80px] border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   placeholder="Tell us what is working or what is rough"
                   // Tailwind doesn't style placeholders easily, so we use inline hex
                   placeholderTextColor={iconColor}
@@ -80,19 +80,19 @@ export default function SendFeedback() {
                />
                
                <Pressable
-                  className={`bg-card-input py-3 rounded-xl items-center border border-border ${
+                  className={`bg-zinc-50 dark:bg-slate-700 py-3 rounded-xl items-center border border-slate-200 dark:border-slate-700 ${
                      loading ? 'opacity-60' : 'active:opacity-80'
                   }`}
                   onPress={handleSend}
                   disabled={loading}
                >
-                  <Text className="text-text font-bold text-[15px]">
+                  <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
                      {loading ? 'Sending...' : 'Send Feedback'}
                   </Text>
                </Pressable>
                
                {message ? (
-                  <Text className="text-xs text-text-subtle text-center">
+                  <Text className="text-xs text-slate-600 dark:text-slate-300 text-center">
                      {message}
                   </Text>
                ) : null}

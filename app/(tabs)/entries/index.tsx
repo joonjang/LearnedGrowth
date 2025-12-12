@@ -6,11 +6,11 @@ import { Entry } from '@/models/entry';
 import { Link, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Pressable,
-  SectionList,
-  Text,
-  View,
-  type GestureResponderEvent,
+   Pressable,
+   SectionList,
+   Text,
+   View,
+   type GestureResponderEvent,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 // The layout hero:
@@ -122,7 +122,7 @@ export default function EntriesScreen() {
 
    return (
       <GestureHandlerRootView
-         className="flex-1 bg-background"
+         className="flex-1 bg-slate-50 dark:bg-slate-900"
          onStartShouldSetResponderCapture={handleTouchCapture}
       >
            <SectionList
@@ -136,13 +136,13 @@ export default function EntriesScreen() {
               renderSectionHeader={({ section }) => (
                  // NativeWind Solution for Sticky Header:
                  // 1. edges=['top'] -> automatically adds padding matching the status bar height
-                 // 2. bg-background/95 -> fills the space behind the status bar
+                 // 2. bg-slate-50/95 -> fills the space behind the status bar
                  <SafeAreaView 
                     edges={['top']} 
-                    className="bg-background/95 backdrop-blur-sm pb-3 pt-2"
+                    className="bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm pb-3 pt-2"
                  >
-                    <View className="items-center self-center rounded-xl border border-border bg-card px-3 py-1.5 shadow-sm">
-                       <Text className="text-center text-sm font-bold text-textSubtle">
+                    <View className="items-center self-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 shadow-sm">
+                       <Text className="text-center text-sm font-bold text-slate-600 dark:text-slate-300">
                           {section.title}
                        </Text>
                     </View>
@@ -186,12 +186,12 @@ export default function EntriesScreen() {
              className="absolute bottom-0 right-0 left-0 items-end px-6 pointer-events-box-none"
            >
               <View className="mb-4">
-                 <Link href={'/(tabs)/entries/new'} asChild>
+                <Link href={'/(tabs)/entries/new'} asChild>
                     <Pressable
-                       className="h-14 w-14 items-center justify-center rounded-full bg-cta shadow-md active:opacity-90"
+                       className="h-14 w-14 items-center justify-center rounded-full bg-amber-500 shadow-sm active:opacity-90"
                        accessibilityLabel="Create new entry"
                     >
-                       <Text className="text-center text-[28px] font-bold leading-[30px] text-ctaText">
+                       <Text className="text-center text-[28px] font-bold leading-[30px] text-white">
                           +
                        </Text>
                     </Pressable>

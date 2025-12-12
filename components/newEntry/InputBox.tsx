@@ -40,20 +40,17 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
    // Hook for placeholder color
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const placeholderColor = isDark ? '#94a3b8' : '#64748b'; // text-hint
+   const placeholderColor = isDark ? '#94a3b8' : '#64748b';
 
    return (
       <Pressable
          onPress={() =>
             typeof ref === 'object' && ref?.current ? ref.current.focus() : null
          }
-         // Merged container classes:
-         // - Base: rounded-xl, bg-card-input, border, px-4, py-3, shadow-sm
-         // - Focus: border-border-strong, shadow-md
-         className={`rounded-[14px] bg-card-input border px-4 py-3 shadow-sm ${
+         className={`rounded-[14px] bg-zinc-50 dark:bg-slate-700 border px-4 py-3 shadow-sm ${
             focused 
-               ? 'border-border-strong shadow-md opacity-100' 
-               : 'border-card-input-border'
+               ? 'border-slate-300 dark:border-slate-500 shadow-md opacity-100' 
+               : 'border-slate-200 dark:border-slate-700'
          }`}
          style={[dims, containerStyle]}
       >
@@ -63,7 +60,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
             value={value}
             onChangeText={onChangeText}
             // Compact vs Standard Text Size
-            className={`text-text leading-6 ${compact ? 'text-lg' : 'text-[22px]'}`}
+            className={`text-slate-900 dark:text-slate-100 leading-6 ${compact ? 'text-lg' : 'text-[22px]'}`}
             style={{ includeFontPadding: false }} // NativeWind handles most, but this is specific
             multiline
             scrollEnabled={scrollEnabled}

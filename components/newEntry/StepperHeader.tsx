@@ -13,8 +13,7 @@ export default function StepperHeader({ step, total, label, style }: Props) {
          className="px-5 py-2"
          style={style}
       >
-         {/* Using 'text-text' for adaptive color */}
-         <Text className="text-base font-medium text-text">
+         <Text className="text-base font-medium text-slate-900 dark:text-slate-100">
             Step {step} of {total} — {label}
          </Text>
       </View>

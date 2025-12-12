@@ -72,7 +72,7 @@ export default function StepperButton({
 
    return (
       <View 
-         className="flex-row min-h-[48px] items-center px-4 gap-3 bg-card-bg"
+         className="flex-row min-h-[48px] items-center px-4 gap-3 bg-white dark:bg-slate-800"
          style={style}
       >
          {/* Left Action (Back/Close) */}
@@ -83,14 +83,14 @@ export default function StepperButton({
                className="items-center justify-center py-2.5 active:opacity-60"
             >
                {/* Conditional Color: Delete (Red) if Close, Text if Back */}
-               <Text className={`text-base font-semibold ${!canGoBack ? 'text-delete' : 'text-text'}`}>
+               <Text className={`text-base font-semibold ${!canGoBack ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-slate-100'}`}>
                   {backLabel}
                </Text>
             </Pressable>
          </View>
 
          {/* Divider */}
-         <View className="w-[1px] self-stretch my-2 bg-border" />
+         <View className="w-[1px] self-stretch my-2 bg-slate-200 dark:bg-slate-700" />
 
          {/* Right Action (Next/Submit) */}
          <View className="flex-1">
@@ -100,7 +100,7 @@ export default function StepperButton({
                hitSlop={12}
                className={`items-center justify-center py-2.5 ${disableNext ? 'opacity-40' : 'active:opacity-60'}`}
             >
-               <Text className={`text-base font-semibold ${disableNext ? 'text-hint' : 'text-text'}`}>
+               <Text className={`text-base font-semibold ${disableNext ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-100'}`}>
                   {nextLabel}
                </Text>
             </Pressable>

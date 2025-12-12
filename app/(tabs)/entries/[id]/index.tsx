@@ -153,7 +153,7 @@ export default function EntryDetailScreen() {
       (key: FieldKey) => {
          if (key === 'belief') return "bg-belief-bg border-belief-border";
          if (key === 'dispute') return "bg-dispute-bg border-dispute-border";
-         return "bg-card-grey border-transparent";
+         return "bg-slate-100 dark:bg-slate-800 border-transparent";
       },
       []
    );
@@ -163,13 +163,13 @@ export default function EntryDetailScreen() {
       (score?: string | null) => {
          switch (score) {
             case 'optimistic':
-               return "bg-dispute-bg text-dispute-text";
+               return { container: "bg-dispute-bg", text: "text-dispute-text" };
             case 'pessimistic':
-               return "bg-belief-bg text-belief-text";
+               return { container: "bg-belief-bg", text: "text-belief-text" };
             case 'mixed':
-               return "bg-card-input text-text";
+               return { container: "bg-zinc-50 dark:bg-slate-700", text: "text-slate-900 dark:text-slate-100" };
             default:
-               return "bg-card-grey text-text-subtle";
+               return { container: "bg-slate-100 dark:bg-slate-800", text: "text-slate-600 dark:text-slate-300" };
          }
       },
       []
@@ -245,14 +245,14 @@ export default function EntryDetailScreen() {
 
    if (!entry) {
       return (
-         <View className="flex-1 items-center justify-center bg-background">
-            <Text className="text-text">Entry not found.</Text>
+         <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-slate-900">
+            <Text className="text-slate-900 dark:text-slate-100">Entry not found.</Text>
          </View>
       );
    }
 
    return (
-      <View className="flex-1 px-4 bg-background">
+      <View className="flex-1 px-4 bg-slate-50 dark:bg-slate-900">
          {/* Safe Area Spacer */}
          <View style={{ height: insets.top }} />
          
@@ -261,7 +261,7 @@ export default function EntryDetailScreen() {
             <Pressable
                onPress={() => router.back()}
                hitSlop={8}
-               className="absolute left-0 p-2 rounded-full active:bg-card-grey"
+               className="absolute left-0 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
             >
                <Ionicons name="chevron-back" size={18} color={iconColor} />
             </Pressable>
@@ -269,15 +269,15 @@ export default function EntryDetailScreen() {
             <View className="items-center gap-1">
                {!isEditing ? (
                   <>
-                     <Text className="text-base text-text font-medium">
+                     <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
                         {formattedTimestamp || ' '}
                      </Text>
-                     <Text className={`text-[13px] text-hint absolute mt-6 ${!statusMessage ? 'opacity-0' : 'opacity-100'}`}>
+                     <Text className={`text-[13px] text-slate-500 dark:text-slate-400 absolute mt-6 ${!statusMessage ? 'opacity-0' : 'opacity-100'}`}>
                         {statusDisplay}
                      </Text>
                   </>
                ) : (
-                  <Text className="text-[13px] text-hint">Editing</Text>
+                  <Text className="text-[13px] text-slate-500 dark:text-slate-400">Editing</Text>
                )}
             </View>
 
@@ -286,24 +286,24 @@ export default function EntryDetailScreen() {
                   <Pressable
                      onPress={handleCancel}
                      hitSlop={8}
-                     className="px-3 py-1.5 rounded-full border border-border bg-card-grey"
+                     className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
                   >
-                     <Text className="text-sm text-text">Cancel</Text>
+                     <Text className="text-sm text-slate-900 dark:text-slate-100">Cancel</Text>
                   </Pressable>
                )}
                <Pressable
                   onPress={isEditing ? handleSave : startEditing}
                   hitSlop={8}
-                  className="px-3 py-1.5 rounded-full border border-border bg-card-grey"
+                  className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
                >
-                  <Text className="text-sm text-text">
+                  <Text className="text-sm text-slate-900 dark:text-slate-100">
                      {isEditing ? 'Save' : 'Edit'}
                   </Text>
                </Pressable>
             </View>
          </View>
 
-         {hasScrolled && <View className="h-[1px] bg-border mb-0" />}
+         {hasScrolled && <View className="h-[1px] bg-slate-200 dark:bg-slate-700 mb-0" />}
 
          <KeyboardAwareScrollView
             className="flex-1 pt-6"
@@ -318,7 +318,7 @@ export default function EntryDetailScreen() {
          >
             {/* Inline AI Analysis */}
             {aiVisible && aiDisplayData ? (
-               <View className="mb-5 p-3 rounded-xl bg-card-grey border border-border gap-1.5">
+               <View className="mb-5 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 gap-1.5">
                   <Pressable
                      className="flex-row items-center justify-between mb-1"
                      onPress={() => {
@@ -326,8 +326,8 @@ export default function EntryDetailScreen() {
                         setShowAnalysis((s) => !s);
                      }}
                   >
-                     <Text className="text-[13px] font-bold text-text">AI Analysis</Text>
-                     <Text className="text-xs font-semibold text-hint">
+                     <Text className="text-[13px] font-bold text-slate-900 dark:text-slate-100">AI Analysis</Text>
+                     <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         {showAnalysis ? 'Hide' : 'Show'}
                      </Text>
                   </Pressable>
@@ -335,7 +335,7 @@ export default function EntryDetailScreen() {
                   {showAnalysis && aiDisplayData ? (
                      <View className="gap-2">
                         {aiDisplayData.analysis.emotionalLogic ? (
-                           <Text className="text-[13px] leading-5 text-text">
+                           <Text className="text-[13px] leading-5 text-slate-900 dark:text-slate-100">
                               {aiDisplayData.analysis.emotionalLogic}
                            </Text>
                         ) : null}
@@ -369,25 +369,25 @@ export default function EntryDetailScreen() {
                               return (
                                  <View className="gap-1.5 py-1" key={key}>
                                     <View className="flex-row items-center justify-between gap-2">
-                                       <Text className="text-xs font-bold text-text px-1.5 py-0.5 rounded-md">
+                                       <Text className="text-xs font-bold text-slate-900 dark:text-slate-100 px-1.5 py-0.5 rounded-md">
                                           {label}
                                        </Text>
-                                       <View className={`px-2 py-1 rounded-full ${chipClass.split(" ")[0]}`}>
-                                          <Text className={`text-xs font-bold capitalize ${chipClass.split(" ")[1]}`}>
+                                       <View className={`px-2 py-1 rounded-full ${chipClass.container}`}>
+                                          <Text className={`text-xs font-bold capitalize ${chipClass.text}`}>
                                              {dim?.score || 'n/a'}
                                           </Text>
                                        </View>
                                     </View>
                                     {dim?.detectedPhrase ? (
                                        <Text
-                                          className="mt-0.5 px-2 py-1.5 rounded-lg text-xs text-text overflow-hidden"
+                                          className="mt-0.5 px-2 py-1.5 rounded-lg text-xs text-slate-900 dark:text-slate-100 overflow-hidden"
                                           style={{ backgroundColor: color + '55' }}
                                        >
                                           &quot;{dim.detectedPhrase}&quot;
                                        </Text>
                                     ) : null}
                                     {dim?.insight ? (
-                                       <Text className="text-[13px] leading-5 text-text">
+                                       <Text className="text-[13px] leading-5 text-slate-900 dark:text-slate-100">
                                           {dim.insight}
                                        </Text>
                                     ) : null}
@@ -397,17 +397,17 @@ export default function EntryDetailScreen() {
                         </View>
 
                         <View className="mt-4 gap-2">
-                           <Text className="text-[13px] font-bold text-text">
+                           <Text className="text-[13px] font-bold text-slate-900 dark:text-slate-100">
                               Another way to see it
                            </Text>
                            {aiDisplayData.suggestions.counterBelief ? (
-                              <View className="p-3 rounded-xl border border-border bg-card-bg shadow-sm">
-                                 <Text className="text-[14px] leading-5 text-text">
+                              <View className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+                                 <Text className="text-[14px] leading-5 text-slate-900 dark:text-slate-100">
                                     {aiDisplayData.suggestions.counterBelief}
                                  </Text>
                               </View>
                            ) : (
-                              <Text className="text-sm text-hint">
+                              <Text className="text-sm text-slate-500 dark:text-slate-400">
                                  Tap “Analyze with AI” to get a counter-belief.
                               </Text>
                            )}
@@ -421,13 +421,13 @@ export default function EntryDetailScreen() {
             {visibleFields.map((field) => {
                // Dynamic classes for input styling
                const editClass = isEditing 
-                  ? "bg-card-input min-h-[80px] py-3" 
+                  ? "bg-zinc-50 dark:bg-slate-700 min-h-[80px] py-3" 
                   : `py-1.5 min-h-0 h-auto ${getAccentClass(field.key)}`;
 
                return (
                   <View className="mb-4 gap-1 shadow-sm" key={field.key}>
-                     <Text className="text-[15px] font-bold text-text">{field.label}</Text>
-                     <Text className="text-[13px] font-semibold text-hint">{field.hint}</Text>
+                     <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">{field.label}</Text>
+                     <Text className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">{field.hint}</Text>
                      
                      <TextInput
                         multiline
@@ -436,7 +436,7 @@ export default function EntryDetailScreen() {
                         onChangeText={setField(field.key)}
                         placeholder={field.placeholder}
                         placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                        className={`mt-1.5 px-3 text-sm text-text leading-5 rounded-xl border border-border ${editClass}`}
+                        className={`mt-1.5 px-3 text-sm text-slate-900 dark:text-slate-100 leading-5 rounded-xl border border-slate-200 dark:border-slate-700 ${editClass}`}
                         scrollEnabled={isEditing}
                         textAlignVertical="top"
                      />

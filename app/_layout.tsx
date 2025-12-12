@@ -14,7 +14,7 @@ import '../global.css';
 function EdgeToEdge({ children }: { children: React.ReactNode }) {
    const insets = useSafeAreaInsets();
    return (
-      <View className="flex-1 bg-background">
+      <View className="flex-1 bg-slate-50 dark:bg-slate-900">
          <TopFade height={insets.top + 48} />
          <StatusBar
             translucent

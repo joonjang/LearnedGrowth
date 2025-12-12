@@ -63,7 +63,7 @@ export function UndoRow({
          exiting={FadeOut.duration(220)}
          className="pt-4 pb-10"
       >
-         <Text className="text-[13px] font-bold text-hint pb-2 pl-2">{timeLabel}</Text>
+         <Text className="text-[13px] font-bold text-slate-500 dark:text-slate-400 pb-2 pl-2">{timeLabel}</Text>
          <View className="min-h-[80px] justify-center items-center py-1 px-2 gap-0.5">
             <Pressable
                accessibilityRole="button"
@@ -71,17 +71,17 @@ export function UndoRow({
                onPress={onUndo}
             >
                <Text
-                  className="text-cta text-[15px] py-1.5 text-center font-medium"
+                  className="text-amber-600 dark:text-amber-400 text-[15px] py-1.5 text-center font-medium"
                   onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)}
                >
                   Undo delete
                </Text>
             </Pressable>
             <View
-               className="h-0.5 bg-border rounded-full overflow-hidden mt-0.5"
+               className="h-0.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-0.5"
                style={textWidth ? { width: textWidth } : undefined}
             >
-               <Animated.View className="absolute inset-0 bg-cta" style={barStyle} />
+               <Animated.View className="absolute inset-0 bg-amber-500" style={barStyle} />
             </View>
          </View>
       </Animated.View>
@@ -130,29 +130,29 @@ export default function EntryRow({
                   {/* Edit Action */}
                   <View className="items-center ml-2 gap-1">
                      <Pressable
-                        className="w-12 h-12 rounded-full items-center justify-center bg-cta shadow-sm active:opacity-90"
+                        className="w-12 h-12 rounded-full items-center justify-center bg-amber-500 shadow-sm active:opacity-90"
                         onPress={handleEdit}
                      >
                         <Ionicons name="pencil-outline" size={22} color={colors.active} />
                      </Pressable>
-                     <Text className="text-xs text-hint">Edit</Text>
+                     <Text className="text-xs text-slate-500 dark:text-slate-400">Edit</Text>
                   </View>
                   
                   {/* Delete Action */}
                   <View className="items-center ml-2 gap-1">
                      <Pressable
-                        className="w-12 h-12 rounded-full items-center justify-center bg-delete shadow-sm active:opacity-90"
+                        className="w-12 h-12 rounded-full items-center justify-center bg-rose-600 shadow-sm active:opacity-90"
                         onPress={onDelete}
                      >
                         <Ionicons name="trash-outline" size={22} color="#ffffff" />
                      </Pressable>
-                     <Text className="text-xs text-hint">Delete</Text>
+                     <Text className="text-xs text-slate-500 dark:text-slate-400">Delete</Text>
                   </View>
                </View>
             )}
          >
             <View className="px-4">
-               <Text className="text-[13px] font-bold text-hint pb-2 pl-2">{timeLabel}</Text>
+               <Text className="text-[13px] font-bold text-slate-500 dark:text-slate-400 pb-2 pl-2">{timeLabel}</Text>
                <EntryCard
                   entry={entry}
                   isMenuOpen={isMenuOpen}

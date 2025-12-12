@@ -4,32 +4,6 @@
 
 @layer base {
   :root {
-    /* --- 1. BASE PRIMITIVES (Light) --- */
-    --background: #f8fafc;        /* slate-50 */
-    --surface: #ffffff;
-    --border: #e2e8f0;            /* slate-200 */
-    --border-strong: #cbd5e1;     /* slate-300 */
-    --shadow-color: #000000;
-
-    /* --- 2. CARDS --- */
-    --card-bg: #ffffff;
-    --card-grey: #f1f5f9;         /* slate-100 */
-    --card-input: #fafafa;        /* zinc-50 */
-    --card-input-border: #e2e8f0; /* slate-200 */
-
-    /* --- 3. TEXT & ICONS --- */
-    --text: #0f172a;              /* slate-900 */
-    --text-subtle: #475569;       /* slate-600 */
-    --hint: #64748b;              /* slate-500 */
-    --muted-icon: #94a3b8;        /* slate-400 */
-    --menu-text: #1e293b;         /* slate-800 */
-
-    /* --- 4. ACTIONS & BRAND --- */
-    --delete: #b91c1c;            /* red-700 */
-    --cta: #f59e0b;               /* amber-500 */
-    --cta-text: #ffffff;
-    --dispute-cta: #10b981;       /* emerald-500 */
-    
     /* Brand: Belief */
     --accent-belief-bg: #fef2f2;      /* red-50 */
     --accent-belief-border: #fecaca;  /* red-200 */
@@ -39,38 +13,10 @@
     --accent-dispute-bg: #ecfdf3;     /* emerald-50 */
     --accent-dispute-border: #a7f3d0; /* emerald-200 */
     --accent-dispute-text: #065f46;   /* emerald-800 */
-
-    /* Effects */
-    --overlay: rgba(15, 23, 42, 0.45);
-    --elevated-border: rgba(15, 23, 42, 0.06);
+    --dispute-cta: #10b981;           /* emerald-500 */
   }
 
   .dark {
-    /* --- DARK MODE OVERRIDES --- */
-    --background: #0f172a;        /* slate-900 */
-    --surface: #1e293b;           /* slate-800 */
-    --border: rgba(148, 163, 184, 0.35);
-    --border-strong: rgba(148, 163, 184, 0.55);
-
-    /* Cards */
-    --card-bg: #1e293b;           /* slate-800 */
-    --card-grey: #334155;         /* slate-700 */
-    --card-input: #334155;        /* slate-700 */
-    --card-input-border: #475569; /* slate-600 */
-
-    /* Text */
-    --text: #f8fafc;              /* slate-50 */
-    --text-subtle: #cbd5e1;       /* slate-300 */
-    --hint: #94a3b8;              /* slate-400 */
-    --muted-icon: #64748b;        /* slate-500 */
-    --menu-text: #f1f5f9;         /* slate-100 */
-
-    /* Actions */
-    --delete: #fb7185;            /* rose-400 */
-    --cta: #fcd34d;               /* amber-300 */
-    --cta-text: #0f172a;          /* slate-900 */
-    --dispute-cta: #6ee7b7;       /* emerald-300 */
-
     /* Brand: Belief (Glassy) */
     --accent-belief-bg: rgba(244, 63, 94, 0.15);
     --accent-belief-border: rgba(244, 63, 94, 0.30);
@@ -80,9 +26,6 @@
     --accent-dispute-bg: rgba(16, 185, 129, 0.15);
     --accent-dispute-border: rgba(16, 185, 129, 0.30);
     --accent-dispute-text: #d1fae5;   /* emerald-100 */
-
-    /* Effects */
-    --overlay: rgba(0, 0, 0, 0.55);
-    --elevated-border: rgba(148, 163, 184, 0.45);
+    --dispute-cta: #6ee7b7;           /* emerald-300 */
   }
 }

@@ -342,7 +342,7 @@ export default function DisputeScreen() {
                backgroundColor="transparent"
                style={isDark ? 'light' : 'dark'}
             />
-            <Text className="text-text">Entry not found.</Text>
+            <Text className="text-slate-900 dark:text-slate-100">Entry not found.</Text>
          </View>
       );
    }
@@ -355,7 +355,7 @@ export default function DisputeScreen() {
             style={isDark ? 'light' : 'dark'}
          />
          <KeyboardAvoidingView
-            className="flex-1 bg-background"
+            className="flex-1 bg-slate-50 dark:bg-slate-900"
             behavior={'padding'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
          >

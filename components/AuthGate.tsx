@@ -30,10 +30,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   if (status === "checking") {
     return (
-      <View className="flex-1 items-center justify-center bg-background pointer-events-auto">
+      <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-slate-900 pointer-events-auto">
         <View className="items-center gap-2.5">
           <ActivityIndicator size="large" color={isDark ? '#ffffff' : '#000000'} />
-          <Text className="text-base font-medium text-text">Checking session…</Text>
+          <Text className="text-base font-medium text-slate-900 dark:text-slate-100">Checking session…</Text>
         </View>
       </View>
     );
