@@ -50,3 +50,5 @@ app-example
 .cursor
 
 /api/
+
+.tmp-export/
