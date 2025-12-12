@@ -46,8 +46,8 @@ export default function ABCAnalysis({
       >
          {/* Header */}
          <View className="flex-row items-center justify-between py-2">
-            <View className="flex-row items-center py-2">
-               <Text className="text-base font-medium text-slate-900 dark:text-slate-100">
+
+               <Text className="text-base px-5 font-medium text-slate-900 dark:text-slate-100">
                   AI Insight
                </Text>
 
@@ -60,7 +60,7 @@ export default function ABCAnalysis({
                      <Ionicons name="close" size={22} color={iconColor} />
                   </Pressable>
                )}
-            </View>
+
          </View>
 
          <View className="flex-1 shadow-sm dark:shadow-none">

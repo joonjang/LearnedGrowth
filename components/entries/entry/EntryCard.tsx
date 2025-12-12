@@ -215,7 +215,7 @@ export default function EntryCard({
 
    return (
       <AnimatedPressable
-         className="pt-[22px] px-[18px] pb-[18px] rounded-[18px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm"
+         className="pt-[22px] px-[18px] pb-[18px] rounded-[18px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-md mx-2 my-3"
          style={cardAnimatedStyle}
          onPress={toggleExpanded}
          onPressIn={() => (pressProgress.value = withTiming(1, { duration: 120 }))}

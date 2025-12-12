@@ -8,7 +8,7 @@ type Props = {
 };
 
 const DEFAULT_COLORS: NonNullable<LinearGradientProps['colors']> = [
-   'rgba(107, 114, 128, 0.32)', // Gray-500 with opacity
+   'rgba(67, 73, 85, 0.32)', // Gray-500 with opacity
    'rgba(107, 114, 128, 0)',    // Transparent
 ];
 

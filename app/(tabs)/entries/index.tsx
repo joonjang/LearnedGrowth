@@ -14,11 +14,12 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 // The layout hero:
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+   SafeAreaView,
+   useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
-type RowItem =
-   | { kind: 'entry'; entry: Entry }
-   | { kind: 'undo'; entry: Entry };
+type RowItem = { kind: 'entry'; entry: Entry } | { kind: 'undo'; entry: Entry };
 
 type EntrySection = {
    title: string;
@@ -30,14 +31,19 @@ const UNDO_TIMEOUT_MS = 5500;
 
 export default function EntriesScreen() {
    const store = useEntries();
-   
+   const insets = useSafeAreaInsets();
+
    // State for Context Menu
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
-   const [openMenuBounds, setOpenMenuBounds] = useState<MenuBounds | null>(null);
-   
+   const [openMenuBounds, setOpenMenuBounds] = useState<MenuBounds | null>(
+      null
+   );
+
    // State for Undo Logic
    const [undoSlots, setUndoSlots] = useState<Entry[]>([]);
-   const undoTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+   const undoTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+      new Map()
+   );
 
    // --- Menu Logic ---
    const closeMenu = () => {
@@ -62,8 +68,12 @@ export default function EntriesScreen() {
          return false;
       }
       const { pageX, pageY } = event.nativeEvent;
-      const insideX = pageX >= openMenuBounds.x && pageX <= openMenuBounds.x + openMenuBounds.width;
-      const insideY = pageY >= openMenuBounds.y && pageY <= openMenuBounds.y + openMenuBounds.height;
+      const insideX =
+         pageX >= openMenuBounds.x &&
+         pageX <= openMenuBounds.x + openMenuBounds.width;
+      const insideY =
+         pageY >= openMenuBounds.y &&
+         pageY <= openMenuBounds.y + openMenuBounds.height;
 
       if (insideX && insideY) return false;
       closeMenu();
@@ -87,12 +97,12 @@ export default function EntriesScreen() {
       closeMenu();
       setUndoSlots((prev) => [...prev.filter((e) => e.id !== entry.id), entry]);
       clearUndoTimer(entry.id);
-      
+
       const timer = setTimeout(() => {
          setUndoSlots((prev) => prev.filter((e) => e.id !== entry.id));
          undoTimers.current.delete(entry.id);
       }, UNDO_TIMEOUT_MS);
-      
+
       undoTimers.current.set(entry.id, timer);
 
       store.deleteEntry(entry.id).catch((e) => {
@@ -125,80 +135,80 @@ export default function EntriesScreen() {
          className="flex-1 bg-slate-50 dark:bg-slate-900"
          onStartShouldSetResponderCapture={handleTouchCapture}
       >
-           <SectionList
-              sections={sections}
-              keyExtractor={(item) => `${item.kind}-${item.entry.id}`}
-              className="flex-1"
-              // Add huge bottom padding so the last item scrolls well above the FAB
-              contentContainerClassName="pb-32"
-              stickySectionHeadersEnabled
-              onScrollBeginDrag={closeMenu}
-              renderSectionHeader={({ section }) => (
-                 // NativeWind Solution for Sticky Header:
-                 // 1. edges=['top'] -> automatically adds padding matching the status bar height
-                 // 2. bg-slate-50/95 -> fills the space behind the status bar
-                 <SafeAreaView 
-                    edges={['top']} 
-                    className="bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm pb-3 pt-2"
-                 >
-                    <View className="items-center self-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 shadow-sm">
-                       <Text className="text-center text-sm font-bold text-slate-600 dark:text-slate-300">
-                          {section.title}
-                       </Text>
-                    </View>
-                 </SafeAreaView>
-              )}
-              renderItem={({ item }) => {
-                 const timeLabel = getTimeLabel(item.entry);
+         <SectionList
+            sections={sections}
+            keyExtractor={(item) => `${item.kind}-${item.entry.id}`}
+            className="flex-1"
+            // Add huge bottom padding so the last item scrolls well above the FAB
+            contentContainerClassName="pb-32"
+            stickySectionHeadersEnabled
+            onScrollBeginDrag={closeMenu}
+            renderSectionHeader={({ section }) => (
+               <SafeAreaView
+                  edges={['top']}
+               >
+                  <View className="items-center self-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 shadow-sm">
+                     <Text className="text-center text-sm font-bold text-slate-600 dark:text-slate-300">
+                        {section.title}
+                     </Text>
+                  </View>
+               </SafeAreaView>
+            )}
+            renderItem={({ item }) => {
+               const timeLabel = getTimeLabel(item.entry);
 
-                 if (item.kind === 'undo') {
-                    return (
-                       <UndoRow
-                          entry={item.entry}
-                          timeLabel={timeLabel}
-                          onUndo={() => handleUndo(item.entry)}
-                          durationMs={UNDO_TIMEOUT_MS}
-                       />
-                    );
-                 }
+               if (item.kind === 'undo') {
+                  return (
+                     <UndoRow
+                        entry={item.entry}
+                        timeLabel={timeLabel}
+                        onUndo={() => handleUndo(item.entry)}
+                        durationMs={UNDO_TIMEOUT_MS}
+                     />
+                  );
+               }
 
-                 return (
-                    <EntryRow
-                       entry={item.entry}
-                       timeLabel={timeLabel}
-                       isMenuOpen={openMenuEntryId === item.entry.id}
-                       onToggleMenu={() => toggleMenu(item.entry.id)}
-                       onCloseMenu={closeMenu}
-                       onMenuLayout={setOpenMenuBounds}
-                       onEdit={() => router.push({ pathname: '/(tabs)/entries/[id]', params: { id: item.entry.id } })}
-                       onDelete={() => requestDelete(item.entry)}
-                    />
-                 );
-              }}
-           />
+               return (
+                  <EntryRow
+                     entry={item.entry}
+                     timeLabel={timeLabel}
+                     isMenuOpen={openMenuEntryId === item.entry.id}
+                     onToggleMenu={() => toggleMenu(item.entry.id)}
+                     onCloseMenu={closeMenu}
+                     onMenuLayout={setOpenMenuBounds}
+                     onEdit={() =>
+                        router.push({
+                           pathname: '/(tabs)/entries/[id]',
+                           params: { id: item.entry.id },
+                        })
+                     }
+                     onDelete={() => requestDelete(item.entry)}
+                  />
+               );
+            }}
+         />
 
-           {/* NativeWind Solution for FAB:
+         {/* NativeWind Solution for FAB:
                1. edges=['bottom'] -> Ensures we respect the Home Indicator area 
                2. pointer-events-box-none -> allows clicks to pass through the empty areas
            */}
-           <SafeAreaView 
-             edges={['bottom']} 
-             className="absolute bottom-0 right-0 left-0 items-end px-6 pointer-events-box-none"
-           >
-              <View className="mb-4">
-                <Link href={'/(tabs)/entries/new'} asChild>
-                    <Pressable
-                       className="h-14 w-14 items-center justify-center rounded-full bg-amber-500 shadow-sm active:opacity-90"
-                       accessibilityLabel="Create new entry"
-                    >
-                       <Text className="text-center text-[28px] font-bold leading-[30px] text-white">
-                          +
-                       </Text>
-                    </Pressable>
-                 </Link>
-              </View>
-           </SafeAreaView>
-
+         <SafeAreaView
+            edges={['bottom']}
+            className="absolute bottom-0 right-0 left-0 items-end px-6 pointer-events-box-none"
+         >
+            <View className="mb-4">
+               <Link href={'/(tabs)/entries/new'} asChild>
+                  <Pressable
+                     className="h-14 w-14 items-center justify-center rounded-full bg-amber-500 shadow-sm active:opacity-90"
+                     accessibilityLabel="Create new entry"
+                  >
+                     <Text className="text-center text-[28px] font-bold leading-[30px] text-white">
+                        +
+                     </Text>
+                  </Pressable>
+               </Link>
+            </View>
+         </SafeAreaView>
       </GestureHandlerRootView>
    );
 }
@@ -225,7 +235,7 @@ function buildSections(rows: RowItem[]): EntrySection[] {
    for (const entry of rows) {
       const { dateKey, dateLabel } = getDateParts(entry.entry);
       const lastSection = sections[sections.length - 1];
-      
+
       if (!lastSection || lastSection.dateKey !== dateKey) {
          sections.push({
             title: dateLabel,
