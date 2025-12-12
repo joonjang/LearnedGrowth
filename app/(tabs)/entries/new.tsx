@@ -12,18 +12,17 @@ import { NewInputEntryType } from '@/models/newInputEntryType';
 // REMOVED: import { useTheme } ...
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
+   Alert,
+   Keyboard,
+   KeyboardAvoidingView,
+   Platform,
+   Pressable,
+   ScrollView,
+   TextInput,
+   View,
 } from 'react-native';
 // KEPT: Use insets for true edge-to-edge control
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -116,15 +115,10 @@ export default function NewEntryModal() {
             { text: 'Discard', style: 'destructive', onPress: () => router.back() },
          ]
       );
-   }, [hasAnyContent, router]);
+   }, [hasAnyContent]);
 
    return (
       <>
-         <StatusBar
-            translucent
-            backgroundColor="transparent"
-            style={isDark ? 'light' : 'dark'}
-         />
          <KeyboardAvoidingView
             className="flex-1 bg-slate-50 dark:bg-slate-900"
             behavior={'padding'}
@@ -138,7 +132,7 @@ export default function NewEntryModal() {
                   contentContainerStyle={{
                      flexGrow: 1,
                      gap: 16, // Replaces styles.scrollContent
-                     paddingTop: topPadding, // <-- Pushes content down, but lets it scroll up
+                     paddingTop:  Platform.OS === 'android' ? topPadding : 12, // <-- Pushes content down, but lets it scroll up
                   }}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
@@ -183,7 +177,7 @@ export default function NewEntryModal() {
                </ScrollView>
 
                {/* INPUT WRAPPER */}
-               <View className={`pb-${!isKeyboardVisible ? '6' : '0'}`}>
+               <View className={isKeyboardVisible ? 'pb-0' : 'pb-6'}>
                   <InputBox
                      ref={inputRef}
                      value={form[currKey]}

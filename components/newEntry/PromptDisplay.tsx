@@ -1,13 +1,13 @@
 import { useDeferredReady } from '@/hooks/useDeferredReady';
 import { useMemo } from 'react';
 import {
-  ScrollView,
-  StyleProp,
-  StyleSheet,
-  Text,
-  TextStyle,
-  View,
-  ViewStyle,
+   ScrollView,
+   StyleProp,
+   StyleSheet,
+   Text,
+   TextStyle,
+   View,
+   ViewStyle,
 } from 'react-native';
 import { TypeAnimation } from 'react-native-type-animation';
 import ThreeDotsLoader from '../ThreeDotLoader';
@@ -75,7 +75,7 @@ export default function PromptDisplay({
          key={text}
          sequence={sequence}
          cursor={false}
-         typeSpeed={50}
+         typeSpeed={25}
          style={flatStyle}
          cursorStyle={flatStyle}
       />

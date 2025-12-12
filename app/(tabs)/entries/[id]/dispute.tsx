@@ -97,7 +97,7 @@ export default function DisputeScreen() {
    const isKeyboardVisible = useKeyboardVisible();
 
    // Unified Edge-to-Edge Padding Logic
-   const topPadding = insets.top + 12;
+   const topPadding = Platform.OS === 'android' ? insets.top + 12 : 12;
 
    const [idx, setIdx] = useState(0);
    const [form, setForm] = useState<Record<NewInputDisputeType, string>>({
@@ -349,11 +349,6 @@ export default function DisputeScreen() {
 
    return (
       <>
-         <StatusBar
-            translucent
-            backgroundColor="transparent"
-            style={isDark ? 'light' : 'dark'}
-         />
          <KeyboardAvoidingView
             className="flex-1 bg-slate-50 dark:bg-slate-900"
             behavior={'padding'}

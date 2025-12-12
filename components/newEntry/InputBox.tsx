@@ -47,7 +47,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
          onPress={() =>
             typeof ref === 'object' && ref?.current ? ref.current.focus() : null
          }
-         className={`rounded-[14px] bg-zinc-50 dark:bg-slate-700 border px-4 py-3 shadow-sm ${
+         className={`rounded-[14px] bg-zinc-50 dark:bg-slate-700 border px-4 py-3 mb-1.5 shadow-sm ${
             focused 
                ? 'border-slate-300 dark:border-slate-500 shadow-md opacity-100' 
                : 'border-slate-200 dark:border-slate-700'

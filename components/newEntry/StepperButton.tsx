@@ -72,7 +72,7 @@ export default function StepperButton({
 
    return (
       <View 
-         className="flex-row min-h-[48px] items-center px-4 gap-3 bg-white dark:bg-slate-800"
+         className="flex-row min-h-[48px] items-center px-4 gap-3"
          style={style}
       >
          {/* Left Action (Back/Close) */}

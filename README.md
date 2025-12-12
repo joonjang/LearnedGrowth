@@ -15,6 +15,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-12
+- Migrated everything to tailwind/nativewind
+- Working on UI
+- Entry input displays uniformly on android and apple
+
 ### 2025-12-11
 - Working on Android
   - Sticky header now works as it does for apple
@@ -214,18 +219,25 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
-- Circle back and assess the edit/cancel/save button flow of [id]/index header
 - Address the UX flow of ABC then to analysis, instead of two buttons make a 'Next' and then options to enable/disable AI
+
+- Circle back and assess the edit/cancel/save button flow of [id]/index header
 - Disable editing of ABC once dispute has been made
-- If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is cached
 - Change to entry should enable a refreshed AI response to be possible
+
+- If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is cached
 - Encrypt entries when in cloud
+
 - Guard ai analysis, it is usable for logged in users only
+
 - Biometric lock disables the app from all screens until unlocked
+
 - Warn if they are still subscribed, give an alert
 - Revenuecat failed purchase screens
 - Login keyboard should push everything up and should be able to tap out when pressoued outside
   - Shold be able to scroll 
+
+- Fine tune dark mode
 
 - Add test to for API
 - Have a distinction for production tables and edge functions and development versions
@@ -265,3 +277,4 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - send feedback button, goes to a table in supabase x
   - if user is offline, grey out manage subscription and delete account and indiciate offline
 - UI
+
