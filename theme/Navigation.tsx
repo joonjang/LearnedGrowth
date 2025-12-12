@@ -26,6 +26,7 @@ export const ThemedTabs = (props: any) => {
     backgroundColor: colors.cardBg,
     borderTopColor: colors.border,
   };
+  
 
   return (
     <Tabs

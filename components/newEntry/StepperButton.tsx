@@ -1,13 +1,14 @@
+import { makeThemedStyles, useTheme } from '@/theme/theme';
 import React, { Dispatch, SetStateAction, useCallback, useMemo } from 'react';
 import {
    Alert,
-   Button,
    Keyboard,
+   Pressable,
    StyleSheet,
+   Text,
    View,
    ViewStyle,
 } from 'react-native';
-import { makeThemedStyles, useTheme } from '@/theme/theme';
 
 type Props = {
    idx: number;
@@ -37,6 +38,10 @@ export default function StepperButton({
    const styles = useStyles();
    const isLast = useMemo(() => idx === totalSteps - 1, [idx, totalSteps]);
    const canGoBack = useMemo(() => idx > 0, [idx]);
+   const backLabel = !canGoBack ? 'Close' : 'Back';
+   const nextLabel = isLast ? 'Submit' : 'Next';
+   const backColor = !canGoBack ? colors.delete : colors.text;
+   const nextColor = disableNext ? colors.hint : colors.text;
 
    const confirmExitTitle = 'Discard changes?';
    const confirmExitMessage = 'You have unsaved changes. Close without saving?';
@@ -73,20 +78,41 @@ export default function StepperButton({
    return (
       <View style={[styles.container, style]}>
          <View style={styles.actionCol}>
-            <Button
-               title={!canGoBack ? 'Close' : 'Back'}
+            <Pressable
                onPress={handleBack}
-               color={!canGoBack ? colors.delete : colors.text}
-            />
+               hitSlop={12}
+               style={({ pressed }) => [
+                  styles.pressable,
+                  pressed && styles.pressed,
+               ]}
+            >
+               <Text style={[styles.text, { color: backColor }]}>
+                  {backLabel}
+               </Text>
+            </Pressable>
          </View>
          <View style={styles.divider} />
          <View style={styles.actionCol}>
-            <Button
-               title={isLast ? 'Submit' : 'Next'}
+            <Pressable
                onPress={handleNext}
                disabled={disableNext}
-               color={isLast ? colors.disputeCTA : colors.cta}
-            />
+               hitSlop={12}
+               style={({ pressed }) => [
+                  styles.pressable,
+                  pressed && !disableNext ? styles.pressed : null,
+                  disableNext ? styles.disabled : null,
+               ]}
+            >
+               <Text
+                  style={[
+                     styles.text,
+                     { color: nextColor },
+                     disableNext ? styles.textDisabled : null,
+                  ]}
+               >
+                  {nextLabel}
+               </Text>
+            </Pressable>
          </View>
       </View>
    );
@@ -109,5 +135,17 @@ const useStyles = makeThemedStyles(({ colors }) =>
          backgroundColor: colors.border,
       },
       actionCol: { flex: 1 },
+      pressable: {
+         alignItems: 'center',
+         justifyContent: 'center',
+         paddingVertical: 10,
+      },
+      pressed: { opacity: 0.6 },
+      text: {
+         fontSize: 16,
+         fontWeight: '600',
+      },
+      disabled: { opacity: 0.4 },
+      textDisabled: { color: colors.hint },
    })
 );

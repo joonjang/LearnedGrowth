@@ -16,6 +16,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
    Alert,
+   Keyboard,
    KeyboardAvoidingView,
    Platform,
    Pressable,
@@ -95,6 +96,22 @@ export default function NewEntryModal() {
       });
    }, [store, trimmedForm]);
 
+   const handleClose = useCallback(() => {
+      if (!hasAnyContent) {
+         router.back();
+         return;
+      }
+      Keyboard.dismiss();
+      Alert.alert(
+         'Discard changes?',
+         'You have unsaved changes. Close without saving?',
+         [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+         ]
+      );
+   }, [hasAnyContent, router]);
+
    return (
       <>
          <StatusBar
@@ -105,7 +122,7 @@ export default function NewEntryModal() {
          <KeyboardAvoidingView
             style={styles.root}
             behavior={'padding'}
-            keyboardVerticalOffset={insets.bottom + 24}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
          >
             <View style={styles.page}>
                
@@ -133,7 +150,7 @@ export default function NewEntryModal() {
                      {/* 2. Close button sits to the right */}
                      <Pressable
                         accessibilityRole="button"
-                        onPress={() => router.back()}
+                        onPress={handleClose}
                         hitSlop={12}
                         style={[
                            styles.closeButton,

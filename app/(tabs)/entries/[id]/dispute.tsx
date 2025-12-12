@@ -26,7 +26,9 @@ import React, {
    useState,
 } from 'react';
 import {
+   Alert,
    Dimensions, // <--- Added
+   Keyboard,
    KeyboardAvoidingView,
    NativeScrollEvent,
    NativeSyntheticEvent,
@@ -292,8 +294,8 @@ export default function DisputeScreen() {
 
    const analysisAnimatedStyle = useAnimatedStyle(() => ({
       opacity: analysisProgress.value,
-      transform: [{ translateY: (1 - analysisProgress.value) * -12 }],
-   }));
+         transform: [{ translateY: (1 - analysisProgress.value) * -12 }],
+      }));
 
    useEffect(() => {
       if (!allowAnalysis) {
@@ -307,6 +309,21 @@ export default function DisputeScreen() {
    }, [allowAnalysis, analysisProgress, stepsProgress, viewMode]);
 
    const showAnalysis = allowAnalysis && viewMode === 'analysis';
+   const handleClose = useCallback(() => {
+      if (!hasUnsavedChanges) {
+         router.back();
+         return;
+      }
+      Keyboard.dismiss();
+      Alert.alert(
+         'Discard changes?',
+         'You have unsaved changes. Close without saving?',
+         [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+         ]
+      );
+   }, [hasUnsavedChanges, router]);
 
    if (!entry) {
       return (
@@ -386,7 +403,7 @@ export default function DisputeScreen() {
                         onPressOut={clearDimensionHighlight}
                         contentTopPadding={topPadding}
                         // Add exit prop here too so we can put a button inside ABCAnalysis if needed
-                        onExit={() => router.back()} 
+                        onExit={handleClose} 
                      />
                   </Animated.View>
                ) : null}

@@ -22,6 +22,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - Edge-to-edge design
 - Status bar color is uniform, black during light mode and white during dark mode
 - Input screen modals now have a close button and inset if android and none if apple
+- dispute.tsx and new.tsx now has alert to close if 'x' is pressed
 
 
 ### 2025-12-10

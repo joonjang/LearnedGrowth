@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons'; // <--- Added
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
+   Alert,
+   Keyboard,
    NativeScrollEvent,
    NativeSyntheticEvent,
    Pressable,
@@ -72,6 +74,21 @@ export default function DisputeSteps({
 }: Props) {
    const styles = useStyles();
    const { colors } = useTheme(); // <--- Hook for colors
+   const handleClose = useCallback(() => {
+      if (!hasUnsavedChanges) {
+         onExit();
+         return;
+      }
+      Keyboard.dismiss();
+      Alert.alert(
+         'Discard changes?',
+         'You have unsaved changes. Close without saving?',
+         [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Discard', style: 'destructive', onPress: () => onExit() },
+         ]
+      );
+   }, [hasUnsavedChanges, onExit]);
 
    return (
       <>
@@ -102,7 +119,7 @@ export default function DisputeSteps({
                </View>
 
                <Pressable
-                  onPress={onExit}
+                  onPress={handleClose}
                   hitSlop={12}
                   style={styles.closeButton}
                >

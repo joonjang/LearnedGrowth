@@ -1,3 +1,4 @@
+import { makeThemedStyles } from '@/theme/theme';
 import { forwardRef, useState } from 'react';
 import {
    Pressable,
@@ -6,7 +7,6 @@ import {
    TextInputProps,
    ViewStyle,
 } from 'react-native';
-import { makeThemedStyles } from '@/theme/theme';
 
 type Dims = { minHeight?: number; maxHeight?: number };
 
