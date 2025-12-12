@@ -1,12 +1,11 @@
 import { Entry } from '@/models/entry';
-import { makeThemedStyles, useTheme } from '@/theme/theme';
+import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    Pressable,
-   StyleSheet,
    Text,
    View,
-   type TextLayoutEvent,
+   type TextLayoutEvent
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -19,7 +18,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import AnalyzeButton from '../../buttons/AnalyzeButton';
 import CTAButton from '../../buttons/CTAButton';
-
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -39,6 +37,7 @@ type Prop = {
    onMenuLayout?: (bounds: MenuBounds) => void;
 };
 
+// --- Truncation Logic (Kept intact) ---
 const TRUNCATION_LIMITS = {
    adversity: 4,
    belief: 4,
@@ -90,19 +89,26 @@ export default function EntryCard({
    onMenuLayout,
 }: Prop) {
    const menuRef = useRef<View | null>(null);
-   const { colors } = useTheme();
-   const styles = useStyles();
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+   
+   // Raw colors for Animations & Icons
+   const colors = {
+      hint: isDark ? '#94a3b8' : '#64748b',
+      menuText: isDark ? '#1e293b' : '#334155', // slate-800 / slate-700
+      delete: isDark ? '#fb7185' : '#b91c1c',
+      elevatedBorder: isDark ? 'rgba(148, 163, 184, 0.45)' : 'rgba(15, 23, 42, 0.06)',
+      shadowColor: '#000000',
+   };
 
    const [expanded, setExpanded] = useState(false);
    const { truncateState, onLayout, reset } = useTruncations();
 
-   // reset when entry changes
    useEffect(() => {
       setExpanded(false);
       reset();
    }, [entry.id, reset]);
 
-   // any field truncated? then card is expandable
    const isExpandable = useMemo(
       () => Object.values(truncateState).some(Boolean),
       [truncateState]
@@ -124,7 +130,6 @@ export default function EntryCard({
 
    const menuStyle = useAnimatedStyle(() => {
       const width = menuWidth.value || 1;
-
       return {
          opacity: menuOpacity.value,
          transform: [
@@ -136,11 +141,7 @@ export default function EntryCard({
    });
 
    const cardAnimatedStyle = useAnimatedStyle(() => ({
-      transform: [
-         {
-            scale: 1 + pressProgress.value * 0.015,
-         },
-      ],
+      transform: [{ scale: 1 + pressProgress.value * 0.015 }],
       shadowOpacity: 0.06 + expandProgress.value * 0.04,
       borderColor: colors.elevatedBorder,
       shadowColor: colors.shadowColor,
@@ -148,31 +149,16 @@ export default function EntryCard({
 
    useEffect(() => {
       if (isMenuOpen) {
-         menuScale.value = withTiming(1, {
-            duration: 140,
-            easing: Easing.out(Easing.cubic),
-         });
-
-         menuOpacity.value = withTiming(1, {
-            duration: 120,
-            easing: Easing.out(Easing.quad),
-         });
+         menuScale.value = withTiming(1, { duration: 140, easing: Easing.out(Easing.cubic) });
+         menuOpacity.value = withTiming(1, { duration: 120, easing: Easing.out(Easing.quad) });
       } else {
-         menuScale.value = withTiming(0.7, {
-            duration: 90,
-            easing: Easing.in(Easing.cubic),
-         });
-
-         menuOpacity.value = withTiming(0, {
-            duration: 80,
-            easing: Easing.in(Easing.quad),
-         });
+         menuScale.value = withTiming(0.7, { duration: 90, easing: Easing.in(Easing.cubic) });
+         menuOpacity.value = withTiming(0, { duration: 80, easing: Easing.in(Easing.quad) });
       }
    }, [isMenuOpen, menuScale, menuOpacity]);
 
    const measureMenu = useCallback(() => {
       if (!menuRef.current || !onMenuLayout) return;
-
       menuRef.current.measureInWindow((x, y, width, height) => {
          onMenuLayout({ x, y, width, height });
       });
@@ -180,67 +166,76 @@ export default function EntryCard({
 
    useEffect(() => {
       if (!isMenuOpen) return;
-
       const id = requestAnimationFrame(measureMenu);
       return () => cancelAnimationFrame(id);
    }, [isMenuOpen, measureMenu]);
 
-   const handleEdit = () => {
-      onCloseMenu();
-      router.push({
-         pathname: '/(tabs)/entries/[id]',
-         params: { id: entry.id },
-      });
-   };
-
-   const handleDelete = () => {
-      onCloseMenu();
-      onDelete(entry);
-   };
-
    const toggleExpanded = useCallback(() => {
       if (isMenuOpen) onCloseMenu();
-      if (!isExpandable) return; // no-op if nothing to expand
+      if (!isExpandable) return;
       setExpanded((prev) => !prev);
    }, [isMenuOpen, onCloseMenu, isExpandable]);
 
    const expandHintView = (
-      <View style={styles.expandHint}>
-         <Text style={styles.expandText}>Tap to expand details</Text>
+      <View className="flex-row items-center justify-center gap-2 pt-2.5 pb-1">
+         <Text className="text-xs text-hint tracking-wide">Tap to expand details</Text>
       </View>
    );
 
+   // Reusable Text Block Component
+   const SectionBlock = ({ label, text, type, textKey }: { label: string, text: string, type: 'default' | 'belief' | 'dispute', textKey: TruncationKey }) => {
+      const boxClass = type === 'belief' 
+         ? 'bg-belief-bg border-belief-border border'
+         : type === 'dispute'
+            ? 'bg-dispute-bg border-dispute-border border'
+            : 'bg-card-grey border-border border';
+      
+      const textClass = type === 'belief'
+         ? 'text-[15px] font-semibold text-belief-text'
+         : type === 'dispute'
+            ? 'text-[15px] font-semibold text-dispute-text'
+            : 'text-[15px] text-text leading-[22px]';
+
+      return (
+         <View className="mb-3 gap-1.5">
+            <Text className="text-[11px] font-semibold tracking-wider text-hint uppercase">{label}</Text>
+            <View className={`px-3 py-3 rounded-xl ${boxClass}`}>
+               <Text
+                  className={textClass}
+                  onTextLayout={onLayout(textKey)}
+                  numberOfLines={expanded || !truncateState[textKey] ? undefined : TRUNCATION_LIMITS[textKey]}
+                  ellipsizeMode="tail"
+               >
+                  {text}
+               </Text>
+            </View>
+         </View>
+      );
+   };
+
    return (
       <AnimatedPressable
-         style={[styles.card, cardAnimatedStyle]}
-         accessibilityRole="button"
-         accessibilityLabel="View entry details"
+         className="pt-[22px] px-[18px] pb-[18px] rounded-[18px] bg-card-bg border border-border shadow-sm"
+         style={cardAnimatedStyle}
          onPress={toggleExpanded}
-         onPressIn={() => {
-            pressProgress.value = withTiming(1, { duration: 120 });
-         }}
-         onPressOut={() => {
-            pressProgress.value = withTiming(0, { duration: 140 });
-         }}
+         onPressIn={() => (pressProgress.value = withTiming(1, { duration: 120 }))}
+         onPressOut={() => (pressProgress.value = withTiming(0, { duration: 140 }))}
       >
-         {/* menu */}
-         <View style={styles.menuRow}>
+         {/* --- Menu Row --- */}
+         <View className="absolute top-2 right-4 flex-row z-30">
             <Pressable
-               accessibilityLabel="More options"
                hitSlop={8}
-               style={styles.menuButton}
+               className="w-7 h-7 rounded-full items-center justify-center active:bg-black/5 dark:active:bg-white/10"
                onPress={onToggleMenu}
             >
-               <Ionicons
-                  name="ellipsis-horizontal"
-                  size={18}
-                  color={colors.hint}
-               />
+               <Ionicons name="ellipsis-horizontal" size={18} color={colors.hint} />
             </Pressable>
+            
             <Animated.View
                ref={menuRef}
                pointerEvents={isMenuOpen ? 'auto' : 'none'}
-               style={[styles.menu, menuStyle]}
+               className="absolute top-2 right-0 bg-card-bg rounded-xl py-1.5 shadow-lg min-w-[140px] border border-border z-20"
+               style={menuStyle}
                onLayout={(e) => {
                   const { width, height } = e.nativeEvent.layout;
                   menuWidth.value = width;
@@ -249,274 +244,43 @@ export default function EntryCard({
                }}
             >
                <Pressable
-                  style={styles.menuItem}
-                  onPress={handleEdit}
-                  accessibilityRole="button"
-                  accessibilityLabel="Edit entry"
+                  className="flex-row items-center gap-2 py-2 px-3 active:bg-card-grey"
+                  onPress={() => { onCloseMenu(); router.push({ pathname: '/(tabs)/entries/[id]', params: { id: entry.id } }); }}
                >
-                  <Ionicons
-                     name="pencil-outline"
-                     size={16}
-                     color={colors.menuText}
-                  />
-                  <Text style={styles.menuText}>Edit</Text>
+                  <Ionicons name="pencil-outline" size={16} color={isDark ? '#f8fafc' : '#1e293b'} />
+                  <Text className="text-sm font-medium text-text">Edit</Text>
                </Pressable>
                <Pressable
-                  style={styles.menuItem}
-                  onPress={handleDelete}
-                  accessibilityRole="button"
-                  accessibilityLabel="Delete entry"
+                  className="flex-row items-center gap-2 py-2 px-3 active:bg-card-grey"
+                  onPress={() => { onCloseMenu(); onDelete(entry); }}
                >
-                  <Ionicons
-                     name="trash-outline"
-                     size={16}
-                     color={colors.delete}
-                  />
-                  <Text style={[styles.menuText, styles.deleteText]}>
-                     Delete
-                  </Text>
+                  <Ionicons name="trash-outline" size={16} color={colors.delete} />
+                  <Text className="text-sm font-medium text-delete">Delete</Text>
                </Pressable>
             </Animated.View>
          </View>
 
-         {/* Adversity */}
-         <View style={styles.section}>
-            <Text style={styles.label}>Adversity</Text>
-            <View style={styles.sectionCard}>
-               <Text
-                  style={styles.text}
-                  onTextLayout={onLayout('adversity')}
-                  numberOfLines={
-                     expanded || !truncateState.adversity
-                        ? undefined
-                        : TRUNCATION_LIMITS.adversity
-                  }
-                  ellipsizeMode="tail"
-               >
-                  {entry.adversity}
-               </Text>
-            </View>
-         </View>
+         {/* --- Content --- */}
+         <SectionBlock label="Adversity" text={entry.adversity} type="default" textKey="adversity" />
+         <SectionBlock label="Belief" text={entry.belief} type="belief" textKey="belief" />
+         <SectionBlock label="Consequence" text={entry.consequence ?? ''} type="default" textKey="consequence" />
 
-         {/* Belief */}
-         <View style={styles.section}>
-            <Text style={styles.label}>Belief</Text>
-            <View style={[styles.accentBoxBase, styles.beliefBox]}>
-               <Text
-                  style={styles.beliefText}
-                  onTextLayout={onLayout('belief')}
-                  numberOfLines={
-                     expanded || !truncateState.belief
-                        ? undefined
-                        : TRUNCATION_LIMITS.belief
-                  }
-                  ellipsizeMode="tail"
-               >
-                  {entry.belief}
-               </Text>
-            </View>
-         </View>
-
-         {/* Consequence */}
-         <View style={styles.section}>
-            <Text style={styles.label}>Consequence</Text>
-            <View style={styles.sectionCard}>
-               <Text
-                  style={styles.text}
-                  onTextLayout={onLayout('consequence')}
-                  numberOfLines={
-                     expanded || !truncateState.consequence
-                        ? undefined
-                        : TRUNCATION_LIMITS.consequence
-                  }
-                  ellipsizeMode="tail"
-               >
-                  {entry.consequence}
-               </Text>
-            </View>
-         </View>
-
-         {/* pre-dispute hint + CTA */}
+         {/* Pre-dispute Hint */}
          {isExpandable && !expanded && !entry.dispute && expandHintView}
 
          {!entry.dispute ? (
             <>
-               <View style={styles.divider} />
+               <View className="h-[0.5px] bg-border my-2" />
                <CTAButton id={entry.id} />
                <AnalyzeButton id={entry.id} />
             </>
          ) : (
             <>
-               {/* Dispute */}
-               <View style={styles.section}>
-                  <Text style={styles.label}>Dispute</Text>
-                  <View style={[styles.accentBoxBase, styles.disputeBox]}>
-                     <Text
-                        style={styles.disputeText}
-                        onTextLayout={onLayout('dispute')}
-                        numberOfLines={
-                           expanded || !truncateState.dispute
-                              ? undefined
-                              : TRUNCATION_LIMITS.dispute
-                        }
-                        ellipsizeMode="tail"
-                     >
-                        {entry.dispute}
-                     </Text>
-                  </View>
-               </View>
-
-               {/* Energy */}
-               <View style={styles.section}>
-                  <Text style={styles.label}>Energy</Text>
-                  <View style={styles.sectionCard}>
-                     <Text
-                        style={styles.text}
-                        onTextLayout={onLayout('energy')}
-                        numberOfLines={
-                           expanded || !truncateState.energy
-                              ? undefined
-                              : TRUNCATION_LIMITS.energy
-                        }
-                        ellipsizeMode="tail"
-                     >
-                        {entry.energy}
-                     </Text>
-                  </View>
-               </View>
-
+               <SectionBlock label="Dispute" text={entry.dispute} type="dispute" textKey="dispute" />
+               <SectionBlock label="Energy" text={entry.energy ?? ''} type="default" textKey="energy" />
                {isExpandable && !expanded && expandHintView}
             </>
          )}
       </AnimatedPressable>
    );
 }
-
-const useStyles = makeThemedStyles(
-   ({ colors, shadows }) =>
-      StyleSheet.create({
-         card: {
-            paddingTop: 22,
-            paddingHorizontal: 18,
-            paddingBottom: 18,
-            borderRadius: 18,
-            backgroundColor: colors.cardBg,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-            // overflow: 'hidden',
-            ...shadows.shadowSoft,
-         },
-         menuRow: {
-            position: 'absolute',
-            top: 8,
-            right: 16,
-            flexDirection: 'row',
-            zIndex: 30,
-         },
-         menuButton: {
-            width: 28,
-            height: 28,
-            borderRadius: 14,
-            alignItems: 'center',
-            justifyContent: 'center',
-         },
-         menu: {
-            position: 'absolute',
-            top: 8,
-            right: 0,
-            backgroundColor: colors.cardBg,
-            borderRadius: 12,
-            paddingVertical: 6,
-            shadowColor: colors.shadowColor,
-            shadowOpacity: 0.1,
-            shadowRadius: 6,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 6,
-            minWidth: 140,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-            zIndex: 20,
-         },
-         menuItem: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            paddingVertical: 8,
-            paddingHorizontal: 12,
-         },
-         menuText: {
-            fontSize: 14,
-            color: colors.menuText,
-            fontWeight: '500',
-         },
-         deleteText: {
-            color: colors.delete,
-         },
-         section: {
-            marginBottom: 12,
-            gap: 6,
-         },
-         label: {
-            fontSize: 11,
-            fontWeight: '600',
-            letterSpacing: 0.4,
-            color: colors.hint,
-            textTransform: 'uppercase',
-         },
-         text: {
-            fontSize: 15,
-            lineHeight: 22,
-            color: colors.text,
-         },
-         sectionCard: {
-            paddingVertical: 12,
-            paddingHorizontal: 12,
-            borderRadius: 12,
-            backgroundColor: colors.cardGrey,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-         },
-         accentBoxBase: {
-            paddingVertical: 12,
-            paddingHorizontal: 12,
-            borderRadius: 12,
-            borderWidth: StyleSheet.hairlineWidth,
-         },
-         beliefBox: {
-            backgroundColor: colors.accentBeliefBg,
-            borderColor: colors.accentBeliefBorder,
-         },
-         beliefText: {
-            fontSize: 15,
-            fontWeight: '600',
-            color: colors.accentBeliefText,
-         },
-         disputeBox: {
-            backgroundColor: colors.accentDisputeBg,
-            borderColor: colors.accentDisputeBorder,
-         },
-         disputeText: {
-            fontSize: 15,
-            fontWeight: '600',
-            color: colors.accentDisputeText,
-         },
-         expandHint: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            paddingTop: 10,
-            paddingBottom: 4,
-         },
-         expandText: {
-            fontSize: 12,
-            color: colors.hint,
-            letterSpacing: 0.2,
-         },
-         divider: {
-            height: 0.5,
-            backgroundColor: colors.border,
-            marginVertical: 8,
-         },
-      })
-);

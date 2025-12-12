@@ -1,51 +1,52 @@
 import { AdapterGuard } from '@/components/AdapterGuard';
 import { AuthGate } from '@/components/AuthGate';
-import { AdapterProvider } from '@/providers/AdapterProvider';
-import { AuthProvider } from '@/providers/AuthProvider';
-import { EntriesStoreProvider } from '@/providers/EntriesStoreProvider';
-import { PreferencesProvider } from '@/providers/PreferencesProvider';
-import { RevenueCatProvider } from '@/providers/RevenueCatProvider';
-import { ThemedStatusBar } from '@/theme/StatusBar';
+import TopFade from '@/components/TopFade';
+import { AppProviders } from '@/providers/AppProviders';
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import "../global.css";
+import {
+   useSafeAreaInsets
+} from 'react-native-safe-area-context';
+import '../global.css';
+
+function EdgeToEdge({ children }: { children: React.ReactNode }) {
+   const insets = useSafeAreaInsets();
+   return (
+      <View className="flex-1 bg-background">
+         <TopFade height={insets.top + 48} />
+         <StatusBar
+            translucent
+            // Logic: If Dark Mode -> Light Text. If Light Mode -> Dark Text.
+            style={useColorScheme() === 'dark' ? 'light' : 'dark'}
+         />
+         {children}
+      </View>
+   );
+}
 
 export default function RootLayout() {
    return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-         <KeyboardProvider>
-            <PreferencesProvider>
-               <AuthProvider>
-                  <RevenueCatProvider>
-                     <AdapterProvider>
-                        <EntriesStoreProvider>
-                           <SafeAreaProvider>
-                              <AuthGate>
-                                 <AdapterGuard>
-                                    <ThemedStatusBar />
-                                    <Stack
-                                       screenOptions={{ headerShown: false }}
-                                    >
-                                       <Stack.Screen name="(tabs)" />
-                                       <Stack.Screen
-                                          name="(modal)"
-                                          options={{
-                                             animation: 'fade',
-                                             presentation: 'transparentModal',
-                                          }}
-                                       />
-                                    </Stack>
-                                 </AdapterGuard>
-                              </AuthGate>
-                           </SafeAreaProvider>
-                        </EntriesStoreProvider>
-                     </AdapterProvider>
-                  </RevenueCatProvider>
-               </AuthProvider>
-            </PreferencesProvider>
-         </KeyboardProvider>
+         <AppProviders>
+            <AuthGate>
+               <AdapterGuard>
+                  <EdgeToEdge>
+                     <Stack screenOptions={{ headerShown: false }}>
+                        <Stack.Screen name="(tabs)" />
+                        <Stack.Screen
+                           name="(modal)"
+                           options={{
+                              animation: 'fade',
+                              presentation: 'transparentModal',
+                           }}
+                        />
+                     </Stack>
+                  </EdgeToEdge>
+               </AdapterGuard>
+            </AuthGate>
+         </AppProviders>
       </GestureHandlerRootView>
    );
 }

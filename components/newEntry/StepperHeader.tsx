@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Text, View, ViewStyle } from 'react-native';
 
 type Props = {
    step: number;
@@ -9,18 +9,14 @@ type Props = {
 
 export default function StepperHeader({ step, total, label, style }: Props) {
    return (
-      <View style={[styles.container, style]}>
-         <Text style={styles.text}>
+      <View 
+         className="px-5 py-2"
+         style={style}
+      >
+         {/* Using 'text-text' for adaptive color */}
+         <Text className="text-base font-medium text-text">
             Step {step} of {total} — {label}
          </Text>
       </View>
    );
 }
-
-const styles = StyleSheet.create({
-   container: {
-      paddingHorizontal: 20,
-      paddingVertical: 8,
-   },
-   text: { fontSize: 16, fontWeight: '500' },
-});

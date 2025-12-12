@@ -1,17 +1,20 @@
 import { useAuth } from "@/providers/AuthProvider";
 import { useRouter, useSegments } from "expo-router";
+import { useColorScheme } from "nativewind";
 import { ReactNode, useEffect, useMemo } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const { status, isConfigured } = useAuth();
   const router = useRouter();
-  const segments = useSegments();
+  const segments = useSegments() as string[];
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const isAuthRoute = useMemo(() => {
     if (!segments || segments.length === 0) return false;
     const root = segments[0];
-    return root === "login" || root === "(auth)";
+    return root === "login" || root === "(modal)";
   }, [segments]);
 
   useEffect(() => {
@@ -27,10 +30,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   if (status === "checking") {
     return (
-      <View style={styles.overlay} pointerEvents="auto">
-        <View style={styles.card}>
-          <ActivityIndicator size="large" />
-          <Text style={styles.label}>Checking session…</Text>
+      <View className="flex-1 items-center justify-center bg-background pointer-events-auto">
+        <View className="items-center gap-2.5">
+          <ActivityIndicator size="large" color={isDark ? '#ffffff' : '#000000'} />
+          <Text className="text-base font-medium text-text">Checking session…</Text>
         </View>
       </View>
     );
@@ -38,20 +41,3 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "white",
-  },
-  card: {
-    alignItems: "center",
-    gap: 10,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-});

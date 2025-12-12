@@ -1,14 +1,13 @@
-import { makeThemedStyles, useTheme } from '@/theme/theme';
 import React, { Dispatch, SetStateAction, useCallback, useMemo } from 'react';
 import {
    Alert,
    Keyboard,
    Pressable,
-   StyleSheet,
    Text,
    View,
    ViewStyle,
 } from 'react-native';
+// REMOVED: import { makeThemedStyles, useTheme } from '@/theme/theme';
 
 type Props = {
    idx: number;
@@ -30,18 +29,15 @@ export default function StepperButton({
    onSubmit,
    onExit,
    hasUnsavedChanges = false,
-   
    disableNext,
    style,
 }: Props) {
-   const { colors } = useTheme();
-   const styles = useStyles();
+   
+   // Logic
    const isLast = useMemo(() => idx === totalSteps - 1, [idx, totalSteps]);
    const canGoBack = useMemo(() => idx > 0, [idx]);
    const backLabel = !canGoBack ? 'Close' : 'Back';
    const nextLabel = isLast ? 'Submit' : 'Next';
-   const backColor = !canGoBack ? colors.delete : colors.text;
-   const nextColor = disableNext ? colors.hint : colors.text;
 
    const confirmExitTitle = 'Discard changes?';
    const confirmExitMessage = 'You have unsaved changes. Close without saving?';
@@ -51,7 +47,6 @@ export default function StepperButton({
          onExit();
          return;
       }
-
       Keyboard.dismiss();
       Alert.alert(confirmExitTitle, confirmExitMessage, [
          { text: 'Cancel', style: 'cancel' },
@@ -76,40 +71,36 @@ export default function StepperButton({
    }, [isLast, onSubmit, setIdx, totalSteps]);
 
    return (
-      <View style={[styles.container, style]}>
-         <View style={styles.actionCol}>
+      <View 
+         className="flex-row min-h-[48px] items-center px-4 gap-3 bg-card-bg"
+         style={style}
+      >
+         {/* Left Action (Back/Close) */}
+         <View className="flex-1">
             <Pressable
                onPress={handleBack}
                hitSlop={12}
-               style={({ pressed }) => [
-                  styles.pressable,
-                  pressed && styles.pressed,
-               ]}
+               className="items-center justify-center py-2.5 active:opacity-60"
             >
-               <Text style={[styles.text, { color: backColor }]}>
+               {/* Conditional Color: Delete (Red) if Close, Text if Back */}
+               <Text className={`text-base font-semibold ${!canGoBack ? 'text-delete' : 'text-text'}`}>
                   {backLabel}
                </Text>
             </Pressable>
          </View>
-         <View style={styles.divider} />
-         <View style={styles.actionCol}>
+
+         {/* Divider */}
+         <View className="w-[1px] self-stretch my-2 bg-border" />
+
+         {/* Right Action (Next/Submit) */}
+         <View className="flex-1">
             <Pressable
                onPress={handleNext}
                disabled={disableNext}
                hitSlop={12}
-               style={({ pressed }) => [
-                  styles.pressable,
-                  pressed && !disableNext ? styles.pressed : null,
-                  disableNext ? styles.disabled : null,
-               ]}
+               className={`items-center justify-center py-2.5 ${disableNext ? 'opacity-40' : 'active:opacity-60'}`}
             >
-               <Text
-                  style={[
-                     styles.text,
-                     { color: nextColor },
-                     disableNext ? styles.textDisabled : null,
-                  ]}
-               >
+               <Text className={`text-base font-semibold ${disableNext ? 'text-hint' : 'text-text'}`}>
                   {nextLabel}
                </Text>
             </Pressable>
@@ -117,35 +108,3 @@ export default function StepperButton({
       </View>
    );
 }
-
-const useStyles = makeThemedStyles(({ colors }) =>
-   StyleSheet.create({
-      container: {
-         flexDirection: 'row',
-         minHeight: 48,
-         alignItems: 'center',
-         paddingHorizontal: 16,
-         gap: 12,
-         backgroundColor: colors.cardBg,
-      },
-      divider: {
-         width: 1,
-         marginVertical: 8,
-         alignSelf: 'stretch',
-         backgroundColor: colors.border,
-      },
-      actionCol: { flex: 1 },
-      pressable: {
-         alignItems: 'center',
-         justifyContent: 'center',
-         paddingVertical: 10,
-      },
-      pressed: { opacity: 0.6 },
-      text: {
-         fontSize: 16,
-         fontWeight: '600',
-      },
-      disabled: { opacity: 0.4 },
-      textDisabled: { color: colors.hint },
-   })
-);

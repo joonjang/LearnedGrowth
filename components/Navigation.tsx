@@ -1,10 +1,13 @@
 import { Stack, Tabs, usePathname } from "expo-router";
 import { useMemo } from "react";
 import { Platform } from "react-native";
-import { useTheme } from "./theme";
+// 1. Swap the import to your new hook
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 const stackScreenOptions = {
   headerShown: false,
+  // Optional: Set a default background color for the transition area
+  contentStyle: { backgroundColor: 'transparent' }, 
 };
 
 export const ThemedStack = (props: any) => (
@@ -12,34 +15,32 @@ export const ThemedStack = (props: any) => (
 );
 
 export const ThemedTabs = (props: any) => {
-  const { colors } = useTheme();
-
+  // 2. Use the hook to get the raw hex strings
+  const { colors } = useThemeColor();
   const pathname = usePathname();
 
   const shouldHideTabs = useMemo(() => {
     if (!pathname) return false;
-    // Use the regex for cleaner matching (New or Dispute)
+    // Regex matches: /entries/new OR /entries/[id]/dispute
     return /\/entries\/(new|.*\/dispute)$/.test(pathname);
   }, [pathname]);
-
-  const baseTabBarStyle = {
-    backgroundColor: colors.cardBg,
-    borderTopColor: colors.border,
-  };
-  
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: [
-            baseTabBarStyle,
+            {
+              backgroundColor: colors.background, // Uses: #f8fafc or #0f172a
+              borderTopColor: colors.border,      // Uses: #e2e8f0 or #1e293b
+            },
             shouldHideTabs && Platform.OS === 'android' 
                ? { display: 'none' } 
                : {}
         ],
-        tabBarActiveTintColor: colors.text,
-        tabBarInactiveTintColor: colors.hint,
+        // 3. Map the active/inactive state colors
+        tabBarActiveTintColor: colors.active,
+        tabBarInactiveTintColor: colors.inactive,
       }}
       {...props}
     />

@@ -1,4 +1,4 @@
-import { ThemedStack } from '@/theme/Navigation';
+import { ThemedStack } from '@/components/Navigation';
 import { Stack } from 'expo-router';
 
 export default function ModalLayout() {

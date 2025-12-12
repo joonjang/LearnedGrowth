@@ -1,23 +1,27 @@
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
+import { useCallback, useState } from 'react';
 import {
    Pressable,
-   StyleSheet,
    Text,
    TextInput,
    View,
 } from 'react-native';
-import { useState, useCallback } from 'react';
-import { makeThemedStyles } from '@/theme/theme';
 
 export default function SendFeedback() {
    const { user } = useAuth();
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+
+   // Match 'text-hint' or 'text-muted-icon' from your global.css
+   const iconColor = isDark ? '#64748b' : '#94a3b8'; 
+
    const [feedback, setFeedback] = useState('');
    const [loading, setLoading] = useState(false);
    const [message, setMessage] = useState<string | null>(null);
    const [collapsed, setCollapsed] = useState(true);
-   const { styles, iconColor } = useStyles();
 
    const handleSend = useCallback(async () => {
       const text = feedback.trim();
@@ -45,9 +49,15 @@ export default function SendFeedback() {
    }, [feedback, user?.email, user?.id]);
 
    return (
-      <View style={styles.feedbackBlock}>
-         <Pressable style={styles.headerRow} onPress={() => setCollapsed((c) => !c)}>
-            <Text style={styles.label}>Send feedback</Text>
+      <View className="gap-2">
+         {/* Header Row */}
+         <Pressable 
+            className="flex-row items-center justify-between py-1 active:opacity-60" 
+            onPress={() => setCollapsed((c) => !c)}
+         >
+            <Text className="text-xs uppercase text-hint tracking-wider">
+               Send feedback
+            </Text>
             <Ionicons
                name={collapsed ? 'chevron-forward' : 'chevron-down'}
                size={18}
@@ -58,76 +68,36 @@ export default function SendFeedback() {
          {!collapsed && (
             <>
                <TextInput
-                  style={styles.input}
+                  className="min-h-[80px] border border-border rounded-xl p-3 text-sm bg-card-grey text-text"
                   placeholder="Tell us what is working or what is rough"
+                  // Tailwind doesn't style placeholders easily, so we use inline hex
+                  placeholderTextColor={iconColor}
                   multiline
                   value={feedback}
                   onChangeText={setFeedback}
                   editable={!loading}
+                  textAlignVertical="top"
                />
+               
                <Pressable
-                  style={[styles.secondaryButton, loading && styles.buttonDisabled]}
+                  className={`bg-card-input py-3 rounded-xl items-center border border-border ${
+                     loading ? 'opacity-60' : 'active:opacity-80'
+                  }`}
                   onPress={handleSend}
                   disabled={loading}
                >
-                  <Text style={styles.secondaryLabel}>
+                  <Text className="text-text font-bold text-[15px]">
                      {loading ? 'Sending...' : 'Send Feedback'}
                   </Text>
                </Pressable>
-               {message ? <Text style={styles.noteText}>{message}</Text> : null}
+               
+               {message ? (
+                  <Text className="text-xs text-text-subtle text-center">
+                     {message}
+                  </Text>
+               ) : null}
             </>
          )}
       </View>
    );
 }
-
-const useStyles = makeThemedStyles(({ colors }) => ({
-   styles: StyleSheet.create({
-      label: {
-         fontSize: 12,
-         textTransform: 'uppercase',
-         color: colors.hint,
-         letterSpacing: 0.5,
-      },
-      feedbackBlock: {
-         gap: 8,
-      },
-      headerRow: {
-         flexDirection: 'row',
-         alignItems: 'center',
-         justifyContent: 'space-between',
-      },
-      input: {
-         minHeight: 80,
-         borderWidth: StyleSheet.hairlineWidth,
-         borderColor: colors.border,
-         borderRadius: 12,
-         padding: 12,
-         fontSize: 14,
-         backgroundColor: colors.cardGrey,
-         textAlignVertical: 'top',
-         color: colors.text,
-      },
-      secondaryButton: {
-         backgroundColor: colors.cardInput,
-         paddingVertical: 12,
-         borderRadius: 12,
-         alignItems: 'center',
-         borderWidth: StyleSheet.hairlineWidth,
-         borderColor: colors.border,
-      },
-      secondaryLabel: {
-         color: colors.text,
-         fontWeight: '700',
-         fontSize: 15,
-      },
-      buttonDisabled: {
-         opacity: 0.6,
-      },
-      noteText: {
-         fontSize: 12,
-         color: colors.textSubtle,
-      },
-   }),
-   iconColor: colors.mutedIcon,
-}));

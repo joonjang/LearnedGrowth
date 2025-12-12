@@ -1,11 +1,10 @@
-// components/ThreeDotsLoader.tsx
-import React from "react";
-import { View, StyleSheet } from "react-native";
 import LottieView from "lottie-react-native";
+import React from "react";
+import { View } from "react-native";
 
 export default function ThreeDotsLoader() {
   return (
-    <View style={styles.container}>
+    <View className="flex-1 justify-center items-center">
       <LottieView
         source={require("@/assets/animations/three-dots-loading.json")}
         autoPlay
@@ -15,11 +14,3 @@ export default function ThreeDotsLoader() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});

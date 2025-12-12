@@ -1,29 +1,28 @@
 import { type MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow, { UndoRow } from '@/components/entries/entry/EntryRow';
-import { useEntries } from '@/features/hooks/useEntries';
+import { useEntries } from '@/hooks/useEntries';
 import { getDateParts, getTimeLabel } from '@/lib/date';
 import { Entry } from '@/models/entry';
-import { makeThemedStyles } from '@/theme/theme';
 import { Link, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-   Pressable,
-   SectionList,
-   StyleSheet,
-   Text,
-   View,
-   type GestureResponderEvent,
+  Pressable,
+  SectionList,
+  Text,
+  View,
+  type GestureResponderEvent,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// The layout hero:
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type RowItem =
    | { kind: 'entry'; entry: Entry }
    | { kind: 'undo'; entry: Entry };
 
 type EntrySection = {
-   title: string; // e.g. "Today", "Yesterday", "Jan 10"
-   dateKey: string; // "YYYY-MM-DD"
+   title: string;
+   dateKey: string;
    data: RowItem[];
 };
 
@@ -31,15 +30,16 @@ const UNDO_TIMEOUT_MS = 5500;
 
 export default function EntriesScreen() {
    const store = useEntries();
-   const insets = useSafeAreaInsets();
-   const styles = useStyles();
+   
+   // State for Context Menu
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
    const [openMenuBounds, setOpenMenuBounds] = useState<MenuBounds | null>(null);
+   
+   // State for Undo Logic
    const [undoSlots, setUndoSlots] = useState<Entry[]>([]);
-   const undoTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
-      new Map()
-   );
+   const undoTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
+   // --- Menu Logic ---
    const closeMenu = () => {
       if (openMenuEntryId !== null) {
          setOpenMenuEntryId(null);
@@ -50,9 +50,7 @@ export default function EntriesScreen() {
    const toggleMenu = (entryId: string) => {
       setOpenMenuEntryId((current) => {
          const next = current === entryId ? null : entryId;
-         if (next !== current) {
-            setOpenMenuBounds(null);
-         }
+         if (next !== current) setOpenMenuBounds(null);
          return next;
       });
    };
@@ -63,24 +61,20 @@ export default function EntriesScreen() {
          closeMenu();
          return false;
       }
-
       const { pageX, pageY } = event.nativeEvent;
-      const insideX =
-         pageX >= openMenuBounds.x &&
-         pageX <= openMenuBounds.x + openMenuBounds.width;
-      const insideY =
-         pageY >= openMenuBounds.y &&
-         pageY <= openMenuBounds.y + openMenuBounds.height;
+      const insideX = pageX >= openMenuBounds.x && pageX <= openMenuBounds.x + openMenuBounds.width;
+      const insideY = pageY >= openMenuBounds.y && pageY <= openMenuBounds.y + openMenuBounds.height;
 
       if (insideX && insideY) return false;
-
       closeMenu();
       return false;
    };
 
+   // --- Data Preparation ---
    const rowsWithUndo = buildRowsWithUndo(store.rows, undoSlots);
    const sections = buildSections(rowsWithUndo);
 
+   // --- Action Handlers ---
    const clearUndoTimer = (id: string) => {
       const timer = undoTimers.current.get(id);
       if (timer) {
@@ -91,16 +85,14 @@ export default function EntriesScreen() {
 
    const requestDelete = (entry: Entry) => {
       closeMenu();
-      setUndoSlots((prev) => [
-         ...prev.filter((e) => e.id !== entry.id),
-         entry,
-      ]);
-
+      setUndoSlots((prev) => [...prev.filter((e) => e.id !== entry.id), entry]);
       clearUndoTimer(entry.id);
+      
       const timer = setTimeout(() => {
          setUndoSlots((prev) => prev.filter((e) => e.id !== entry.id));
          undoTimers.current.delete(entry.id);
       }, UNDO_TIMEOUT_MS);
+      
       undoTimers.current.set(entry.id, timer);
 
       store.deleteEntry(entry.id).catch((e) => {
@@ -130,100 +122,96 @@ export default function EntriesScreen() {
 
    return (
       <GestureHandlerRootView
-         style={styles.container}
+         className="flex-1 bg-background"
          onStartShouldSetResponderCapture={handleTouchCapture}
       >
-         <SectionList
-            sections={sections}
-            keyExtractor={(item) => `${item.kind}-${item.entry.id}`}
-            // 1. Apply top inset to the VIEW style.
-            // This moves the "ceiling" that headers stick to.
-            style={{ 
-               flex: 1, 
-               paddingTop: insets.top 
-            }}
-            // 2. Adjust content container.
-            // Move the extra 8px spacing here.
-            contentContainerStyle={{
-               paddingBottom: insets.bottom + 16,
-               paddingTop: 8, 
-            }}
-            // 3. Adjust scroll indicators.
-            // Top is 0 because the list frame is already pushed down.
-            scrollIndicatorInsets={{
-               top: 0,
-               bottom: insets.bottom,
-            }}
-            // 4. Remove the spacer component.
-            ListHeaderComponent={null}
-            stickySectionHeadersEnabled
-            onScrollBeginDrag={closeMenu}
-            renderSectionHeader={({ section }) => (
-               <View style={styles.sectionHeaderWrapper}>
-                  <View style={styles.sectionHeaderPill}>
-                     <Text style={styles.sectionHeader}>{section.title}</Text>
-                  </View>
-               </View>
-            )}
-            renderItem={({ item }) => {
-               const timeLabel = getTimeLabel(item.entry);
+           <SectionList
+              sections={sections}
+              keyExtractor={(item) => `${item.kind}-${item.entry.id}`}
+              className="flex-1"
+              // Add huge bottom padding so the last item scrolls well above the FAB
+              contentContainerClassName="pb-32"
+              stickySectionHeadersEnabled
+              onScrollBeginDrag={closeMenu}
+              renderSectionHeader={({ section }) => (
+                 // NativeWind Solution for Sticky Header:
+                 // 1. edges=['top'] -> automatically adds padding matching the status bar height
+                 // 2. bg-background/95 -> fills the space behind the status bar
+                 <SafeAreaView 
+                    edges={['top']} 
+                    className="bg-background/95 backdrop-blur-sm pb-3 pt-2"
+                 >
+                    <View className="items-center self-center rounded-xl border border-border bg-card px-3 py-1.5 shadow-sm">
+                       <Text className="text-center text-sm font-bold text-textSubtle">
+                          {section.title}
+                       </Text>
+                    </View>
+                 </SafeAreaView>
+              )}
+              renderItem={({ item }) => {
+                 const timeLabel = getTimeLabel(item.entry);
 
-               if (item.kind === 'undo') {
-                  return (
-                     <UndoRow
-                        entry={item.entry}
-                        timeLabel={timeLabel}
-                        onUndo={() => handleUndo(item.entry)}
-                        durationMs={UNDO_TIMEOUT_MS}
-                     />
-                  );
-               }
+                 if (item.kind === 'undo') {
+                    return (
+                       <UndoRow
+                          entry={item.entry}
+                          timeLabel={timeLabel}
+                          onUndo={() => handleUndo(item.entry)}
+                          durationMs={UNDO_TIMEOUT_MS}
+                       />
+                    );
+                 }
 
-               const handleEdit = () => {
-                  router.push({
-                     pathname: '/(tabs)/entries/[id]',
-                     params: { id: item.entry.id },
-                  });
-               };
+                 return (
+                    <EntryRow
+                       entry={item.entry}
+                       timeLabel={timeLabel}
+                       isMenuOpen={openMenuEntryId === item.entry.id}
+                       onToggleMenu={() => toggleMenu(item.entry.id)}
+                       onCloseMenu={closeMenu}
+                       onMenuLayout={setOpenMenuBounds}
+                       onEdit={() => router.push({ pathname: '/(tabs)/entries/[id]', params: { id: item.entry.id } })}
+                       onDelete={() => requestDelete(item.entry)}
+                    />
+                 );
+              }}
+           />
 
-               return (
-                  <EntryRow
-                     entry={item.entry}
-                     timeLabel={timeLabel}
-                     isMenuOpen={openMenuEntryId === item.entry.id}
-                     onToggleMenu={() => toggleMenu(item.entry.id)}
-                     onCloseMenu={closeMenu}
-                     onMenuLayout={setOpenMenuBounds}
-                     onEdit={handleEdit}
-                     onDelete={() => requestDelete(item.entry)}
-                  />
-               );
-            }}
-         />
+           {/* NativeWind Solution for FAB:
+               1. edges=['bottom'] -> Ensures we respect the Home Indicator area 
+               2. pointer-events-box-none -> allows clicks to pass through the empty areas
+           */}
+           <SafeAreaView 
+             edges={['bottom']} 
+             className="absolute bottom-0 right-0 left-0 items-end px-6 pointer-events-box-none"
+           >
+              <View className="mb-4">
+                 <Link href={'/(tabs)/entries/new'} asChild>
+                    <Pressable
+                       className="h-14 w-14 items-center justify-center rounded-full bg-cta shadow-md active:opacity-90"
+                       accessibilityLabel="Create new entry"
+                    >
+                       <Text className="text-center text-[28px] font-bold leading-[30px] text-ctaText">
+                          +
+                       </Text>
+                    </Pressable>
+                 </Link>
+              </View>
+           </SafeAreaView>
 
-         <View style={styles.newButtonWrapper}>
-            <Link href={'/(tabs)/entries/new'} asChild>
-               <Pressable
-                  style={styles.newButton}
-                  accessibilityLabel="Create new entry"
-               >
-                  <Text style={styles.newButtonText}>+</Text>
-               </Pressable>
-            </Link>
-         </View>
       </GestureHandlerRootView>
    );
 }
 
+// --- Helper Functions ---
+
 function buildRowsWithUndo(rows: Entry[], undoSlots: Entry[]): RowItem[] {
    const merged: RowItem[] = rows.map((entry) => ({ kind: 'entry', entry }));
-
    for (const entry of undoSlots) {
       if (!rows.find((r) => r.id === entry.id)) {
          merged.push({ kind: 'undo', entry });
       }
    }
-
    return merged.sort((a, b) => {
       const aTime = new Date(a.entry.createdAt).getTime();
       const bTime = new Date(b.entry.createdAt).getTime();
@@ -234,12 +222,10 @@ function buildRowsWithUndo(rows: Entry[], undoSlots: Entry[]): RowItem[] {
 
 function buildSections(rows: RowItem[]): EntrySection[] {
    const sections: EntrySection[] = [];
-
    for (const entry of rows) {
       const { dateKey, dateLabel } = getDateParts(entry.entry);
-
       const lastSection = sections[sections.length - 1];
-
+      
       if (!lastSection || lastSection.dateKey !== dateKey) {
          sections.push({
             title: dateLabel,
@@ -250,54 +236,5 @@ function buildSections(rows: RowItem[]): EntrySection[] {
          lastSection.data.push(entry);
       }
    }
-
    return sections;
 }
-
-const useStyles = makeThemedStyles(
-   ({ colors, typography, components, shadows }) =>
-      StyleSheet.create({
-         container: {
-            flex: 1,
-            backgroundColor: colors.background,
-         },
-         sectionHeaderWrapper: {
-            paddingVertical: 12,
-            alignItems: 'center',
-         },
-         sectionHeaderPill: {
-            ...components.compactCard,
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderColor: colors.borderStrong,
-            backgroundColor: colors.cardGrey,
-            ...shadows.shadowSoft,
-         },
-         sectionHeader: {
-            ...typography.subtitle,
-            textAlign: 'center',
-            fontWeight: '700',
-         },
-         newButtonWrapper: {
-            position: 'absolute',
-            right: 24,
-            bottom: 18,
-         },
-         newButton: {
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            backgroundColor: colors.cta,
-            alignItems: 'center',
-            justifyContent: 'center',
-            ...shadows.shadowSoft,
-         },
-         newButtonText: {
-            ...typography.title,
-            fontSize: 28,
-            lineHeight: 30,
-            color: colors.ctaText,
-            textAlign: 'center',
-         },
-      })
-);

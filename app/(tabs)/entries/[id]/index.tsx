@@ -1,18 +1,18 @@
 import AnalyzeButton from '@/components/buttons/AnalyzeButton';
 import CTAButton from '@/components/buttons/CTAButton';
-import { useEntries } from '@/features/hooks/useEntries';
+import { useEntries } from '@/hooks/useEntries';
 import { formatDateTimeWithWeekday } from '@/lib/date';
 import type { Entry } from '@/models/entry';
 import { usePreferences } from '@/providers/PreferencesProvider';
-import { makeThemedStyles, useTheme } from '@/theme/theme';
+// REMOVED: import { makeThemedStyles, useTheme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useColorScheme } from 'nativewind'; // <--- Added
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
    LayoutAnimation,
    Platform,
    Pressable,
-   StyleSheet,
    Text,
    TextInput,
    UIManager,
@@ -23,12 +23,10 @@ import {
    KeyboardController,
 } from 'react-native-keyboard-controller';
 import {
-   SafeAreaView,
    useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
-type DimensionKey = 'permanence' | 'pervasiveness' | 'personalization';
 
 const FIELD_META = [
    {
@@ -67,6 +65,7 @@ const FIELD_META = [
    hint: string;
    placeholder: string;
 }[];
+
 const FIELD_KEYS: FieldKey[] = FIELD_META.map((f) => f.key);
 
 function buildFieldRecord(getValue: (key: FieldKey) => string) {
@@ -76,13 +75,9 @@ function buildFieldRecord(getValue: (key: FieldKey) => string) {
    }, {} as Record<FieldKey, string>);
 }
 
-
 export default function EntryDetailScreen() {
    useEffect(() => {
-      if (
-         Platform.OS === 'android' &&
-         UIManager.setLayoutAnimationEnabledExperimental
-      ) {
+      if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
          UIManager.setLayoutAnimationEnabledExperimental(true);
       }
    }, []);
@@ -91,12 +86,15 @@ export default function EntryDetailScreen() {
    const entryId = Array.isArray(id) ? id[0] : id;
    const store = useEntries();
    const entry = entryId ? store.getEntryById(entryId) : undefined;
-   const { showAiAnalysis: aiVisible, hapticsEnabled, hapticsAvailable, triggerHaptic } =
-      usePreferences();
+   const { showAiAnalysis: aiVisible, hapticsEnabled, hapticsAvailable, triggerHaptic } = usePreferences();
+   
    const insets = useSafeAreaInsets();
    const keyboardOffset = insets.bottom + 32;
-   const { colors } = useTheme();
-   const styles = useStyles();
+
+   // Theme Hooks
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
 
    const [form, setForm] = useState<Record<FieldKey, string>>(() =>
       buildFieldRecord((key) => entry?.[key] ?? '')
@@ -104,8 +102,7 @@ export default function EntryDetailScreen() {
    const [justSaved, setJustSaved] = useState(false);
    const [hasScrolled, setHasScrolled] = useState(false);
    const [isEditing, setIsEditing] = useState(false);
-   const [editSnapshot, setEditSnapshot] =
-      useState<Record<FieldKey, string> | null>(null);
+   const [editSnapshot, setEditSnapshot] = useState<Record<FieldKey, string> | null>(null);
    const [showAnalysis, setShowAnalysis] = useState(false);
 
    useEffect(() => {
@@ -151,39 +148,31 @@ export default function EntryDetailScreen() {
       });
    }, [baseline, trimmed]);
 
-   const getAccentStyle = useCallback(
+   // Helper: Return Class Names instead of Style Objects
+   const getAccentClass = useCallback(
       (key: FieldKey) => {
-         if (key === 'belief') {
-            return {
-               backgroundColor: colors.accentBeliefBg,
-               borderColor: colors.accentBeliefBorder,
-            };
-         }
-         if (key === 'dispute') {
-            return {
-               backgroundColor: colors.accentDisputeBg,
-               borderColor: colors.accentDisputeBorder,
-            };
-         }
-         return null;
+         if (key === 'belief') return "bg-belief-bg border-belief-border";
+         if (key === 'dispute') return "bg-dispute-bg border-dispute-border";
+         return "bg-card-grey border-transparent";
       },
-      [colors]
+      []
    );
 
-   const getChipStyle = useCallback(
+   // Helper: Return Class Names for Chips
+   const getChipClass = useCallback(
       (score?: string | null) => {
          switch (score) {
             case 'optimistic':
-               return { bg: colors.accentDisputeBg, text: colors.accentDisputeText };
+               return "bg-dispute-bg text-dispute-text";
             case 'pessimistic':
-               return { bg: colors.accentBeliefBg, text: colors.accentBeliefText };
+               return "bg-belief-bg text-belief-text";
             case 'mixed':
-               return { bg: colors.cardInput, text: colors.text };
+               return "bg-card-input text-text";
             default:
-               return { bg: colors.cardGrey, text: colors.textSubtle };
+               return "bg-card-grey text-text-subtle";
          }
       },
-      [colors]
+      []
    );
 
    const setField = useCallback(
@@ -235,14 +224,8 @@ export default function EntryDetailScreen() {
       KeyboardController.dismiss();
    }, [editSnapshot, isEditing]);
 
-   const formattedTimestamp = entry
-      ? formatDateTimeWithWeekday(entry.createdAt)
-      : '';
-   const statusMessage = justSaved
-      ? 'Saved'
-      : hasChanges
-      ? 'Unsaved changes'
-      : '';
+   const formattedTimestamp = entry ? formatDateTimeWithWeekday(entry.createdAt) : '';
+   const statusMessage = justSaved ? 'Saved' : hasChanges ? 'Unsaved changes' : '';
    const statusDisplay = statusMessage || 'Saved';
 
    useEffect(() => {
@@ -260,75 +243,70 @@ export default function EntryDetailScreen() {
       [hasScrolled]
    );
 
-
-
    if (!entry) {
       return (
-         <SafeAreaView style={styles.container}>
-            <Text style={styles.text}>Entry not found.</Text>
-         </SafeAreaView>
+         <View className="flex-1 items-center justify-center bg-background">
+            <Text className="text-text">Entry not found.</Text>
+         </View>
       );
    }
 
-  
    return (
-      <View style={styles.container}>
+      <View className="flex-1 px-4 bg-background">
+         {/* Safe Area Spacer */}
          <View style={{ height: insets.top }} />
-         <View style={styles.header}>
+         
+         {/* Header */}
+         <View className="flex-row items-center justify-center mb-4 relative z-10">
             <Pressable
                onPress={() => router.back()}
-               style={styles.backButton}
                hitSlop={8}
+               className="absolute left-0 p-2 rounded-full active:bg-card-grey"
             >
-               <Ionicons name="chevron-back" size={18} color="#111827" />
+               <Ionicons name="chevron-back" size={18} color={iconColor} />
             </Pressable>
 
-            <View style={styles.titleMeta}>
+            <View className="items-center gap-1">
                {!isEditing ? (
                   <>
-                     <Text style={styles.timeStamp}>
+                     <Text className="text-base text-text font-medium">
                         {formattedTimestamp || ' '}
                      </Text>
-                     <Text
-                        style={[
-                           styles.statusText,
-                           !statusMessage && styles.statusTextHidden,
-                        ]}
-                     >
+                     <Text className={`text-[13px] text-hint absolute mt-6 ${!statusMessage ? 'opacity-0' : 'opacity-100'}`}>
                         {statusDisplay}
                      </Text>
                   </>
                ) : (
-                  <Text style={styles.statusText}>Editing</Text>
+                  <Text className="text-[13px] text-hint">Editing</Text>
                )}
             </View>
 
-            <View style={styles.actions}>
-               {isEditing ? (
+            <View className="absolute right-0 flex-row items-center gap-2">
+               {isEditing && (
                   <Pressable
-                     style={styles.cancelButton}
                      onPress={handleCancel}
                      hitSlop={8}
+                     className="px-3 py-1.5 rounded-full border border-border bg-card-grey"
                   >
-                     <Text style={styles.cancelLabel}>Cancel</Text>
+                     <Text className="text-sm text-text">Cancel</Text>
                   </Pressable>
-               ) : null}
+               )}
                <Pressable
-                  style={styles.saveButton}
                   onPress={isEditing ? handleSave : startEditing}
                   hitSlop={8}
+                  className="px-3 py-1.5 rounded-full border border-border bg-card-grey"
                >
-                  <Text style={styles.saveLabel}>
+                  <Text className="text-sm text-text">
                      {isEditing ? 'Save' : 'Edit'}
                   </Text>
                </Pressable>
             </View>
          </View>
 
-         {hasScrolled ? <View style={styles.divider} /> : null}
+         {hasScrolled && <View className="h-[1px] bg-border mb-0" />}
 
          <KeyboardAwareScrollView
-            style={styles.scroll}
+            className="flex-1 pt-6"
             contentContainerStyle={[{ paddingBottom: insets.bottom + 16 }]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
@@ -338,33 +316,31 @@ export default function EntryDetailScreen() {
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
          >
+            {/* Inline AI Analysis */}
             {aiVisible && aiDisplayData ? (
-               <View style={styles.inlineAnalysis}>
+               <View className="mb-5 p-3 rounded-xl bg-card-grey border border-border gap-1.5">
                   <Pressable
-                     style={styles.inlineHeaderRow}
+                     className="flex-row items-center justify-between mb-1"
                      onPress={() => {
-                        LayoutAnimation.configureNext(
-                           LayoutAnimation.Presets.easeInEaseOut
-                        );
+                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                         setShowAnalysis((s) => !s);
                      }}
                   >
-                     <Text style={styles.inlineHeading}>AI Analysis</Text>
-                     <Text style={styles.inlineToggle}>
+                     <Text className="text-[13px] font-bold text-text">AI Analysis</Text>
+                     <Text className="text-xs font-semibold text-hint">
                         {showAnalysis ? 'Hide' : 'Show'}
                      </Text>
                   </Pressable>
 
                   {showAnalysis && aiDisplayData ? (
-                     <View style={styles.inlineAnalysisBody}>
+                     <View className="gap-2">
                         {aiDisplayData.analysis.emotionalLogic ? (
-                           <Text style={styles.inlineBody}>
+                           <Text className="text-[13px] leading-5 text-text">
                               {aiDisplayData.analysis.emotionalLogic}
                            </Text>
                         ) : null}
 
-
-                        <View style={styles.inlineStyleGroup}>
+                        <View className="mt-1 gap-2">
                            {(
                               [
                                  [
@@ -387,41 +363,31 @@ export default function EntryDetailScreen() {
                                  ],
                               ] as const
                            ).map(([key, label, dim, color]) => {
-                              const chipStyle = getChipStyle(dim?.score);
+                              // Extract class string from helper
+                              const chipClass = getChipClass(dim?.score); 
+                              
                               return (
-                                 <View style={styles.dimensionBlock} key={key}>
-                                    <View style={styles.dimensionHeaderRow}>
-                                       <Text style={styles.dimensionLabel}>
+                                 <View className="gap-1.5 py-1" key={key}>
+                                    <View className="flex-row items-center justify-between gap-2">
+                                       <Text className="text-xs font-bold text-text px-1.5 py-0.5 rounded-md">
                                           {label}
                                        </Text>
-                                       <View
-                                          style={[
-                                             styles.chip,
-                                             { backgroundColor: chipStyle.bg },
-                                          ]}
-                                       >
-                                          <Text
-                                             style={[
-                                                styles.chipText,
-                                                { color: chipStyle.text },
-                                             ]}
-                                          >
+                                       <View className={`px-2 py-1 rounded-full ${chipClass.split(" ")[0]}`}>
+                                          <Text className={`text-xs font-bold capitalize ${chipClass.split(" ")[1]}`}>
                                              {dim?.score || 'n/a'}
                                           </Text>
                                        </View>
                                     </View>
                                     {dim?.detectedPhrase ? (
                                        <Text
-                                          style={[
-                                             styles.inlinePhrase,
-                                             { backgroundColor: color + '55' },
-                                          ]}
+                                          className="mt-0.5 px-2 py-1.5 rounded-lg text-xs text-text overflow-hidden"
+                                          style={{ backgroundColor: color + '55' }}
                                        >
                                           &quot;{dim.detectedPhrase}&quot;
                                        </Text>
                                     ) : null}
                                     {dim?.insight ? (
-                                       <Text style={styles.inlineBody}>
+                                       <Text className="text-[13px] leading-5 text-text">
                                           {dim.insight}
                                        </Text>
                                     ) : null}
@@ -430,19 +396,18 @@ export default function EntryDetailScreen() {
                            })}
                         </View>
 
-                        {/* //TODO: add another way to see it here */}
-                        <View style={styles.counterSection}>
-                           <Text style={styles.counterTitle}>
+                        <View className="mt-4 gap-2">
+                           <Text className="text-[13px] font-bold text-text">
                               Another way to see it
                            </Text>
                            {aiDisplayData.suggestions.counterBelief ? (
-                              <View style={styles.counterBox}>
-                                 <Text style={styles.counterText}>
+                              <View className="p-3 rounded-xl border border-border bg-card-bg shadow-sm">
+                                 <Text className="text-[14px] leading-5 text-text">
                                     {aiDisplayData.suggestions.counterBelief}
                                  </Text>
                               </View>
                            ) : (
-                              <Text style={styles.counterHint}>
+                              <Text className="text-sm text-hint">
                                  Tap “Analyze with AI” to get a counter-belief.
                               </Text>
                            )}
@@ -452,29 +417,32 @@ export default function EntryDetailScreen() {
                </View>
             ) : null}
 
-            {visibleFields.map((field) => (
-               <View style={styles.section} key={field.key}>
-                  <Text style={styles.label}>{field.label}</Text>
-                  <Text style={styles.subLabel}>{field.hint}</Text>
-                  {/** Accent background for belief/dispute in read-only mode */}
-                  {/** Keep editing and read-only styles below */}
-                  {/** accentStyle computed from theme */}
-                  <TextInput
-                     multiline
-                     editable={isEditing}
-                     value={form[field.key]}
-                     onChangeText={setField(field.key)}
-                     placeholder={field.placeholder}
-                     style={[
-                        styles.input,
-                        isEditing ? styles.inputEdit : styles.inputReadOnly,
-                        !isEditing && getAccentStyle(field.key),
-                     ]}
-                     scrollEnabled={isEditing}
-                     textAlignVertical="top"
-                  />
-               </View>
-            ))}
+            {/* Form Fields */}
+            {visibleFields.map((field) => {
+               // Dynamic classes for input styling
+               const editClass = isEditing 
+                  ? "bg-card-input min-h-[80px] py-3" 
+                  : `py-1.5 min-h-0 h-auto ${getAccentClass(field.key)}`;
+
+               return (
+                  <View className="mb-4 gap-1 shadow-sm" key={field.key}>
+                     <Text className="text-[15px] font-bold text-text">{field.label}</Text>
+                     <Text className="text-[13px] font-semibold text-hint">{field.hint}</Text>
+                     
+                     <TextInput
+                        multiline
+                        editable={isEditing}
+                        value={form[field.key]}
+                        onChangeText={setField(field.key)}
+                        placeholder={field.placeholder}
+                        placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
+                        className={`mt-1.5 px-3 text-sm text-text leading-5 rounded-xl border border-border ${editClass}`}
+                        scrollEnabled={isEditing}
+                        textAlignVertical="top"
+                     />
+                  </View>
+               );
+            })}
 
             {!entry.dispute?.trim() && (
                <>
@@ -483,334 +451,7 @@ export default function EntryDetailScreen() {
                </>
             )}
 
-
          </KeyboardAwareScrollView>
       </View>
    );
 }
-
-const useStyles = makeThemedStyles(({ colors, typography, shadows }) =>
-   StyleSheet.create({
-      aiResultContainer: {
-         marginTop: 16,
-         padding: 12,
-         borderRadius: 12,
-         backgroundColor: colors.cardGrey,
-         borderWidth: StyleSheet.hairlineWidth,
-         borderColor: colors.border,
-      },
-      aiResultTitle: {
-         fontSize: 14,
-         fontWeight: '700',
-         marginBottom: 8,
-         color: colors.text,
-      },
-      aiResultText: {
-         fontSize: 12,
-         lineHeight: 16,
-         color: colors.text,
-         fontFamily: Platform.select({
-            ios: 'Menlo',
-            android: 'monospace',
-            default: 'System',
-         }),
-      },
-      aiResultScroll: {
-         maxHeight: 240,
-      },
-      aiSection: {
-         gap: 6,
-         marginBottom: 12,
-      },
-      aiSectionHeading: {
-         fontSize: 13,
-         fontWeight: '700',
-         color: colors.text,
-      },
-      aiBody: {
-         fontSize: 13,
-         lineHeight: 18,
-         color: colors.text,
-      },
-      aiSubtle: {
-         fontSize: 12,
-         lineHeight: 16,
-         color: colors.hint,
-      },
-      aiBullet: {
-         marginLeft: 2,
-      },
-      aiStyleGroup: {
-         marginTop: 6,
-         gap: 8,
-      },
-      aiStyleRow: {
-         gap: 4,
-      },
-      aiStyleLabel: {
-         fontSize: 12,
-         fontWeight: '700',
-         color: colors.text,
-      },
-      aiStyleContent: {
-         gap: 2,
-      },
-      aiStyleChip: {
-         alignSelf: 'flex-start',
-         paddingHorizontal: 8,
-         paddingVertical: 4,
-         borderRadius: 8,
-         backgroundColor: colors.cardGrey,
-         borderWidth: StyleSheet.hairlineWidth,
-         borderColor: colors.border,
-         fontSize: 12,
-         color: colors.text,
-         textTransform: 'capitalize',
-      },
-      inlineAnalysis: {
-         marginBottom: 20,
-         padding: 12,
-         borderRadius: 12,
-         backgroundColor: colors.cardGrey,
-         borderWidth: StyleSheet.hairlineWidth,
-         borderColor: colors.border,
-         gap: 6,
-      },
-      inlineAnalysisBody: {
-         gap: 8,
-      },
-      dimensionBlock: {
-         gap: 6,
-         paddingVertical: 4,
-      },
-      dimensionHeaderRow: {
-         flexDirection: 'row',
-         alignItems: 'center',
-         justifyContent: 'space-between',
-         gap: 8,
-      },
-      dimensionLabel: {
-         fontSize: 12,
-         fontWeight: '700',
-         color: colors.text,
-         paddingHorizontal: 6,
-         paddingVertical: 2,
-         borderRadius: 6,
-      },
-      chip: {
-         paddingHorizontal: 8,
-         paddingVertical: 4,
-         borderRadius: 999,
-      },
-      chipText: {
-         fontSize: 12,
-         fontWeight: '700',
-         color: colors.text,
-         textTransform: 'capitalize',
-      },
-      inlinePhrase: {
-         marginTop: 2,
-         paddingHorizontal: 8,
-         paddingVertical: 6,
-         borderRadius: 8,
-         fontSize: 12,
-         color: colors.text,
-      },
-      inlineHeading: {
-         fontSize: 13,
-         fontWeight: '700',
-         color: colors.text,
-      },
-      inlineHeaderRow: {
-         flexDirection: 'row',
-         alignItems: 'center',
-         justifyContent: 'space-between',
-         marginBottom: 4,
-      },
-      inlineToggle: {
-         fontSize: 12,
-         fontWeight: '600',
-         color: colors.hint,
-      },
-      inlineBody: {
-         fontSize: 13,
-         lineHeight: 18,
-         color: colors.text,
-      },
-      inlineSubtle: {
-         fontSize: 12,
-         lineHeight: 16,
-         color: colors.hint,
-      },
-      inlineStyleGroup: {
-         marginTop: 4,
-         gap: 8,
-      },
-      inlineStyleRow: {
-         gap: 4,
-      },
-      inlineStyleLabel: {
-         fontSize: 12,
-         fontWeight: '700',
-         color: colors.text,
-      },
-      inlineStyleChip: {
-         alignSelf: 'flex-start',
-         paddingHorizontal: 8,
-         paddingVertical: 4,
-         borderRadius: 8,
-         backgroundColor: colors.cardGrey,
-         borderWidth: StyleSheet.hairlineWidth,
-         borderColor: colors.border,
-         fontSize: 12,
-         color: colors.text,
-         textTransform: 'capitalize',
-      },
-      counterSection: {
-         marginTop: 16,
-         gap: 8,
-      },
-      counterTitle: {
-         fontSize: 13,
-         fontWeight: '700',
-         color: colors.text,
-      },
-      counterBox: {
-         padding: 12,
-         borderRadius: 12,
-         borderWidth: StyleSheet.hairlineWidth,
-         borderColor: colors.border,
-         backgroundColor: colors.cardBg,
-         shadowColor: colors.shadowColor,
-         shadowOpacity: 0.04,
-         shadowRadius: 8,
-         shadowOffset: { width: 0, height: 2 },
-         elevation: 1,
-      },
-      counterText: {
-         ...typography.body,
-         color: colors.text,
-         lineHeight: 20,
-      },
-      counterHint: {
-         ...typography.body,
-         color: colors.hint,
-      },
-
-      container: {
-         flex: 1,
-         paddingHorizontal: 16,
-         backgroundColor: colors.background,
-      },
-      header: {
-         flexDirection: 'row',
-         alignItems: 'center',
-         justifyContent: 'center',
-         marginBottom: 16,
-         position: 'relative',
-      },
-      backButton: {
-         padding: 8,
-         position: 'absolute',
-         left: 0,
-      },
-      titleMeta: {
-         flex: 1,
-         flexDirection: 'column',
-         alignItems: 'center',
-         gap: 4,
-      },
-      saveButton: {
-         padding: 8,
-         borderRadius: 999,
-         borderWidth: StyleSheet.hairlineWidth,
-         borderColor: colors.border,
-         backgroundColor: colors.cardGrey,
-      },
-      saveLabel: {
-         fontSize: 14,
-         color: colors.text,
-      },
-      actions: {
-         position: 'absolute',
-         right: 0,
-         flexDirection: 'row',
-         alignItems: 'center',
-         gap: 8,
-      },
-      cancelButton: {
-         paddingHorizontal: 10,
-         paddingVertical: 6,
-         borderRadius: 999,
-         borderWidth: StyleSheet.hairlineWidth,
-         borderColor: colors.border,
-         backgroundColor: colors.cardGrey,
-      },
-      cancelLabel: {
-         fontSize: 14,
-         color: colors.text,
-      },
-      timeStamp: {
-         fontSize: 16,
-         color: colors.text,
-      },
-      divider: {
-         height: 1,
-         backgroundColor: colors.border,
-         marginBottom: 0,
-      },
-      statusText: {
-         fontSize: 13,
-         color: colors.hint,
-         position: 'absolute',
-         marginTop: 24,
-      },
-      statusTextHidden: {
-         opacity: 0,
-      },
-      scroll: {
-         paddingTop: 24,
-         flex: 1,
-      },
-      section: {
-         marginBottom: 16,
-         gap: 4,
-         ...shadows.shadowSoft,
-      },
-      label: {
-         fontSize: 15,
-         fontWeight: '700',
-         color: colors.text,
-      },
-      subLabel: {
-         fontSize: 13,
-         fontWeight: '600',
-         color: colors.hint,
-      },
-      input: {
-         marginTop: 6,
-         paddingHorizontal: 12,
-         color: colors.text,
-         fontSize: 14,
-         lineHeight: 20,
-         borderRadius: 12,
-         borderWidth: StyleSheet.hairlineWidth,
-         borderColor: colors.border,
-      },
-      inputEdit: {
-         backgroundColor: colors.cardInput,
-         minHeight: 80,
-         paddingVertical: 12,
-      },
-      inputReadOnly: {
-         backgroundColor: colors.cardGrey,
-         paddingVertical: 6,
-         minHeight: undefined,
-         height: undefined,
-      },
-      text: {
-         fontSize: 14,
-         color: colors.text,
-      },
-   })
-);

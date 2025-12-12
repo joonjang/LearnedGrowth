@@ -1,16 +1,16 @@
-import { useDeferredReady } from '@/features/hooks/useDeferredReady';
+import { useDeferredReady } from '@/hooks/useDeferredReady';
+import { useMemo } from 'react';
 import {
-   ScrollView,
-   StyleSheet,
-   StyleProp,
-   Text,
-   TextStyle,
-   View,
-   ViewStyle,
+  ScrollView,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextStyle,
+  View,
+  ViewStyle,
 } from 'react-native';
 import { TypeAnimation } from 'react-native-type-animation';
 import ThreeDotsLoader from '../ThreeDotLoader';
-import { useMemo } from 'react';
 
 type Props = {
    text: string;

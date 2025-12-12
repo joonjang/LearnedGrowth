@@ -1,4 +1,5 @@
-import { Ionicons } from '@expo/vector-icons'; // <--- Added
+import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 import React, { useCallback } from 'react';
 import {
    Alert,
@@ -7,7 +8,6 @@ import {
    NativeSyntheticEvent,
    Pressable,
    ScrollView,
-   StyleSheet,
    TextInput,
    View,
 } from 'react-native';
@@ -19,7 +19,6 @@ import StepperButton from '@/components/newEntry/StepperButton';
 import StepperHeader from '@/components/newEntry/StepperHeader';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
-import { makeThemedStyles, useTheme } from '@/theme/theme'; // <--- Added useTheme
 
 type Props = {
    entry: Entry;
@@ -72,8 +71,11 @@ export default function DisputeSteps({
    promptContainerStyle,
    contentTopPadding,
 }: Props) {
-   const styles = useStyles();
-   const { colors } = useTheme(); // <--- Hook for colors
+   
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
+
    const handleClose = useCallback(() => {
       if (!hasUnsavedChanges) {
          onExit();
@@ -94,11 +96,13 @@ export default function DisputeSteps({
       <>
          <ScrollView
             ref={scrollRef}
-            style={styles.scroll}
-            contentContainerStyle={[
-               styles.scrollContent,
-               { paddingTop: contentTopPadding ?? 24 },
-            ]}
+            className="flex-1"
+            contentContainerStyle={{
+               flexGrow: 1,
+               justifyContent: 'space-between',
+               gap: 16,
+               paddingTop: contentTopPadding ?? 24
+            }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
@@ -108,9 +112,9 @@ export default function DisputeSteps({
                scrollToBottom(true);
             }}
          >
-            {/* --- HEADER ROW (Stepper + Close Button) --- */}
-            <View style={styles.headerRow}>
-               <View style={styles.stepperContainer}>
+            {/* --- HEADER ROW --- */}
+            <View className="flex-row items-center mb-2">
+               <View className="flex-1 mr-2">
                   <StepperHeader
                      step={idx + 1}
                      total={4}
@@ -121,9 +125,9 @@ export default function DisputeSteps({
                <Pressable
                   onPress={handleClose}
                   hitSlop={12}
-                  style={styles.closeButton}
+                  className="p-2 rounded-2xl border border-border bg-card-bg items-center justify-center active:opacity-70"
                >
-                  <Ionicons name="close" size={22} color={colors.text} />
+                  <Ionicons name="close" size={22} color={iconColor} />
                </Pressable>
             </View>
 
@@ -141,16 +145,13 @@ export default function DisputeSteps({
                maxHeight={promptMaxHeight}
                scrollEnabled
                numberOfLines={6}
-               containerStyle={promptContainerStyle ?? styles.promptContainer}
+               containerStyle={promptContainerStyle ?? { flexGrow: 1, justifyContent: 'space-evenly' }}
             />
          </ScrollView>
-         <View
-            style={[
-               styles.inputWrapper,
-               {
-                  paddingBottom: !isKeyboardVisible ? 16 : 0
-               },
-            ]}
+
+         {/* --- INPUT WRAPPER --- */}
+         <View 
+            style={{ paddingBottom: !isKeyboardVisible ? 16 : 0 }}
          >
             <InputBox
                ref={inputRef}
@@ -174,41 +175,3 @@ export default function DisputeSteps({
       </>
    );
 }
-
-const useStyles = makeThemedStyles(({ colors }) =>
-   StyleSheet.create({
-      scroll: { flex: 1 },
-      scrollContent: {
-         flexGrow: 1,
-         justifyContent: 'space-between',
-         gap: 16,
-      },
-      // --- NEW STYLES MATCHING NewEntryModal ---
-      headerRow: {
-         flexDirection: 'row',
-         alignItems: 'center',
-         marginBottom: 8,
-      },
-      stepperContainer: {
-         flex: 1,
-         marginRight: 8,
-      },
-      closeButton: {
-         padding: 8,
-         borderRadius: 16,
-         borderWidth: StyleSheet.hairlineWidth,
-         borderColor: colors.border,
-         backgroundColor: colors.cardBg,
-         alignItems: 'center',
-         justifyContent: 'center',
-      },
-      // ----------------------------------------
-      promptContainer: {
-         flexGrow: 1,
-         justifyContent: 'space-evenly',
-      },
-      inputWrapper: {
-         // paddingHorizontal is handled by parent page
-      },
-   })
-);

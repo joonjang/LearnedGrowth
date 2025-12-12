@@ -1,12 +1,12 @@
-import { makeThemedStyles } from '@/theme/theme';
+import { useColorScheme } from 'nativewind';
 import { forwardRef, useState } from 'react';
 import {
    Pressable,
-   StyleSheet,
    TextInput,
    TextInputProps,
    ViewStyle,
 } from 'react-native';
+// REMOVED: import { makeThemedStyles } from '@/theme/theme';
 
 type Dims = { minHeight?: number; maxHeight?: number };
 
@@ -36,25 +36,35 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
    ref
 ) {
    const [focused, setFocused] = useState(false);
-   const { styles, placeholderColor } = useStyles();
+   
+   // Hook for placeholder color
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+   const placeholderColor = isDark ? '#94a3b8' : '#64748b'; // text-hint
+
    return (
       <Pressable
          onPress={() =>
             typeof ref === 'object' && ref?.current ? ref.current.focus() : null
          }
-         style={[
-            styles.inputBox,
-            focused && styles.inputBoxFocused,
-            dims,
-            containerStyle,
-         ]}
+         // Merged container classes:
+         // - Base: rounded-xl, bg-card-input, border, px-4, py-3, shadow-sm
+         // - Focus: border-border-strong, shadow-md
+         className={`rounded-[14px] bg-card-input border px-4 py-3 shadow-sm ${
+            focused 
+               ? 'border-border-strong shadow-md opacity-100' 
+               : 'border-card-input-border'
+         }`}
+         style={[dims, containerStyle]}
       >
          <TextInput
             ref={ref}
             placeholder={placeholder}
             value={value}
             onChangeText={onChangeText}
-            style={compact ? styles.inputTextCompact : styles.inputText}
+            // Compact vs Standard Text Size
+            className={`text-text leading-6 ${compact ? 'text-lg' : 'text-[22px]'}`}
+            style={{ includeFontPadding: false }} // NativeWind handles most, but this is specific
             multiline
             scrollEnabled={scrollEnabled}
             textAlignVertical="top"
@@ -74,44 +84,3 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
 });
 
 export default InputBox;
-
-const useStyles = makeThemedStyles(({ colors, shadows }) => {
-   const inputBase = {
-      borderRadius: 14,
-      backgroundColor: colors.cardInput,
-      borderWidth: 1,
-      borderColor: colors.cardInputBorder,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      ...shadows.shadowSoft,
-      shadowRadius: 4,
-      shadowOffset: { width: 0, height: 3 },
-      elevation: 2,
-   } as const;
-
-   return {
-      styles: StyleSheet.create({
-         inputBox: inputBase,
-         inputBoxFocused: {
-            ...inputBase,
-            borderColor: colors.borderStrong,
-            shadowOpacity: 0.16,
-            shadowRadius: 2,
-            elevation: 3,
-         },
-         inputText: {
-            fontSize: 22,
-            lineHeight: 24,
-            color: colors.text,
-            includeFontPadding: false as any,
-         },
-         inputTextCompact: {
-            fontSize: 18,
-            lineHeight: 21,
-            color: colors.text,
-            includeFontPadding: false as any,
-         },
-      }),
-      placeholderColor: colors.hint,
-   };
-});

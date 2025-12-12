@@ -3,28 +3,29 @@ import InputBox from '@/components/newEntry/InputBox';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
 import StepperButton from '@/components/newEntry/StepperButton';
 import StepperHeader from '@/components/newEntry/StepperHeader';
-import { useEntries } from '@/features/hooks/useEntries';
-import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
-import { usePromptLayout } from '@/features/hooks/usePromptLayout';
-import { usePrompts } from '@/features/hooks/usePrompts';
-import { useVisitedSet } from '@/features/hooks/useVisitedSet';
+import { useEntries } from '@/hooks/useEntries';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
+import { usePromptLayout } from '@/hooks/usePromptLayout';
+import { usePrompts } from '@/hooks/usePrompts';
+import { useVisitedSet } from '@/hooks/useVisitedSet';
 import { NewInputEntryType } from '@/models/newInputEntryType';
-import { useTheme } from '@/theme/theme';
+// REMOVED: import { useTheme } ...
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useColorScheme } from 'nativewind';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
-   Alert,
-   Keyboard,
-   KeyboardAvoidingView,
-   Platform,
-   Pressable,
-   ScrollView,
-   StyleSheet,
-   TextInput,
-   View,
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
 } from 'react-native';
+// KEPT: Use insets for true edge-to-edge control
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STEP_ORDER = ['adversity', 'belief', 'consequence'] as const;
@@ -36,14 +37,19 @@ const STEP_LABEL: Record<NewInputEntryType, string> = {
 
 export default function NewEntryModal() {
    const store = useEntries();
-   const insets = useSafeAreaInsets();
-   const { mode, colors } = useTheme();
+   const insets = useSafeAreaInsets(); // <-- The correct tool for Edge-to-Edge
+   
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
+
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
    const { promptTextStyle, inputBoxDims, promptMaxHeight } = usePromptLayout();
    const isKeyboardVisible = useKeyboardVisible();
    
-   const topPadding = Platform.OS === 'android' ? insets.top + 12 : 20; 
+   // Logic: Start below the notch (insets.top) + some breathing room (12px)
+   const topPadding = insets.top + 12;
 
    const [form, setForm] = useState<Record<NewInputEntryType, string>>({
       adversity: '',
@@ -58,11 +64,13 @@ export default function NewEntryModal() {
    const prompts = usePrompts(STEP_ORDER, promptListGetter);
    const [idx, setIdx] = useState(0);
    const currKey = STEP_ORDER[idx] as NewInputEntryType;
+   
    const setField = useCallback(
       (k: NewInputEntryType) => (v: string) =>
          setForm((f) => ({ ...f, [k]: v })),
       []
    );
+   
    const trimmedForm = useMemo(
       () => ({
          adversity: form.adversity.trim(),
@@ -71,20 +79,18 @@ export default function NewEntryModal() {
       }),
       [form]
    );
+   
    const hasAnyContent = useMemo(
       () => Object.values(trimmedForm).some(Boolean),
       [trimmedForm]
    );
    const currentEmpty = !trimmedForm[currKey];
 
-    const submit = useCallback(async () => {
+   const submit = useCallback(async () => {
       const { adversity, belief, consequence } = trimmedForm;
 
       if (!adversity || !belief || !consequence) {
-         Alert.alert(
-            'Add required text',
-            'Please fill in all fields before saving.'
-         );
+         Alert.alert('Add required text', 'Please fill in all fields before saving.');
          return;
       }
 
@@ -117,29 +123,31 @@ export default function NewEntryModal() {
          <StatusBar
             translucent
             backgroundColor="transparent"
-            style={mode === 'dark' ? 'light' : 'dark'}
+            style={isDark ? 'light' : 'dark'}
          />
          <KeyboardAvoidingView
-            style={styles.root}
+            className="flex-1 bg-background"
             behavior={'padding'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
          >
-            <View style={styles.page}>
-               
+            {/* NO SafeAreaView Wrapper here. We want the ScrollView to touch the top edge. */}
+            
+            <View className="flex-1 px-5">
                <ScrollView
-                  style={styles.scroll}
-                  contentContainerStyle={[
-                     styles.scrollContent,
-                     { paddingTop: topPadding},
-                  ]}
+                  className="flex-1"
+                  contentContainerStyle={{
+                     flexGrow: 1,
+                     gap: 16, // Replaces styles.scrollContent
+                     paddingTop: topPadding, // <-- Pushes content down, but lets it scroll up
+                  }}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
                >
-                  {/* HEADER ROW CONTAINER */}
-                  <View style={styles.headerRow}>
+                  {/* HEADER ROW */}
+                  <View className="flex-row items-center mb-4">
                      
-                     {/* 1. Stepper takes available space */}
-                     <View style={styles.stepperContainer}>
+                     {/* Stepper Container */}
+                     <View className="flex-1 mr-2">
                         <StepperHeader
                            step={idx + 1}
                            total={STEP_ORDER.length}
@@ -147,23 +155,17 @@ export default function NewEntryModal() {
                         />
                      </View>
 
-                     {/* 2. Close button sits to the right */}
+                     {/* Close Button */}
                      <Pressable
                         accessibilityRole="button"
                         onPress={handleClose}
                         hitSlop={12}
-                        style={[
-                           styles.closeButton,
-                           {
-                              backgroundColor: colors.cardBg,
-                              borderColor: colors.border,
-                           },
-                        ]}
+                        className="p-2 rounded-2xl border border-border bg-card-bg items-center justify-center active:opacity-70"
                      >
                         <Ionicons
                            name="close"
                            size={22}
-                           color={colors.text}
+                           color={iconColor}
                         />
                      </Pressable>
                   </View>
@@ -176,11 +178,12 @@ export default function NewEntryModal() {
                      maxHeight={promptMaxHeight}
                      scrollEnabled
                      numberOfLines={6}
-                     containerStyle={styles.promptContainer}
+                     containerStyle={{ flexGrow: 1, justifyContent: 'space-evenly' }}
                   />
                </ScrollView>
 
-               <View style={[styles.inputWrapper, {paddingBottom: !isKeyboardVisible ? 24 : 0}]}>
+               {/* INPUT WRAPPER */}
+               <View className={`pb-${!isKeyboardVisible ? '6' : '0'}`}>
                   <InputBox
                      ref={inputRef}
                      value={form[currKey]}
@@ -204,41 +207,3 @@ export default function NewEntryModal() {
       </>
    );
 }
-
-const styles = StyleSheet.create({
-   root: { flex: 1, backgroundColor: '#fff' },
-   page: {
-      flex: 1,
-      paddingHorizontal: 20,
-   },
-   // NEW STYLES
-   headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center', // Aligns the text and button vertically
-      marginBottom: 16,
-      // If StepperHeader has its own top padding, you might want to reduce it there
-   },
-   stepperContainer: {
-      flex: 1, // Takes up all remaining width
-      marginRight: 8, // Ensures text doesn't hit the close button
-   },
-   closeButton: {
-      padding: 8,
-      borderRadius: 16,
-      borderWidth: StyleSheet.hairlineWidth,
-      alignItems: 'center',
-      justifyContent: 'center',
-   },
-   scroll: { flex: 1 },
-   scrollContent: {
-      flexGrow: 1,
-      gap: 16,
-   },
-   promptContainer: {
-      flexGrow: 1,
-      justifyContent: 'space-evenly',
-   },
-   inputWrapper: {
-      // paddingHorizontal: 16,
-   },
-});

@@ -1,168 +1,120 @@
-import { Ionicons } from '@expo/vector-icons'; // <--- Added
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
-import {
-   HighlightMap,
-   HighlightedText,
-} from '@/components/entries/highlightUtils';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
-import { makeThemedStyles, useTheme } from '@/theme/theme'; // <--- Added useTheme
+import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 
 type Props = {
    entry: Entry;
-   highlights: {
-      permanence: HighlightMap;
-      pervasiveness: HighlightMap;
-      personalization: HighlightMap;
-   };
-   showPermanenceHighlight: boolean;
-   showPervasivenessHighlight: boolean;
-   showPersonalizationHighlight: boolean;
    aiData?: LearnedGrowthResponse | null;
    loading: boolean;
    error?: string | null;
    streamingText?: string;
-   highlightColors?: {
-      permanence?: string;
-      pervasiveness?: string;
-      personalization?: string;
-   };
-   onGoToSteps?: () => void;
-   onPressIn?: (
-      field: 'permanence' | 'pervasiveness' | 'personalization'
-   ) => void;
-   onPressOut?: () => void;
    contentTopPadding?: number;
-   onExit?: () => void; // <--- Added onExit prop
+   onExit?: () => void;
+    onGoToSteps?: () => void;
 };
 
 export default function ABCAnalysis({
    entry,
-   highlights,
-   showPermanenceHighlight,
-   showPervasivenessHighlight,
-   showPersonalizationHighlight,
    aiData,
    loading,
    error,
    streamingText,
-   highlightColors,
-   onGoToSteps,
-   onPressIn,
-   onPressOut,
    contentTopPadding,
-   onExit, // <--- Destructure prop
+   onExit,
+   onGoToSteps
 }: Props) {
-   const styles = useStyles();
-   const { colors } = useTheme(); // <--- Hook for colors
-
-   const activeHighlights: HighlightMap = {
-      adversity: [
-         ...(showPermanenceHighlight ? highlights.permanence.adversity : []),
-         ...(showPervasivenessHighlight
-            ? highlights.pervasiveness.adversity
-            : []),
-         ...(showPersonalizationHighlight
-            ? highlights.personalization.adversity
-            : []),
-      ],
-      belief: [
-         ...(showPermanenceHighlight ? highlights.permanence.belief : []),
-         ...(showPervasivenessHighlight ? highlights.pervasiveness.belief : []),
-         ...(showPersonalizationHighlight
-            ? highlights.personalization.belief
-            : []),
-      ],
-      consequence: [
-         ...(showPermanenceHighlight ? highlights.permanence.consequence : []),
-         ...(showPervasivenessHighlight
-            ? highlights.pervasiveness.consequence
-            : []),
-         ...(showPersonalizationHighlight
-            ? highlights.personalization.consequence
-            : []),
-      ],
-   };
-
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
    return (
       <ScrollView
-         style={styles.scroll}
-         contentContainerStyle={[
-            styles.scrollContent,
-            { paddingTop: contentTopPadding ?? 24 },
-         ]}
+         className="flex-1"
+         contentContainerStyle={{
+            paddingTop: contentTopPadding ?? 24,
+            paddingBottom: 48,
+            flexGrow: 1,
+            justifyContent: 'space-between',
+            gap: 16,
+         }}
          keyboardShouldPersistTaps="always"
          showsVerticalScrollIndicator={false}
-         onScrollEndDrag={() => onPressOut?.()}
-         onMomentumScrollEnd={() => onPressOut?.()}
       >
-         {/* HEADER ROW (Title + Close Button) */}
-         <View style={styles.container}>
-            <Text style={styles.text}>AI Insight</Text>
-            
-            {onExit && (
-               <Pressable
-                  onPress={onExit}
-                  hitSlop={12}
-                  style={styles.closeButton}
-               >
-                  <Ionicons name="close" size={22} color={colors.text} />
-               </Pressable>
-            )}
+         {/* Header */}
+         <View className="flex-row items-center justify-between py-2">
+            <View className="flex-row items-center py-2">
+               <Text className="text-base font-medium text-text">
+                  AI Insight
+               </Text>
+
+               {onExit && (
+                  <Pressable
+                     onPress={onExit}
+                     hitSlop={12}
+                     className="p-2 rounded-2xl border border-border bg-card-bg items-center justify-center active:opacity-70"
+                  >
+                     <Ionicons name="close" size={22} color={iconColor} />
+                  </Pressable>
+               )}
+            </View>
          </View>
 
-         <View style={styles.contentCard}>
-            <View style={[styles.contextBox]}>
-               <View style={styles.contextRow}>
-                  <Text style={styles.contextLabel}>Adversity</Text>
-                  <HighlightedText
-                     text={entry.adversity}
-                     highlights={activeHighlights.adversity}
-                  />
+         <View className="flex-1 shadow-sm dark:shadow-none">
+            {/* Context Box */}
+            <View className="p-3 rounded-xl bg-card-grey border border-border gap-2.5">
+               <View className="gap-1">
+                  <Text className="text-xs font-bold text-text-subtle uppercase tracking-widest">
+                     Adversity
+                  </Text>
+                  <Text className="text-base text-text leading-relaxed">
+                     {entry.adversity}
+                  </Text>
                </View>
-               <View style={styles.contextDivider} />
-               <View style={styles.contextRow}>
-                  <Text style={styles.contextLabel}>Belief</Text>
-                  <HighlightedText
-                     text={entry.belief}
-                     highlights={activeHighlights.belief}
-                  />
+
+               <View className="h-[1px] bg-border my-0.5" />
+
+               <View className="gap-1">
+                  <Text className="text-xs font-bold text-text-subtle uppercase tracking-widest">
+                     Belief
+                  </Text>
+                  <Text className="text-base text-text leading-relaxed">
+                     {entry.belief}
+                  </Text>
                </View>
+
                {entry.consequence && (
                   <>
-                     <View style={styles.contextDivider} />
-                     <View style={styles.contextRow}>
-                        <Text style={styles.contextLabel}>Consequence</Text>
-                        <HighlightedText
-                           text={entry.consequence}
-                           highlights={activeHighlights.consequence}
-                        />
+                     <View className="h-[1px] bg-border my-0.5" />
+                     <View className="gap-1">
+                        <Text className="text-xs font-bold text-text-subtle uppercase tracking-widest">
+                           Consequence
+                        </Text>
+                        <Text className="text-base text-text leading-relaxed">
+                           {entry.consequence}
+                        </Text>
                      </View>
                   </>
                )}
             </View>
          </View>
 
-         <View style={styles.contentCard}>
+         <View className="flex-1 shadow-sm dark:shadow-none">
             <AiInsightCard
                data={aiData}
                streamingText={streamingText}
                loading={loading}
                error={error}
-               highlightColors={highlightColors}
-               onPressIn={onPressIn}
-               onPressOut={onPressOut}
-               showPermanenceHighlight={showPermanenceHighlight}
-               showPervasivenessHighlight={showPervasivenessHighlight}
-               showPersonalizationHighlight={showPersonalizationHighlight}
             />
-
             {onGoToSteps && aiData ? (
-               <Pressable style={styles.switchButton} onPress={onGoToSteps}>
-                  <Text style={styles.switchButtonText}>
+               <Pressable 
+                  className="mt-4 py-2.5 px-3 rounded-full bg-disputeCTA items-center justify-center shadow-sm active:opacity-90"
+                  onPress={onGoToSteps}
+               >
+                  <Text className="text-base font-semibold text-ctaText">
                      Dispute your belief
                   </Text>
                </Pressable>
@@ -171,95 +123,3 @@ export default function ABCAnalysis({
       </ScrollView>
    );
 }
-
-const useStyles = makeThemedStyles(
-   ({ colors, typography, components, shadows }) =>
-      StyleSheet.create({
-         scroll: { flex: 1 },
-         scrollContent: {
-            flexGrow: 1,
-            justifyContent: 'space-between',
-            gap: 16,
-            paddingBottom: 48,
-         },
-         container: {
-            // This acts as the Header Row now
-            paddingHorizontal: 0, // Removed padding since parent layer has it
-            paddingVertical: 8,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-         },
-         closeButton: {
-            padding: 8,
-            borderRadius: 16,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-            backgroundColor: colors.cardBg,
-            alignItems: 'center',
-            justifyContent: 'center',
-         },
-         contentCard: {
-            flex: 1,
-            ...shadows.shadowSoft,
-         },
-         text: { ...typography.body, fontSize: 16, fontWeight: '500' },
-         switchButton: {
-            marginTop: 16,
-            paddingVertical: 10,
-            paddingHorizontal: 12,
-            borderRadius: 999,
-            backgroundColor: colors.disputeCTA,
-            alignItems: 'center',
-            justifyContent: 'center',
-            ...shadows.shadowSoft,
-         },
-         switchButtonText: {
-            ...typography.body,
-            fontSize: 16,
-            fontWeight: '600',
-            color: colors.ctaText,
-         },
-         contextBox: {
-            ...components.compactCard,
-            backgroundColor: colors.cardGrey,
-            gap: 10,
-         },
-         contextRow: { gap: 4 },
-         contextLabel: {
-            ...typography.caption,
-            fontWeight: '700',
-            color: colors.textSubtle,
-            textTransform: 'uppercase',
-            letterSpacing: 0.4,
-         },
-         contextDivider: {
-            height: 1,
-            backgroundColor: colors.border,
-            marginVertical: 2,
-         },
-         card: {
-            ...components.cardBase,
-            backgroundColor: colors.cardGrey,
-            gap: 12,
-         },
-         title: {
-            ...typography.title,
-            marginBottom: 4,
-         },
-         subText: {
-            ...typography.body,
-            color: colors.textSubtle,
-            marginTop: 4,
-         },
-         errorCard: {
-            backgroundColor: colors.accentBeliefBg,
-            borderColor: colors.accentBeliefBorder,
-            borderWidth: StyleSheet.hairlineWidth,
-         },
-         errorText: {
-            ...typography.body,
-            color: colors.accentBeliefText,
-         },
-      })
-);

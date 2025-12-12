@@ -1,23 +1,21 @@
 import rawAbcde from '@/assets/data/abcde.json';
 import ABCAnalysis from '@/components/entries/dispute/ABCAnalysis';
 import DisputeSteps from '@/components/entries/dispute/DisputeSteps';
-import {
-   buildHighlightMap
-} from '@/components/entries/highlightUtils';
-import { useAbcAi } from '@/features/hooks/useAbcAi';
-import { useEntries } from '@/features/hooks/useEntries';
-import { useKeyboardVisible } from '@/features/hooks/useKeyboardVisible';
-import { usePromptLayout } from '@/features/hooks/usePromptLayout';
-import { usePrompts } from '@/features/hooks/usePrompts';
-import { useVisitedSet } from '@/features/hooks/useVisitedSet';
+import { useAbcAi } from '@/hooks/useAbcAi';
+import { useEntries } from '@/hooks/useEntries';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
+import { usePromptLayout } from '@/hooks/usePromptLayout';
+import { usePrompts } from '@/hooks/usePrompts';
+import { useVisitedSet } from '@/hooks/useVisitedSet';
 import type { AbcdeJson } from '@/models/abcdeJson';
 import type { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { usePreferences } from '@/providers/PreferencesProvider';
-import { useTheme } from '@/theme/theme';
+// REMOVED: import { useTheme } from '@/theme/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useColorScheme } from 'nativewind'; // <--- Added
 import React, {
    useCallback,
    useEffect,
@@ -27,14 +25,12 @@ import React, {
 } from 'react';
 import {
    Alert,
-   Dimensions, // <--- Added
    Keyboard,
    KeyboardAvoidingView,
    NativeScrollEvent,
    NativeSyntheticEvent,
-   Platform, // <--- Added
+   Platform,
    ScrollView,
-   StyleSheet,
    Text,
    TextInput,
    View,
@@ -53,23 +49,6 @@ const STEP_ORDER = [
    'usefulness',
    'energy',
 ] as const;
-
-const DIMENSION_COLORS = {
-   permanence: '#FCA5A5',
-   pervasiveness: '#93C5FD',
-   personalization: '#C4B5FD',
-};
-
-// 1. Helper for robust bottom padding (Same as NewEntryModal)
-const isIphoneWithNotch = () => {
-   const dim = Dimensions.get('window');
-   return (
-      Platform.OS === 'ios' &&
-      !Platform.isPad &&
-      !Platform.isTV &&
-      (dim.height >= 780 || dim.width >= 780)
-   );
-};
 
 function endWithPeriod(text: string) {
    const trimmed = text.trim();
@@ -94,6 +73,9 @@ export default function DisputeScreen() {
       analyze?: string | string[];
    }>();
 
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+
    const entryId = Array.isArray(params.id) ? params.id[0] : params.id;
    const analyzeQuery = Array.isArray(params.analyze)
       ? params.analyze[0]
@@ -105,7 +87,7 @@ export default function DisputeScreen() {
       hapticsAvailable,
       triggerHaptic,
    } = usePreferences();
-   const { colors, mode } = useTheme();
+
    const allowAnalysis = aiVisible;
 
    const { getEntryById, updateEntry } = useEntries();
@@ -113,9 +95,9 @@ export default function DisputeScreen() {
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
    const insets = useSafeAreaInsets();
    const isKeyboardVisible = useKeyboardVisible();
-   
-   // 2. Updated Padding Logic to match NewEntryModal
-   const topPadding = Platform.OS === 'android' ? insets.top + 12 : 20;
+
+   // Unified Edge-to-Edge Padding Logic
+   const topPadding = insets.top + 12;
 
    const [idx, setIdx] = useState(0);
    const [form, setForm] = useState<Record<NewInputDisputeType, string>>({
@@ -126,19 +108,21 @@ export default function DisputeScreen() {
    });
 
    const [analysisTriggered, setAnalysisTriggered] = useState(false);
-   const [showPermanenceHighlight, setShowPermanenceHighlight] = useState(false);
-   const [showPervasivenessHighlight, setShowPervasivenessHighlight] = useState(false);
-   const [showPersonalizationHighlight, setShowPersonalizationHighlight] = useState(false);
 
    const initialViewMode: 'steps' | 'analysis' =
       allowAnalysis && shouldAnalyze ? 'analysis' : 'steps';
-   const [viewMode, setViewMode] = useState<'steps' | 'analysis'>(initialViewMode);
+   const [viewMode, setViewMode] = useState<'steps' | 'analysis'>(
+      initialViewMode
+   );
    const [hasAutoOpenedAnalysis, setHasAutoOpenedAnalysis] = useState(false);
-   
-   const stepsProgress = useSharedValue(initialViewMode === 'steps' ? 1 : 0);
-   const analysisProgress = useSharedValue(initialViewMode === 'analysis' ? 1 : 0);
 
-   const { analyze, lastResult, loading, error, ready, streamText } = useAbcAi();
+   const stepsProgress = useSharedValue(initialViewMode === 'steps' ? 1 : 0);
+   const analysisProgress = useSharedValue(
+      initialViewMode === 'analysis' ? 1 : 0
+   );
+
+   const { analyze, lastResult, loading, error, ready, streamText } =
+      useAbcAi();
 
    useEffect(() => {
       if (!entry || !ready || !allowAnalysis) return;
@@ -151,7 +135,15 @@ export default function DisputeScreen() {
          belief: entry.belief,
          consequence: entry.consequence ?? undefined,
       }).catch((e) => console.log(e));
-   }, [allowAnalysis, ready, shouldAnalyze, analysisTriggered, entry, lastResult, analyze]);
+   }, [
+      allowAnalysis,
+      ready,
+      shouldAnalyze,
+      analysisTriggered,
+      entry,
+      lastResult,
+      analyze,
+   ]);
 
    useEffect(() => {
       if (!allowAnalysis && viewMode === 'analysis') {
@@ -184,32 +176,28 @@ export default function DisputeScreen() {
       const composedDispute = buildDisputeText(trimmedForm);
       const entryDispute = (entry?.dispute ?? '').trim();
       const entryEnergy = (entry?.energy ?? '').trim();
-      return composedDispute !== entryDispute || trimmedForm.energy !== entryEnergy;
+      return (
+         composedDispute !== entryDispute || trimmedForm.energy !== entryEnergy
+      );
    }, [entry?.dispute, entry?.energy, trimmedForm]);
-
-   const analysisData = useMemo(
-      () => lastResult?.data?.analysis ?? entry?.aiResponse?.analysis ?? null,
-      [entry?.aiResponse?.analysis, lastResult?.data?.analysis]
-   );
 
    useEffect(() => {
       if (!entry || !lastResult?.data) return;
-      const storedKey = entry.aiResponse ? JSON.stringify(entry.aiResponse) : null;
+      const storedKey = entry.aiResponse
+         ? JSON.stringify(entry.aiResponse)
+         : null;
       const incomingKey = JSON.stringify(lastResult.data);
       if (storedKey === incomingKey) return;
-      updateEntry(entry.id, { aiResponse: lastResult.data })
-         .catch((e) => console.warn('Failed to store AI response', e));
+      updateEntry(entry.id, { aiResponse: lastResult.data }).catch((e) =>
+         console.warn('Failed to store AI response', e)
+      );
    }, [entry, lastResult?.data, updateEntry]);
 
-   const highlightSets = useMemo(() => ({
-      permanence: buildHighlightMap(entry, analysisData?.dimensions?.permanence?.detectedPhrase, DIMENSION_COLORS.permanence),
-      pervasiveness: buildHighlightMap(entry, analysisData?.dimensions?.pervasiveness?.detectedPhrase, DIMENSION_COLORS.pervasiveness),
-      personalization: buildHighlightMap(entry, analysisData?.dimensions?.personalization?.detectedPhrase, DIMENSION_COLORS.personalization),
-   }), [entry, analysisData]);
-
    const suggestionPrompts = useMemo(() => {
-      const pick = (val?: string | null, fallback?: string) => val && val.trim() ? val : fallback ?? '';
-      const sug = lastResult?.data?.suggestions ?? entry?.aiResponse?.suggestions;
+      const pick = (val?: string | null, fallback?: string) =>
+         val && val.trim() ? val : (fallback ?? '');
+      const sug =
+         lastResult?.data?.suggestions ?? entry?.aiResponse?.suggestions;
       return {
          evidence: pick(sug?.evidenceQuestion, prompts.evidence),
          alternatives: pick(sug?.alternativesQuestion, prompts.alternatives),
@@ -223,26 +211,16 @@ export default function DisputeScreen() {
       return entry?.aiResponse ?? null;
    }, [entry?.aiResponse, lastResult?.data]);
 
-   const handleDimensionPressIn = useCallback((field: 'permanence' | 'pervasiveness' | 'personalization') => {
-      setShowPermanenceHighlight(field === 'permanence');
-      setShowPervasivenessHighlight(field === 'pervasiveness');
-      setShowPersonalizationHighlight(field === 'personalization');
-   }, []);
-
-   const clearDimensionHighlight = useCallback(() => {
-      setShowPermanenceHighlight(false);
-      setShowPervasivenessHighlight(false);
-      setShowPersonalizationHighlight(false);
-   }, []);
-
    const currentEmpty = !trimmedForm[currKey];
    const scrollRef = useRef<ScrollView | null>(null);
    const stickToBottom = useRef(true);
    const inputRef = useRef<TextInput>(null);
-   const { promptTextStyle, inputBoxDims, promptMaxHeight } = usePromptLayout('compact');
+   const { promptTextStyle, inputBoxDims, promptMaxHeight } =
+      usePromptLayout('compact');
 
    const setField = useCallback(
-      (k: NewInputDisputeType) => (v: string) => setForm((f) => ({ ...f, [k]: v })),
+      (k: NewInputDisputeType) => (v: string) =>
+         setForm((f) => ({ ...f, [k]: v })),
       []
    );
 
@@ -256,7 +234,14 @@ export default function DisputeScreen() {
       if (Object.keys(patch).length) await updateEntry(entry.id, patch);
       if (hapticsEnabled && hapticsAvailable) triggerHaptic();
       router.back();
-   }, [entry, hapticsAvailable, hapticsEnabled, triggerHaptic, trimmedForm, updateEntry]);
+   }, [
+      entry,
+      hapticsAvailable,
+      hapticsEnabled,
+      triggerHaptic,
+      trimmedForm,
+      updateEntry,
+   ]);
 
    const scrollToBottom = useCallback((animated = true) => {
       const ref = scrollRef.current;
@@ -264,19 +249,36 @@ export default function DisputeScreen() {
       ref.scrollToEnd({ animated });
    }, []);
 
-   const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
-      const gap = contentSize.height - (contentOffset.y + layoutMeasurement.height);
-      stickToBottom.current = gap < 12;
-   }, []);
-
-   useEffect(() => { requestAnimationFrame(() => scrollToBottom(false)); }, [scrollToBottom]);
+   const handleScroll = useCallback(
+      (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+         const { layoutMeasurement, contentOffset, contentSize } =
+            e.nativeEvent;
+         const gap =
+            contentSize.height - (contentOffset.y + layoutMeasurement.height);
+         stickToBottom.current = gap < 12;
+      },
+      []
+   );
 
    useEffect(() => {
-      const handleShow = () => requestAnimationFrame(() => scrollToBottom(true));
-      const willShowSub = KeyboardEvents.addListener('keyboardWillShow', handleShow);
-      const didShowSub = KeyboardEvents.addListener('keyboardDidShow', handleShow);
-      return () => { willShowSub.remove(); didShowSub.remove(); };
+      requestAnimationFrame(() => scrollToBottom(false));
+   }, [scrollToBottom]);
+
+   useEffect(() => {
+      const handleShow = () =>
+         requestAnimationFrame(() => scrollToBottom(true));
+      const willShowSub = KeyboardEvents.addListener(
+         'keyboardWillShow',
+         handleShow
+      );
+      const didShowSub = KeyboardEvents.addListener(
+         'keyboardDidShow',
+         handleShow
+      );
+      return () => {
+         willShowSub.remove();
+         didShowSub.remove();
+      };
    }, [scrollToBottom]);
 
    useEffect(() => {
@@ -294,8 +296,8 @@ export default function DisputeScreen() {
 
    const analysisAnimatedStyle = useAnimatedStyle(() => ({
       opacity: analysisProgress.value,
-         transform: [{ translateY: (1 - analysisProgress.value) * -12 }],
-      }));
+      transform: [{ translateY: (1 - analysisProgress.value) * -12 }],
+   }));
 
    useEffect(() => {
       if (!allowAnalysis) {
@@ -320,16 +322,27 @@ export default function DisputeScreen() {
          'You have unsaved changes. Close without saving?',
          [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+            {
+               text: 'Discard',
+               style: 'destructive',
+               onPress: () => router.back(),
+            },
          ]
       );
-   }, [hasUnsavedChanges, router]);
+   }, [hasUnsavedChanges]);
 
    if (!entry) {
       return (
-         <View style={[styles.centered, { paddingTop: topPadding }]}>
-            <StatusBar translucent backgroundColor="transparent" style={mode === 'dark' ? 'light' : 'dark'} />
-            <Text>Entry not found.</Text>
+         <View
+            className="flex-1 justify-center items-center gap-2"
+            style={{ paddingTop: topPadding }}
+         >
+            <StatusBar
+               translucent
+               backgroundColor="transparent"
+               style={isDark ? 'light' : 'dark'}
+            />
+            <Text className="text-text">Entry not found.</Text>
          </View>
       );
    }
@@ -339,20 +352,19 @@ export default function DisputeScreen() {
          <StatusBar
             translucent
             backgroundColor="transparent"
-            style={mode === 'dark' ? 'light' : 'dark'}
+            style={isDark ? 'light' : 'dark'}
          />
          <KeyboardAvoidingView
-            style={styles.root}
+            className="flex-1 bg-background"
             behavior={'padding'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
          >
-            <View style={styles.page}>
-               
-               {/* --- FLOATING CLOSE BUTTON REMOVED FROM HERE --- */}
-
+            <View className="flex-1 relative">
+               {/* 1. Steps Layer (Dispute) */}
                <Animated.View
                   pointerEvents={showAnalysis ? 'none' : 'auto'}
-                  style={[styles.layer, stepsAnimatedStyle]}
+                  className="absolute inset-0 px-5"
+                  style={stepsAnimatedStyle}
                >
                   <DisputeSteps
                      entry={entry}
@@ -376,34 +388,33 @@ export default function DisputeScreen() {
                      inputRef={inputRef}
                      isKeyboardVisible={isKeyboardVisible}
                      inputBoxDims={inputBoxDims}
-                     promptContainerStyle={styles.promptContainer}
+                     // Pass a simple style object if component expects style, or className if it supports it.
+                     // Assuming 'promptContainerStyle' is a legacy style prop in the child:
+                     promptContainerStyle={{
+                        flexGrow: 1,
+                        justifyContent: 'space-evenly',
+                     }}
                      // onShowInsights={() => setViewMode('analysis')}
                      contentTopPadding={topPadding}
                   />
                </Animated.View>
 
+               {/* 2. Analysis Layer (AI) */}
                {allowAnalysis ? (
                   <Animated.View
                      pointerEvents={showAnalysis ? 'auto' : 'none'}
-                     style={[styles.layer, analysisAnimatedStyle]}
+                     className="absolute inset-0 px-5"
+                     style={analysisAnimatedStyle}
                   >
                      <ABCAnalysis
                         entry={entry}
-                        highlights={highlightSets}
-                        highlightColors={DIMENSION_COLORS}
-                        showPermanenceHighlight={showPermanenceHighlight}
-                        showPervasivenessHighlight={showPervasivenessHighlight}
-                        showPersonalizationHighlight={showPersonalizationHighlight}
                         aiData={aiData}
                         loading={loading}
                         error={error}
                         streamingText={streamText}
-                        onGoToSteps={() => setViewMode('steps')}
-                        onPressIn={handleDimensionPressIn}
-                        onPressOut={clearDimensionHighlight}
                         contentTopPadding={topPadding}
-                        // Add exit prop here too so we can put a button inside ABCAnalysis if needed
-                        onExit={handleClose} 
+                        onExit={handleClose}
+                        onGoToSteps={() => setViewMode('steps')}
                      />
                   </Animated.View>
                ) : null}
@@ -412,29 +423,3 @@ export default function DisputeScreen() {
       </>
    );
 }
-
-export const styles = StyleSheet.create({
-   root: { flex: 1, backgroundColor: '#fff' },
-   page: {
-      flex: 1,
-      position: 'relative',
-   },
-   promptContainer: {
-      flexGrow: 1,
-      justifyContent: 'space-evenly',
-   },
-   inputWrapper: {
-      paddingHorizontal: 16,
-   },
-   centered: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: 8,
-   },
-   layer: {
-      ...StyleSheet.absoluteFillObject,
-      paddingHorizontal: 20, // Ensure this matches standard page padding
-   },
-   // Removed closeButton style from here as it lives in children now
-});
