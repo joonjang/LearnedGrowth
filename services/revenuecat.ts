@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import Purchases, {
   CustomerInfo,
   LOG_LEVEL,
@@ -6,20 +7,42 @@ import Purchases, {
 } from "react-native-purchases";
 import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 
+
 // Entitlement identifier as configured in RevenueCat dashboard.
 export const GROWTH_PLUS_ENTITLEMENT = "Growth Plus";
 export const MONTHLY_PACKAGE_IDENTIFIER = "monthly";
 export const CONSUMABLE_PRODUCT_IDENTIFIER = "consumable";
 
-export type PaywallResult = PAYWALL_RESULT;
+export type PaywallResult = PAYWALL_RESULT; // <--- Don't forget this import
 
 function getRevenueCatApiKey() {
-  const key = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
+  const isDev = __DEV__;
+  const isIOS = Platform.OS === "ios";
+  const isAndroid = Platform.OS === "android";
+
+  let key: string | undefined = "";
+
+  if (isDev) {
+    // Uses the same key for both platforms in Dev (as you requested)
+    key = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_DEV;
+  } else {
+    // Production needs specific keys for each store
+    if (isIOS) {
+      key = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_PROD_IOS;
+    } else if (isAndroid) {
+      key = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_PROD_ANDROID;
+    }
+  }
+
   if (!key) {
+    // Helpful error message for debugging
     throw new Error(
-      "Missing EXPO_PUBLIC_REVENUECAT_API_KEY. Set it in your .env (app reload required)."
+      `RevenueCat API Key not found. Platform: ${Platform.OS}, Mode: ${
+        isDev ? "Dev" : "Release"
+      }. Check your .env file.`,
     );
   }
+
   return key;
 }
 
@@ -53,7 +76,7 @@ export async function fetchOfferings() {
 }
 
 export async function presentGrowthPlusPaywall(
-  offering?: PurchasesOffering | null
+  offering?: PurchasesOffering | null,
 ) {
   const result = await RevenueCatUI.presentPaywallIfNeeded({
     requiredEntitlementIdentifier: GROWTH_PLUS_ENTITLEMENT,
@@ -78,7 +101,7 @@ export async function presentCustomerCenter() {
 export async function purchaseConsumable(productId?: string) {
   const products = await Purchases.getProducts(
     [productId ?? CONSUMABLE_PRODUCT_IDENTIFIER],
-    PRODUCT_CATEGORY.NON_SUBSCRIPTION
+    PRODUCT_CATEGORY.NON_SUBSCRIPTION,
   );
   const product = products[0];
   if (!product) {

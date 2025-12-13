@@ -22,9 +22,7 @@ import {
    KeyboardAwareScrollView,
    KeyboardController,
 } from 'react-native-keyboard-controller';
-import {
-   useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
 
@@ -69,15 +67,21 @@ const FIELD_META = [
 const FIELD_KEYS: FieldKey[] = FIELD_META.map((f) => f.key);
 
 function buildFieldRecord(getValue: (key: FieldKey) => string) {
-   return FIELD_KEYS.reduce((acc, key) => {
-      acc[key] = getValue(key);
-      return acc;
-   }, {} as Record<FieldKey, string>);
+   return FIELD_KEYS.reduce(
+      (acc, key) => {
+         acc[key] = getValue(key);
+         return acc;
+      },
+      {} as Record<FieldKey, string>
+   );
 }
 
 export default function EntryDetailScreen() {
    useEffect(() => {
-      if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+      if (
+         Platform.OS === 'android' &&
+         UIManager.setLayoutAnimationEnabledExperimental
+      ) {
          UIManager.setLayoutAnimationEnabledExperimental(true);
       }
    }, []);
@@ -86,8 +90,13 @@ export default function EntryDetailScreen() {
    const entryId = Array.isArray(id) ? id[0] : id;
    const store = useEntries();
    const entry = entryId ? store.getEntryById(entryId) : undefined;
-   const { showAiAnalysis: aiVisible, hapticsEnabled, hapticsAvailable, triggerHaptic } = usePreferences();
-   
+   const {
+      showAiAnalysis: aiVisible,
+      hapticsEnabled,
+      hapticsAvailable,
+      triggerHaptic,
+   } = usePreferences();
+
    const insets = useSafeAreaInsets();
    const keyboardOffset = insets.bottom + 32;
 
@@ -102,7 +111,10 @@ export default function EntryDetailScreen() {
    const [justSaved, setJustSaved] = useState(false);
    const [hasScrolled, setHasScrolled] = useState(false);
    const [isEditing, setIsEditing] = useState(false);
-   const [editSnapshot, setEditSnapshot] = useState<Record<FieldKey, string> | null>(null);
+   const [editSnapshot, setEditSnapshot] = useState<Record<
+      FieldKey,
+      string
+   > | null>(null);
    const [showAnalysis, setShowAnalysis] = useState(false);
 
    useEffect(() => {
@@ -149,31 +161,31 @@ export default function EntryDetailScreen() {
    }, [baseline, trimmed]);
 
    // Helper: Return Class Names instead of Style Objects
-   const getAccentClass = useCallback(
-      (key: FieldKey) => {
-         if (key === 'belief') return "bg-belief-bg border-belief-border";
-         if (key === 'dispute') return "bg-dispute-bg border-dispute-border";
-         return "bg-slate-100 dark:bg-slate-800 border-transparent";
-      },
-      []
-   );
+   const getAccentClass = useCallback((key: FieldKey) => {
+      if (key === 'belief') return 'bg-belief-bg border-belief-border';
+      if (key === 'dispute') return 'bg-dispute-bg border-dispute-border';
+      return 'bg-slate-100 dark:bg-slate-800 border-transparent';
+   }, []);
 
    // Helper: Return Class Names for Chips
-   const getChipClass = useCallback(
-      (score?: string | null) => {
-         switch (score) {
-            case 'optimistic':
-               return { container: "bg-dispute-bg", text: "text-dispute-text" };
-            case 'pessimistic':
-               return { container: "bg-belief-bg", text: "text-belief-text" };
-            case 'mixed':
-               return { container: "bg-zinc-50 dark:bg-slate-700", text: "text-slate-900 dark:text-slate-100" };
-            default:
-               return { container: "bg-slate-100 dark:bg-slate-800", text: "text-slate-600 dark:text-slate-300" };
-         }
-      },
-      []
-   );
+   const getChipClass = useCallback((score?: string | null) => {
+      switch (score) {
+         case 'optimistic':
+            return { container: 'bg-dispute-bg', text: 'text-dispute-text' };
+         case 'pessimistic':
+            return { container: 'bg-belief-bg', text: 'text-belief-text' };
+         case 'mixed':
+            return {
+               container: 'bg-zinc-50 dark:bg-slate-700',
+               text: 'text-slate-900 dark:text-slate-100',
+            };
+         default:
+            return {
+               container: 'bg-slate-100 dark:bg-slate-800',
+               text: 'text-slate-600 dark:text-slate-300',
+            };
+      }
+   }, []);
 
    const setField = useCallback(
       (key: FieldKey) => (value: string) => {
@@ -224,8 +236,14 @@ export default function EntryDetailScreen() {
       KeyboardController.dismiss();
    }, [editSnapshot, isEditing]);
 
-   const formattedTimestamp = entry ? formatDateTimeWithWeekday(entry.createdAt) : '';
-   const statusMessage = justSaved ? 'Saved' : hasChanges ? 'Unsaved changes' : '';
+   const formattedTimestamp = entry
+      ? formatDateTimeWithWeekday(entry.createdAt)
+      : '';
+   const statusMessage = justSaved
+      ? 'Saved'
+      : hasChanges
+        ? 'Unsaved changes'
+        : '';
    const statusDisplay = statusMessage || 'Saved';
 
    useEffect(() => {
@@ -246,7 +264,9 @@ export default function EntryDetailScreen() {
    if (!entry) {
       return (
          <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-slate-900">
-            <Text className="text-slate-900 dark:text-slate-100">Entry not found.</Text>
+            <Text className="text-slate-900 dark:text-slate-100">
+               Entry not found.
+            </Text>
          </View>
       );
    }
@@ -255,7 +275,7 @@ export default function EntryDetailScreen() {
       <View className="flex-1 px-4 bg-slate-50 dark:bg-slate-900">
          {/* Safe Area Spacer */}
          <View style={{ height: insets.top }} />
-         
+
          {/* Header */}
          <View className="flex-row items-center justify-center mb-4 relative z-10">
             <Pressable
@@ -272,12 +292,16 @@ export default function EntryDetailScreen() {
                      <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
                         {formattedTimestamp || ' '}
                      </Text>
-                     <Text className={`text-[13px] text-slate-500 dark:text-slate-400 absolute mt-6 ${!statusMessage ? 'opacity-0' : 'opacity-100'}`}>
+                     <Text
+                        className={`text-[13px] text-slate-500 dark:text-slate-400 absolute mt-6 ${!statusMessage ? 'opacity-0' : 'opacity-100'}`}
+                     >
                         {statusDisplay}
                      </Text>
                   </>
                ) : (
-                  <Text className="text-[13px] text-slate-500 dark:text-slate-400">Editing</Text>
+                  <Text className="text-[13px] text-slate-500 dark:text-slate-400">
+                     Editing
+                  </Text>
                )}
             </View>
 
@@ -288,7 +312,9 @@ export default function EntryDetailScreen() {
                      hitSlop={8}
                      className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
                   >
-                     <Text className="text-sm text-slate-900 dark:text-slate-100">Cancel</Text>
+                     <Text className="text-sm text-slate-900 dark:text-slate-100">
+                        Cancel
+                     </Text>
                   </Pressable>
                )}
                <Pressable
@@ -303,10 +329,12 @@ export default function EntryDetailScreen() {
             </View>
          </View>
 
-         {hasScrolled && <View className="h-[1px] bg-slate-200 dark:bg-slate-700 mb-0" />}
+         {hasScrolled && (
+            <View className="h-[1px] bg-slate-200 dark:bg-slate-700 mb-0" />
+         )}
 
          <KeyboardAwareScrollView
-            className="flex-1 pt-6"
+            className="flex-1 pt-6 p-1"
             contentContainerStyle={[{ paddingBottom: insets.bottom + 16 }]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
@@ -322,11 +350,15 @@ export default function EntryDetailScreen() {
                   <Pressable
                      className="flex-row items-center justify-between mb-1"
                      onPress={() => {
-                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                        LayoutAnimation.configureNext(
+                           LayoutAnimation.Presets.easeInEaseOut
+                        );
                         setShowAnalysis((s) => !s);
                      }}
                   >
-                     <Text className="text-[13px] font-bold text-slate-900 dark:text-slate-100">AI Analysis</Text>
+                     <Text className="text-[13px] font-bold text-slate-900 dark:text-slate-100">
+                        AI Analysis
+                     </Text>
                      <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         {showAnalysis ? 'Hide' : 'Show'}
                      </Text>
@@ -364,16 +396,20 @@ export default function EntryDetailScreen() {
                               ] as const
                            ).map(([key, label, dim, color]) => {
                               // Extract class string from helper
-                              const chipClass = getChipClass(dim?.score); 
-                              
+                              const chipClass = getChipClass(dim?.score);
+
                               return (
                                  <View className="gap-1.5 py-1" key={key}>
                                     <View className="flex-row items-center justify-between gap-2">
                                        <Text className="text-xs font-bold text-slate-900 dark:text-slate-100 px-1.5 py-0.5 rounded-md">
                                           {label}
                                        </Text>
-                                       <View className={`px-2 py-1 rounded-full ${chipClass.container}`}>
-                                          <Text className={`text-xs font-bold capitalize ${chipClass.text}`}>
+                                       <View
+                                          className={`px-2 py-1 rounded-full ${chipClass.container}`}
+                                       >
+                                          <Text
+                                             className={`text-xs font-bold capitalize ${chipClass.text}`}
+                                          >
                                              {dim?.score || 'n/a'}
                                           </Text>
                                        </View>
@@ -381,7 +417,9 @@ export default function EntryDetailScreen() {
                                     {dim?.detectedPhrase ? (
                                        <Text
                                           className="mt-0.5 px-2 py-1.5 rounded-lg text-xs text-slate-900 dark:text-slate-100 overflow-hidden"
-                                          style={{ backgroundColor: color + '55' }}
+                                          style={{
+                                             backgroundColor: color + '55',
+                                          }}
                                        >
                                           &quot;{dim.detectedPhrase}&quot;
                                        </Text>
@@ -419,16 +457,46 @@ export default function EntryDetailScreen() {
 
             {/* Form Fields */}
             {visibleFields.map((field) => {
-               // Dynamic classes for input styling
-               const editClass = isEditing 
-                  ? "bg-zinc-50 dark:bg-slate-700 min-h-[80px] py-3" 
-                  : `py-1.5 min-h-0 h-auto ${getAccentClass(field.key)}`;
+               // 1. Text Color & Weight
+               let textColorClass = 'text-slate-900 dark:text-slate-100';
+               if (!isEditing) {
+                  if (field.key === 'belief')
+                     textColorClass = 'text-belief-text font-semibold';
+                  if (field.key === 'dispute')
+                     textColorClass = 'text-dispute-text font-semibold';
+               }
+
+               // 2. Container Style (Background, Border Color, Spacing)
+               let containerClass = '';
+
+               if (isEditing) {
+                  // Edit Mode: Standard look for all fields
+                  containerClass =
+                     'bg-zinc-50 dark:bg-slate-700 border-slate-200 dark:border-slate-700 min-h-[80px] py-3';
+               } else {
+                  // View Mode: Custom colors for Belief/Dispute, Standard for others
+                  if (field.key === 'belief') {
+                     containerClass =
+                        'bg-belief-bg border-belief-border py-3 min-h-0 h-auto';
+                  } else if (field.key === 'dispute') {
+                     containerClass =
+                        'bg-dispute-bg border-dispute-border py-3 min-h-0 h-auto';
+                  } else {
+                     // Normal fields (Adversity, etc.)
+                     containerClass =
+                        'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 py-3 min-h-0 h-auto';
+                  }
+               }
 
                return (
-                  <View className="mb-4 gap-1 shadow-sm" key={field.key}>
-                     <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">{field.label}</Text>
-                     <Text className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">{field.hint}</Text>
-                     
+                  <View className="mb-4 gap-1" key={`${field.key}-${isEditing ? 'edit' : 'view'}`} >
+                     <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
+                        {field.label}
+                     </Text>
+                     <Text className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">
+                        {field.hint}
+                     </Text>
+
                      <TextInput
                         multiline
                         editable={isEditing}
@@ -436,7 +504,8 @@ export default function EntryDetailScreen() {
                         onChangeText={setField(field.key)}
                         placeholder={field.placeholder}
                         placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                        className={`mt-1.5 px-3 text-sm text-slate-900 dark:text-slate-100 leading-5 rounded-xl border border-slate-200 dark:border-slate-700 ${editClass}`}
+                        // Removed "border-slate-200" from here and added {containerClass} and {textColorClass}
+                        className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${containerClass} ${textColorClass}`}
                         scrollEnabled={isEditing}
                         textAlignVertical="top"
                      />
@@ -450,7 +519,6 @@ export default function EntryDetailScreen() {
                   {aiVisible ? <AnalyzeButton id={entry.id} /> : null}
                </>
             )}
-
          </KeyboardAwareScrollView>
       </View>
    );

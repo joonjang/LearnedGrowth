@@ -11,9 +11,21 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - Set `EXPO_PUBLIC_REVENUECAT_API_KEY` in `.env` / EAS secrets.
   - Configure your Offering + Paywall + Customer Center in the RevenueCat dashboard (`Growth Plus` entitlement, `monthly` package, optional `consumable` product).
 
+## Dev + Preivew
+- dev `
+  - npx expo run:ios --device
+- preview 
+  - run on xcode
+  - npx expo run:ios --configuration Release --device
+
 ---
 
 ## Development Journal
+
+### 2025-12-13
+- Enabled apple app store purchase
+- Made local ruby usable for fastlane for mac
+- [id] belief/dispute matches entry card
 
 ### 2025-12-12
 - Migrated everything to tailwind/nativewind
