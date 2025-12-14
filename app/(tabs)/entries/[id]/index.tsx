@@ -4,7 +4,6 @@ import { useEntries } from '@/hooks/useEntries';
 import { formatDateTimeWithWeekday } from '@/lib/date';
 import type { Entry } from '@/models/entry';
 import { usePreferences } from '@/providers/PreferencesProvider';
-// REMOVED: import { makeThemedStyles, useTheme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useColorScheme } from 'nativewind'; // <--- Added
@@ -344,9 +343,69 @@ export default function EntryDetailScreen() {
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
          >
-            {/* Inline AI Analysis */}
+
+
+            {/* Form Fields */}
+            {visibleFields.map((field) => {
+               // 1. Text Color & Weight
+               let textColorClass = 'text-slate-900 dark:text-slate-100';
+               if (!isEditing) {
+                  if (field.key === 'belief')
+                     textColorClass = 'text-belief-text font-semibold';
+                  if (field.key === 'dispute')
+                     textColorClass = 'text-dispute-text font-semibold';
+               }
+
+               // 2. Container Style (Background, Border Color, Spacing)
+               let containerClass = '';
+
+               if (isEditing) {
+                  // Edit Mode: Standard look for all fields
+                  containerClass =
+                     'bg-zinc-50 dark:bg-slate-700 border-slate-200 dark:border-slate-700 min-h-[80px] py-3';
+               } else {
+                  // View Mode: Custom colors for Belief/Dispute, Standard for others
+                  if (field.key === 'belief') {
+                     containerClass =
+                        'bg-belief-bg border-belief-border py-3 min-h-0 h-auto';
+                  } else if (field.key === 'dispute') {
+                     containerClass =
+                        'bg-dispute-bg border-dispute-border py-3 min-h-0 h-auto';
+                  } else {
+                     // Normal fields (Adversity, etc.)
+                     containerClass =
+                        'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 py-3 min-h-0 h-auto';
+                  }
+               }
+
+               return (
+                  <View className="mb-4 gap-1" key={`${field.key}-${isEditing ? 'edit' : 'view'}`} >
+                     <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
+                        {field.label}
+                     </Text>
+                     <Text className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">
+                        {field.hint}
+                     </Text>
+
+                     <TextInput
+                        multiline
+                        editable={isEditing}
+                        value={form[field.key]}
+                        onChangeText={setField(field.key)}
+                        placeholder={field.placeholder}
+                        placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
+                        // Removed "border-slate-200" from here and added {containerClass} and {textColorClass}
+                        className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${containerClass} ${textColorClass}`}
+                        scrollEnabled={isEditing}
+                        textAlignVertical="top"
+                     />
+                  </View>
+               );
+            })}
+
+                        {/* Inline AI Analysis */}
             {aiVisible && aiDisplayData ? (
-               <View className="mb-5 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 gap-1.5">
+               <View className="my-6 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border shadow-sm border-slate-200 dark:border-slate-700 gap-1.5">
                   <Pressable
                      className="flex-row items-center justify-between mb-1"
                      onPress={() => {
@@ -454,64 +513,6 @@ export default function EntryDetailScreen() {
                   ) : null}
                </View>
             ) : null}
-
-            {/* Form Fields */}
-            {visibleFields.map((field) => {
-               // 1. Text Color & Weight
-               let textColorClass = 'text-slate-900 dark:text-slate-100';
-               if (!isEditing) {
-                  if (field.key === 'belief')
-                     textColorClass = 'text-belief-text font-semibold';
-                  if (field.key === 'dispute')
-                     textColorClass = 'text-dispute-text font-semibold';
-               }
-
-               // 2. Container Style (Background, Border Color, Spacing)
-               let containerClass = '';
-
-               if (isEditing) {
-                  // Edit Mode: Standard look for all fields
-                  containerClass =
-                     'bg-zinc-50 dark:bg-slate-700 border-slate-200 dark:border-slate-700 min-h-[80px] py-3';
-               } else {
-                  // View Mode: Custom colors for Belief/Dispute, Standard for others
-                  if (field.key === 'belief') {
-                     containerClass =
-                        'bg-belief-bg border-belief-border py-3 min-h-0 h-auto';
-                  } else if (field.key === 'dispute') {
-                     containerClass =
-                        'bg-dispute-bg border-dispute-border py-3 min-h-0 h-auto';
-                  } else {
-                     // Normal fields (Adversity, etc.)
-                     containerClass =
-                        'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 py-3 min-h-0 h-auto';
-                  }
-               }
-
-               return (
-                  <View className="mb-4 gap-1" key={`${field.key}-${isEditing ? 'edit' : 'view'}`} >
-                     <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
-                        {field.label}
-                     </Text>
-                     <Text className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">
-                        {field.hint}
-                     </Text>
-
-                     <TextInput
-                        multiline
-                        editable={isEditing}
-                        value={form[field.key]}
-                        onChangeText={setField(field.key)}
-                        placeholder={field.placeholder}
-                        placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                        // Removed "border-slate-200" from here and added {containerClass} and {textColorClass}
-                        className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${containerClass} ${textColorClass}`}
-                        scrollEnabled={isEditing}
-                        textAlignVertical="top"
-                     />
-                  </View>
-               );
-            })}
 
             {!entry.dispute?.trim() && (
                <>

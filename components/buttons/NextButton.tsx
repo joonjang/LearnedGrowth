@@ -1,50 +1,31 @@
-export default function NextButton(){
-    return ();
+import { router, usePathname } from 'expo-router';
+import { Pressable, Text } from 'react-native';
+
+type Prop = {
+   id: string;
+};
+
+export default function NextButton({ id }: Prop) {
+   const pathname = usePathname();
+   const entryPath = `/entries/${id}`;
+   const alreadyOnEntry = pathname === entryPath;
+
+   return (
+      <Pressable
+         className="mt-1 py-2.5 px-3 rounded-full bg-dispute-cta items-center justify-center active:opacity-90"
+      onPress={() => {
+         if (!alreadyOnEntry) {
+            router.push(entryPath as any);
+         }
+         // if free user show option to display ai or directly dispute
+
+         // if subscribed user
+         router.push(`/entries/${id}/dispute?analyze=1`);
+      }}
+    >
+         <Text className="text-base font-semibold text-white">
+            Next
+         </Text>
+      </Pressable>
+   );
 }
-
-
-// import { makeThemedStyles } from '@/theme/theme';
-// import { router, usePathname } from 'expo-router';
-// import { Pressable, StyleSheet, Text } from 'react-native';
-
-// type Prop = {
-//    id: string;
-// };
-
-// export default function AnalyzeButton({ id }: Prop) {
-//    const pathname = usePathname();
-//    const entryPath = `/entries/${id}`;
-//    const alreadyOnEntry = pathname === entryPath;
-//    const styles = useStyles();
-
-//    function aiAnalysis() {
-//       if (!alreadyOnEntry) {
-//          router.push(entryPath as any);
-//       }
-//       router.push(`/entries/${id}/dispute?analyze=1`);
-//    }
-//    return (
-//       <Pressable style={styles.button} onPress={aiAnalysis}>
-//          <Text style={styles.buttonText}>Next</Text>
-//       </Pressable>
-//    );
-// }
-
-// const useStyles = makeThemedStyles(({ colors }) =>
-//    StyleSheet.create({
-//       button: {
-//          marginTop: 4,
-//          paddingVertical: 10,
-//          paddingHorizontal: 12,
-//          borderRadius: 999,
-//          backgroundColor: colors.cta,
-//          alignItems: 'center',
-//          justifyContent: 'center',
-//       },
-//       buttonText: {
-//          fontSize: 16,
-//          fontWeight: '600',
-//          color: colors.ctaText,
-//       },
-//    })
-// );

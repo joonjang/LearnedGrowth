@@ -237,6 +237,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Disable editing of ABC once dispute has been made
 - Change to entry should enable a refreshed AI response to be possible
 
+- Login screen needs to scroll and close on tap out
+
 - If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is cached
 - Encrypt entries when in cloud
 
