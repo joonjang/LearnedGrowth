@@ -8,6 +8,7 @@ import {
    type TextLayoutEvent
 } from 'react-native';
 
+import NextButton from '@/components/buttons/NextButton';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Animated, {
@@ -16,8 +17,6 @@ import Animated, {
    useSharedValue,
    withTiming,
 } from 'react-native-reanimated';
-import AnalyzeButton from '../../buttons/AnalyzeButton';
-import CTAButton from '../../buttons/CTAButton';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -268,14 +267,18 @@ export default function EntryCard({
          {/* Pre-dispute Hint */}
          {isExpandable && !expanded && !entry.dispute && expandHintView}
 
+
+
+
          {!entry.dispute ? (
             <>
-               <View className="h-[0.5px] bg-slate-200 dark:bg-slate-700 my-2" />
-               <CTAButton id={entry.id} />
-               <AnalyzeButton id={entry.id} />
+               <View className="h-[0.5px] bg-slate-200 dark:bg-slate-700 my-5" />
+               <NextButton id={entry.id} />
             </>
          ) : (
             <>
+
+
                <SectionBlock label="Dispute" text={entry.dispute} type="dispute" textKey="dispute" />
                <SectionBlock label="Energy" text={entry.energy ?? ''} type="default" textKey="energy" />
                {isExpandable && !expanded && expandHintView}

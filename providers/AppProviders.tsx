@@ -4,6 +4,7 @@ import { EntriesStoreProvider } from '@/providers/EntriesStoreProvider';
 import { PreferencesProvider } from '@/providers/PreferencesProvider';
 import { RevenueCatProvider } from '@/providers/RevenueCatProvider';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
@@ -15,7 +16,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
              <AdapterProvider>
                 <EntriesStoreProvider>
                    <SafeAreaProvider>
-                      {children}
+                      <BottomSheetModalProvider>
+                         {children}
+                      </BottomSheetModalProvider>
                    </SafeAreaProvider>
                 </EntriesStoreProvider>
              </AdapterProvider>

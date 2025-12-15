@@ -12,7 +12,6 @@ import {
    View,
    type GestureResponderEvent,
 } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 // The layout hero:
 import {
    SafeAreaView,
@@ -131,9 +130,9 @@ export default function EntriesScreen() {
    }, []);
 
    return (
-      <GestureHandlerRootView
+      <View
          className="flex-1 bg-slate-50 dark:bg-slate-900"
-         onStartShouldSetResponderCapture={handleTouchCapture}
+         // onStartShouldSetResponderCapture={handleTouchCapture}
       >
          <SectionList
             sections={sections}
@@ -209,7 +208,7 @@ export default function EntriesScreen() {
                </Link>
             </View>
          </SafeAreaView>
-      </GestureHandlerRootView>
+      </View>
    );
 }
 

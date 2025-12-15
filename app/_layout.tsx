@@ -6,9 +6,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import {
-   useSafeAreaInsets
-} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import '../global.css';
 
 function EdgeToEdge({ children }: { children: React.ReactNode }) {
@@ -38,8 +36,7 @@ export default function RootLayout() {
                         <Stack.Screen
                            name="(modal)"
                            options={{
-                              animation: 'fade',
-                              presentation: 'transparentModal',
+                              presentation: 'containedTransparentModal',
                            }}
                         />
                      </Stack>

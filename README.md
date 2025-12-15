@@ -22,6 +22,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-15
+- gorhom/bottom-sheet (`https://gorhom.dev/react-native-bottom-sheet/`) integrated for login and free-user modal
+
 ### 2025-12-13
 - Enabled apple app store purchase
 - Made local ruby usable for fastlane for mac
