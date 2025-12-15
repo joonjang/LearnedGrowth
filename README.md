@@ -24,6 +24,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2025-12-15
 - gorhom/bottom-sheet (`https://gorhom.dev/react-native-bottom-sheet/`) integrated for login and free-user modal
+- dispute.tsx is its own directory and is fullscreen on both android and apple
 
 ### 2025-12-13
 - Enabled apple app store purchase

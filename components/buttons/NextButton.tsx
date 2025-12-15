@@ -19,7 +19,7 @@ export default function NextButton({ id }: Prop) {
     //   }
 
       if (isSubscribed) {
-         router.push(`/entries/${id}/dispute?analyze=1`);
+         router.push(`/dispute/${id}?analyze=1`);
          return;
       }
 

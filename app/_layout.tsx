@@ -39,6 +39,14 @@ export default function RootLayout() {
                               presentation: 'containedTransparentModal',
                            }}
                         />
+                        <Stack.Screen
+                           name="dispute/[id]"
+                           options={{
+                              presentation: 'fullScreenModal',
+                              animation: 'slide_from_bottom',
+                              headerShown: false,
+                           }}
+                        />
                      </Stack>
                   </EdgeToEdge>
                </AdapterGuard>

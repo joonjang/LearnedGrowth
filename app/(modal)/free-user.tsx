@@ -41,10 +41,6 @@ export default function FreeUserChoiceScreen() {
       modalRef.current?.dismiss();
    }, []);
 
-   const handleDismiss = useCallback(() => {
-      router.back();
-   }, [router]);
-
    useEffect(() => {
       const id = requestAnimationFrame(() => {
          modalRef.current?.present();
@@ -57,7 +53,7 @@ export default function FreeUserChoiceScreen() {
          close();
          return;
       }
-      router.replace(`/entries/${entryId}/dispute?analyze=1`);
+      router.replace(`/dispute/${entryId}?analyze=1`);
    };
 
    const goToSteps = () => {
@@ -65,7 +61,12 @@ export default function FreeUserChoiceScreen() {
          close();
          return;
       }
-      router.replace(`/entries/${entryId}/dispute`);
+
+      if (router.canDismiss()) {
+         router.dismiss();
+      }
+      
+      router.push(`/dispute/${entryId}`);
    };
 
    return (
@@ -75,7 +76,6 @@ export default function FreeUserChoiceScreen() {
             snapPoints={snapPoints}
             index={0}
             enablePanDownToClose
-            onDismiss={handleDismiss}
             backdropComponent={renderBackdrop}
             handleIndicatorStyle={{ backgroundColor: sheetIndicator }}
             backgroundStyle={{

@@ -151,7 +151,7 @@ export default function DisputeSteps({
 
          {/* --- INPUT WRAPPER --- */}
          <View 
-             className={isKeyboardVisible ? 'pb-0' : 'pb-6'}
+             className={isKeyboardVisible ? 'pb-0' : 'pb-6' }
          >
             <InputBox
                ref={inputRef}

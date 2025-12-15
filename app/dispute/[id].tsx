@@ -17,29 +17,28 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind'; // <--- Added
 import React, {
-   useCallback,
-   useEffect,
-   useMemo,
-   useRef,
-   useState,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from 'react';
 import {
-   Alert,
-   Keyboard,
-   KeyboardAvoidingView,
-   NativeScrollEvent,
-   NativeSyntheticEvent,
-   Platform,
-   ScrollView,
-   Text,
-   TextInput,
-   View,
+    Alert,
+    Keyboard,
+    KeyboardAvoidingView,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    ScrollView,
+    Text,
+    TextInput,
+    View
 } from 'react-native';
 import { KeyboardEvents } from 'react-native-keyboard-controller';
 import Animated, {
-   useAnimatedStyle,
-   useSharedValue,
-   withTiming,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -97,7 +96,7 @@ export default function DisputeScreen() {
    const isKeyboardVisible = useKeyboardVisible();
 
    // Unified Edge-to-Edge Padding Logic
-   const topPadding = Platform.OS === 'android' ? insets.top + 12 : 12;
+   const topPadding = insets.top + 12;
 
    const [idx, setIdx] = useState(0);
    const [form, setForm] = useState<Record<NewInputDisputeType, string>>({
@@ -352,7 +351,6 @@ export default function DisputeScreen() {
          <KeyboardAvoidingView
             className="flex-1 bg-slate-50 dark:bg-slate-900"
             behavior={'padding'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
          >
             <View className="flex-1 relative">
                {/* 1. Steps Layer (Dispute) */}

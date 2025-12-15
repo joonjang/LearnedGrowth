@@ -13,14 +13,6 @@ export default function EntriesStack() {
             }}
          />
          <Stack.Screen
-            name="[id]/dispute"
-            options={{
-               title: 'Dispute',
-               presentation: 'modal',
-               animation: 'slide_from_bottom',
-            }}
-         />
-         <Stack.Screen
             name="[id]/index"
             options={({ route }) => {
                const animateInstant = (
