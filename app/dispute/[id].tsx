@@ -17,28 +17,27 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind'; // <--- Added
 import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+   useCallback,
+   useEffect,
+   useMemo,
+   useRef,
+   useState,
 } from 'react';
 import {
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
-    ScrollView,
-    Text,
-    TextInput,
-    View
+   Alert,
+   Keyboard,
+   NativeScrollEvent,
+   NativeSyntheticEvent,
+   ScrollView,
+   Text,
+   TextInput,
+   View
 } from 'react-native';
-import { KeyboardEvents } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView, KeyboardEvents } from 'react-native-keyboard-controller';
 import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+   useAnimatedStyle,
+   useSharedValue,
+   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -94,6 +93,7 @@ export default function DisputeScreen() {
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
    const insets = useSafeAreaInsets();
    const isKeyboardVisible = useKeyboardVisible();
+
 
    // Unified Edge-to-Edge Padding Logic
    const topPadding = insets.top + 12;
@@ -413,6 +413,7 @@ export default function DisputeScreen() {
                ) : null}
             </View>
          </KeyboardAvoidingView>
+         
       </>
    );
 }

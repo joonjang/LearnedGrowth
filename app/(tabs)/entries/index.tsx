@@ -196,7 +196,7 @@ export default function EntriesScreen() {
             className="absolute bottom-0 right-0 left-0 items-end px-6 pointer-events-box-none"
          >
             <View className="mb-4">
-               <Link href={'/(tabs)/entries/new'} asChild>
+               <Link href={'/new'} asChild>
                   <Pressable
                      className="h-14 w-14 items-center justify-center rounded-full bg-amber-500 shadow-sm active:opacity-90"
                      accessibilityLabel="Create new entry"

@@ -17,13 +17,13 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import {
    Alert,
    Keyboard,
-   KeyboardAvoidingView,
    Platform,
    Pressable,
    ScrollView,
    TextInput,
    View,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 // KEPT: Use insets for true edge-to-edge control
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

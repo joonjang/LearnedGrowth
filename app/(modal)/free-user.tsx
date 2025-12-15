@@ -61,12 +61,8 @@ export default function FreeUserChoiceScreen() {
          close();
          return;
       }
-
-      if (router.canDismiss()) {
-         router.dismiss();
-      }
       
-      router.push(`/dispute/${entryId}`);
+      router.replace(`/dispute/${entryId}`);
    };
 
    return (

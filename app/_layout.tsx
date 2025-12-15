@@ -47,6 +47,14 @@ export default function RootLayout() {
                               headerShown: false,
                            }}
                         />
+                        <Stack.Screen
+                           name="new"
+                           options={{
+                              presentation: 'modal',
+                              animation: 'slide_from_bottom',
+                              headerShown: false, 
+                           }}
+                        />
                      </Stack>
                   </EdgeToEdge>
                </AdapterGuard>
