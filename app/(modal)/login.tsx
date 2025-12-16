@@ -1,22 +1,22 @@
 import { useAuth } from '@/providers/AuthProvider';
 import { Ionicons } from '@expo/vector-icons';
 import {
-   BottomSheetBackdrop,
-   BottomSheetModal,
-   BottomSheetScrollView,
-   BottomSheetTextInput
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetScrollView,
+  BottomSheetTextInput
 } from '@gorhom/bottom-sheet';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-   ActivityIndicator,
-   Keyboard,
-   Platform,
-   Pressable,
-   Text,
-   View
+  ActivityIndicator,
+  Keyboard,
+  Platform,
+  Pressable,
+  Text,
+  View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -24,9 +24,11 @@ export default function AuthModal() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const modalRef = useRef<BottomSheetModal>(null);
-  const { colorScheme } = useColorScheme();
   
-  // Theme Helpers
+  // 1. GUARD FLAG
+  const isRedirecting = useRef(false);
+
+  const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const theme = {
     bg: isDark ? '#0f172a' : '#ffffff',
@@ -39,24 +41,44 @@ export default function AuthModal() {
   };
 
   const { signIn, signUp, signInWithApple, signInWithGoogle } = useAuth();
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [status, setStatus] = useState<'idle' | 'submitting' | 'apple' | 'google'>('idle');
   const [error, setError] = useState<string | null>(null);
+
+  const { returnPath, shouldAnalyze } = useLocalSearchParams<{ 
+      returnPath?: string; 
+      shouldAnalyze?: string; 
+  }>();
 
   useEffect(() => {
     setTimeout(() => modalRef.current?.present(), 100);
   }, []);
 
-  const handleDismiss = useCallback(() => router.back(), [router]);
+  // 2. GUARDED DISMISSAL
+  const handleDismiss = useCallback(() => {
+    if (isRedirecting.current) return;
+    router.back();
+  }, [router]);
 
   const handleAuth = async (action: () => Promise<void | boolean>, type: typeof status) => {
     setError(null);
     setStatus(type);
     try {
       await action();
-      modalRef.current?.dismiss();
+
+      if (returnPath) {
+         // 3. SET FLAG BEFORE NAVIGATING
+         isRedirecting.current = true;
+         
+         router.replace({
+            pathname: returnPath,
+            params: shouldAnalyze ? { analyze: shouldAnalyze } : undefined
+         } as any);
+      } else {
+         modalRef.current?.dismiss();
+      }
     } catch (err: any) {
       setError(err?.message ?? 'Authentication failed.');
       setStatus('idle');
@@ -65,29 +87,22 @@ export default function AuthModal() {
 
   const onEmailAuth = () => {
     if (!email.trim() || !password) return setError('Please enter email & password.');
-    handleAuth(
-      () => (isSignUp ? signUp(email, password) : signIn(email, password)),
-      'submitting'
-    );
+    handleAuth(() => (isSignUp ? signUp(email, password) : signIn(email, password)), 'submitting');
   };
 
   useEffect(() => {
     const event = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const subscription = Keyboard.addListener(event, () => {
-      // This tells the sheet: "The keyboard is gone, go back to your anchor point."
-      modalRef.current?.snapToIndex(0);
-    });
-
-    return () => subscription.remove();
+    const sub = Keyboard.addListener(event, () => modalRef.current?.snapToIndex(0));
+    return () => sub.remove();
   }, []);
 
   return (
     <BottomSheetModal
       ref={modalRef}
+      onDismiss={handleDismiss} // <--- Uses guarded handler
       index={0}
       enableDynamicSizing={true} 
       enablePanDownToClose
-      onDismiss={handleDismiss}
       handleIndicatorStyle={{ backgroundColor: theme.indicator }}
       backgroundStyle={{ backgroundColor: theme.bg, borderRadius: 24 }}
       keyboardBehavior="interactive"
@@ -97,18 +112,11 @@ export default function AuthModal() {
         <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
       )}
     >
-      <BottomSheetScrollView
-        contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 24 }}
-        keyboardShouldPersistTaps="handled"
-      >
+      <BottomSheetScrollView contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 24 }} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View className="mb-6">
-          <Text className="text-3xl font-bold mb-2" style={{ color: theme.text }}>
-            {isSignUp ? 'Start your Growth' : 'Welcome Back'}
-          </Text>
-          <Text className="text-base" style={{ color: theme.subText }}>
-            {isSignUp ? 'Create an account to save your journal.' : 'Sign in to sync your entries.'}
-          </Text>
+          <Text className="text-3xl font-bold mb-2" style={{ color: theme.text }}>{isSignUp ? 'Start your Growth' : 'Welcome Back'}</Text>
+          <Text className="text-base" style={{ color: theme.subText }}>{isSignUp ? 'Create an account to save your journal.' : 'Sign in to sync your entries.'}</Text>
         </View>
 
         {/* Social Buttons */}
@@ -122,7 +130,6 @@ export default function AuthModal() {
               onPress={() => handleAuth(signInWithApple, 'apple')}
             />
           )}
-
           <Pressable
             className={`flex-row items-center justify-center h-[50px] rounded-[14px] border ${theme.inputBorder} active:opacity-70`}
             onPress={() => handleAuth(signInWithGoogle, 'google')}
@@ -137,12 +144,7 @@ export default function AuthModal() {
           </Pressable>
         </View>
 
-        <View className="flex-row items-center gap-3 mb-6 opacity-50">
-          <View className="flex-1 h-[1px]" style={{ backgroundColor: theme.subText }} />
-          <Text className="text-xs font-bold uppercase" style={{ color: theme.subText }}>OR</Text>
-          <View className="flex-1 h-[1px]" style={{ backgroundColor: theme.subText }} />
-        </View>
-
+        {/* Form Inputs */}
         <View className="gap-4 mb-6">
           <BottomSheetTextInput
             placeholder="Email address"
@@ -178,10 +180,7 @@ export default function AuthModal() {
         </Pressable>
 
         <Pressable className="items-center py-2" onPress={() => { setError(null); setIsSignUp(!isSignUp); }}>
-          <Text style={{ color: theme.subText }}>
-            {isSignUp ? 'Already have an account? ' : 'First time here? '}
-            <Text className="text-dispute-cta font-bold">{isSignUp ? 'Sign In' : 'Sign Up'}</Text>
-          </Text>
+          <Text style={{ color: theme.subText }}>{isSignUp ? 'Already have an account? ' : 'First time here? '} <Text className="text-dispute-cta font-bold">{isSignUp ? 'Sign In' : 'Sign Up'}</Text></Text>
         </Pressable>
       </BottomSheetScrollView>
     </BottomSheetModal>
