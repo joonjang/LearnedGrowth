@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 export default function EntriesStack() {
    return (
       <ThemedStack>
-         <Stack.Screen name="index" options={{ title: 'Entries' }} />
+         <Stack.Screen name="index" options={{ title: 'Entries', animation: 'slide_from_left' }} />
          <Stack.Screen
             name="new"
             options={{

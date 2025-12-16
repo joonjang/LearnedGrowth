@@ -28,6 +28,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - new.tsx now in root directory 
 - dispute and new entries now have synchronized behaviour for the keyboard padding inputs
 - Login screen now has keyboard view change configured
+- Next button branches to analyze if subscribed or option to use ai credit if logged in and is not subscribed or dispute
 
 ### 2025-12-13
 - Enabled apple app store purchase
@@ -238,64 +239,43 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
-- Address the UX flow of ABC then to analysis, instead of two buttons make a 'Next' and then options to enable/disable AI
+- Look into supabase user table for subscription to be triggered by revenuecat webhook
 
 - Circle back and assess the edit/cancel/save button flow of [id]/index header
 - Disable editing of ABC once dispute has been made
 - Change to entry should enable a refreshed AI response to be possible
 
-- Login screen needs to scroll and close on tap out
-
 - If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is cached
 - Encrypt entries when in cloud
-
-- Guard ai analysis, it is usable for logged in users only
 
 - Biometric lock disables the app from all screens until unlocked
 
 - Warn if they are still subscribed, give an alert
 - Revenuecat failed purchase screens
-- Login keyboard should push everything up and should be able to tap out when pressoued outside
-  - Shold be able to scroll 
 
 - Fine tune dark mode
 
 - Add test to for API
 - Have a distinction for production tables and edge functions and development versions
 
+- Implement a home page summary screen showing weekly optimism/mix/pessimism meter
+
 ## Steps
-- Offline first x
-- AI analysis x
-- API integration x
+
 - Auth guard
-  - entry associated to account_id x
-  - all offline entries get their account_id updated to supabase id x
-  - login UI stack x
-  - associated account field of: x
-    * plan: 'free' or 'invested' x
-    * ai_analysis_calls x
-    * extra_ai_credits x
+  - log out should hide entries
 - Cloud database sync x
-- RevenueCat billing integration x
 - Account screen/Setting
-  - Add a gentle banner in the Settings: "Your data is only on this phone. Sign in to back it up."
-  - display free or growth plus status x
-  - if free user, display available use for the month + extra credit x
-  - if free, show a CTA to upgrade to growth plus or buy more analysis x
   - if subscribed, manage subscription. links to app store management sheet 
   - restore purchases to re-sync active subscription of reinstall app
     - webhook should update with the supabase database to match
-  - enable biometric security x
-  - toggle to show/hide ai use x
-  - light/dark theme mode
+  - enable biometric security -- buggy
   - tactile haptic feedback when completing an entry x
-  - display current logged in email x
-  - standard sign-out action x
   - delete account x
-    - delete user entry in supabase and existence of user on the cloud x
-    - delete the auth user x
+    - test for google and apple
     - warn if they are still subscribed, give an alert
-  - send feedback button, goes to a table in supabase x
   - if user is offline, grey out manage subscription and delete account and indiciate offline
+- App store paymen testing + revenuecat
+  - test fails and restore purchase
 - UI
 

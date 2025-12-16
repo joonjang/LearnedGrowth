@@ -1,4 +1,5 @@
 import { useAuth } from '@/providers/AuthProvider';
+import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 
@@ -8,7 +9,8 @@ type Prop = {
 
 export default function NextButton({ id }: Prop) {
    const { status, profile } = useAuth();
-   const isSubscribed = status === 'signedIn' && profile?.plan === 'invested';
+   const { isGrowthPlusActive } = useRevenueCat();
+   const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
 
    const handlePress = () => {
       if (isSubscribed) {

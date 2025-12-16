@@ -340,7 +340,7 @@ export default function AccountScreen() {
 
    const planLabel = useMemo(() => {
       if (entitlementActive) return 'Growth Plus (RevenueCat)';
-      return plan === 'invested' ? 'Growth Plus (database only)' : 'Free';
+      return 'Free';
    }, [entitlementActive, plan]);
 
    const refillLabel = useMemo(() => {

@@ -158,12 +158,6 @@ export default function EntryDetailScreen() {
       });
    }, [baseline, trimmed]);
 
-   // Helper: Return Class Names instead of Style Objects
-   const getAccentClass = useCallback((key: FieldKey) => {
-      if (key === 'belief') return 'bg-belief-bg border-belief-border';
-      if (key === 'dispute') return 'bg-dispute-bg border-dispute-border';
-      return 'bg-slate-100 dark:bg-slate-800 border-transparent';
-   }, []);
 
    // Helper: Return Class Names for Chips
    const getChipClass = useCallback((score?: string | null) => {
@@ -221,7 +215,7 @@ export default function EntryDetailScreen() {
       setEditSnapshot(null);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       KeyboardController.dismiss();
-   }, [baseline, entry, hapticsEnabled, hasChanges, store, trimmed]);
+   }, [baseline, entry, hapticsAvailable, hapticsEnabled, hasChanges, store, triggerHaptic, trimmed]);
 
    const handleCancel = useCallback(() => {
       if (!isEditing) return;
@@ -277,7 +271,7 @@ export default function EntryDetailScreen() {
          {/* Header */}
          <View className="flex-row items-center justify-center mb-4 relative z-10">
             <Pressable
-               onPress={() => router.back()}
+               onPress={() => router.replace('/(tabs)/entries')}
                hitSlop={8}
                className="absolute left-0 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
             >

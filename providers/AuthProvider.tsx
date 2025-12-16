@@ -1,21 +1,21 @@
 import { supabase } from "@/lib/supabase";
+import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import {
   Session,
   User,
   type PostgrestSingleResponse,
 } from "@supabase/supabase-js";
-import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import * as AppleAuthentication from "expo-apple-authentication";
-import { Platform } from "react-native";
 import {
   createContext,
+  ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
-  ReactNode,
 } from "react";
+import { Platform } from "react-native";
 
 type AccountPlan = "free" | "invested";
 
