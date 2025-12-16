@@ -23,7 +23,6 @@ export default function FreeUserChoiceScreen() {
    const entryId = Array.isArray(id) ? id[0] : id;
    const isSignedIn = status === 'signedIn';
 
-   // --- CLEANUP 1: Centralized Theme ---
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
 
@@ -62,7 +61,8 @@ export default function FreeUserChoiceScreen() {
       return () => cancelAnimationFrame(id);
    }, []);
 
-   // --- CLEANUP 2: Consolidated Navigation ---
+   const handleDismiss = useCallback(() => router.back(), [router]);
+
    const handleChoice = (requiresAuth: boolean) => {
       if (!entryId) return modalRef.current?.dismiss();
 
@@ -83,7 +83,8 @@ export default function FreeUserChoiceScreen() {
    return (
       <BottomSheetModal
          ref={modalRef}
-         // --- CHANGE 1: Enable Dynamic Sizing ---
+         onDismiss={handleDismiss}
+         index={0}
          enableDynamicSizing={true}
          enablePanDownToClose
          backdropComponent={renderBackdrop}
