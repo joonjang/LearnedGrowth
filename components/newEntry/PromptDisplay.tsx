@@ -75,7 +75,7 @@ export default function PromptDisplay({
          key={text}
          sequence={sequence}
          cursor={false}
-         typeSpeed={25}
+         typeSpeed={35}
          style={flatStyle}
          cursorStyle={flatStyle}
       />

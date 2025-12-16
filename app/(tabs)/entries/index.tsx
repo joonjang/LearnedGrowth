@@ -139,19 +139,22 @@ export default function EntriesScreen() {
             keyExtractor={(item) => `${item.kind}-${item.entry.id}`}
             className="flex-1"
             // Add huge bottom padding so the last item scrolls well above the FAB
-            contentContainerClassName="pb-32"
+            contentContainerStyle={{
+               paddingBottom: 128, // Matches pb-32
+               paddingTop: insets.top,
+            }}
             stickySectionHeadersEnabled
             onScrollBeginDrag={closeMenu}
             renderSectionHeader={({ section }) => (
-               <SafeAreaView
-                  edges={['top']}
+               <View 
+                  className="items-center py-2 bg-slate-50 dark:bg-slate-900"
                >
                   <View className="items-center self-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 shadow-sm">
                      <Text className="text-center text-sm font-bold text-slate-600 dark:text-slate-300">
                         {section.title}
                      </Text>
                   </View>
-               </SafeAreaView>
+               </View>
             )}
             renderItem={({ item }) => {
                const timeLabel = getTimeLabel(item.entry);

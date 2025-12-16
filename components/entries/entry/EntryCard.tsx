@@ -229,7 +229,7 @@ export default function EntryCard({
             >
                <Ionicons name="ellipsis-horizontal" size={18} color={colors.hint} />
             </Pressable>
-            
+            {/* TODO: make menu bigger */}
             <Animated.View
                ref={menuRef}
                pointerEvents={isMenuOpen ? 'auto' : 'none'}

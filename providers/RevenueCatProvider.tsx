@@ -1,5 +1,4 @@
 import {
-  CONSUMABLE_PRODUCT_IDENTIFIER,
   GROWTH_PLUS_ENTITLEMENT,
   PaywallResult,
   configureRevenueCat,
@@ -10,14 +9,8 @@ import {
   presentCustomerCenter,
   presentGrowthPlusPaywall,
   purchaseConsumable,
-  restoreRevenueCatPurchases,
+  restoreRevenueCatPurchases
 } from "@/services/revenuecat";
-import Purchases, {
-  CustomerInfo,
-  MakePurchaseResult,
-  PurchasesOffering,
-  PurchasesOfferings,
-} from "react-native-purchases";
 import {
   ReactNode,
   createContext,
@@ -28,6 +21,12 @@ import {
   useRef,
   useState,
 } from "react";
+import Purchases, {
+  CustomerInfo,
+  MakePurchaseResult,
+  PurchasesOffering,
+  PurchasesOfferings,
+} from "react-native-purchases";
 
 import { useAuth } from "./AuthProvider";
 
@@ -188,6 +187,8 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
       showPaywall,
     ]
   );
+
+  console.log(`RevenueCat customer: ${JSON.stringify(customerInfo?.originalAppUserId, null, 4)}}`);
 
   return (
     <RevenueCatContext.Provider value={value}>

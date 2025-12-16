@@ -239,7 +239,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
-- Look into supabase user table for subscription to be triggered by revenuecat webhook
+- create a credit pack 10 25 50
 
 - Circle back and assess the edit/cancel/save button flow of [id]/index header
 - Disable editing of ABC once dispute has been made
@@ -250,7 +250,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - Biometric lock disables the app from all screens until unlocked
 
-- Warn if they are still subscribed, give an alert
 - Revenuecat failed purchase screens
 
 - Fine tune dark mode
@@ -263,8 +262,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ## Steps
 
 - Auth guard
-  - log out should hide entries
-- Cloud database sync x
+  - Cloud database sync 
+    - log out should hide entries
+
 - Account screen/Setting
   - if subscribed, manage subscription. links to app store management sheet 
   - restore purchases to re-sync active subscription of reinstall app
