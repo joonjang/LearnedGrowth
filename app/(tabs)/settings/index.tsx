@@ -1,15 +1,15 @@
+import CreditShop from '@/components/CreditShop';
 import SendFeedback from '@/components/SendFeedback';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
-// REMOVED: import { makeThemedStyles, useTheme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
-import { useColorScheme } from 'nativewind'; // <--- Added
+import { useColorScheme } from 'nativewind';
 import {
    useCallback,
    useEffect,
@@ -20,6 +20,7 @@ import {
 import {
    ActivityIndicator,
    Alert,
+   LayoutAnimation,
    Linking,
    Platform,
    Pressable,
@@ -42,7 +43,10 @@ const MANAGE_SUBSCRIPTION_URL = Platform.select({
    default: 'https://apps.apple.com/account/subscriptions',
 });
 
-export default function AccountScreen() {
+// Standard button height class for uniformity
+const BTN_HEIGHT = 'h-12 justify-center';
+
+export default function SettingsScreen() {
    const {
       status,
       user,
@@ -52,7 +56,7 @@ export default function AccountScreen() {
       loadingProfile,
       isConfigured,
    } = useAuth();
-   
+
    const {
       loading: rcLoading,
       error: rcError,
@@ -78,19 +82,18 @@ export default function AccountScreen() {
 
    const router = useRouter();
    const insets = useSafeAreaInsets();
-   
+
    // --- Theme Logic ---
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const iconColor = isDark ? '#94a3b8' : '#64748b'; // text-muted-icon
-   const loaderColor = isDark ? '#f8fafc' : '#0f172a'; // text
+   const iconColor = isDark ? '#94a3b8' : '#64748b';
+   const loaderColor = isDark ? '#f8fafc' : '#0f172a';
 
-   // Switch Colors (Must be raw hex)
    const switchTrackColor = {
-      false: isDark ? '#475569' : '#cbd5e1', // border-strong
-      true: isDark ? '#f8fafc' : '#0f172a',  // text
+      false: isDark ? '#475569' : '#cbd5e1',
+      true: isDark ? '#f8fafc' : '#0f172a',
    };
-   const switchThumbColor = isDark ? '#1e293b' : '#ffffff'; // card-bg
+   const switchThumbColor = isDark ? '#1e293b' : '#ffffff';
 
    // --- State ---
    const [isOffline, setIsOffline] = useState(false);
@@ -114,6 +117,8 @@ export default function AccountScreen() {
    const extraCredits = profile?.extraAiCredits ?? 0;
    const monthlyRemaining = Math.max(FREE_MONTHLY_LIMIT - aiUsed, 0);
    const darkMode = theme === 'dark';
+
+   const [isShopOpen, setIsShopOpen] = useState(false);
 
    useEffect(() => {
       const unsubscribe = NetInfo.addEventListener((state) => {
@@ -145,7 +150,6 @@ export default function AccountScreen() {
          setBiometricInfo({ hasHardware, isEnrolled });
          return { hasHardware, isEnrolled };
       } catch (err) {
-         console.warn('Biometric check failed', err);
          const fallback = { hasHardware: false, isEnrolled: false };
          setBiometricInfo(fallback);
          return fallback;
@@ -169,20 +173,6 @@ export default function AccountScreen() {
          }
       } catch (err: any) {
          setBillingNote(err?.message ?? 'Unable to open paywall.');
-      } finally {
-         setBillingAction(null);
-      }
-   };
-
-   const handleBuyConsumable = async () => {
-      setBillingAction('consumable');
-      setBillingNote(null);
-      try {
-         await buyConsumable();
-         setBillingNote('Added 10 more analysis credits.');
-         await refreshProfile();
-      } catch (err: any) {
-         setBillingNote(err?.message ?? 'Purchase failed.');
       } finally {
          setBillingAction(null);
       }
@@ -329,19 +319,15 @@ export default function AccountScreen() {
    };
 
    const confirmSignOut = () =>
-      Alert.alert(
-         'Sign out',
-         'You will be signed out.',
-         [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Sign out', style: 'destructive', onPress: signOut },
-         ]
-      );
+      Alert.alert('Sign out', 'You will be signed out.', [
+         { text: 'Cancel', style: 'cancel' },
+         { text: 'Sign out', style: 'destructive', onPress: signOut },
+      ]);
 
    const planLabel = useMemo(() => {
       if (entitlementActive) return 'Growth Plus (RevenueCat)';
       return 'Free';
-   }, [entitlementActive, plan]);
+   }, [entitlementActive]);
 
    const refillLabel = useMemo(() => {
       if (!profile?.aiCycleStart) return null;
@@ -358,8 +344,14 @@ export default function AccountScreen() {
       });
    }, [profile?.aiCycleStart]);
 
+   const toggleShop = () => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setIsShopOpen(!isShopOpen);
+   };
+
    const biometricUnavailable = !biometricInfo.hasHardware;
-   const biometricNeedsEnroll = biometricInfo.hasHardware && !biometricInfo.isEnrolled;
+   const biometricNeedsEnroll =
+      biometricInfo.hasHardware && !biometricInfo.isEnrolled;
 
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
@@ -368,7 +360,7 @@ export default function AccountScreen() {
                paddingTop: insets.top + 8,
                paddingBottom: insets.bottom + 24,
                paddingHorizontal: 16,
-               gap: 14
+               gap: 14,
             }}
             scrollIndicatorInsets={{
                top: insets.top,
@@ -386,7 +378,9 @@ export default function AccountScreen() {
                <View className="flex-row gap-2 items-center">
                   {isOffline && (
                      <View className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-                        <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">Offline</Text>
+                        <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                           Offline
+                        </Text>
                      </View>
                   )}
                </View>
@@ -398,9 +392,6 @@ export default function AccountScreen() {
                   <Text className="text-sm font-bold text-belief-text">
                      Supabase not configured
                   </Text>
-                  <Text className="text-xs text-belief-text">
-                     Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY to enable sync.
-                  </Text>
                </View>
             )}
 
@@ -411,15 +402,14 @@ export default function AccountScreen() {
                      <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
                         Your data is only on this phone.
                      </Text>
-                     <Text className="text-xs text-slate-600 dark:text-slate-300">
-                        Sign in to back it up.
-                     </Text>
                   </View>
                   <Pressable
                      className="mt-2 bg-dispute-cta py-2 px-3 rounded-lg self-start shadow-sm"
                      onPress={() => router.push('/(modal)/login')}
                   >
-                     <Text className="text-white font-bold text-sm">Sign in</Text>
+                     <Text className="text-white font-bold text-sm">
+                        Sign in
+                     </Text>
                   </Pressable>
                </View>
             )}
@@ -428,7 +418,9 @@ export default function AccountScreen() {
             {user && (
                <View className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 shadow-sm">
                   <View className="flex-row justify-between items-center">
-                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">Subscription</Text>
+                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                        Subscription
+                     </Text>
                      {(loadingProfile || rcLoading) && (
                         <ActivityIndicator size="small" color={loaderColor} />
                      )}
@@ -436,15 +428,21 @@ export default function AccountScreen() {
 
                   <View className="flex-row items-start gap-3">
                      <View className="flex-1">
-                        <Text className="text-xs text-slate-500 dark:text-slate-400 tracking-wider">Current plan</Text>
-                        <Text className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">{planLabel}</Text>
+                        <Text className="text-xs text-slate-500 dark:text-slate-400 tracking-wider">
+                           Current plan
+                        </Text>
+                        <Text className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                           {planLabel}
+                        </Text>
                      </View>
                      <Pressable
                         className={`w-10 h-10 rounded-full items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 ${loadingProfile ? 'opacity-50' : ''}`}
                         onPress={refreshProfile}
                         disabled={loadingProfile}
                      >
-                        <Text className="font-bold text-slate-900 dark:text-slate-100">{loadingProfile ? '…' : '↻'}</Text>
+                        <Text className="font-bold text-slate-900 dark:text-slate-100">
+                           {loadingProfile ? '…' : '↻'}
+                        </Text>
                      </Pressable>
                   </View>
 
@@ -463,12 +461,10 @@ export default function AccountScreen() {
                                  {monthlyRemaining}
                               </Text>
                            </View>
-                           
+
                            {/* Extra Analysis Metric */}
-                           <Pressable
-                              className={`flex-1 min-w-[30%] bg-zinc-50 dark:bg-slate-700 rounded-xl p-3 border border-slate-200 dark:border-slate-600 gap-1.5 shadow-sm active:bg-slate-100 dark:active:bg-slate-800 ${billingAction === 'consumable' ? 'opacity-50' : ''}`}
-                              onPress={handleBuyConsumable}
-                              disabled={billingAction !== null}
+                           <View
+                              className={`flex-1 min-w-[30%] bg-zinc-50 dark:bg-slate-700 rounded-xl p-3 border border-slate-200 dark:border-slate-600 gap-1.5 shadow-sm `}
                            >
                               <Text className="text-xs text-slate-500 dark:text-slate-400 mb-1">
                                  Extra Analysis
@@ -476,47 +472,87 @@ export default function AccountScreen() {
                               <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
                                  {extraCredits}
                               </Text>
-                              <View className="self-start px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                                 <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                                    {billingAction === 'consumable' ? 'Adding...' : 'Add more'}
-                                 </Text>
-                              </View>
-                           </Pressable>
+                           </View>
                         </View>
                      </>
                   )}
 
                   {!entitlementActive ? (
-                     <View className="gap-2">
+                     <View className="gap-3 pt-5">
+                        {/* The Shop */}
+                        <View className="shadow-sm shadow-slate-300 dark:shadow-none bg-white dark:bg-slate-800 rounded-2xl">
+                           {/* 2. INNER VIEW: Responsible for Clipping (Overflow) and Border */}
+                           <View className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
+                              <Pressable
+                                 onPress={toggleShop}
+                                 className={`relative flex-row items-center justify-center active:bg-slate-50 dark:active:bg-slate-700/50 ${BTN_HEIGHT}`}
+                              >
+                                 <Text className="text-[15px] font-bold text-slate-900 dark:text-white">
+                                    Get More Analysis
+                                 </Text>
+
+                                 <View className="absolute right-4">
+                                    <Ionicons
+                                       name={
+                                          isShopOpen
+                                             ? 'chevron-up'
+                                             : 'chevron-down'
+                                       }
+                                       size={20}
+                                       color="#94a3b8"
+                                    />
+                                 </View>
+                              </Pressable>
+
+                              {isShopOpen && (
+                                 <View className="p-4 pt-0">
+                                    <View className="h-[1px] bg-slate-100 dark:bg-slate-700 mb-4" />
+                                    <CreditShop />
+                                 </View>
+                              )}
+                           </View>
+                        </View>
+
                         <Pressable
-                           className={`bg-dispute-cta py-3 rounded-xl items-center shadow-sm active:opacity-90 ${billingAction === 'upgrade' ? 'opacity-50' : ''}`}
+                           // ADDED SHADOWS HERE
+                           className={`bg-dispute-cta rounded-xl items-center shadow-sm shadow-slate-300 dark:shadow-none active:opacity-90 ${BTN_HEIGHT} ${billingAction === 'upgrade' ? 'opacity-50' : ''}`}
                            onPress={handleUpgrade}
                            disabled={billingAction !== null}
                         >
                            <Text className="text-white font-bold text-[15px]">
-                              {billingAction === 'upgrade' ? 'Opening...' : 'Upgrade to Growth Plus'}
+                              {billingAction === 'upgrade'
+                                 ? 'Opening...'
+                                 : 'Upgrade to Growth Plus'}
                            </Text>
                         </Pressable>
                      </View>
                   ) : (
-                     <Pressable
-                        className={`bg-slate-100 dark:bg-slate-800 py-3 rounded-xl items-center shadow-sm border border-slate-200 dark:border-slate-700 active:bg-slate-200 dark:active:bg-slate-700 ${(isOffline || billingAction === 'manage') ? 'opacity-50' : ''}`}
-                        onPress={handleManageSubscription}
-                        disabled={isOffline || billingAction !== null}
-                     >
-                        <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
-                           {billingAction === 'manage' ? 'Opening...' : 'Manage Subscription'}
-                        </Text>
-                     </Pressable>
+                     <View className="gap-3 pt-5">
+                        <Pressable
+                           // ADDED SHADOWS HERE
+                           className={`bg-slate-100 dark:bg-slate-800 rounded-xl items-center shadow-sm shadow-slate-300 dark:shadow-none border border-slate-200 dark:border-slate-700 active:bg-slate-200 dark:active:bg-slate-700 ${BTN_HEIGHT} ${isOffline || billingAction === 'manage' ? 'opacity-50' : ''}`}
+                           onPress={handleManageSubscription}
+                           disabled={isOffline || billingAction !== null}
+                        >
+                           <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
+                              {billingAction === 'manage'
+                                 ? 'Opening...'
+                                 : 'Manage Subscription'}
+                           </Text>
+                        </Pressable>
+                     </View>
                   )}
 
                   <Pressable
-                     className={`py-3 rounded-xl items-center border border-slate-200 dark:border-slate-700 shadow-sm active:bg-slate-100 dark:active:bg-slate-800 ${(isOffline || billingAction === 'restore') ? 'opacity-50' : ''}`}
+                     // ADDED SHADOWS HERE
+                     className={`rounded-xl bg-white dark:bg-slate-800 items-center shadow-sm shadow-slate-300 dark:shadow-none border border-slate-200 dark:border-slate-700 active:bg-slate-100 dark:active:bg-slate-800 ${BTN_HEIGHT} ${isOffline || billingAction === 'restore' ? 'opacity-50' : ''}`}
                      onPress={handleRestore}
                      disabled={isOffline || billingAction !== null}
                   >
-                     <Text className="text-slate-900 dark:text-slate-100 font-bold text-sm">
-                        {billingAction === 'restore' ? 'Restoring...' : 'Restore Purchases'}
+                     <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
+                        {billingAction === 'restore'
+                           ? 'Restoring...'
+                           : 'Restore Purchases'}
                      </Text>
                   </Pressable>
 
@@ -531,7 +567,9 @@ export default function AccountScreen() {
             {/* Preferences Card */}
             <View className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 shadow-sm">
                <View className="flex-row justify-between items-center">
-                  <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">App preferences</Text>
+                  <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                     App preferences
+                  </Text>
                   {prefsLoading && (
                      <ActivityIndicator size="small" color={loaderColor} />
                   )}
@@ -557,7 +595,8 @@ export default function AccountScreen() {
                )}
                {biometricNeedsEnroll && (
                   <Text className="text-xs text-slate-600 dark:text-slate-300">
-                     Add a fingerprint or face profile in system settings to turn this on.
+                     Add a fingerprint or face profile in system settings to
+                     turn this on.
                   </Text>
                )}
 
@@ -600,7 +639,11 @@ export default function AccountScreen() {
                   />
                </SettingRow>
 
-               {prefsError && <Text className="text-xs text-slate-600 dark:text-slate-300">{prefsError}</Text>}
+               {prefsError && (
+                  <Text className="text-xs text-slate-600 dark:text-slate-300">
+                     {prefsError}
+                  </Text>
+               )}
             </View>
 
             {/* Account Actions Card */}
@@ -610,9 +653,13 @@ export default function AccountScreen() {
                      className="flex-row justify-between items-center active:opacity-60"
                      onPress={() => setActionsCollapsed((c) => !c)}
                   >
-                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">Account actions</Text>
+                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                        Account actions
+                     </Text>
                      <Ionicons
-                        name={actionsCollapsed ? 'chevron-forward' : 'chevron-down'}
+                        name={
+                           actionsCollapsed ? 'chevron-forward' : 'chevron-down'
+                        }
                         size={18}
                         color={iconColor}
                      />
@@ -621,14 +668,18 @@ export default function AccountScreen() {
                   {!actionsCollapsed && (
                      <View className="gap-3 mt-1">
                         <Pressable
-                           className="py-3 rounded-xl items-center border border-slate-200 dark:border-slate-700 shadow-sm active:bg-slate-100 dark:active:bg-slate-800"
+                           // ADDED SHADOWS HERE
+                           className={`rounded-xl bg-white dark:bg-slate-800 items-center border border-slate-200 dark:border-slate-700 shadow-sm shadow-slate-300 dark:shadow-none active:bg-slate-100 dark:active:bg-slate-800 ${BTN_HEIGHT}`}
                            onPress={confirmSignOut}
                         >
-                           <Text className="text-slate-900 dark:text-slate-100 font-bold text-sm">Sign out</Text>
+                           <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
+                              Sign out
+                           </Text>
                         </Pressable>
 
                         <Pressable
-                           className={`py-3 rounded-xl items-center bg-belief-bg border border-belief-border shadow-sm active:opacity-80 ${(isOffline || deleteLoading) ? 'opacity-50' : ''}`}
+                           // ADDED SHADOWS HERE
+                           className={`rounded-xl items-center bg-belief-bg border border-belief-border shadow-sm shadow-slate-300 dark:shadow-none active:opacity-80 ${BTN_HEIGHT} ${isOffline || deleteLoading ? 'opacity-50' : ''}`}
                            onPress={confirmDelete}
                            disabled={isOffline || deleteLoading}
                         >
@@ -645,7 +696,6 @@ export default function AccountScreen() {
             <View className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 shadow-sm">
                <SendFeedback />
             </View>
-            
          </ScrollView>
       </View>
    );
@@ -663,10 +713,16 @@ function SettingRow({
    disabled?: boolean;
 }) {
    return (
-      <View className={`flex-row items-center gap-2 ${disabled ? 'opacity-60' : ''}`}>
+      <View
+         className={`flex-row items-center gap-2 ${disabled ? 'opacity-60' : ''}`}
+      >
          <View className="flex-1">
-            <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">{title}</Text>
-            <Text className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">{description}</Text>
+            <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
+               {title}
+            </Text>
+            <Text className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
+               {description}
+            </Text>
          </View>
          {children}
       </View>

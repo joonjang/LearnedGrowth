@@ -22,6 +22,12 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-16
+- Credit pack established
+- Cleaned up account screen, now labelled as settings screen
+  - buttons uniform
+  - added credit purchase options
+
 ### 2025-12-15
 - gorhom/bottom-sheet (`https://gorhom.dev/react-native-bottom-sheet/`) integrated for login and free-user modal
 - dispute.tsx is its own directory and is fullscreen on both android and apple
@@ -239,7 +245,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
-- create a credit pack 10 25 50
+
+- Refreshing expired plan should show correct status
+  - currently shows still subscribed even after expiration
 
 - Circle back and assess the edit/cancel/save button flow of [id]/index header
 - Disable editing of ABC once dispute has been made
@@ -253,6 +261,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Revenuecat failed purchase screens
 
 - Fine tune dark mode
+  - prompt text white
+  - loading ellipse white
 
 - Add test to for API
 - Have a distinction for production tables and edge functions and development versions
