@@ -5,6 +5,7 @@ import {
    BottomSheetModal,
    BottomSheetView,
 } from '@gorhom/bottom-sheet';
+import { useAuth } from '@/providers/AuthProvider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -14,8 +15,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function FreeUserChoiceScreen() {
    const router = useRouter();
    const insets = useSafeAreaInsets();
+   const { status } = useAuth();
    const { id } = useLocalSearchParams<{ id?: string | string[] }>();
    const entryId = Array.isArray(id) ? id[0] : id;
+   const isSignedIn = status === 'signedIn';
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
@@ -53,7 +56,17 @@ export default function FreeUserChoiceScreen() {
          close();
          return;
       }
-      router.replace(`/dispute/${entryId}?analyze=1`);
+      const analyzePath = `/dispute/${entryId}?analyze=1`;
+
+      if (!isSignedIn) {
+         router.replace({
+            pathname: '/(modal)/login',
+            params: { redirect: analyzePath },
+         } as any);
+         return;
+      }
+
+      router.replace(analyzePath);
    };
 
    const goToSteps = () => {

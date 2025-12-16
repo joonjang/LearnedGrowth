@@ -1,277 +1,189 @@
 import { useAuth } from '@/providers/AuthProvider';
-// REMOVED: import { shadowSoft } from '@/theme/shadows';
-// REMOVED: import { useTheme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import {
    BottomSheetBackdrop,
-   BottomSheetBackdropProps,
    BottomSheetModal,
    BottomSheetScrollView,
+   BottomSheetTextInput
 } from '@gorhom/bottom-sheet';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useRouter } from 'expo-router';
-import { useColorScheme } from 'nativewind'; // <--- Added
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useColorScheme } from 'nativewind';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
    ActivityIndicator,
+   Keyboard,
    Platform,
    Pressable,
    Text,
-   TextInput,
-   View,
+   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AuthModal() {
-   const router = useRouter();
-   const insets = useSafeAreaInsets();
-   const modalRef = useRef<BottomSheetModal>(null);
-   const snapPoints = useMemo(() => ['88%'], []);
-   
-   // Hook into NativeWind theme
-   const { colorScheme } = useColorScheme();
-   const isDark = colorScheme === 'dark';
-   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
-   const sheetIndicator = isDark ? '#475569' : '#cbd5e1';
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const modalRef = useRef<BottomSheetModal>(null);
+  const { colorScheme } = useColorScheme();
+  
+  // Theme Helpers
+  const isDark = colorScheme === 'dark';
+  const theme = {
+    bg: isDark ? '#0f172a' : '#ffffff',
+    text: isDark ? '#f8fafc' : '#0f172a',
+    subText: isDark ? '#cbd5e1' : '#475569',
+    indicator: isDark ? '#475569' : '#cbd5e1',
+    inputBg: isDark ? '#334155' : '#f8fafc',
+    inputBorder: isDark ? 'border-slate-600' : 'border-slate-200',
+    placeholder: isDark ? '#94a3b8' : '#64748b',
+  };
 
-   const { signIn, signUp, signInWithApple, signInWithGoogle } = useAuth();
+  const { signIn, signUp, signInWithApple, signInWithGoogle } = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'apple' | 'google'>('idle');
+  const [error, setError] = useState<string | null>(null);
 
-   const [isSignUp, setIsSignUp] = useState(false);
-   const [email, setEmail] = useState('');
-   const [password, setPassword] = useState('');
-   const [submitting, setSubmitting] = useState(false);
-   const [socialSubmitting, setSocialSubmitting] = useState<
-      'apple' | 'google' | null
-   >(null);
-   const [localError, setLocalError] = useState<string | null>(null);
+  useEffect(() => {
+    setTimeout(() => modalRef.current?.present(), 100);
+  }, []);
 
-   const renderBackdrop = useCallback(
-      (props: BottomSheetBackdropProps) => (
-         <BottomSheetBackdrop
-            {...props}
-            appearsOnIndex={0}
-            disappearsOnIndex={-1}
-            pressBehavior="close"
-            opacity={0.45}
-         />
-      ),
-      []
-   );
+  const handleDismiss = useCallback(() => router.back(), [router]);
 
-   const handleClose = useCallback(() => {
+  const handleAuth = async (action: () => Promise<void | boolean>, type: typeof status) => {
+    setError(null);
+    setStatus(type);
+    try {
+      await action();
       modalRef.current?.dismiss();
-   }, []);
+    } catch (err: any) {
+      setError(err?.message ?? 'Authentication failed.');
+      setStatus('idle');
+    }
+  };
 
-   const handleDismiss = useCallback(() => {
-      router.back();
-   }, [router]);
+  const onEmailAuth = () => {
+    if (!email.trim() || !password) return setError('Please enter email & password.');
+    handleAuth(
+      () => (isSignUp ? signUp(email, password) : signIn(email, password)),
+      'submitting'
+    );
+  };
 
-   useEffect(() => {
-      const id = requestAnimationFrame(() => {
-         modalRef.current?.present();
-      });
-      return () => cancelAnimationFrame(id);
-   }, []);
+  useEffect(() => {
+    const event = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const subscription = Keyboard.addListener(event, () => {
+      // This tells the sheet: "The keyboard is gone, go back to your anchor point."
+      modalRef.current?.snapToIndex(0);
+    });
 
-   const handleSubmit = async () => {
-      setLocalError(null);
-      const trimmedEmail = email.trim();
-      if (!trimmedEmail || !password) {
-         setLocalError('Please enter your email and password.');
-         return;
-      }
-      setSubmitting(true);
-      try {
-         if (isSignUp) {
-            await signUp(trimmedEmail, password);
-         } else {
-            await signIn(trimmedEmail, password);
-         }
-         handleClose();
-      } catch (err: any) {
-         setLocalError(err?.message ?? 'Something went wrong.');
-      } finally {
-         setSubmitting(false);
-      }
-   };
+    return () => subscription.remove();
+  }, []);
 
-   const handleAppleSignIn = async () => {
-      setLocalError(null);
-      setSocialSubmitting('apple');
-      try {
-         const success = await signInWithApple();
-         if (success) handleClose();
-      } catch (err: any) {
-         setLocalError(err?.message ?? 'Apple sign-in failed.');
-      } finally {
-         setSocialSubmitting(null);
-      }
-   };
+  return (
+    <BottomSheetModal
+      ref={modalRef}
+      index={0}
+      enableDynamicSizing={true} 
+      enablePanDownToClose
+      onDismiss={handleDismiss}
+      handleIndicatorStyle={{ backgroundColor: theme.indicator }}
+      backgroundStyle={{ backgroundColor: theme.bg, borderRadius: 24 }}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      topInset={insets.top}
+      backdropComponent={(props) => (
+        <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+      )}
+    >
+      <BottomSheetScrollView
+        contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 24 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View className="mb-6">
+          <Text className="text-3xl font-bold mb-2" style={{ color: theme.text }}>
+            {isSignUp ? 'Start your Growth' : 'Welcome Back'}
+          </Text>
+          <Text className="text-base" style={{ color: theme.subText }}>
+            {isSignUp ? 'Create an account to save your journal.' : 'Sign in to sync your entries.'}
+          </Text>
+        </View>
 
-   const handleGoogleSignIn = async () => {
-      setLocalError(null);
-      setSocialSubmitting('google');
-      try {
-         const success = await signInWithGoogle();
-         if (success) handleClose();
-      } catch (err: any) {
-         setLocalError(err?.message ?? 'Google sign-in failed.');
-      } finally {
-         setSocialSubmitting(null);
-      }
-   };
+        {/* Social Buttons */}
+        <View className="gap-3 mb-6">
+          {Platform.OS === 'ios' && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={isSignUp ? AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP : AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={isDark ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+              cornerRadius={14}
+              style={{ width: '100%', height: 50 }}
+              onPress={() => handleAuth(signInWithApple, 'apple')}
+            />
+          )}
 
-   return (
-      <View className="flex-1 bg-transparent">
-         <BottomSheetModal
-            ref={modalRef}
-            snapPoints={snapPoints}
-            index={0}
-            enablePanDownToClose
-            onDismiss={handleDismiss}
-            backdropComponent={renderBackdrop}
-            handleIndicatorStyle={{ backgroundColor: sheetIndicator }}
-            backgroundStyle={{
-               backgroundColor: isDark ? '#0f172a' : '#ffffff',
-               borderRadius: 24,
-            }}
-         >
-            <BottomSheetScrollView
-               contentContainerStyle={{
-                  paddingHorizontal: 24,
-                  paddingTop: 12,
-                  paddingBottom: insets.bottom + 24,
-               }}
-               keyboardShouldPersistTaps="handled"
-            >
-               {/* Header */}
-               <View className="mb-6">
-                  <View className="flex-row items-start justify-between mb-2">
-                     <Text className="text-3xl font-bold text-slate-900 dark:text-slate-100 flex-1 mr-4">
-                        {isSignUp ? 'Start your Growth' : 'Welcome Back'}
-                     </Text>
-                  </View>
+          <Pressable
+            className={`flex-row items-center justify-center h-[50px] rounded-[14px] border ${theme.inputBorder} active:opacity-70`}
+            onPress={() => handleAuth(signInWithGoogle, 'google')}
+            disabled={status !== 'idle'}
+          >
+            {status === 'google' ? <ActivityIndicator color={theme.text} /> : (
+              <>
+                <Ionicons name="logo-google" size={20} color={theme.text} />
+                <Text className="ml-2 font-semibold" style={{ color: theme.text }}>Continue with Google</Text>
+              </>
+            )}
+          </Pressable>
+        </View>
 
-                  <Text className="text-base text-slate-600 dark:text-slate-300 leading-snug">
-                     {isSignUp
-                        ? 'Create an account to save your journal and unlock AI insights.'
-                        : 'Sign in to sync your entries and continue your journey.'}
-                  </Text>
-               </View>
+        <View className="flex-row items-center gap-3 mb-6 opacity-50">
+          <View className="flex-1 h-[1px]" style={{ backgroundColor: theme.subText }} />
+          <Text className="text-xs font-bold uppercase" style={{ color: theme.subText }}>OR</Text>
+          <View className="flex-1 h-[1px]" style={{ backgroundColor: theme.subText }} />
+        </View>
 
-               {/* Social Auth Stack */}
-               <View className="gap-3 mb-6">
-                  {Platform.OS === 'ios' && (
-                     <AppleAuthentication.AppleAuthenticationButton
-                        buttonType={
-                           isSignUp
-                              ? AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
-                              : AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
-                        }
-                        buttonStyle={
-                           isDark
-                              ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
-                              : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-                        }
-                        cornerRadius={14}
-                        // Native components often need explicit style objects
-                        style={{ width: '100%', height: 50 }}
-                        onPress={handleAppleSignIn}
-                     />
-                  )}
+        <View className="gap-4 mb-6">
+          <BottomSheetTextInput
+            placeholder="Email address"
+            placeholderTextColor={theme.placeholder}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            style={{ backgroundColor: theme.inputBg, color: theme.text }}
+            className={`h-[54px] rounded-[14px] px-4 text-base border ${theme.inputBorder}`}
+          />
+          <BottomSheetTextInput
+            placeholder="Password"
+            placeholderTextColor={theme.placeholder}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            style={{ backgroundColor: theme.inputBg, color: theme.text }}
+            className={`h-[54px] rounded-[14px] px-4 text-base border ${theme.inputBorder}`}
+          />
+        </View>
 
-                  <Pressable
-                     className={`flex-row items-center justify-center h-[50px] rounded-[14px] border border-slate-200 dark:border-slate-700 gap-2 active:bg-slate-100 dark:active:bg-slate-800 ${
-                        socialSubmitting ? 'opacity-80' : ''
-                     }`}
-                     onPress={handleGoogleSignIn}
-                     disabled={submitting || Boolean(socialSubmitting)}
-                  >
-                     {socialSubmitting === 'google' ? (
-                        <ActivityIndicator color={iconColor} />
-                     ) : (
-                        <>
-                           <Ionicons
-                              name="logo-google"
-                              size={20}
-                              color={iconColor}
-                           />
-                           <Text className="font-semibold text-[15px] text-slate-900 dark:text-slate-100">
-                              Continue with Google
-                           </Text>
-                        </>
-                     )}
-                  </Pressable>
-               </View>
+        {error && <Text className="mb-4 text-center text-sm text-rose-500 font-medium">{error}</Text>}
 
-               {/* Divider */}
-               <View className="flex-row items-center gap-3 mb-6">
-                  <View className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-700 opacity-20" />
-                  <Text className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
-                     OR
-                  </Text>
-                  <View className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-700 opacity-20" />
-               </View>
+        <Pressable
+          className={`h-[54px] rounded-[14px] items-center justify-center mb-5 bg-dispute-cta active:opacity-90 ${status !== 'idle' ? 'opacity-70' : ''}`}
+          onPress={onEmailAuth}
+          disabled={status !== 'idle'}
+        >
+          {status === 'submitting' ? <ActivityIndicator color="#FFF" /> : (
+            <Text className="text-white text-[17px] font-bold">{isSignUp ? 'Create Account' : 'Sign In'}</Text>
+          )}
+        </Pressable>
 
-               {/* Form Inputs */}
-               <View className="gap-4 mb-6">
-                  <TextInput
-                     autoCapitalize="none"
-                     keyboardType="email-address"
-                     placeholder="Email address"
-                     // Tailwind doesn't support placeholder colors in RN, so set a slate tone inline.
-                     placeholderTextColor={isDark ? '#94a3b8' : '#64748b'} 
-                     value={email}
-                     onChangeText={setEmail}
-                     className="h-[54px] rounded-[14px] px-4 text-base border border-slate-200 dark:border-slate-600 bg-zinc-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
-                  />
-                  <TextInput
-                     placeholder="Password"
-                     placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                     value={password}
-                     onChangeText={setPassword}
-                     secureTextEntry
-                     className="h-[54px] rounded-[14px] px-4 text-base border border-slate-200 dark:border-slate-600 bg-zinc-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
-                  />
-               </View>
-
-               {localError && (
-                  <Text className="mb-4 text-center text-sm text-rose-600 dark:text-rose-400 font-medium">
-                     {localError}
-                  </Text>
-               )}
-
-               {/* Primary Action */}
-               <Pressable
-                  className={`h-[54px] rounded-[14px] items-center justify-center mb-5 bg-dispute-cta shadow-md active:scale-[0.98] ${
-                     submitting ? 'opacity-80' : ''
-                  }`}
-                  onPress={handleSubmit}
-                  disabled={submitting}
-               >
-                  {submitting ? (
-                     <ActivityIndicator color="#FFF" />
-                  ) : (
-                     <Text className="text-white text-[17px] font-bold">
-                        {isSignUp ? 'Create Account' : 'Sign In'}
-                     </Text>
-                  )}
-               </Pressable>
-
-               {/* Footer */}
-               <Pressable
-                  className="items-center py-2"
-                  onPress={() => setIsSignUp(!isSignUp)}
-               >
-                  <Text className="text-sm text-slate-600 dark:text-slate-300">
-                     {isSignUp ? 'Already have an account? ' : 'First time here? '}
-                     <Text className="text-dispute-cta font-bold">
-                        {isSignUp ? 'Sign In' : 'Sign Up'}
-                     </Text>
-                  </Text>
-               </Pressable>
-            </BottomSheetScrollView>
-         </BottomSheetModal>
-      </View>
-   );
+        <Pressable className="items-center py-2" onPress={() => { setError(null); setIsSignUp(!isSignUp); }}>
+          <Text style={{ color: theme.subText }}>
+            {isSignUp ? 'Already have an account? ' : 'First time here? '}
+            <Text className="text-dispute-cta font-bold">{isSignUp ? 'Sign In' : 'Sign Up'}</Text>
+          </Text>
+        </Pressable>
+      </BottomSheetScrollView>
+    </BottomSheetModal>
+  );
 }

@@ -1,5 +1,5 @@
 import { useAuth } from '@/providers/AuthProvider';
-import { router, usePathname } from 'expo-router';
+import { router } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 
 type Prop = {
@@ -8,16 +8,9 @@ type Prop = {
 
 export default function NextButton({ id }: Prop) {
    const { status, profile } = useAuth();
-   const pathname = usePathname();
-   const entryPath = `/entries/${id}`;
-   const alreadyOnEntry = pathname === entryPath;
    const isSubscribed = status === 'signedIn' && profile?.plan === 'invested';
 
    const handlePress = () => {
-    //   if (!alreadyOnEntry) {
-    //      router.push(entryPath as any);
-    //   }
-
       if (isSubscribed) {
          router.push(`/dispute/${id}?analyze=1`);
          return;

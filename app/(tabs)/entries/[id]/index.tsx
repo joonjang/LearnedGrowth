@@ -1,5 +1,4 @@
-import AnalyzeButton from '@/components/buttons/AnalyzeButton';
-import CTAButton from '@/components/buttons/CTAButton';
+import NextButton from '@/components/buttons/NextButton';
 import { useEntries } from '@/hooks/useEntries';
 import { formatDateTimeWithWeekday } from '@/lib/date';
 import type { Entry } from '@/models/entry';
@@ -516,8 +515,7 @@ export default function EntryDetailScreen() {
 
             {!entry.dispute?.trim() && (
                <>
-                  <CTAButton id={entry.id} />
-                  {aiVisible ? <AnalyzeButton id={entry.id} /> : null}
+                  <NextButton id={entry.id} />
                </>
             )}
          </KeyboardAwareScrollView>

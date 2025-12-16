@@ -27,6 +27,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - dispute.tsx is its own directory and is fullscreen on both android and apple
 - new.tsx now in root directory 
 - dispute and new entries now have synchronized behaviour for the keyboard padding inputs
+- Login screen now has keyboard view change configured
 
 ### 2025-12-13
 - Enabled apple app store purchase
