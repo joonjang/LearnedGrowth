@@ -1,3 +1,4 @@
+import { useAuth } from '@/providers/AuthProvider';
 import { Ionicons } from '@expo/vector-icons';
 import {
    BottomSheetBackdrop,
@@ -5,10 +6,9 @@ import {
    BottomSheetModal,
    BottomSheetView,
 } from '@gorhom/bottom-sheet';
-import { useAuth } from '@/providers/AuthProvider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -25,7 +25,6 @@ export default function FreeUserChoiceScreen() {
    const sheetIndicator = isDark ? '#475569' : '#cbd5e1';
 
    const modalRef = useRef<BottomSheetModal>(null);
-   const snapPoints = useMemo(() => ['48%'], []);
 
    const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -34,7 +33,7 @@ export default function FreeUserChoiceScreen() {
             appearsOnIndex={0}
             disappearsOnIndex={-1}
             pressBehavior="close"
-            opacity={0.45}
+            opacity={0.5}
          />
       ),
       []
@@ -82,7 +81,7 @@ export default function FreeUserChoiceScreen() {
       <View className="flex-1 bg-transparent">
          <BottomSheetModal
             ref={modalRef}
-            snapPoints={snapPoints}
+            enableDynamicSizing
             index={0}
             enablePanDownToClose
             backdropComponent={renderBackdrop}

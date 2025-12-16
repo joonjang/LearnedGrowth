@@ -36,6 +36,7 @@ export default function RootLayout() {
                         <Stack.Screen
                            name="(modal)"
                            options={{
+                              animation: 'none',
                               presentation: 'containedTransparentModal',
                            }}
                         />
