@@ -5,14 +5,6 @@ export default function EntriesStack() {
       <ThemedStack>
          <Stack.Screen name="index" options={{ title: 'Entries', animation: 'slide_from_left' }} />
          <Stack.Screen
-            name="new"
-            options={{
-               title: 'New Entry',
-               presentation: 'modal',
-               animation: 'slide_from_bottom',
-            }}
-         />
-         <Stack.Screen
             name="[id]/index"
             options={({ route }) => {
                const animateInstant = (
