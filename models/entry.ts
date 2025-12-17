@@ -8,6 +8,7 @@ export interface Entry {
    dispute?: string;
    energy?: string;
    aiResponse?: LearnedGrowthResponse | null;
+   aiRetryCount?: number;
    createdAt: string;
    updatedAt: string;
    accountId?: string | null;

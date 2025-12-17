@@ -18,6 +18,7 @@ export function createEntry(
     const entry: Entry = {
         ...data,
         aiResponse: null,
+        aiRetryCount: 0,
         id: Crypto.randomUUID(),
         createdAt: now,
         updatedAt: now,

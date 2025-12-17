@@ -4,6 +4,7 @@ export const baseEntry: Omit<Entry, 'id' | 'createdAt' | 'updatedAt'> = {
    adversity: 'Test adversity',
    belief: 'Test belief',
    aiResponse: null,
+   aiRetryCount: 0,
    consequence: undefined,
    dispute: undefined,
    energy: undefined,

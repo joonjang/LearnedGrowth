@@ -41,6 +41,7 @@ export function useEntries() {
          adversity: adversity,
          belief: belief,
          aiResponse: null,
+         aiRetryCount: 0,
          consequence: consequence,
          dispute: '',
          energy: '',

@@ -81,6 +81,15 @@ describe.each([
             expect(all[0].adversity).toBe('Test adversity');
          });
 
+         it('defaults aiRetryCount to 0 when missing', async () => {
+            const input: Entry = { ...entry };
+            delete (input as any).aiRetryCount;
+
+            await db.add(input);
+            const stored = await db.getById('123');
+            expect(stored?.aiRetryCount).toBe(0);
+         });
+
          it("add does not mutate caller's object", async () => {
             const input = { ...entry };
             await db.add(input);
@@ -178,6 +187,14 @@ describe.each([
             await expect(db.update('nope', { belief: 'Z' })).rejects.toThrow(
                /not found/i
             );
+         });
+
+         it('persists aiRetryCount updates', async () => {
+            await db.add(entry);
+            clock.advanceMs(1000);
+            await db.update('123', { aiRetryCount: 3 });
+            const stored = await db.getById('123');
+            expect(stored?.aiRetryCount).toBe(3);
          });
 
          it('createdAt never changes on update', async () => {

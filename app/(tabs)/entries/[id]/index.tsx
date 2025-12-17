@@ -186,6 +186,21 @@ export default function EntryDetailScreen() {
          return acc;
       }, {} as Partial<Entry>);
 
+      if (entry.aiResponse) {
+         const coreFields: FieldKey[] = ['adversity', 'belief', 'consequence'];
+         
+         const analysisChanged = coreFields.some(
+            (key) => trimmed[key] !== baseline[key]
+         );
+
+         if (analysisChanged) {
+            patch.aiResponse = {
+               ...entry.aiResponse,
+               isStale: true,
+            };
+         }
+      }
+
       await store.updateEntry(entry.id, patch);
       if (hapticsEnabled && hapticsAvailable) {
          triggerHaptic();
@@ -269,7 +284,7 @@ export default function EntryDetailScreen() {
                {!isEditing ? (
                   <>
                      <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
-                        {formattedTimestamp || ' '}
+                        {formattedTimestamp || ' '}{` - DEBUG: ${entry.aiRetryCount}`}
                      </Text>
                      <Text
                         className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 ${
@@ -409,7 +424,7 @@ export default function EntryDetailScreen() {
 	            {/* Inline AI Analysis */}
 	            {aiVisible && aiDisplayData ? (
                   <>
-                  <View className="h-[1px] bg-slate-200 dark:bg-slate-700 m-5" />
+                  <View className="h-[1px] bg-slate-200 dark:bg-slate-700 my-5" />
 	               <AiInsightCard
 	                  data={aiDisplayData}
                   />

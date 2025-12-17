@@ -129,11 +129,24 @@ export default function DisputeScreen() {
       if (entry?.aiResponse) return;
 
       setAnalysisTriggered(true);
-      analyze({
-         adversity: entry.adversity,
-         belief: entry.belief,
-         consequence: entry.consequence ?? undefined,
-      }).catch((e) => console.log(e));
+
+      (async () => {
+         try {
+            const result = await analyze({
+               adversity: entry.adversity,
+               belief: entry.belief,
+               consequence: entry.consequence ?? undefined,
+            });
+
+            const nextRetryCount = (entry.aiRetryCount ?? 0) + 1;
+            await updateEntry(entry.id, {
+               aiResponse: result.data,
+               aiRetryCount: nextRetryCount,
+            });
+         } catch (e) {
+            console.log(e);
+         }
+      })();
    }, [
       allowAnalysis,
       ready,
@@ -142,6 +155,7 @@ export default function DisputeScreen() {
       entry,
       lastResult,
       analyze,
+      updateEntry,
    ]);
 
    useEffect(() => {
@@ -179,18 +193,6 @@ export default function DisputeScreen() {
          composedDispute !== entryDispute || trimmedForm.energy !== entryEnergy
       );
    }, [entry?.dispute, entry?.energy, trimmedForm]);
-
-   useEffect(() => {
-      if (!entry || !lastResult?.data) return;
-      const storedKey = entry.aiResponse
-         ? JSON.stringify(entry.aiResponse)
-         : null;
-      const incomingKey = JSON.stringify(lastResult.data);
-      if (storedKey === incomingKey) return;
-      updateEntry(entry.id, { aiResponse: lastResult.data }).catch((e) =>
-         console.warn('Failed to store AI response', e)
-      );
-   }, [entry, lastResult?.data, updateEntry]);
 
    const suggestionPrompts = useMemo(() => {
       const pick = (val?: string | null, fallback?: string) =>

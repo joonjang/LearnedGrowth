@@ -15,6 +15,7 @@ export type ExplanatoryDimension = {
 };
 
 export type LearnedGrowthResponse = {
+  isStale?: boolean;
   safety: {
     isCrisis: boolean;
     crisisMessage: string | null;

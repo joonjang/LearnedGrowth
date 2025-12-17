@@ -1,5 +1,6 @@
 import { getIosShadowStyle } from '@/lib/shadow';
 import { LearnedGrowthResponse } from '@/models/aiService';
+import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import { useMemo } from 'react';
 import { Platform, Text, View } from 'react-native';
@@ -20,7 +21,7 @@ function DimensionCard({
    score,
    insight,
    detectedPhrase,
-   baseColor, 
+   baseColor,
 }: {
    label: string;
    score: Score;
@@ -30,15 +31,16 @@ function DimensionCard({
 }) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   
+
    const iosShadowSm = useMemo(
       () => getIosShadowStyle({ isDark, preset: 'sm' }),
       [isDark]
    );
 
    const chipStyle = useMemo(() => {
-      const baseContainer = "px-2 py-0.5 rounded-full border items-center flex-row gap-1.5 self-start";
-      const baseText = "text-[11px] font-semibold";
+      const baseContainer =
+         'px-2 py-0.5 rounded-full border items-center flex-row gap-1.5 self-start';
+      const baseText = 'text-[11px] font-semibold';
 
       switch (score) {
          case 'optimistic':
@@ -83,10 +85,10 @@ function DimensionCard({
          </View>
 
          {detectedPhrase && (
-            <View 
+            <View
                className="self-start px-2 py-1.5 rounded-lg mb-0.5"
-               style={{ 
-                  backgroundColor: baseColor + (isDark ? '33' : '4D'), 
+               style={{
+                  backgroundColor: baseColor + (isDark ? '33' : '4D'),
                }}
             >
                <Text className="text-xs font-medium text-slate-900 dark:text-slate-100 italic">
@@ -103,14 +105,10 @@ function DimensionCard({
 }
 
 // --- Main Component ---
-export function AiInsightCard({
-   data,
-   streamingText,
-   error,
-}: Props) {
+export function AiInsightCard({ data, streamingText, error }: Props) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   
+
    // Reuse shadow for consistency
    const iosShadowSm = useMemo(
       () => getIosShadowStyle({ isDark, preset: 'sm' }),
@@ -123,9 +121,7 @@ export function AiInsightCard({
             <Text className="text-lg font-bold text-belief-text">
                AI couldn’t respond
             </Text>
-            <Text className="text-sm text-belief-text opacity-90">
-               {error}
-            </Text>
+            <Text className="text-sm text-belief-text opacity-90">{error}</Text>
          </View>
       );
    }
@@ -142,36 +138,69 @@ export function AiInsightCard({
             <View className="items-center py-2">
                <ThreeDotsLoader />
             </View>
-            
+
             <View className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-700 shadow-sm min-h-[100px]">
                <View className="flex-row items-center gap-2 mb-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-                   <View className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                   <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  <View className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                      ANALYZING ENTRY...
-                   </Text>
+                  </Text>
                </View>
-               <Text 
+               <Text
                   className="text-[11px] text-slate-600 dark:text-slate-400 leading-4"
                   style={{
                      fontFamily: Platform.select({
                         ios: 'Menlo',
                         android: 'monospace',
                         default: 'Courier',
-                     })
+                     }),
                   }}
                >
-                  {renderStreamingText || "Connecting..."}
+                  {renderStreamingText || 'Connecting...'}
                </Text>
             </View>
          </View>
       );
    }
 
-   const { safety, analysis, suggestions } = data;
+   const { safety, analysis, suggestions, isStale } = data;
    const { dimensions: dims, emotionalLogic } = analysis;
 
    return (
       <View className="gap-4 pb-4">
+         {isStale && (
+            <View className="flex-row items-center justify-between bg-slate-100 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 mt-4">
+               <View className="flex-row items-center gap-2 flex-1">
+                  <Ionicons
+                     name="time-outline"
+                     size={16}
+                     color={isDark ? '#94a3b8' : '#64748b'}
+                  />
+                  <View>
+                     <Text className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                        Previous Analysis
+                     </Text>
+                     <Text className="text-[11px] text-slate-500 dark:text-slate-500">
+                        Based on older text. Still useful for context.
+                     </Text>
+                  </View>
+               </View>
+
+               {/* Small, unobtrusive Refresh Button */}
+               {/* {onRefresh && (
+               <Pressable 
+                  onPress={onRefresh}
+                  hitSlop={8}
+                  className="px-3 py-1.5 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-sm active:opacity-60"
+               >
+                  <Text className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                     Update
+                  </Text>
+               </Pressable>
+            )} */}
+            </View>
+         )}
+
          {/* Crisis Banner */}
          {safety.isCrisis && (
             <View className="rounded-xl p-4 bg-belief-bg border border-belief-border shadow-sm">
@@ -179,7 +208,8 @@ export function AiInsightCard({
                   You deserve support
                </Text>
                <Text className="text-[13px] leading-5 text-belief-text">
-                  {safety.crisisMessage || 'It sounds like you might be in crisis. Please reach out to local emergency services or a crisis line right away.'}
+                  {safety.crisisMessage ||
+                     'It sounds like you might be in crisis. Please reach out to local emergency services or a crisis line right away.'}
                </Text>
             </View>
          )}
@@ -202,28 +232,28 @@ export function AiInsightCard({
                How your mind is seeing this
             </Text>
 
-            <DimensionCard 
+            <DimensionCard
                label="Permanence (Time)"
                score={dims.permanence.score}
                insight={dims.permanence.insight ?? undefined}
                detectedPhrase={dims.permanence.detectedPhrase ?? undefined}
-               baseColor="#ef4444" 
+               baseColor="#ef4444"
             />
 
-            <DimensionCard 
+            <DimensionCard
                label="Pervasiveness (Scope)"
                score={dims.pervasiveness.score}
                insight={dims.pervasiveness.insight ?? undefined}
                detectedPhrase={dims.pervasiveness.detectedPhrase ?? undefined}
-               baseColor="#3b82f6" 
+               baseColor="#3b82f6"
             />
 
-            <DimensionCard 
+            <DimensionCard
                label="Personalization (Blame)"
                score={dims.personalization.score}
                insight={dims.personalization.insight ?? undefined}
                detectedPhrase={dims.personalization.detectedPhrase ?? undefined}
-               baseColor="#8b5cf6" 
+               baseColor="#8b5cf6"
             />
          </View>
 
@@ -233,20 +263,14 @@ export function AiInsightCard({
                <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100 ml-1 mb-2">
                   Another way to see it
                </Text>
-               
-               {/* Redesign:
-                  1. Switched to 'bg-white' to match other cards (removes weird contrast).
-                  2. Added 'iosShadowSm' for consistent depth.
-                  3. Added a green accent bar (bg-dispute-cta) to indicate growth/optimism.
-                  4. Removed quotes/italics for a cleaner, authoritative look.
-               */}
-               <View 
+
+               <View
                   className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm"
                   style={iosShadowSm}
                >
                   <View className="flex-row gap-3">
-                     <Text className="flex-1 text-[15px] leading-6 font-medium text-slate-800 dark:text-slate-200">
-                     &quot;{suggestions.counterBelief}&quot;
+                     <Text className="flex-1 text-[15px] leading-6 font-medium text-slate-800 dark:text-slate-200 italic">
+                        &quot;{suggestions.counterBelief}&quot;
                      </Text>
                   </View>
                </View>

@@ -9,6 +9,7 @@ interface Row {
    adversity: string;
    belief: string;
    ai_response: string | null;
+   ai_retry_count: number | null;
    consequence: string | null;
    dispute: string | null;
    energy: string | null;
@@ -38,6 +39,15 @@ function cloneAiResponse(
    return aiResponse ? JSON.parse(JSON.stringify(aiResponse)) : null;
 }
 
+function normalizeAiRetryCount(raw: any): number {
+   if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+   if (typeof raw === "string" && raw.trim() !== "") {
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed)) return parsed;
+   }
+   return 0;
+}
+
 export class SQLEntriesAdapter implements EntriesAdapter {
    private entries?: Entry[];
    private db?: SQLite.SQLiteDatabase;
@@ -52,6 +62,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
    private copyEntry(entry: Entry): Entry {
       return {
          ...entry,
+         aiRetryCount: entry.aiRetryCount ?? 0,
          aiResponse: cloneAiResponse(entry.aiResponse ?? null),
       };
    }
@@ -62,6 +73,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          adversity: row.adversity,
          belief: row.belief,
          aiResponse: parseAiResponse(row.ai_response),
+         aiRetryCount: normalizeAiRetryCount(row.ai_retry_count),
          consequence: row.consequence ?? undefined,
          dispute: row.dispute ?? undefined,
          energy: row.energy ?? undefined,
@@ -84,7 +96,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
 
       try {
          const rows = await this.db.getAllAsync<Row>(`
-            SELECT id, adversity, belief, ai_response, consequence, dispute, energy,
+            SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
               created_at, updated_at, account_id, dirty_since, is_deleted
             FROM entries
             WHERE is_deleted = 0
@@ -105,7 +117,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
       try {
          const row = await this.db.getFirstAsync<Row>(
             `
-          SELECT id, adversity, belief, ai_response, consequence, dispute, energy,
+          SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
               created_at, updated_at, account_id, dirty_since, is_deleted
             FROM entries
             WHERE id = $id
@@ -136,10 +148,10 @@ export class SQLEntriesAdapter implements EntriesAdapter {
       try {
          await this.db.runAsync(
             `INSERT INTO entries
-       (id, adversity, belief, consequence, dispute, energy, ai_response,
+       (id, adversity, belief, consequence, dispute, energy, ai_response, ai_retry_count,
         created_at, updated_at, account_id, dirty_since, is_deleted)
        VALUES
-       ($id, $adversity, $belief, $consequence, $dispute, $energy, $ai_response,
+       ($id, $adversity, $belief, $consequence, $dispute, $energy, $ai_response, $ai_retry_count,
         $created_at, $updated_at, $account_id, $dirty_since, $is_deleted)`,
             {
                $id: entry.id,
@@ -149,6 +161,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
                $dispute: entry.dispute ?? null,
                $energy: entry.energy ?? null,
                $ai_response: serializeAiResponse(entry.aiResponse ?? null),
+               $ai_retry_count: entry.aiRetryCount ?? 0,
                $created_at: entry.createdAt,
                $updated_at: entry.updatedAt,
                $account_id: entry.accountId ?? null,
@@ -158,7 +171,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          );
 
          const row = await this.db.getFirstAsync<Row>(
-            `SELECT id, adversity, belief, ai_response, consequence, dispute, energy,
+            `SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
               created_at, updated_at, account_id, dirty_since, is_deleted
          FROM entries
         WHERE id = $id
@@ -228,6 +241,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          SET adversity   = $adversity,
               belief      = $belief,
               ai_response = $ai_response,
+              ai_retry_count = $ai_retry_count,
               consequence = $consequence,
               dispute     = $dispute,
               energy      = $energy,
@@ -241,6 +255,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
                $adversity: merged.adversity,
                $belief: merged.belief,
                $ai_response: serializeAiResponse(merged.aiResponse ?? null),
+               $ai_retry_count: merged.aiRetryCount ?? 0,
                $consequence: merged.consequence ?? null,
                $dispute: merged.dispute ?? null,
                $energy: merged.energy ?? null,
@@ -253,7 +268,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          );
 
          const row = await this.db.getFirstAsync<Row>(
-            `SELECT id, adversity, belief, ai_response, consequence, dispute, energy,
+            `SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
               created_at, updated_at, account_id, dirty_since, is_deleted
          FROM entries
         WHERE id = $id

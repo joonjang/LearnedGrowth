@@ -24,6 +24,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2025-12-17
 - Restyled AiInsightCard
+- Displays if ai analysis is stale
+  - added new property in aiResponse
+- Counts the amount of ai calls made in respect to entry
 
 ### 2025-12-16
 - Credit pack established
