@@ -14,22 +14,29 @@ type Props = {
 
 type Score = 'optimistic' | 'mixed' | 'pessimistic' | null | undefined | string;
 
-export function AiInsightCard({
-   data,
-   streamingText,
-   loading,
-   error,
-}: Props) {
-
+// --- Helper Component for Dimensions ---
+function DimensionCard({
+   label,
+   score,
+   insight,
+   detectedPhrase,
+   baseColor, 
+}: {
+   label: string;
+   score: Score;
+   insight?: string;
+   detectedPhrase?: string;
+   baseColor: string;
+}) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   
    const iosShadowSm = useMemo(
       () => getIosShadowStyle({ isDark, preset: 'sm' }),
       [isDark]
    );
-   
-   // Helper to get Tailwind Classes for chips
-   const getScoreChip = (score: Score) => {
+
+   const chipStyle = useMemo(() => {
       const baseContainer = "px-2 py-0.5 rounded-full border items-center flex-row gap-1.5 self-start";
       const baseText = "text-[11px] font-semibold";
 
@@ -37,7 +44,7 @@ export function AiInsightCard({
          case 'optimistic':
             return {
                label: 'Optimistic',
-               container: `${baseContainer} bg-dispute-bg border-dispute-cta`, // Using semantic brand colors
+               container: `${baseContainer} bg-dispute-bg border-dispute-cta`,
                text: `${baseText} text-dispute-text`,
             };
          case 'pessimistic':
@@ -48,34 +55,81 @@ export function AiInsightCard({
             };
          case 'mixed':
             return {
-               label: 'Mixed view',
+               label: 'Mixed',
                container: `${baseContainer} bg-zinc-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600`,
                text: `${baseText} text-slate-900 dark:text-slate-100`,
             };
          default:
             return {
-               label: 'No clear pattern',
+               label: 'Neutral',
                container: `${baseContainer} bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700`,
                text: `${baseText} text-slate-600 dark:text-slate-300`,
             };
       }
-   };
+   }, [score]);
 
-   // --- Error State ---
+   return (
+      <View
+         className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-2"
+         style={iosShadowSm}
+      >
+         <View className="flex-row items-center justify-between">
+            <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+               {label}
+            </Text>
+            <View className={chipStyle.container}>
+               <Text className={chipStyle.text}>{chipStyle.label}</Text>
+            </View>
+         </View>
+
+         {detectedPhrase && (
+            <View 
+               className="self-start px-2 py-1.5 rounded-lg mb-0.5"
+               style={{ 
+                  backgroundColor: baseColor + (isDark ? '33' : '4D'), 
+               }}
+            >
+               <Text className="text-xs font-medium text-slate-900 dark:text-slate-100 italic">
+                  &quot;{detectedPhrase}&quot;
+               </Text>
+            </View>
+         )}
+
+         <Text className="text-[13px] leading-5 text-slate-700 dark:text-slate-300">
+            {insight || 'No clear pattern detected here.'}
+         </Text>
+      </View>
+   );
+}
+
+// --- Main Component ---
+export function AiInsightCard({
+   data,
+   streamingText,
+   error,
+}: Props) {
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+   
+   // Reuse shadow for consistency
+   const iosShadowSm = useMemo(
+      () => getIosShadowStyle({ isDark, preset: 'sm' }),
+      [isDark]
+   );
+
    if (error) {
       return (
          <View className="p-4 rounded-2xl bg-belief-bg border border-belief-border gap-2">
             <Text className="text-lg font-bold text-belief-text">
                AI couldn’t respond
             </Text>
-            <Text className="text-sm text-belief-text">
+            <Text className="text-sm text-belief-text opacity-90">
                {error}
             </Text>
          </View>
       );
    }
 
-   // --- Loading / Streaming State ---
    const MAX_VISIBLE_CHARS = 250;
    const renderStreamingText =
       streamingText && streamingText.length > MAX_VISIBLE_CHARS
@@ -84,14 +138,20 @@ export function AiInsightCard({
 
    if (!data) {
       return (
-         <View className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 gap-3">
-            <ThreeDotsLoader />
-            <View className="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
-               <Text className="text-xs tracking-wider text-slate-600 dark:text-slate-300 mb-1 uppercase font-semibold">
-                  Received data
-               </Text>
+         <View className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 gap-4">
+            <View className="items-center py-2">
+               <ThreeDotsLoader />
+            </View>
+            
+            <View className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-700 shadow-sm min-h-[100px]">
+               <View className="flex-row items-center gap-2 mb-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                   <View className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                   <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                     ANALYZING ENTRY...
+                   </Text>
+               </View>
                <Text 
-                  className="text-xs text-slate-900 dark:text-slate-100 leading-5"
+                  className="text-[11px] text-slate-600 dark:text-slate-400 leading-4"
                   style={{
                      fontFamily: Platform.select({
                         ios: 'Menlo',
@@ -100,7 +160,7 @@ export function AiInsightCard({
                      })
                   }}
                >
-                  {renderStreamingText}
+                  {renderStreamingText || "Connecting..."}
                </Text>
             </View>
          </View>
@@ -109,118 +169,89 @@ export function AiInsightCard({
 
    const { safety, analysis, suggestions } = data;
    const { dimensions: dims, emotionalLogic } = analysis;
-   const showCrisis = safety.isCrisis;
-
-   const permanenceChip = getScoreChip(dims.permanence.score);
-   const pervasivenessChip = getScoreChip(dims.pervasiveness.score);
-   const personalizationChip = getScoreChip(dims.personalization.score);
 
    return (
-      <View className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 gap-3">
-         {/* Crisis banner */}
-         {showCrisis && (
-            <View className="rounded-xl p-3 bg-belief-bg border border-belief-border mb-1">
-               <Text className="text-base font-semibold text-belief-text mb-0.5">
+      <View className="gap-4 pb-4">
+         {/* Crisis Banner */}
+         {safety.isCrisis && (
+            <View className="rounded-xl p-4 bg-belief-bg border border-belief-border shadow-sm">
+               <Text className="text-base font-bold text-belief-text mb-1">
                   You deserve support
                </Text>
-               <Text className="text-sm text-belief-text">
+               <Text className="text-[13px] leading-5 text-belief-text">
                   {safety.crisisMessage || 'It sounds like you might be in crisis. Please reach out to local emergency services or a crisis line right away.'}
                </Text>
             </View>
          )}
 
-         {/* Emotional validation */}
-         <View className="mt-1 gap-1.5">
-            <Text className="text-lg font-bold text-slate-900 dark:text-slate-100">
+         {/* Emotional Validation */}
+         <View className=" py-4 px-2 ">
+            <Text className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
                Your reaction makes sense
             </Text>
             {!!emotionalLogic && (
-               <Text className="text-sm text-slate-900 dark:text-slate-100 leading-5">
+               <Text className="text-[15px] leading-6 text-slate-700 dark:text-slate-300">
                   {emotionalLogic}
                </Text>
             )}
          </View>
 
-         {/* How your mind is seeing this */}
-         <View className="mt-1 gap-1.5">
-            <Text className="text-base font-semibold text-slate-600 dark:text-slate-300">
+         {/* 3 Ps (Dimensions) */}
+         <View className="gap-3">
+            <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100 ml-1">
                How your mind is seeing this
             </Text>
 
-            {/* Permanence */}
-            <View
-               className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-1.5"
-               style={iosShadowSm}
-            >
-               <View className="flex-row items-center justify-between">
-                  <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase">
-                     How long it feels
-                  </Text>
-                  <View className={permanenceChip.container}>
-                     <Text className={permanenceChip.text}>
-                        {permanenceChip.label}
-                     </Text>
-                  </View>
-               </View>
-               <Text className="text-sm text-slate-900 dark:text-slate-100">
-                  {dims.permanence.insight || 'No clear pattern here.'}
-               </Text>
-            </View>
+            <DimensionCard 
+               label="Permanence (Time)"
+               score={dims.permanence.score}
+               insight={dims.permanence.insight ?? undefined}
+               detectedPhrase={dims.permanence.detectedPhrase ?? undefined}
+               baseColor="#ef4444" 
+            />
 
-            {/* Pervasiveness */}
-            <View
-               className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-1.5"
-               style={iosShadowSm}
-            >
-               <View className="flex-row items-center justify-between">
-                  <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase">
-                     How big it feels
-                  </Text>
-                  <View className={pervasivenessChip.container}>
-                     <Text className={pervasivenessChip.text}>
-                        {pervasivenessChip.label}
-                     </Text>
-                  </View>
-               </View>
-               <Text className="text-sm text-slate-900 dark:text-slate-100">
-                  {dims.pervasiveness.insight || 'No clear pattern here.'}
-               </Text>
-            </View>
+            <DimensionCard 
+               label="Pervasiveness (Scope)"
+               score={dims.pervasiveness.score}
+               insight={dims.pervasiveness.insight ?? undefined}
+               detectedPhrase={dims.pervasiveness.detectedPhrase ?? undefined}
+               baseColor="#3b82f6" 
+            />
 
-            {/* Personalization */}
-            <View
-               className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-1.5"
-               style={iosShadowSm}
-            >
-               <View className="flex-row items-center justify-between">
-                  <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase">
-                     Where blame goes
-                  </Text>
-                  <View className={personalizationChip.container}>
-                     <Text className={personalizationChip.text}>
-                        {personalizationChip.label}
-                     </Text>
-                  </View>
-               </View>
-               <Text className="text-sm text-slate-900 dark:text-slate-100">
-                  {dims.personalization.insight || 'No clear pattern here.'}
-               </Text>
-            </View>
+            <DimensionCard 
+               label="Personalization (Blame)"
+               score={dims.personalization.score}
+               insight={dims.personalization.insight ?? undefined}
+               detectedPhrase={dims.personalization.detectedPhrase ?? undefined}
+               baseColor="#8b5cf6" 
+            />
          </View>
 
-         {/* Another way to talk to yourself */}
-         {suggestions.counterBelief ? (
-            <View className="mt-1 gap-1.5">
-               <Text className="text-base font-semibold text-slate-600 dark:text-slate-300">
+         {/* Suggestion - NEW DESIGN */}
+         {suggestions.counterBelief && (
+            <View className="mt-2">
+               <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100 ml-1 mb-2">
                   Another way to see it
                </Text>
-               <View className="p-3 rounded-xl bg-zinc-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 mt-1">
-                  <Text className="text-sm text-slate-900 dark:text-slate-100 leading-5">
-                     {suggestions.counterBelief}
-                  </Text>
+               
+               {/* Redesign:
+                  1. Switched to 'bg-white' to match other cards (removes weird contrast).
+                  2. Added 'iosShadowSm' for consistent depth.
+                  3. Added a green accent bar (bg-dispute-cta) to indicate growth/optimism.
+                  4. Removed quotes/italics for a cleaner, authoritative look.
+               */}
+               <View 
+                  className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm"
+                  style={iosShadowSm}
+               >
+                  <View className="flex-row gap-3">
+                     <Text className="flex-1 text-[15px] leading-6 font-medium text-slate-800 dark:text-slate-200">
+                     &quot;{suggestions.counterBelief}&quot;
+                     </Text>
+                  </View>
                </View>
             </View>
-         ) : null}
+         )}
       </View>
    );
 }

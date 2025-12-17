@@ -29,12 +29,17 @@ type GetIosShadowStyleOptions = {
    disableInDark?: boolean;
 };
 
+type IosShadowStyle = Pick<
+   ViewStyle,
+   'shadowColor' | 'shadowOpacity' | 'shadowRadius' | 'shadowOffset'
+>;
+
 export function getIosShadowStyle({
    isDark,
    preset = 'card',
    colorLight = '#0f172a',
    disableInDark = true,
-}: GetIosShadowStyleOptions): ViewStyle | undefined {
+}: GetIosShadowStyleOptions): IosShadowStyle | undefined {
    if (Platform.OS !== 'ios') return undefined;
 
    if (disableInDark && isDark) {

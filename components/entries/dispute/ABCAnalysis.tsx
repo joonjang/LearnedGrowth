@@ -45,6 +45,7 @@ export default function ABCAnalysis({
             flexGrow: 1,
             justifyContent: 'space-between',
             gap: 16,
+            padding: 2
          }}
          keyboardShouldPersistTaps="always"
          showsVerticalScrollIndicator={false}

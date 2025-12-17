@@ -1,5 +1,6 @@
 import NextButton from '@/components/buttons/NextButton';
 import { ROUTE_ENTRIES } from '@/components/constants';
+import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
 import { useEntries } from '@/hooks/useEntries';
 import { formatDateTimeWithWeekday } from '@/lib/date';
 import { getIosShadowStyle } from '@/lib/shadow';
@@ -141,7 +142,6 @@ export default function EntryDetailScreen() {
    );
 
    const aiDisplayData = entry?.aiResponse ?? null;
-   const analysis = aiDisplayData?.analysis ?? null;
 
    const hasChanges = useMemo(
       () => FIELD_KEYS.some((key) => trimmed[key] !== baseline[key]),
@@ -157,25 +157,7 @@ export default function EntryDetailScreen() {
       });
    }, [baseline, trimmed]);
 
-   // Helper: Return Class Names for Chips
-   const getChipClass = useCallback((score?: string | null) => {
-      switch (score) {
-         case 'optimistic':
-            return { container: 'bg-dispute-bg', text: 'text-dispute-text' };
-         case 'pessimistic':
-            return { container: 'bg-belief-bg', text: 'text-belief-text' };
-         case 'mixed':
-            return {
-               container: 'bg-zinc-50 dark:bg-slate-700',
-               text: 'text-slate-900 dark:text-slate-100',
-            };
-         default:
-            return {
-               container: 'bg-slate-100 dark:bg-slate-800',
-               text: 'text-slate-600 dark:text-slate-300',
-            };
-      }
-   }, []);
+
 
    const setField = useCallback(
       (key: FieldKey) => (value: string) => {
@@ -274,10 +256,6 @@ export default function EntryDetailScreen() {
          {/* Safe Area Spacer */}
          <View style={{ height: insets.top }} />
 
-         {/* FIX 1: Header Movement 
-            - Added 'h-11' to fix the container height.
-            - Standardized text size to 'text-base' for both Edit/View states.
-         */}
          <View className="h-11 flex-row items-center justify-center mb-4 relative z-10">
             <Pressable
                onPress={() => router.replace(ROUTE_ENTRIES)}
@@ -430,106 +408,13 @@ export default function EntryDetailScreen() {
 
 	            {/* Inline AI Analysis */}
 	            {aiVisible && aiDisplayData ? (
-	               <View
-	                  className="my-6 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border shadow-sm border-slate-200 dark:border-slate-700 gap-1.5"
-	                  style={iosShadowSm}
-	               >
-	                  <View className="flex-row items-center justify-between mb-1">
-	                     <Text className="text-[13px] font-bold text-slate-900 dark:text-slate-100">
-	                        AI Analysis
-	                     </Text>
-                     <Ionicons
-                        name="sparkles"
-                        size={14}
-                        color={isDark ? '#fbbf24' : '#d97706'}
-                     />
-                  </View>
+                  <>
+                  <View className="h-[1px] bg-slate-200 dark:bg-slate-700 m-5" />
+	               <AiInsightCard
+	                  data={aiDisplayData}
+                  />
+                  </>
 
-                  <View className="gap-2">
-                     <Text className="text-[13px] leading-5 text-slate-900 dark:text-slate-100">
-                        {aiDisplayData.analysis.emotionalLogic}
-                     </Text>
-
-                     <View className="mt-1 gap-2">
-                        {(
-                           [
-                              [
-                                 'permanence',
-                                 'How long it feels',
-                                 analysis?.dimensions.permanence,
-                                 '#FCA5A5',
-                              ],
-                              [
-                                 'pervasiveness',
-                                 'How big it feels',
-                                 analysis?.dimensions.pervasiveness,
-                                 '#93C5FD',
-                              ],
-                              [
-                                 'personalization',
-                                 'Where blame goes',
-                                 analysis?.dimensions.personalization,
-                                 '#C4B5FD',
-                              ],
-                           ] as const
-                        ).map(([key, label, dim, color]) => {
-                           // Extract class string from helper
-                           const chipClass = getChipClass(dim?.score);
-
-                           return (
-                              <View className="gap-1.5 py-1" key={key}>
-                                 <View className="flex-row items-center justify-between gap-2">
-                                    <Text className="text-xs font-bold text-slate-900 dark:text-slate-100 px-1.5 py-0.5 rounded-md">
-                                       {label}
-                                    </Text>
-                                    <View
-                                       className={`px-2 py-1 rounded-full ${chipClass.container}`}
-                                    >
-                                       <Text
-                                          className={`text-xs font-bold capitalize ${chipClass.text}`}
-                                       >
-                                          {dim?.score || 'n/a'}
-                                       </Text>
-                                    </View>
-                                 </View>
-                                 {dim?.detectedPhrase ? (
-                                    <Text
-                                       className="mt-0.5 px-2 py-1.5 rounded-lg text-xs text-slate-900 dark:text-slate-100 overflow-hidden"
-                                       style={{
-                                          backgroundColor: color + '55',
-                                       }}
-                                    >
-                                       &quot;{dim.detectedPhrase}&quot;
-                                    </Text>
-                                 ) : null}
-                                 {dim?.insight ? (
-                                    <Text className="text-[13px] leading-5 text-slate-900 dark:text-slate-100">
-                                       {dim.insight}
-                                    </Text>
-                                 ) : null}
-                              </View>
-                           );
-                        })}
-                     </View>
-
-	                     {aiDisplayData.suggestions.counterBelief && (
-	                        <View className="mt-4 gap-2">
-	                           <Text className="text-[13px] font-bold text-slate-900 dark:text-slate-100">
-	                              Another way to see it
-	                           </Text>
-
-	                           <View
-	                              className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm"
-	                              style={iosShadowSm}
-	                           >
-	                              <Text className="text-[14px] leading-5 text-slate-900 dark:text-slate-100">
-	                                 {aiDisplayData.suggestions.counterBelief}
-	                              </Text>
-	                           </View>
-                        </View>
-                     )}
-                  </View>
-               </View>
             ) : null}
 
             {!entry.dispute?.trim() && (

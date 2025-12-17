@@ -36,7 +36,7 @@ export default function NextButton({ id }: Prop) {
          return {
             label: "View Analysis",
             icon: "document-text",
-            bgColor: "bg-slate-700 dark:bg-slate-600",
+            bgColor: "bg-blue-500 dark:bg-blue-800",
             textColor: "text-white"
          };
       }
@@ -44,14 +44,14 @@ export default function NextButton({ id }: Prop) {
          return {
             label: "Analyze with AI",
             icon: "sparkles",
-            bgColor: "bg-dispute-cta",
+            bgColor: "bg-dispute-cta dark:bg-green-800",
             textColor: "text-white"
          };
       }
       return {
          label: "Continue",
          icon: "arrow-forward",
-         bgColor: "bg-dispute-cta",
+         bgColor: "bg-dispute-cta dark:bg-green-800",
          textColor: "text-white"
       };
    }, [hasCachedAnalysis, isSubscribed]);

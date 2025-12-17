@@ -22,6 +22,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-17
+- Restyled AiInsightCard
+
 ### 2025-12-16
 - Credit pack established
 - Cleaned up account screen, now labelled as settings screen
