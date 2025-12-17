@@ -272,7 +272,7 @@ export default function EntryCard({
 
          {!entry.dispute ? (
             <>
-               <View className="h-[0.5px] bg-slate-200 dark:bg-slate-700 my-5" />
+               <View className="h-[0.5px] bg-slate-200 dark:bg-slate-700 m-2" />
                <NextButton id={entry.id} />
             </>
          ) : (

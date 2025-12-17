@@ -1,4 +1,11 @@
-import { FREE_MONTHLY_CREDITS } from '@/components/constants';
+import {
+   AI_ANALYSIS_CREDIT_COST,
+   BOTTOM_SHEET_BACKDROP_OPACITY,
+   BOTTOM_SHEET_CONTENT_PADDING,
+   BOTTOM_SHEET_RADIUS,
+   FREE_MONTHLY_CREDITS,
+   ROUTE_LOGIN,
+} from '@/components/constants';
 import CreditShop from '@/components/CreditShop';
 import { useAuth } from '@/providers/AuthProvider';
 import { Ionicons } from '@expo/vector-icons';
@@ -69,7 +76,7 @@ export default function FreeUserChoiceScreen() {
             appearsOnIndex={0}
             disappearsOnIndex={-1}
             pressBehavior="close"
-            opacity={0.5}
+            opacity={BOTTOM_SHEET_BACKDROP_OPACITY}
          />
       ),
       []
@@ -104,7 +111,7 @@ export default function FreeUserChoiceScreen() {
 
       if (requiresAuth && !isSignedIn) {
          router.replace({
-            pathname: '/(modal)/login',
+            pathname: ROUTE_LOGIN,
             params: { redirect: path },
          } as any);
       } else {
@@ -126,11 +133,14 @@ export default function FreeUserChoiceScreen() {
          enablePanDownToClose
          backdropComponent={renderBackdrop}
          handleIndicatorStyle={{ backgroundColor: theme.indicator }}
-         backgroundStyle={{ backgroundColor: theme.bg, borderRadius: 24 }}
+         backgroundStyle={{
+            backgroundColor: theme.bg,
+            borderRadius: BOTTOM_SHEET_RADIUS,
+         }}
       >
          <BottomSheetScrollView
             contentContainerStyle={{
-               paddingHorizontal: 24,
+               paddingHorizontal: BOTTOM_SHEET_CONTENT_PADDING,
                paddingTop: 16,
                paddingBottom: insets.bottom + 20,
             }}
@@ -206,7 +216,9 @@ export default function FreeUserChoiceScreen() {
                            >
                               {availableCredits === 0
                                  ? 'You have 0 credits left.'
-                                 : `Costs 1 credit. ${creditAvailability}`}
+                                 : `Costs ${AI_ANALYSIS_CREDIT_COST} credit${
+                                      AI_ANALYSIS_CREDIT_COST === 1 ? '' : 's'
+                                   }. ${creditAvailability}`}
                            </Text>
                         </View>
                      </View>

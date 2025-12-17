@@ -1,4 +1,10 @@
 import { useAuth } from '@/providers/AuthProvider';
+import {
+   BOTTOM_SHEET_BACKDROP_OPACITY,
+   BOTTOM_SHEET_CONTENT_PADDING,
+   BOTTOM_SHEET_RADIUS,
+   ROUTE_ENTRIES,
+} from '@/components/constants';
 import { Ionicons } from '@expo/vector-icons';
 import {
   BottomSheetBackdrop,
@@ -98,7 +104,7 @@ export default function AuthModal() {
             if (router.canGoBack()) router.dismissAll();
 
             // Go to the main app tabs
-            router.replace('/(tabs)/entries');
+            router.replace(ROUTE_ENTRIES);
          }
       } catch (err: any) {
          setError(err?.message ?? 'Authentication failed.');
@@ -132,7 +138,10 @@ export default function AuthModal() {
          enableDynamicSizing={true}
          enablePanDownToClose
          handleIndicatorStyle={{ backgroundColor: theme.indicator }}
-         backgroundStyle={{ backgroundColor: theme.bg, borderRadius: 24 }}
+         backgroundStyle={{
+            backgroundColor: theme.bg,
+            borderRadius: BOTTOM_SHEET_RADIUS,
+         }}
          keyboardBehavior="interactive"
          keyboardBlurBehavior="restore"
          topInset={insets.top}
@@ -141,14 +150,14 @@ export default function AuthModal() {
                {...props}
                disappearsOnIndex={-1}
                appearsOnIndex={0}
-               opacity={0.5}
+               opacity={BOTTOM_SHEET_BACKDROP_OPACITY}
             />
          )}
       >
          <BottomSheetScrollView
             contentContainerStyle={{
-               padding: 24,
-               paddingBottom: insets.bottom + 24,
+               padding: BOTTOM_SHEET_CONTENT_PADDING,
+               paddingBottom: insets.bottom + BOTTOM_SHEET_CONTENT_PADDING,
             }}
             keyboardShouldPersistTaps="handled"
          >

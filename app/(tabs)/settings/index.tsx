@@ -1,4 +1,4 @@
-import { BTN_HEIGHT } from '@/components/constants';
+import { BTN_HEIGHT, FREE_MONTHLY_CREDITS, ROUTE_LOGIN } from '@/components/constants';
 import CreditShop from '@/components/CreditShop';
 import SendFeedback from '@/components/SendFeedback';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -33,7 +33,6 @@ import {
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const FREE_MONTHLY_LIMIT = 5;
 const STORAGE_KEYS = {
    biometric: 'prefs:biometricLock',
 } as const;
@@ -113,7 +112,7 @@ export default function SettingsScreen() {
    const hasGrowth = entitlementActive;
    const aiUsed = profile?.aiCallsUsed ?? 0;
    const extraCredits = profile?.extraAiCredits ?? 0;
-   const monthlyRemaining = Math.max(FREE_MONTHLY_LIMIT - aiUsed, 0);
+   const monthlyRemaining = Math.max(FREE_MONTHLY_CREDITS - aiUsed, 0);
    const darkMode = theme === 'dark';
 
    const [isShopOpen, setIsShopOpen] = useState(false);
@@ -293,7 +292,7 @@ export default function SettingsScreen() {
          const { error } = await supabase.functions.invoke('delete-account');
          if (error) throw new Error(error.message);
          await signOut();
-         router.push('/(modal)/login');
+         router.push(ROUTE_LOGIN);
       } catch (err: any) {
          Alert.alert('Delete account', err?.message ?? 'Delete failed.');
       } finally {
@@ -418,7 +417,7 @@ export default function SettingsScreen() {
                   </View>
                   <Pressable
                      className="mt-2 bg-dispute-cta py-2 px-3 rounded-lg self-start shadow-sm"
-                     onPress={() => router.push('/(modal)/login')}
+                     onPress={() => router.push(ROUTE_LOGIN)}
                   >
                      <Text className="text-white font-bold text-sm">
                         Sign in

@@ -1,3 +1,4 @@
+import { ROUTE_LOGIN } from '@/components/constants';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router'; // Import router for redirection
@@ -33,7 +34,7 @@ export default function CreditShop({ style, onSuccess }: CreditShopProps) {
                { text: 'Cancel', style: 'cancel' },
                {
                   text: 'Log In / Sign Up',
-                  onPress: () => router.push('/(modal)/login'), // Or your auth route
+                  onPress: () => router.push(ROUTE_LOGIN), // Or your auth route
                },
             ]
          );

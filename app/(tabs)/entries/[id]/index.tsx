@@ -1,4 +1,5 @@
 import NextButton from '@/components/buttons/NextButton';
+import { ROUTE_ENTRIES } from '@/components/constants';
 import { useEntries } from '@/hooks/useEntries';
 import { formatDateTimeWithWeekday } from '@/lib/date';
 import type { Entry } from '@/models/entry';
@@ -274,7 +275,7 @@ export default function EntryDetailScreen() {
          */}
          <View className="h-11 flex-row items-center justify-center mb-4 relative z-10">
             <Pressable
-               onPress={() => router.replace('/(tabs)/entries')}
+               onPress={() => router.replace(ROUTE_ENTRIES)}
                hitSlop={8}
                className="absolute left-0 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
             >

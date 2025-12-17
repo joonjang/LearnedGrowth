@@ -30,6 +30,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Refreshing expired plan should show correct status
 - CreditShop.tsx now handles profile credit refreshes
 - Next button should go to analysis if cache exists 
+- abstracted constants to constants.ts
 
 
 ### 2025-12-15
