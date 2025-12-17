@@ -1,14 +1,22 @@
 import { useAuth } from '@/providers/AuthProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router'; // Import router for redirection
+import { useColorScheme } from 'nativewind';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { PurchasesPackage } from 'react-native-purchases';
 
-export default function CreditShop() {
-   const { offerings, buyConsumable } = useRevenueCat();
+type CreditShopProps = {
+   style?: any;
+   onSuccess?: () => void; // <--- 1. Add this prop definition
+};
+
+export default function CreditShop({ style, onSuccess }: CreditShopProps) {
+   const { offerings, buyConsumable, refreshCustomerInfo } = useRevenueCat();
    const { refreshProfile, status } = useAuth(); // Grab status
    const [buyingPackage, setBuyingPackage] = useState<string | null>(null);
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
 
    const creditOffering = offerings?.all['credits'];
    const packages =
@@ -17,7 +25,6 @@ export default function CreditShop() {
       ) || [];
 
    const handleBuy = async (pkg: PurchasesPackage) => {
-      // 1. GUARD: Force login if not authenticated
       if (status !== 'signedIn') {
          Alert.alert(
             'Account Required',
@@ -39,11 +46,20 @@ export default function CreditShop() {
       try {
          await buyConsumable(pkg.product.identifier);
 
-         // Refresh profile to update UI
-         setTimeout(() => refreshProfile(), 2000);
-         setTimeout(() => refreshProfile(), 5000);
+         await refreshCustomerInfo();
+
+         const pollDelays = [1000, 2000, 2000];
+
+         for (const delay of pollDelays) {
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            await refreshProfile();
+         }
 
          Alert.alert('Success!', 'Credits added to your account.');
+
+         if (onSuccess) {
+            onSuccess();
+         }
       } catch (e: any) {
          if (!e.userCancelled) {
             Alert.alert('Purchase Failed', e.message);
@@ -53,10 +69,11 @@ export default function CreditShop() {
       }
    };
 
-   if (!creditOffering) return <ActivityIndicator />;
+   if (!creditOffering)
+      return <ActivityIndicator color={isDark ? '#0f172a' : 'white'} />;
 
    return (
-      <View className="gap-4">
+      <View className="gap-4" style={style}>
          {packages.map((pkg) => {
             const isBuying = buyingPackage === pkg.identifier;
             const count = getCreditCount(pkg.identifier);
@@ -76,7 +93,10 @@ export default function CreditShop() {
 
                   <View className="bg-slate-900 dark:bg-white px-4 py-2 rounded-full">
                      {isBuying ? (
-                        <ActivityIndicator size="small" color={'black'} />
+                        <ActivityIndicator
+                           size="small"
+                           color={isDark ? '#0f172a' : 'white'}
+                        />
                      ) : (
                         <Text className="text-white dark:text-slate-900 font-bold">
                            {pkg.product.priceString}

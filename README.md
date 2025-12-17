@@ -28,6 +28,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - buttons uniform
   - added credit purchase options
 - Refreshing expired plan should show correct status
+- CreditShop.tsx now handles profile credit refreshes
 
 
 ### 2025-12-15
@@ -247,6 +248,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
+
+- Display outdated analysis sign if entry changed
+- Limit same entry change
+  - "You've analyzed this entry quite a bit! To move forward with your growth, try moving on to the Disputation (D) phase now."
 
 - Circle back and assess the edit/cancel/save button flow of [id]/index header
 - Disable editing of ABC once dispute has been made

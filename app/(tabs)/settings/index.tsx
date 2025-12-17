@@ -62,7 +62,7 @@ export default function SettingsScreen() {
       buyConsumable,
       restorePurchases,
       isGrowthPlusActive,
-      refreshCustomerInfo
+      refreshCustomerInfo,
    } = useRevenueCat();
 
    const {
@@ -85,14 +85,14 @@ export default function SettingsScreen() {
    // --- Theme Logic ---
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const iconColor = isDark ? '#94a3b8' : '#64748b'; 
+   const iconColor = isDark ? '#94a3b8' : '#64748b';
    const loaderColor = isDark ? '#f8fafc' : '#0f172a';
 
    const switchTrackColor = {
-      false: isDark ? '#475569' : '#cbd5e1', 
-      true: isDark ? '#f8fafc' : '#0f172a', 
+      false: isDark ? '#475569' : '#cbd5e1',
+      true: isDark ? '#f8fafc' : '#0f172a',
    };
-   const switchThumbColor = isDark ? '#1e293b' : '#ffffff'; 
+   const switchThumbColor = isDark ? '#1e293b' : '#ffffff';
 
    // --- State ---
    const [isRefreshing, setIsRefreshing] = useState(false);
@@ -308,12 +308,9 @@ export default function SettingsScreen() {
       try {
          // Ask RevenueCat: "Is their subscription actually still valid?"
          // Ask Supabase: "Do they have new credits?"
-         await Promise.all([
-            refreshCustomerInfo(), 
-            refreshProfile()
-         ]);
+         await Promise.all([refreshCustomerInfo(), refreshProfile()]);
       } catch (e) {
-         console.log("Refresh failed", e);
+         console.log('Refresh failed', e);
       } finally {
          setIsRefreshing(false);
       }
@@ -418,7 +415,7 @@ export default function SettingsScreen() {
                <View className="bg-slate-100 dark:bg-slate-800 border border-dispute-cta rounded-xl p-3 flex-row items-center gap-2.5 shadow-sm">
                   <View className="flex-1">
                      <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
-                        Your data is only on this phone.
+                        Log in to back up your data.
                      </Text>
                   </View>
                   <Pressable
@@ -525,12 +522,19 @@ export default function SettingsScreen() {
                               {isShopOpen && (
                                  <View className="p-4 pt-0">
                                     <View className="h-[1px] bg-slate-100 dark:bg-slate-700 mb-4" />
-                                    <CreditShop />
+                                    <CreditShop
+                                       onSuccess={() => {
+                                          LayoutAnimation.configureNext(
+                                             LayoutAnimation.Presets
+                                                .easeInEaseOut
+                                          );
+                                       }}
+                                    />
                                  </View>
                               )}
                            </View>
                         </View>
-                        
+
                         <Pressable
                            // ADDED SHADOWS HERE
                            className={`bg-dispute-cta rounded-xl items-center shadow-sm shadow-slate-300 dark:shadow-none active:opacity-90 ${BTN_HEIGHT} ${billingAction === 'upgrade' ? 'opacity-50' : ''}`}
@@ -545,19 +549,19 @@ export default function SettingsScreen() {
                         </Pressable>
                      </View>
                   ) : (
-                     <View className="gap-3 pt-5"> 
-                     <Pressable
-                        // ADDED SHADOWS HERE
-                        className={`bg-slate-100 dark:bg-slate-800 rounded-xl items-center shadow-sm shadow-slate-300 dark:shadow-none border border-slate-200 dark:border-slate-700 active:bg-slate-200 dark:active:bg-slate-700 ${BTN_HEIGHT} ${isOffline || billingAction === 'manage' ? 'opacity-50' : ''}`}
-                        onPress={handleManageSubscription}
-                        disabled={isOffline || billingAction !== null}
-                     >
-                        <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
-                           {billingAction === 'manage'
-                              ? 'Opening...'
-                              : 'Manage Subscription'}
-                        </Text>
-                     </Pressable>
+                     <View className="gap-3 pt-5">
+                        <Pressable
+                           // ADDED SHADOWS HERE
+                           className={`bg-slate-100 dark:bg-slate-800 rounded-xl items-center shadow-sm shadow-slate-300 dark:shadow-none border border-slate-200 dark:border-slate-700 active:bg-slate-200 dark:active:bg-slate-700 ${BTN_HEIGHT} ${isOffline || billingAction === 'manage' ? 'opacity-50' : ''}`}
+                           onPress={handleManageSubscription}
+                           disabled={isOffline || billingAction !== null}
+                        >
+                           <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
+                              {billingAction === 'manage'
+                                 ? 'Opening...'
+                                 : 'Manage Subscription'}
+                           </Text>
+                        </Pressable>
                      </View>
                   )}
 
