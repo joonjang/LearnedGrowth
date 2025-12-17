@@ -249,6 +249,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- Next button should go to analysis if cache exists 
+
 - Display outdated analysis sign if entry changed
 - Limit same entry change
   - "You've analyzed this entry quite a bit! To move forward with your growth, try moving on to the Disputation (D) phase now."
@@ -287,9 +289,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - tactile haptic feedback when completing an entry x
   - delete account x
     - test for google and apple
-    - warn if they are still subscribed, give an alert
   - if user is offline, grey out manage subscription and delete account and indiciate offline
-- App store paymen testing + revenuecat
+- App store payment testing + revenuecat
   - test fails and restore purchase
 - UI
 

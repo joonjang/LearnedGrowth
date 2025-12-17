@@ -5,7 +5,7 @@ import type { Entry } from '@/models/entry';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useColorScheme } from 'nativewind'; // <--- Added
+import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
    LayoutAnimation,
@@ -75,6 +75,7 @@ function buildFieldRecord(getValue: (key: FieldKey) => string) {
 }
 
 export default function EntryDetailScreen() {
+   // Enable LayoutAnimation for Android
    useEffect(() => {
       if (
          Platform.OS === 'android' &&
@@ -113,7 +114,6 @@ export default function EntryDetailScreen() {
       FieldKey,
       string
    > | null>(null);
-   const [showAnalysis, setShowAnalysis] = useState(false);
 
    useEffect(() => {
       if (!entry) return;
@@ -122,14 +122,7 @@ export default function EntryDetailScreen() {
       setHasScrolled(false);
       setIsEditing(false);
       setEditSnapshot(null);
-      setShowAnalysis(false);
    }, [entry]);
-
-   useEffect(() => {
-      if (!aiVisible) {
-         setShowAnalysis(false);
-      }
-   }, [aiVisible]);
 
    const trimmed = useMemo(
       () => buildFieldRecord((key) => form[key].trim()),
@@ -157,7 +150,6 @@ export default function EntryDetailScreen() {
          return true;
       });
    }, [baseline, trimmed]);
-
 
    // Helper: Return Class Names for Chips
    const getChipClass = useCallback((score?: string | null) => {
@@ -215,7 +207,16 @@ export default function EntryDetailScreen() {
       setEditSnapshot(null);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       KeyboardController.dismiss();
-   }, [baseline, entry, hapticsAvailable, hapticsEnabled, hasChanges, store, triggerHaptic, trimmed]);
+   }, [
+      baseline,
+      entry,
+      hapticsAvailable,
+      hapticsEnabled,
+      hasChanges,
+      store,
+      triggerHaptic,
+      trimmed,
+   ]);
 
    const handleCancel = useCallback(() => {
       if (!isEditing) return;
@@ -224,7 +225,6 @@ export default function EntryDetailScreen() {
       setJustSaved(false);
       setEditSnapshot(null);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setShowAnalysis(false);
       KeyboardController.dismiss();
    }, [editSnapshot, isEditing]);
 
@@ -234,8 +234,8 @@ export default function EntryDetailScreen() {
    const statusMessage = justSaved
       ? 'Saved'
       : hasChanges
-        ? 'Unsaved changes'
-        : '';
+      ? 'Unsaved changes'
+      : '';
    const statusDisplay = statusMessage || 'Saved';
 
    useEffect(() => {
@@ -268,8 +268,11 @@ export default function EntryDetailScreen() {
          {/* Safe Area Spacer */}
          <View style={{ height: insets.top }} />
 
-         {/* Header */}
-         <View className="flex-row items-center justify-center mb-4 relative z-10">
+         {/* FIX 1: Header Movement 
+            - Added 'h-11' to fix the container height.
+            - Standardized text size to 'text-base' for both Edit/View states.
+         */}
+         <View className="h-11 flex-row items-center justify-center mb-4 relative z-10">
             <Pressable
                onPress={() => router.replace('/(tabs)/entries')}
                hitSlop={8}
@@ -278,20 +281,22 @@ export default function EntryDetailScreen() {
                <Ionicons name="chevron-back" size={18} color={iconColor} />
             </Pressable>
 
-            <View className="items-center gap-1">
+            <View className="items-center justify-center gap-1 h-full">
                {!isEditing ? (
                   <>
                      <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
                         {formattedTimestamp || ' '}
                      </Text>
                      <Text
-                        className={`text-[13px] text-slate-500 dark:text-slate-400 absolute mt-6 ${!statusMessage ? 'opacity-0' : 'opacity-100'}`}
+                        className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 ${
+                           !statusMessage ? 'opacity-0' : 'opacity-100'
+                        }`}
                      >
                         {statusDisplay}
                      </Text>
                   </>
                ) : (
-                  <Text className="text-[13px] text-slate-500 dark:text-slate-400">
+                  <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
                      Editing
                   </Text>
                )}
@@ -336,8 +341,6 @@ export default function EntryDetailScreen() {
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
          >
-
-
             {/* Form Fields */}
             {visibleFields.map((field) => {
                // 1. Text Color & Weight
@@ -372,7 +375,10 @@ export default function EntryDetailScreen() {
                }
 
                return (
-                  <View className="mb-4 gap-1" key={`${field.key}-${isEditing ? 'edit' : 'view'}`} >
+                  <View
+                     className="mb-4 gap-1"
+                     key={`${field.key}-${isEditing ? 'edit' : 'view'}`}
+                  >
                      <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
                         {field.label}
                      </Text>
@@ -380,130 +386,135 @@ export default function EntryDetailScreen() {
                         {field.hint}
                      </Text>
 
-                     <TextInput
-                        multiline
-                        editable={isEditing}
-                        value={form[field.key]}
-                        onChangeText={setField(field.key)}
-                        placeholder={field.placeholder}
-                        placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                        // Removed "border-slate-200" from here and added {containerClass} and {textColorClass}
-                        className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${containerClass} ${textColorClass}`}
-                        scrollEnabled={isEditing}
-                        textAlignVertical="top"
-                     />
+                     {isEditing ? (
+                        <TextInput
+                           multiline
+                           value={form[field.key]}
+                           onChangeText={setField(field.key)}
+                           placeholder={field.placeholder}
+                           placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
+                           className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${containerClass} ${textColorClass}`}
+                           scrollEnabled={true}
+                           textAlignVertical="top"
+                        />
+                     ) : (
+                        /* FIX 2: Disable Touch-to-Edit 
+                           - Changed Pressable to View
+                           - Removed onPress event
+                        */
+                        <View
+                           className={`mt-1.5 px-3 rounded-xl border shadow-sm ${containerClass}`}
+                        >
+                           <Text
+                              className={`text-sm leading-5 ${textColorClass}`}
+                           >
+                              {form[field.key] || (
+                                 <Text className="italic opacity-50 text-slate-400">
+                                    Empty
+                                 </Text>
+                              )}
+                           </Text>
+                        </View>
+                     )}
                   </View>
                );
             })}
 
-                        {/* Inline AI Analysis */}
+            {/* Inline AI Analysis */}
             {aiVisible && aiDisplayData ? (
                <View className="my-6 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border shadow-sm border-slate-200 dark:border-slate-700 gap-1.5">
-                  <Pressable
-                     className="flex-row items-center justify-between mb-1"
-                     onPress={() => {
-                        LayoutAnimation.configureNext(
-                           LayoutAnimation.Presets.easeInEaseOut
-                        );
-                        setShowAnalysis((s) => !s);
-                     }}
-                  >
+                  <View className="flex-row items-center justify-between mb-1">
                      <Text className="text-[13px] font-bold text-slate-900 dark:text-slate-100">
                         AI Analysis
                      </Text>
-                     <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                        {showAnalysis ? 'Hide' : 'Show'}
+                     <Ionicons
+                        name="sparkles"
+                        size={14}
+                        color={isDark ? '#fbbf24' : '#d97706'}
+                     />
+                  </View>
+
+                  <View className="gap-2">
+                     <Text className="text-[13px] leading-5 text-slate-900 dark:text-slate-100">
+                        {aiDisplayData.analysis.emotionalLogic}
                      </Text>
-                  </Pressable>
 
-                  {showAnalysis && aiDisplayData ? (
-                     <View className="gap-2">
-                        {aiDisplayData.analysis.emotionalLogic ? (
-                           <Text className="text-[13px] leading-5 text-slate-900 dark:text-slate-100">
-                              {aiDisplayData.analysis.emotionalLogic}
-                           </Text>
-                        ) : null}
-
-                        <View className="mt-1 gap-2">
-                           {(
+                     <View className="mt-1 gap-2">
+                        {(
+                           [
                               [
-                                 [
-                                    'permanence',
-                                    'How long it feels',
-                                    analysis?.dimensions.permanence,
-                                    '#FCA5A5',
-                                 ],
-                                 [
-                                    'pervasiveness',
-                                    'How big it feels',
-                                    analysis?.dimensions.pervasiveness,
-                                    '#93C5FD',
-                                 ],
-                                 [
-                                    'personalization',
-                                    'Where blame goes',
-                                    analysis?.dimensions.personalization,
-                                    '#C4B5FD',
-                                 ],
-                              ] as const
-                           ).map(([key, label, dim, color]) => {
-                              // Extract class string from helper
-                              const chipClass = getChipClass(dim?.score);
+                                 'permanence',
+                                 'How long it feels',
+                                 analysis?.dimensions.permanence,
+                                 '#FCA5A5',
+                              ],
+                              [
+                                 'pervasiveness',
+                                 'How big it feels',
+                                 analysis?.dimensions.pervasiveness,
+                                 '#93C5FD',
+                              ],
+                              [
+                                 'personalization',
+                                 'Where blame goes',
+                                 analysis?.dimensions.personalization,
+                                 '#C4B5FD',
+                              ],
+                           ] as const
+                        ).map(([key, label, dim, color]) => {
+                           // Extract class string from helper
+                           const chipClass = getChipClass(dim?.score);
 
-                              return (
-                                 <View className="gap-1.5 py-1" key={key}>
-                                    <View className="flex-row items-center justify-between gap-2">
-                                       <Text className="text-xs font-bold text-slate-900 dark:text-slate-100 px-1.5 py-0.5 rounded-md">
-                                          {label}
-                                       </Text>
-                                       <View
-                                          className={`px-2 py-1 rounded-full ${chipClass.container}`}
-                                       >
-                                          <Text
-                                             className={`text-xs font-bold capitalize ${chipClass.text}`}
-                                          >
-                                             {dim?.score || 'n/a'}
-                                          </Text>
-                                       </View>
-                                    </View>
-                                    {dim?.detectedPhrase ? (
+                           return (
+                              <View className="gap-1.5 py-1" key={key}>
+                                 <View className="flex-row items-center justify-between gap-2">
+                                    <Text className="text-xs font-bold text-slate-900 dark:text-slate-100 px-1.5 py-0.5 rounded-md">
+                                       {label}
+                                    </Text>
+                                    <View
+                                       className={`px-2 py-1 rounded-full ${chipClass.container}`}
+                                    >
                                        <Text
-                                          className="mt-0.5 px-2 py-1.5 rounded-lg text-xs text-slate-900 dark:text-slate-100 overflow-hidden"
-                                          style={{
-                                             backgroundColor: color + '55',
-                                          }}
+                                          className={`text-xs font-bold capitalize ${chipClass.text}`}
                                        >
-                                          &quot;{dim.detectedPhrase}&quot;
+                                          {dim?.score || 'n/a'}
                                        </Text>
-                                    ) : null}
-                                    {dim?.insight ? (
-                                       <Text className="text-[13px] leading-5 text-slate-900 dark:text-slate-100">
-                                          {dim.insight}
-                                       </Text>
-                                    ) : null}
+                                    </View>
                                  </View>
-                              );
-                           })}
-                        </View>
+                                 {dim?.detectedPhrase ? (
+                                    <Text
+                                       className="mt-0.5 px-2 py-1.5 rounded-lg text-xs text-slate-900 dark:text-slate-100 overflow-hidden"
+                                       style={{
+                                          backgroundColor: color + '55',
+                                       }}
+                                    >
+                                       &quot;{dim.detectedPhrase}&quot;
+                                    </Text>
+                                 ) : null}
+                                 {dim?.insight ? (
+                                    <Text className="text-[13px] leading-5 text-slate-900 dark:text-slate-100">
+                                       {dim.insight}
+                                    </Text>
+                                 ) : null}
+                              </View>
+                           );
+                        })}
+                     </View>
 
+                     {aiDisplayData.suggestions.counterBelief && (
                         <View className="mt-4 gap-2">
                            <Text className="text-[13px] font-bold text-slate-900 dark:text-slate-100">
                               Another way to see it
                            </Text>
-                           {aiDisplayData.suggestions.counterBelief ? (
-                              <View className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
-                                 <Text className="text-[14px] leading-5 text-slate-900 dark:text-slate-100">
-                                    {aiDisplayData.suggestions.counterBelief}
-                                 </Text>
-                              </View>
-                           ) : (
-                              <Text className="text-sm text-slate-500 dark:text-slate-400">
-                                 Tap “Analyze with AI” to get a counter-belief.
+
+                           <View className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+                              <Text className="text-[14px] leading-5 text-slate-900 dark:text-slate-100">
+                                 {aiDisplayData.suggestions.counterBelief}
                               </Text>
-                           )}
+                           </View>
                         </View>
-                     </View>
-                  ) : null}
+                     )}
+                  </View>
                </View>
             ) : null}
 
