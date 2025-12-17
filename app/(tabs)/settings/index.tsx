@@ -1,3 +1,4 @@
+import { BTN_HEIGHT } from '@/components/constants';
 import CreditShop from '@/components/CreditShop';
 import SendFeedback from '@/components/SendFeedback';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -43,9 +44,6 @@ const MANAGE_SUBSCRIPTION_URL = Platform.select({
    default: 'https://apps.apple.com/account/subscriptions',
 });
 
-// Standard button height class for uniformity
-const BTN_HEIGHT = 'h-12 justify-center';
-
 export default function SettingsScreen() {
    const {
       status,
@@ -64,6 +62,7 @@ export default function SettingsScreen() {
       buyConsumable,
       restorePurchases,
       isGrowthPlusActive,
+      refreshCustomerInfo
    } = useRevenueCat();
 
    const {
@@ -86,16 +85,17 @@ export default function SettingsScreen() {
    // --- Theme Logic ---
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const iconColor = isDark ? '#94a3b8' : '#64748b';
+   const iconColor = isDark ? '#94a3b8' : '#64748b'; 
    const loaderColor = isDark ? '#f8fafc' : '#0f172a';
 
    const switchTrackColor = {
-      false: isDark ? '#475569' : '#cbd5e1',
-      true: isDark ? '#f8fafc' : '#0f172a',
+      false: isDark ? '#475569' : '#cbd5e1', 
+      true: isDark ? '#f8fafc' : '#0f172a', 
    };
-   const switchThumbColor = isDark ? '#1e293b' : '#ffffff';
+   const switchThumbColor = isDark ? '#1e293b' : '#ffffff'; 
 
    // --- State ---
+   const [isRefreshing, setIsRefreshing] = useState(false);
    const [isOffline, setIsOffline] = useState(false);
    const [billingNote, setBillingNote] = useState<string | null>(null);
    const [billingAction, setBillingAction] = useState<
@@ -303,6 +303,24 @@ export default function SettingsScreen() {
       }
    };
 
+   const handleManualRefresh = async () => {
+      setIsRefreshing(true);
+      try {
+         // Ask RevenueCat: "Is their subscription actually still valid?"
+         // Ask Supabase: "Do they have new credits?"
+         await Promise.all([
+            refreshCustomerInfo(), 
+            refreshProfile()
+         ]);
+      } catch (e) {
+         console.log("Refresh failed", e);
+      } finally {
+         setIsRefreshing(false);
+      }
+   };
+
+   const isLoading = loadingProfile || rcLoading || isRefreshing;
+
    const confirmDelete = () => {
       const warning = entitlementActive
          ? 'This will delete your account and synced data. Active subscriptions will NOT be canceled automatically.'
@@ -421,7 +439,7 @@ export default function SettingsScreen() {
                      <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
                         Subscription
                      </Text>
-                     {(loadingProfile || rcLoading) && (
+                     {isLoading && (
                         <ActivityIndicator size="small" color={loaderColor} />
                      )}
                   </View>
@@ -437,8 +455,8 @@ export default function SettingsScreen() {
                      </View>
                      <Pressable
                         className={`w-10 h-10 rounded-full items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 ${loadingProfile ? 'opacity-50' : ''}`}
-                        onPress={refreshProfile}
-                        disabled={loadingProfile}
+                        onPress={handleManualRefresh}
+                        disabled={isLoading}
                      >
                         <Text className="font-bold text-slate-900 dark:text-slate-100">
                            {loadingProfile ? '…' : '↻'}
@@ -495,8 +513,8 @@ export default function SettingsScreen() {
                                     <Ionicons
                                        name={
                                           isShopOpen
-                                             ? 'chevron-up'
-                                             : 'chevron-down'
+                                             ? 'chevron-down'
+                                             : 'chevron-forward'
                                        }
                                        size={20}
                                        color="#94a3b8"
@@ -512,7 +530,7 @@ export default function SettingsScreen() {
                               )}
                            </View>
                         </View>
-
+                        
                         <Pressable
                            // ADDED SHADOWS HERE
                            className={`bg-dispute-cta rounded-xl items-center shadow-sm shadow-slate-300 dark:shadow-none active:opacity-90 ${BTN_HEIGHT} ${billingAction === 'upgrade' ? 'opacity-50' : ''}`}
@@ -527,19 +545,19 @@ export default function SettingsScreen() {
                         </Pressable>
                      </View>
                   ) : (
-                     <View className="gap-3 pt-5">
-                        <Pressable
-                           // ADDED SHADOWS HERE
-                           className={`bg-slate-100 dark:bg-slate-800 rounded-xl items-center shadow-sm shadow-slate-300 dark:shadow-none border border-slate-200 dark:border-slate-700 active:bg-slate-200 dark:active:bg-slate-700 ${BTN_HEIGHT} ${isOffline || billingAction === 'manage' ? 'opacity-50' : ''}`}
-                           onPress={handleManageSubscription}
-                           disabled={isOffline || billingAction !== null}
-                        >
-                           <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
-                              {billingAction === 'manage'
-                                 ? 'Opening...'
-                                 : 'Manage Subscription'}
-                           </Text>
-                        </Pressable>
+                     <View className="gap-3 pt-5"> 
+                     <Pressable
+                        // ADDED SHADOWS HERE
+                        className={`bg-slate-100 dark:bg-slate-800 rounded-xl items-center shadow-sm shadow-slate-300 dark:shadow-none border border-slate-200 dark:border-slate-700 active:bg-slate-200 dark:active:bg-slate-700 ${BTN_HEIGHT} ${isOffline || billingAction === 'manage' ? 'opacity-50' : ''}`}
+                        onPress={handleManageSubscription}
+                        disabled={isOffline || billingAction !== null}
+                     >
+                        <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
+                           {billingAction === 'manage'
+                              ? 'Opening...'
+                              : 'Manage Subscription'}
+                        </Text>
+                     </Pressable>
                      </View>
                   )}
 

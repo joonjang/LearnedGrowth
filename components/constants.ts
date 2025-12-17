@@ -1,0 +1,1 @@
+export const BTN_HEIGHT = "h-12 justify-center"; 

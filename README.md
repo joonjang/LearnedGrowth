@@ -27,6 +27,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Cleaned up account screen, now labelled as settings screen
   - buttons uniform
   - added credit purchase options
+- Refreshing expired plan should show correct status
+
 
 ### 2025-12-15
 - gorhom/bottom-sheet (`https://gorhom.dev/react-native-bottom-sheet/`) integrated for login and free-user modal
@@ -245,9 +247,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
-
-- Refreshing expired plan should show correct status
-  - currently shows still subscribed even after expiration
 
 - Circle back and assess the edit/cancel/save button flow of [id]/index header
 - Disable editing of ABC once dispute has been made
