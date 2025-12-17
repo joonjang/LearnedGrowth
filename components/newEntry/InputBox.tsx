@@ -1,5 +1,6 @@
+import { getIosShadowStyle } from '@/lib/shadow';
 import { useColorScheme } from 'nativewind';
-import { forwardRef, useState } from 'react';
+import { forwardRef, useMemo, useState } from 'react';
 import {
    Pressable,
    TextInput,
@@ -41,6 +42,10 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const placeholderColor = isDark ? '#94a3b8' : '#64748b';
+   const iosShadowStyle = useMemo(
+      () => getIosShadowStyle({ isDark, preset: focused ? 'md' : 'sm' }),
+      [focused, isDark]
+   );
 
    return (
       <Pressable
@@ -52,7 +57,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
                ? 'border-slate-300 dark:border-slate-500 shadow-md opacity-100' 
                : 'border-slate-200 dark:border-slate-700'
          }`}
-         style={[dims, containerStyle]}
+         style={[dims, containerStyle, iosShadowStyle]}
       >
          <TextInput
             ref={ref}

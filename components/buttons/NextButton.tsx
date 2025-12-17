@@ -1,9 +1,11 @@
 import { BTN_HEIGHT } from '@/components/constants';
+import { getIosShadowStyle } from '@/lib/shadow';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEntriesStore } from '@/providers/EntriesStoreProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
@@ -15,10 +17,18 @@ export default function NextButton({ id }: Prop) {
    const { status } = useAuth();
    const { isGrowthPlusActive } = useRevenueCat();
    const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
+
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
    
    const entriesStore = useEntriesStore();
    const hasCachedAnalysis = entriesStore((state) =>
       Boolean(state.byId[id]?.aiResponse)
+   );
+
+   const iosShadowStyle = useMemo(
+      () => getIosShadowStyle({ isDark, preset: 'md' }),
+      [isDark]
    );
 
    const config = useMemo(() => {
@@ -62,6 +72,7 @@ export default function NextButton({ id }: Prop) {
       <View className="mt-6 mb-3">
          <Pressable
             onPress={handlePress}
+            style={iosShadowStyle}
             // 1. 'relative' allows us to position the icon absolutely inside
             // 2. 'items-center' aligns text vertically
             className={`

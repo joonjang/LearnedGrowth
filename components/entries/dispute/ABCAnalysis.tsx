@@ -1,4 +1,5 @@
-import React from 'react';
+import { getIosShadowStyle } from '@/lib/shadow';
+import React, { useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
@@ -31,6 +32,10 @@ export default function ABCAnalysis({
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
+   const iosShadowSm = useMemo(
+      () => getIosShadowStyle({ isDark, preset: 'sm' }),
+      [isDark]
+   );
    return (
       <ScrollView
          className="flex-1"
@@ -63,7 +68,7 @@ export default function ABCAnalysis({
 
          </View>
 
-         <View className="flex-1 shadow-sm dark:shadow-none">
+         <View className="flex-1 shadow-sm dark:shadow-none" style={iosShadowSm}>
             {/* Context Box */}
             <View className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 gap-2.5">
                <View className="gap-1">
@@ -102,7 +107,7 @@ export default function ABCAnalysis({
             </View>
          </View>
 
-         <View className="flex-1 shadow-sm dark:shadow-none">
+         <View className="flex-1 shadow-sm dark:shadow-none" style={iosShadowSm}>
             <AiInsightCard
                data={aiData}
                streamingText={streamingText}
@@ -112,6 +117,7 @@ export default function ABCAnalysis({
             {onGoToSteps && aiData ? (
                <Pressable 
                   className="mt-4 py-2.5 px-3 rounded-full bg-dispute-cta items-center justify-center shadow-sm active:opacity-90"
+                  style={iosShadowSm}
                   onPress={onGoToSteps}
                >
                   <Text className="text-base font-semibold text-white">

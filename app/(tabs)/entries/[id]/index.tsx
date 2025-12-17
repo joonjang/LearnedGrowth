@@ -2,6 +2,7 @@ import NextButton from '@/components/buttons/NextButton';
 import { ROUTE_ENTRIES } from '@/components/constants';
 import { useEntries } from '@/hooks/useEntries';
 import { formatDateTimeWithWeekday } from '@/lib/date';
+import { getIosShadowStyle } from '@/lib/shadow';
 import type { Entry } from '@/models/entry';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { Ionicons } from '@expo/vector-icons';
@@ -102,8 +103,12 @@ export default function EntryDetailScreen() {
 
    // Theme Hooks
    const { colorScheme } = useColorScheme();
-   const isDark = colorScheme === 'dark';
-   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
+	   const isDark = colorScheme === 'dark';
+	   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
+	   const iosShadowSm = useMemo(
+	      () => getIosShadowStyle({ isDark, preset: 'sm' }),
+	      [isDark]
+	   );
 
    const [form, setForm] = useState<Record<FieldKey, string>>(() =>
       buildFieldRecord((key) => entry?.[key] ?? '')
@@ -387,28 +392,30 @@ export default function EntryDetailScreen() {
                         {field.hint}
                      </Text>
 
-                     {isEditing ? (
-                        <TextInput
-                           multiline
-                           value={form[field.key]}
-                           onChangeText={setField(field.key)}
-                           placeholder={field.placeholder}
-                           placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                           className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${containerClass} ${textColorClass}`}
-                           scrollEnabled={true}
-                           textAlignVertical="top"
-                        />
-                     ) : (
+	                     {isEditing ? (
+	                        <TextInput
+	                           multiline
+	                           value={form[field.key]}
+	                           onChangeText={setField(field.key)}
+	                           placeholder={field.placeholder}
+	                           placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
+	                           className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${containerClass} ${textColorClass}`}
+	                           style={iosShadowSm}
+	                           scrollEnabled={true}
+	                           textAlignVertical="top"
+	                        />
+	                     ) : (
                         /* FIX 2: Disable Touch-to-Edit 
                            - Changed Pressable to View
                            - Removed onPress event
-                        */
-                        <View
-                           className={`mt-1.5 px-3 rounded-xl border shadow-sm ${containerClass}`}
-                        >
-                           <Text
-                              className={`text-sm leading-5 ${textColorClass}`}
-                           >
+	                        */
+	                        <View
+	                           className={`mt-1.5 px-3 rounded-xl border shadow-sm ${containerClass}`}
+	                           style={iosShadowSm}
+	                        >
+	                           <Text
+	                              className={`text-sm leading-5 ${textColorClass}`}
+	                           >
                               {form[field.key] || (
                                  <Text className="italic opacity-50 text-slate-400">
                                     Empty
@@ -421,13 +428,16 @@ export default function EntryDetailScreen() {
                );
             })}
 
-            {/* Inline AI Analysis */}
-            {aiVisible && aiDisplayData ? (
-               <View className="my-6 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border shadow-sm border-slate-200 dark:border-slate-700 gap-1.5">
-                  <View className="flex-row items-center justify-between mb-1">
-                     <Text className="text-[13px] font-bold text-slate-900 dark:text-slate-100">
-                        AI Analysis
-                     </Text>
+	            {/* Inline AI Analysis */}
+	            {aiVisible && aiDisplayData ? (
+	               <View
+	                  className="my-6 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border shadow-sm border-slate-200 dark:border-slate-700 gap-1.5"
+	                  style={iosShadowSm}
+	               >
+	                  <View className="flex-row items-center justify-between mb-1">
+	                     <Text className="text-[13px] font-bold text-slate-900 dark:text-slate-100">
+	                        AI Analysis
+	                     </Text>
                      <Ionicons
                         name="sparkles"
                         size={14}
@@ -502,17 +512,20 @@ export default function EntryDetailScreen() {
                         })}
                      </View>
 
-                     {aiDisplayData.suggestions.counterBelief && (
-                        <View className="mt-4 gap-2">
-                           <Text className="text-[13px] font-bold text-slate-900 dark:text-slate-100">
-                              Another way to see it
-                           </Text>
+	                     {aiDisplayData.suggestions.counterBelief && (
+	                        <View className="mt-4 gap-2">
+	                           <Text className="text-[13px] font-bold text-slate-900 dark:text-slate-100">
+	                              Another way to see it
+	                           </Text>
 
-                           <View className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
-                              <Text className="text-[14px] leading-5 text-slate-900 dark:text-slate-100">
-                                 {aiDisplayData.suggestions.counterBelief}
-                              </Text>
-                           </View>
+	                           <View
+	                              className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm"
+	                              style={iosShadowSm}
+	                           >
+	                              <Text className="text-[14px] leading-5 text-slate-900 dark:text-slate-100">
+	                                 {aiDisplayData.suggestions.counterBelief}
+	                              </Text>
+	                           </View>
                         </View>
                      )}
                   </View>

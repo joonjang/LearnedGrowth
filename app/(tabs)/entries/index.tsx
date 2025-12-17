@@ -2,17 +2,18 @@ import { type MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow, { UndoRow } from '@/components/entries/entry/EntryRow';
 import { useEntries } from '@/hooks/useEntries';
 import { getDateParts, getTimeLabel } from '@/lib/date';
+import { getIosShadowStyle } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
 import { Link, router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useColorScheme } from 'nativewind';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
    Pressable,
    SectionList,
    Text,
-   View,
-   type GestureResponderEvent,
+   View
 } from 'react-native';
-// The layout hero:
+import { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import {
    SafeAreaView,
    useSafeAreaInsets,
@@ -31,25 +32,56 @@ const UNDO_TIMEOUT_MS = 5500;
 export default function EntriesScreen() {
    const store = useEntries();
    const insets = useSafeAreaInsets();
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+   const iosShadowSm = useMemo(
+      () => getIosShadowStyle({ isDark, preset: 'sm' }),
+      [isDark]
+   );
 
-   // State for Context Menu
+   // --- Menu State ---
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
    const [openMenuBounds, setOpenMenuBounds] = useState<MenuBounds | null>(
       null
    );
 
-   // State for Undo Logic
+   // --- Swipe State (New) ---
+   // We use a ref to track the currently open swipe row so we can close it imperatively
+   const openSwipeableRef = useRef<SwipeableMethods | null>(null);
+
+   // --- Undo State ---
    const [undoSlots, setUndoSlots] = useState<Entry[]>([]);
    const undoTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
       new Map()
    );
 
-   // --- Menu Logic ---
+   // --- Actions ---
+
    const closeMenu = () => {
       if (openMenuEntryId !== null) {
          setOpenMenuEntryId(null);
          setOpenMenuBounds(null);
       }
+   };
+
+   // Helper: Closes the active swipe row (if any)
+   // Returns true if something was closed, false otherwise
+   const closeActiveSwipeable = () => {
+      if (openSwipeableRef.current) {
+         openSwipeableRef.current.close();
+         openSwipeableRef.current = null;
+         return true;
+      }
+      return false;
+   };
+
+   // Callback: Passed to EntryRow to track when it opens
+   const onRowSwipeOpen = (ref: SwipeableMethods) => {
+      // If a different row is already open, close it
+      if (openSwipeableRef.current && openSwipeableRef.current !== ref) {
+         openSwipeableRef.current.close();
+      }
+      openSwipeableRef.current = ref;
    };
 
    const toggleMenu = (entryId: string) => {
@@ -60,30 +92,6 @@ export default function EntriesScreen() {
       });
    };
 
-   const handleTouchCapture = (event: GestureResponderEvent) => {
-      if (!openMenuEntryId) return false;
-      if (!openMenuBounds) {
-         closeMenu();
-         return false;
-      }
-      const { pageX, pageY } = event.nativeEvent;
-      const insideX =
-         pageX >= openMenuBounds.x &&
-         pageX <= openMenuBounds.x + openMenuBounds.width;
-      const insideY =
-         pageY >= openMenuBounds.y &&
-         pageY <= openMenuBounds.y + openMenuBounds.height;
-
-      if (insideX && insideY) return false;
-      closeMenu();
-      return false;
-   };
-
-   // --- Data Preparation ---
-   const rowsWithUndo = buildRowsWithUndo(store.rows, undoSlots);
-   const sections = buildSections(rowsWithUndo);
-
-   // --- Action Handlers ---
    const clearUndoTimer = (id: string) => {
       const timer = undoTimers.current.get(id);
       if (timer) {
@@ -94,6 +102,7 @@ export default function EntriesScreen() {
 
    const requestDelete = (entry: Entry) => {
       closeMenu();
+      closeActiveSwipeable(); // Close swipe if open
       setUndoSlots((prev) => [...prev.filter((e) => e.id !== entry.id), entry]);
       clearUndoTimer(entry.id);
 
@@ -121,6 +130,10 @@ export default function EntriesScreen() {
       }
    };
 
+   // --- Data Prep ---
+   const rowsWithUndo = buildRowsWithUndo(store.rows, undoSlots);
+   const sections = buildSections(rowsWithUndo);
+
    useEffect(() => {
       const timers = undoTimers.current;
       return () => {
@@ -130,27 +143,32 @@ export default function EntriesScreen() {
    }, []);
 
    return (
-      <View
-         className="flex-1 bg-slate-50 dark:bg-slate-900"
-         // onStartShouldSetResponderCapture={handleTouchCapture}
-      >
+      <View className="flex-1 bg-slate-50 dark:bg-slate-900">
          <SectionList
             sections={sections}
             keyExtractor={(item) => `${item.kind}-${item.entry.id}`}
             className="flex-1"
-            // Add huge bottom padding so the last item scrolls well above the FAB
             contentContainerStyle={{
-               paddingBottom: 128, // Matches pb-32
-               
+               paddingBottom: 128,
             }}
             stickySectionHeadersEnabled
-            onScrollBeginDrag={closeMenu}
+            showsVerticalScrollIndicator={false}
+
+            // FIX: This triggers when you start scrolling/dragging the list
+            onScrollBeginDrag={() => {
+               closeMenu();
+               closeActiveSwipeable(); 
+            }}
+            
             renderSectionHeader={({ section }) => (
                <View 
-                  className="items-center py-2"
-                  style={{paddingTop: insets.top,}}
+                  className="items-center pb-2 "
+                  style={{ paddingTop: insets.top }}
                >
-                  <View className="items-center self-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 shadow-sm">
+                  <View
+                     className="items-center self-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 shadow-sm"
+                     style={iosShadowSm}
+                  >
                      <Text className="text-center text-sm font-bold text-slate-600 dark:text-slate-300">
                         {section.title}
                      </Text>
@@ -179,6 +197,11 @@ export default function EntriesScreen() {
                      onToggleMenu={() => toggleMenu(item.entry.id)}
                      onCloseMenu={closeMenu}
                      onMenuLayout={setOpenMenuBounds}
+                     
+                     // Pass the handlers down
+                     onSwipeOpen={onRowSwipeOpen}
+                     closeActiveSwipeable={closeActiveSwipeable}
+                     
                      onEdit={() =>
                         router.push({
                            pathname: '/(tabs)/entries/[id]',
@@ -191,10 +214,6 @@ export default function EntriesScreen() {
             }}
          />
 
-         {/* NativeWind Solution for FAB:
-               1. edges=['bottom'] -> Ensures we respect the Home Indicator area 
-               2. pointer-events-box-none -> allows clicks to pass through the empty areas
-           */}
          <SafeAreaView
             edges={['bottom']}
             className="absolute bottom-0 right-0 left-0 items-end px-6 pointer-events-box-none"
@@ -203,6 +222,7 @@ export default function EntriesScreen() {
                <Link href={'/new'} asChild>
                   <Pressable
                      className="h-14 w-14 items-center justify-center rounded-full bg-amber-500 shadow-sm active:opacity-90"
+                     style={iosShadowSm}
                      accessibilityLabel="Create new entry"
                   >
                      <Text className="text-center text-[28px] font-bold leading-[30px] text-white">
@@ -217,7 +237,6 @@ export default function EntriesScreen() {
 }
 
 // --- Helper Functions ---
-
 function buildRowsWithUndo(rows: Entry[], undoSlots: Entry[]): RowItem[] {
    const merged: RowItem[] = rows.map((entry) => ({ kind: 'entry', entry }));
    for (const entry of undoSlots) {

@@ -31,6 +31,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - CreditShop.tsx now handles profile credit refreshes
 - Next button should go to analysis if cache exists 
 - abstracted constants to constants.ts
+- applied solution to android and apple having different shadow behaviours
+- Circle back and assess the edit/cancel/save button flow of [id]/index header
 
 
 ### 2025-12-15
@@ -255,10 +257,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Limit same entry change
   - "You've analyzed this entry quite a bit! To move forward with your growth, try moving on to the Disputation (D) phase now."
 
-- Circle back and assess the edit/cancel/save button flow of [id]/index header
-- Disable editing of ABC once dispute has been made
-- Change to entry should enable a refreshed AI response to be possible
-
 - If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is cached
 - Encrypt entries when in cloud
 
@@ -293,4 +291,3 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - App store payment testing + revenuecat
   - test fails and restore purchase
 - UI
-

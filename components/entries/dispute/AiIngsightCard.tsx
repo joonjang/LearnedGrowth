@@ -1,4 +1,7 @@
+import { getIosShadowStyle } from '@/lib/shadow';
 import { LearnedGrowthResponse } from '@/models/aiService';
+import { useColorScheme } from 'nativewind';
+import { useMemo } from 'react';
 import { Platform, Text, View } from 'react-native';
 import ThreeDotsLoader from '../../ThreeDotLoader';
 
@@ -17,6 +20,13 @@ export function AiInsightCard({
    loading,
    error,
 }: Props) {
+
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+   const iosShadowSm = useMemo(
+      () => getIosShadowStyle({ isDark, preset: 'sm' }),
+      [isDark]
+   );
    
    // Helper to get Tailwind Classes for chips
    const getScoreChip = (score: Score) => {
@@ -138,7 +148,10 @@ export function AiInsightCard({
             </Text>
 
             {/* Permanence */}
-            <View className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-1.5">
+            <View
+               className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-1.5"
+               style={iosShadowSm}
+            >
                <View className="flex-row items-center justify-between">
                   <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase">
                      How long it feels
@@ -155,7 +168,10 @@ export function AiInsightCard({
             </View>
 
             {/* Pervasiveness */}
-            <View className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-1.5">
+            <View
+               className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-1.5"
+               style={iosShadowSm}
+            >
                <View className="flex-row items-center justify-between">
                   <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase">
                      How big it feels
@@ -172,7 +188,10 @@ export function AiInsightCard({
             </View>
 
             {/* Personalization */}
-            <View className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-1.5">
+            <View
+               className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm gap-1.5"
+               style={iosShadowSm}
+            >
                <View className="flex-row items-center justify-between">
                   <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase">
                      Where blame goes
