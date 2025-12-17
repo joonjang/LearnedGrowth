@@ -59,7 +59,6 @@ export default function SettingsScreen() {
       loading: rcLoading,
       error: rcError,
       showPaywall,
-      buyConsumable,
       restorePurchases,
       isGrowthPlusActive,
       refreshCustomerInfo,
@@ -110,7 +109,6 @@ export default function SettingsScreen() {
    const [actionsCollapsed, setActionsCollapsed] = useState(true);
    const [deleteLoading, setDeleteLoading] = useState(false);
 
-   const plan = profile?.plan ?? 'free';
    const entitlementActive = isGrowthPlusActive;
    const hasGrowth = entitlementActive;
    const aiUsed = profile?.aiCallsUsed ?? 0;
@@ -149,7 +147,7 @@ export default function SettingsScreen() {
             : false;
          setBiometricInfo({ hasHardware, isEnrolled });
          return { hasHardware, isEnrolled };
-      } catch (err) {
+      } catch {
          const fallback = { hasHardware: false, isEnrolled: false };
          setBiometricInfo(fallback);
          return fallback;

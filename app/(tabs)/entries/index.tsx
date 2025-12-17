@@ -141,13 +141,14 @@ export default function EntriesScreen() {
             // Add huge bottom padding so the last item scrolls well above the FAB
             contentContainerStyle={{
                paddingBottom: 128, // Matches pb-32
-               paddingTop: insets.top,
+               
             }}
             stickySectionHeadersEnabled
             onScrollBeginDrag={closeMenu}
             renderSectionHeader={({ section }) => (
                <View 
-                  className="items-center py-2 bg-slate-50 dark:bg-slate-900"
+                  className="items-center py-2"
+                  style={{paddingTop: insets.top,}}
                >
                   <View className="items-center self-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 shadow-sm">
                      <Text className="text-center text-sm font-bold text-slate-600 dark:text-slate-300">

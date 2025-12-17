@@ -108,7 +108,7 @@ export default function FreeUserChoiceScreen() {
             params: { redirect: path },
          } as any);
       } else {
-         router.replace(path);
+         router.replace(path as any);
       }
    };
 

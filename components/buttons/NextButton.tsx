@@ -1,4 +1,5 @@
 import { useAuth } from '@/providers/AuthProvider';
+import { useEntriesStore } from '@/providers/EntriesStoreProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
 import { Pressable, Text } from 'react-native';
@@ -8,12 +9,22 @@ type Prop = {
 };
 
 export default function NextButton({ id }: Prop) {
-   const { status, profile } = useAuth();
+   const { status } = useAuth();
    const { isGrowthPlusActive } = useRevenueCat();
    const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
+   const entriesStore = useEntriesStore();
+   const hasCachedAnalysis = entriesStore((state) =>
+      Boolean(state.byId[id]?.aiResponse)
+   );
 
    const handlePress = () => {
       if (isSubscribed) {
+         router.push(`/dispute/${id}?analyze=1`);
+         return;
+      }
+
+      // Cached AI results are safe to view without consuming credits.
+      if (hasCachedAnalysis) {
          router.push(`/dispute/${id}?analyze=1`);
          return;
       }

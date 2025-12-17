@@ -29,6 +29,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - added credit purchase options
 - Refreshing expired plan should show correct status
 - CreditShop.tsx now handles profile credit refreshes
+- Next button should go to analysis if cache exists 
 
 
 ### 2025-12-15
@@ -248,8 +249,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
-
-- Next button should go to analysis if cache exists 
 
 - Display outdated analysis sign if entry changed
 - Limit same entry change
