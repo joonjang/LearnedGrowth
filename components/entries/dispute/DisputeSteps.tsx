@@ -1,17 +1,15 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useColorScheme } from 'nativewind';
 import React, { useCallback } from 'react';
 import {
    Alert,
    Keyboard,
    NativeScrollEvent,
    NativeSyntheticEvent,
-   Pressable,
    ScrollView,
    TextInput,
-   View,
+   View
 } from 'react-native';
 
+import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import EntryContextView from '@/components/entries/dispute/EntryContextView';
 import InputBox from '@/components/newEntry/InputBox';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
@@ -72,9 +70,7 @@ export default function DisputeSteps({
    contentTopPadding,
 }: Props) {
    
-   const { colorScheme } = useColorScheme();
-   const isDark = colorScheme === 'dark';
-   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
+
 
    const handleClose = useCallback(() => {
       if (!hasUnsavedChanges) {
@@ -122,13 +118,7 @@ export default function DisputeSteps({
                   />
                </View>
 
-               <Pressable
-                  onPress={handleClose}
-                  hitSlop={12}
-                  className="p-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
-               >
-                  <Ionicons name="close" size={22} color={iconColor} />
-               </Pressable>
+               <RoundedCloseButton onPress={handleClose} />
             </View>
 
             <EntryContextView

@@ -1,4 +1,5 @@
 import rawAbcde from '@/assets/data/abcde.json';
+import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import InputBox from '@/components/newEntry/InputBox';
 import PromptDisplay from '@/components/newEntry/PromptDisplay';
 import StepperButton from '@/components/newEntry/StepperButton';
@@ -10,7 +11,6 @@ import { usePrompts } from '@/hooks/usePrompts';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
 import { NewInputEntryType } from '@/models/newInputEntryType';
 // REMOVED: import { useTheme } ...
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -18,10 +18,9 @@ import {
    Alert,
    Keyboard,
    Platform,
-   Pressable,
    ScrollView,
    TextInput,
-   View,
+   View
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 // KEPT: Use insets for true edge-to-edge control
@@ -150,18 +149,7 @@ export default function NewEntryModal() {
                      </View>
 
                      {/* Close Button */}
-                     <Pressable
-                        accessibilityRole="button"
-                        onPress={handleClose}
-                        hitSlop={12}
-                        className="p-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
-                     >
-                        <Ionicons
-                           name="close"
-                           size={22}
-                           color={iconColor}
-                        />
-                     </Pressable>
+                     <RoundedCloseButton onPress={handleClose} />
                   </View>
 
                   <PromptDisplay

@@ -2,10 +2,10 @@ import { getIosShadowStyle } from '@/lib/shadow';
 import React, { useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
-import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 
 type Props = {
@@ -58,13 +58,7 @@ export default function ABCAnalysis({
                </Text>
 
                {onExit && (
-                  <Pressable
-                     onPress={onExit}
-                     hitSlop={12}
-                     className="p-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
-                  >
-                     <Ionicons name="close" size={22} color={iconColor} />
-                  </Pressable>
+                  <RoundedCloseButton onPress={onExit} />
                )}
 
          </View>
