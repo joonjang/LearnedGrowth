@@ -16,8 +16,8 @@ type Props = {
    streamingText?: string;
    contentTopPadding?: number;
    onExit?: () => void;
-    onGoToSteps?: () => void;
-    onRefresh: () => void;
+   onGoToSteps?: () => void;
+   onRefresh: () => void;
    retryCount: number;
    maxRetries: number;
 };
@@ -50,25 +50,24 @@ export default function ABCAnalysis({
             flexGrow: 1,
             justifyContent: 'space-between',
             gap: 16,
-            padding: 2
+            padding: 2,
          }}
          keyboardShouldPersistTaps="always"
          showsVerticalScrollIndicator={false}
       >
          {/* Header */}
          <View className="flex-row items-center justify-between py-2">
+            <Text className="text-base px-5 font-medium text-slate-900 dark:text-slate-100">
+               AI Insight
+            </Text>
 
-               <Text className="text-base px-5 font-medium text-slate-900 dark:text-slate-100">
-                  AI Insight
-               </Text>
-
-               {onExit && (
-                  <RoundedCloseButton onPress={onExit} />
-               )}
-
+            {onExit && <RoundedCloseButton onPress={onExit} />}
          </View>
 
-         <View className="flex-1 shadow-sm dark:shadow-none" style={iosShadowSm}>
+         <View
+            className="flex-1 shadow-sm dark:shadow-none"
+            style={iosShadowSm}
+         >
             {/* Context Box */}
             <View className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 gap-2.5">
                <View className="gap-1">
@@ -107,18 +106,22 @@ export default function ABCAnalysis({
             </View>
          </View>
 
-         <View className="flex-1 shadow-sm dark:shadow-none" style={iosShadowSm}>
+         <View
+            className="flex-1 shadow-sm dark:shadow-none"
+            style={iosShadowSm}
+         >
             <AiInsightCard
                data={aiData}
                streamingText={streamingText}
                loading={loading}
                error={error}
                onRefresh={onRefresh}
-                retryCount={retryCount}
-                maxRetries={maxRetries}
+               retryCount={retryCount}
+               maxRetries={maxRetries}
+               updatedAt={entry.updatedAt}
             />
             {onGoToSteps && aiData ? (
-               <Pressable 
+               <Pressable
                   className="mt-4 py-2.5 px-3 rounded-full bg-dispute-cta items-center justify-center shadow-sm active:opacity-90"
                   style={iosShadowSm}
                   onPress={onGoToSteps}

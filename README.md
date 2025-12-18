@@ -29,6 +29,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Counts the amount of ai calls made in respect to entry
 - Display outdated analysis sign if entry changed
 - Button abstracted and flow improved for EntryCard vs [id]/index
+- Cooldown added
 
 ### 2025-12-16
 - Credit pack established
@@ -262,11 +263,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ## Next Steps
 
 
-
-- Limit same entry change
-  - "You've analyzed this entry quite a bit! To move forward with your growth, try moving on to the Disputation (D) phase now."
-
 - If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is cached
+
 - Encrypt entries when in cloud
 
 - Biometric lock disables the app from all screens until unlocked

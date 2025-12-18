@@ -225,6 +225,7 @@ export default function DisputeScreen() {
    const inputRef = useRef<TextInput>(null);
    const { promptTextStyle, inputBoxDims, promptMaxHeight } =
       usePromptLayout('compact');
+      
 
    const setField = useCallback(
       (k: NewInputDisputeType) => (v: string) =>

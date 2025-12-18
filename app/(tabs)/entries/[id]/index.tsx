@@ -302,7 +302,6 @@ export default function EntryDetailScreen() {
                   <>
                      <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
                         {formattedTimestamp || ' '}
-                        {` - DEBUG: ${entry.aiRetryCount}`}
                      </Text>
 
                      {/* --- ABSOLUTE STATUS TEXT --- */}
