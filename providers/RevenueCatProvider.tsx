@@ -188,8 +188,6 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
     ]
   );
 
-  console.log(`RevenueCat customer: ${JSON.stringify(customerInfo?.originalAppUserId, null, 4)}}`);
-
   return (
     <RevenueCatContext.Provider value={value}>
       {children}

@@ -30,6 +30,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Display outdated analysis sign if entry changed
 - Button abstracted and flow improved for EntryCard vs [id]/index
 - Cooldown added
+- If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is received and should be cached
 
 ### 2025-12-16
 - Credit pack established
@@ -263,7 +264,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ## Next Steps
 
 
-- If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is cached
+
 
 - Encrypt entries when in cloud
 

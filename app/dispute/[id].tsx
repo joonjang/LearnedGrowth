@@ -128,31 +128,53 @@ export default function DisputeScreen() {
       useAbcAi();
 
    useEffect(() => {
+      // 1. Basic Guards
       if (!entry || !ready || !allowAnalysis) return;
+
+      // 2. Prevent Double-Trigger
       if (!shouldRegenerate || analysisTriggered || lastResult) return;
 
       setAnalysisTriggered(true);
       setIsRegenerating(true);
 
+      // 3. Track Mount Status
+      let isMounted = true;
+
       (async () => {
          try {
+            // This runs in the background even if screen closes
             const result = await analyze({
                adversity: entry.adversity,
                belief: entry.belief,
                consequence: entry.consequence ?? undefined,
             });
 
-            setIsRegenerating(false);
+            // UI Update: Guarded (Only if screen is open)
+            if (isMounted) {
+               setIsRegenerating(false);
+            }
+
+            // Data Save: UNGUARDED (Runs even if screen is closed)
             const nextRetryCount = (entry.aiRetryCount ?? 0) + 1;
             await updateEntry(entry.id, {
                aiResponse: result.data,
                aiRetryCount: nextRetryCount,
             });
+
+            // Haptics: Guarded
+            if (isMounted && hapticsEnabled && hapticsAvailable) {
+               triggerHaptic();
+            }
          } catch (e) {
-            setIsRegenerating(false);
             console.log(e);
+            if (isMounted) setIsRegenerating(false);
          }
       })();
+
+      // Cleanup
+      return () => {
+         isMounted = false;
+      };
    }, [
       allowAnalysis,
       ready,
@@ -162,6 +184,9 @@ export default function DisputeScreen() {
       lastResult,
       analyze,
       updateEntry,
+      hapticsEnabled,
+      hapticsAvailable,
+      triggerHaptic,
    ]);
 
    useEffect(() => {
