@@ -18,6 +18,13 @@ import StepperHeader from '@/components/newEntry/StepperHeader';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 
+const DISPUTE_STEP_ORDER: NewInputDisputeType[] = [
+   'evidence',
+   'alternatives',
+   'usefulness',
+   'energy',
+];
+
 type Props = {
    entry: Entry;
    idx: number;
@@ -69,9 +76,6 @@ export default function DisputeSteps({
    promptContainerStyle,
    contentTopPadding,
 }: Props) {
-   
-
-
    const handleClose = useCallback(() => {
       if (!hasUnsavedChanges) {
          onExit();
@@ -87,6 +91,20 @@ export default function DisputeSteps({
          ]
       );
    }, [hasUnsavedChanges, onExit]);
+
+   const handleStepChange = useCallback(
+      (direction: 'next' | 'back') => {
+         const delta = direction === 'next' ? 1 : -1;
+         const nextIdx = Math.min(
+            Math.max(idx + delta, 0),
+            DISPUTE_STEP_ORDER.length - 1
+         );
+         const nextKey = DISPUTE_STEP_ORDER[nextIdx];
+         inputRef.current?.setNativeProps({ text: form[nextKey] ?? '' });
+         setIdx(nextIdx);
+      },
+      [form, idx, inputRef, setIdx]
+   );
 
    return (
       <>
@@ -144,6 +162,7 @@ export default function DisputeSteps({
              className={isKeyboardVisible ? 'pb-0' : 'pb-6' }
          >
             <InputBox
+
                ref={inputRef}
                value={form[currKey]}
                onChangeText={setField(currKey)}
@@ -151,6 +170,7 @@ export default function DisputeSteps({
                scrollEnabled
                compact
                onFocus={() => scrollToBottom(true)}
+               
             />
             <StepperButton
                idx={idx}
@@ -160,6 +180,9 @@ export default function DisputeSteps({
                onExit={onExit}
                hasUnsavedChanges={hasUnsavedChanges}
                disableNext={disableNext}
+               inputRef={inputRef}
+               onNext={() => handleStepChange('next')}
+               onBack={() => handleStepChange('back')}
             />
          </View>
       </>

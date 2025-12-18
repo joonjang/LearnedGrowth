@@ -100,6 +100,20 @@ export default function NewEntryModal() {
       });
    }, [store, trimmedForm]);
 
+   const handleStepChange = useCallback(
+      (direction: 'next' | 'back') => {
+         const delta = direction === 'next' ? 1 : -1;
+         const nextIdx = Math.min(
+            Math.max(idx + delta, 0),
+            STEP_ORDER.length - 1
+         );
+         const nextKey = STEP_ORDER[nextIdx];
+         inputRef.current?.setNativeProps({ text: form[nextKey] ?? '' });
+         setIdx(nextIdx);
+      },
+      [form, idx, inputRef, setIdx]
+   );
+
    const handleClose = useCallback(() => {
       if (!hasAnyContent) {
          router.back();
@@ -167,6 +181,7 @@ export default function NewEntryModal() {
                {/* INPUT WRAPPER */}
                <View className={isKeyboardVisible ? 'pb-0' : 'pb-6'}>
                   <InputBox
+
                      ref={inputRef}
                      value={form[currKey]}
                      onChangeText={setField(currKey)}
@@ -181,9 +196,12 @@ export default function NewEntryModal() {
                      onExit={() => router.back()}
                      hasUnsavedChanges={hasAnyContent}
                      disableNext={currentEmpty}
+                     inputRef={inputRef}
+                     onNext={() => handleStepChange('next')}
+                     onBack={() => handleStepChange('back')}
                   />
                </View>
-               
+                
             </View>
          </KeyboardAvoidingView>
       </>

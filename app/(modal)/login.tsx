@@ -101,7 +101,10 @@ export default function AuthModal() {
          } else {
             // CASE B: Default Login (No redirect param)
             // Since AuthGate no longer auto-redirects, we must do it manually.
-            if (router.canGoBack()) router.dismissAll();
+            if (router.canGoBack()) {
+               // Dismiss the modal/screen if we were pushed here
+               router.dismiss();
+            }
 
             // Go to the main app tabs
             router.replace(ROUTE_ENTRIES);

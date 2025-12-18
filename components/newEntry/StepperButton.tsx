@@ -4,6 +4,7 @@ import {
    Keyboard,
    Pressable,
    Text,
+   TextInput,
    View,
    ViewStyle,
 } from 'react-native';
@@ -20,6 +21,9 @@ type Props = {
    confirmExitMessage?: string;
    disableNext?: boolean;
    style?: ViewStyle;
+   inputRef?: React.RefObject<TextInput | null>;
+   onNext?: () => void;
+   onBack?: () => void;
 };
 
 export default function StepperButton({
@@ -31,6 +35,9 @@ export default function StepperButton({
    hasUnsavedChanges = false,
    disableNext,
    style,
+   inputRef,
+   onNext,
+   onBack,
 }: Props) {
    
    // Logic
@@ -55,20 +62,41 @@ export default function StepperButton({
    }, [confirmExitMessage, confirmExitTitle, hasUnsavedChanges, onExit]);
 
    const handleBack = useCallback(() => {
+      const wasFocused = inputRef?.current?.isFocused?.() ?? false;
+
       if (!canGoBack) {
          handleExit();
          return;
       }
-      setIdx((i) => Math.max(i - 1, 0));
-   }, [canGoBack, handleExit, setIdx]);
+      if (onBack) {
+         onBack();
+      } else {
+         setIdx((i) => Math.max(i - 1, 0));
+      }
+
+      if (wasFocused) {
+         setTimeout(() => inputRef?.current?.focus?.(), 0);
+      }
+   }, [canGoBack, handleExit, inputRef, onBack, setIdx]);
 
    const handleNext = useCallback(() => {
+      const isCurrentlyFocused = inputRef?.current?.isFocused?.() ?? false;
+
       if (isLast) {
          onSubmit();
          return;
       }
-      setIdx((i) => Math.min(i + 1, totalSteps - 1));
-   }, [isLast, onSubmit, setIdx, totalSteps]);
+      if (onNext) {
+         onNext();
+      } else {
+         setIdx((i) => Math.min(i + 1, totalSteps - 1));
+      }
+
+      if (isCurrentlyFocused) {
+         // A minimal timeout ensures the cycle completes if the button stole focus
+         setTimeout(() => inputRef?.current?.focus?.(), 0);
+      }
+   }, [inputRef, isLast, onNext, onSubmit, setIdx, totalSteps]);
 
    return (
       <View 

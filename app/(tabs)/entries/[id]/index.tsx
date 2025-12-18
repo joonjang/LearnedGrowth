@@ -50,13 +50,13 @@ const FIELD_META = [
    {
       key: 'dispute',
       label: 'Dispute',
-      hint: 'Argument against negative belief.',
+      hint: 'Your response to the belief.',
       placeholder: 'Collect the key sentences you used to dispute',
    },
    {
       key: 'energy',
       label: 'Energy',
-      hint: 'How you feel after the disputation.',
+      hint: 'How you feel after thinking through it all.',
       placeholder: 'Note any shift in mood or energy',
    },
 ] satisfies {
