@@ -13,7 +13,6 @@ import type { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { usePreferences } from '@/providers/PreferencesProvider';
-// REMOVED: import { useTheme } from '@/theme/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind'; // <--- Added
@@ -127,6 +126,15 @@ export default function DisputeScreen() {
    const { analyze, lastResult, loading, error, ready, streamText } =
       useAbcAi();
 
+   const isMountedRef = useRef(true);
+
+   useEffect(() => {
+      isMountedRef.current = true;
+      return () => {
+         isMountedRef.current = false;
+      };
+   }, []);
+
    useEffect(() => {
       // 1. Basic Guards
       if (!entry || !ready || !allowAnalysis) return;
@@ -136,9 +144,6 @@ export default function DisputeScreen() {
 
       setAnalysisTriggered(true);
       setIsRegenerating(true);
-
-      // 3. Track Mount Status
-      let isMounted = true;
 
       (async () => {
          try {
@@ -150,7 +155,7 @@ export default function DisputeScreen() {
             });
 
             // UI Update: Guarded (Only if screen is open)
-            if (isMounted) {
+            if (isMountedRef.current) {
                setIsRegenerating(false);
             }
 
@@ -162,19 +167,14 @@ export default function DisputeScreen() {
             });
 
             // Haptics: Guarded
-            if (isMounted && hapticsEnabled && hapticsAvailable) {
+            if (isMountedRef.current && hapticsEnabled && hapticsAvailable) {
                triggerHaptic();
             }
          } catch (e) {
             console.log(e);
-            if (isMounted) setIsRegenerating(false);
+            if (isMountedRef.current) setIsRegenerating(false);
          }
       })();
-
-      // Cleanup
-      return () => {
-         isMounted = false;
-      };
    }, [
       allowAnalysis,
       ready,

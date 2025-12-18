@@ -263,8 +263,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- Bug pressing next doesnt clear the text input sometimes
 
-
+- Seeing setting screen should update revenue cat credits 
 
 - Encrypt entries when in cloud
 

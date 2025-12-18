@@ -154,11 +154,15 @@ export function AiInsightCard({
                   </View>
 
                   <Text className="text-[11px] text-slate-600 dark:text-slate-400 leading-4">
-                     {isCoolingDown
-                        ? 'Updates paused to encourage you to continue to the next step.'
-                        : isNudgeStep
-                          ? "You've refined this quite a bit. Ready to move to the next step?" 
-                          : 'Entry has changed. Update analysis?'}
+                     {
+                        !onRefresh
+                           ? 'This insight is based on an older version of your entry.' // <--- Static Message
+                           : isCoolingDown
+                             ? 'Updates paused to encourage you to continue to the next step.'
+                             : isNudgeStep
+                               ? "You've refined this quite a bit. Ready to move to the next step?"
+                               : 'Entry has changed. Update analysis?'
+                     }
                   </Text>
                </View>
 

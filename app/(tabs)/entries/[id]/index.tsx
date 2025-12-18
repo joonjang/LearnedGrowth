@@ -454,7 +454,7 @@ export default function EntryDetailScreen() {
                   <View className="h-[1px] bg-slate-200 dark:bg-slate-700 my-5" />
                   <AiInsightCard
                      data={aiDisplayData}
-                     onRefresh={entry.dispute ? undefined : handleOpenDisputeAndUpdate}
+                     onRefresh={entry.dispute || isEditing ? undefined : handleOpenDisputeAndUpdate}
                      retryCount={entry.aiRetryCount ?? 0}
                      maxRetries={MAX_AI_RETRIES}
                      updatedAt={entry.updatedAt}
