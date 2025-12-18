@@ -104,7 +104,7 @@ export default function FreeUserChoiceScreen() {
       if (!entryId) return modalRef.current?.dismiss();
 
       const path = requiresAuth
-         ? `/dispute/${entryId}?analyze=1`
+         ? `/dispute/${entryId}?view=analysis&refresh=true`
          : `/dispute/${entryId}`;
 
       isRedirecting.current = true;

@@ -234,12 +234,11 @@ export default function EntryDetailScreen() {
    const handleOpenDisputeAndUpdate = useCallback(() => {
       if (!entry) return;
       
-      // We push to the dispute screen. 
-      // We do NOT need "analyze: true" here because the data exists (it's just stale).
-      // The Dispute Screen will see the stale data and show its own "Update" button.
+      // Navigate to the analysis view and explicitly request regeneration.
+      // Keeping view/refresh separate avoids accidental API calls when just viewing.
       router.push({
          pathname: '/dispute/[id]',
-         params: { id: entry.id, analyze: '1' }
+         params: { id: entry.id, view: 'analysis', refresh: 'true' }
       });
    }, [entry]);
 

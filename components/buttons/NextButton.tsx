@@ -57,8 +57,12 @@ export default function NextButton({ id }: Prop) {
    }, [hasCachedAnalysis, isSubscribed]);
 
    const handlePress = () => {
-      if (isSubscribed || hasCachedAnalysis) {
-         router.push(`/dispute/${id}?analyze=1`);
+      if (hasCachedAnalysis) {
+         router.push(`/dispute/${id}?view=analysis`);
+         return;
+      }
+      if (isSubscribed) {
+         router.push(`/dispute/${id}?view=analysis&refresh=true`);
          return;
       }
 

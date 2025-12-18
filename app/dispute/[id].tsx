@@ -69,17 +69,19 @@ function buildDisputeText(form: Record<NewInputDisputeType, string>) {
 export default function DisputeScreen() {
    const params = useLocalSearchParams<{
       id?: string | string[];
-      analyze?: string | string[];
+      view?: string | string[];
+      refresh?: string | string[];
    }>();
 
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
 
    const entryId = Array.isArray(params.id) ? params.id[0] : params.id;
-   const analyzeQuery = Array.isArray(params.analyze)
-      ? params.analyze[0]
-      : params.analyze;
-   const shouldAnalyze = analyzeQuery === '1' || analyzeQuery === 'true';
+   const viewQuery = Array.isArray(params.view) ? params.view[0] : params.view;
+   const refreshQuery = Array.isArray(params.refresh)
+      ? params.refresh[0]
+      : params.refresh;
+   const shouldRegenerate = refreshQuery === 'true';
    const {
       showAiAnalysis: aiVisible,
       hapticsEnabled,
@@ -110,7 +112,7 @@ export default function DisputeScreen() {
    const [analysisTriggered, setAnalysisTriggered] = useState(false);
 
    const initialViewMode: 'steps' | 'analysis' =
-      allowAnalysis && shouldAnalyze ? 'analysis' : 'steps';
+      allowAnalysis && viewQuery === 'analysis' ? 'analysis' : 'steps';
    const [viewMode, setViewMode] = useState<'steps' | 'analysis'>(
       initialViewMode
    );
@@ -126,8 +128,7 @@ export default function DisputeScreen() {
 
    useEffect(() => {
       if (!entry || !ready || !allowAnalysis) return;
-      if (!shouldAnalyze || analysisTriggered || lastResult) return;
-      if (entry?.aiResponse) return;
+      if (!shouldRegenerate || analysisTriggered || lastResult) return;
 
       setAnalysisTriggered(true);
 
@@ -151,7 +152,7 @@ export default function DisputeScreen() {
    }, [
       allowAnalysis,
       ready,
-      shouldAnalyze,
+      shouldRegenerate,
       analysisTriggered,
       entry,
       lastResult,
