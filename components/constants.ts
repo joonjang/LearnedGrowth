@@ -2,6 +2,7 @@ export const BTN_HEIGHT = 'h-12 justify-center';
 
 export const FREE_MONTHLY_CREDITS = 5;
 export const AI_ANALYSIS_CREDIT_COST = 1;
+export const MAX_AI_RETRIES = 30;
 
 export const BOTTOM_SHEET_RADIUS = 24;
 export const BOTTOM_SHEET_BACKDROP_OPACITY = 0.5;

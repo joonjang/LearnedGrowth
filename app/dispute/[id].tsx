@@ -1,4 +1,5 @@
 import rawAbcde from '@/assets/data/abcde.json';
+import { MAX_AI_RETRIES } from '@/components/constants';
 import ABCAnalysis from '@/components/entries/dispute/ABCAnalysis';
 import DisputeSteps from '@/components/entries/dispute/DisputeSteps';
 import { useAbcAi } from '@/hooks/useAbcAi';
@@ -261,6 +262,30 @@ export default function DisputeScreen() {
       []
    );
 
+   const handleRefreshAnalysis = useCallback(async () => {
+      if (!entry) return;
+      try {
+         // Trigger the hook's analyze function
+         const result = await analyze({
+             adversity: entry.adversity,
+             belief: entry.belief,
+             consequence: entry.consequence
+         });
+
+         // Increment and Save
+         const nextRetryCount = (entry.aiRetryCount ?? 0) + 1;
+         
+         await updateEntry(entry.id, {
+            aiResponse: result.data,
+            aiRetryCount: nextRetryCount,
+         });
+
+         if (hapticsEnabled && hapticsAvailable) triggerHaptic();
+      } catch (e) {
+         console.error("Refresh failed", e);
+      }
+   }, [entry, analyze, updateEntry, hapticsEnabled, hapticsAvailable, triggerHaptic]);
+
    useEffect(() => {
       requestAnimationFrame(() => scrollToBottom(false));
    }, [scrollToBottom]);
@@ -410,6 +435,9 @@ export default function DisputeScreen() {
                         contentTopPadding={topPadding}
                         onExit={handleClose}
                         onGoToSteps={() => setViewMode('steps')}
+                        onRefresh={handleRefreshAnalysis}
+                  retryCount={entry?.aiRetryCount ?? 0}
+                  maxRetries={MAX_AI_RETRIES}
                      />
                   </Animated.View>
                ) : null}

@@ -3,7 +3,7 @@ import { LearnedGrowthResponse } from '@/models/aiService';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import { useMemo } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import ThreeDotsLoader from '../../ThreeDotLoader';
 
 type Props = {
@@ -11,6 +11,9 @@ type Props = {
    streamingText?: string;
    loading?: boolean;
    error?: string | null;
+   onRefresh?: () => void;
+   retryCount?: number;
+   maxRetries?: number;
 };
 
 type Score = 'optimistic' | 'mixed' | 'pessimistic' | null | undefined | string;
@@ -105,7 +108,9 @@ function DimensionCard({
 }
 
 // --- Main Component ---
-export function AiInsightCard({ data, streamingText, error }: Props) {
+export function AiInsightCard({ data, streamingText, error, onRefresh,
+   retryCount = 0,
+   maxRetries = 3, }: Props) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
 
@@ -165,6 +170,8 @@ export function AiInsightCard({ data, streamingText, error }: Props) {
 
    const { safety, analysis, suggestions, isStale } = data;
    const { dimensions: dims, emotionalLogic } = analysis;
+   const retriesLeft = Math.max(0, maxRetries - retryCount);
+   const canRefresh = retriesLeft > 0;
 
    return (
       <View className="gap-4 pb-4">
@@ -186,18 +193,25 @@ export function AiInsightCard({ data, streamingText, error }: Props) {
                   </View>
                </View>
 
-               {/* Small, unobtrusive Refresh Button */}
-               {/* {onRefresh && (
-               <Pressable 
-                  onPress={onRefresh}
-                  hitSlop={8}
-                  className="px-3 py-1.5 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-sm active:opacity-60"
-               >
-                  <Text className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                     Update
-                  </Text>
-               </Pressable>
-            )} */}
+               {onRefresh && (
+                  canRefresh ? (
+                     <Pressable 
+                        onPress={onRefresh}
+                        hitSlop={8}
+                        className="px-3 py-1.5 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-sm active:opacity-60"
+                     >
+                        <Text className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                           Update ({retriesLeft})
+                        </Text>
+                     </Pressable>
+                  ) : (
+                     <View className="opacity-60 px-2">
+                         <Text className="text-[10px] font-bold text-slate-400 uppercase">
+                           Limit Reached
+                        </Text>
+                     </View>
+                  )
+               )}
             </View>
          )}
 

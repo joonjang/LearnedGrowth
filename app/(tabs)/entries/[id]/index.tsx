@@ -1,5 +1,5 @@
 import NextButton from '@/components/buttons/NextButton';
-import { ROUTE_ENTRIES } from '@/components/constants';
+import { MAX_AI_RETRIES, ROUTE_ENTRIES } from '@/components/constants';
 import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
 import { useEntries } from '@/hooks/useEntries';
 import { formatDateTimeWithWeekday } from '@/lib/date';
@@ -231,6 +231,19 @@ export default function EntryDetailScreen() {
       KeyboardController.dismiss();
    }, [editSnapshot, isEditing]);
 
+   const handleOpenDisputeAndUpdate = useCallback(() => {
+      if (!entry) return;
+      
+      // We push to the dispute screen. 
+      // We do NOT need "analyze: true" here because the data exists (it's just stale).
+      // The Dispute Screen will see the stale data and show its own "Update" button.
+      router.push({
+         pathname: '/dispute/[id]',
+         params: { id: entry.id, analyze: '1' }
+      });
+   }, [entry]);
+
+
    const formattedTimestamp = entry
       ? formatDateTimeWithWeekday(entry.createdAt)
       : '';
@@ -427,6 +440,9 @@ export default function EntryDetailScreen() {
                   <View className="h-[1px] bg-slate-200 dark:bg-slate-700 my-5" />
 	               <AiInsightCard
 	                  data={aiDisplayData}
+                     onRefresh={handleOpenDisputeAndUpdate} 
+                     retryCount={entry.aiRetryCount ?? 0}
+                     maxRetries={MAX_AI_RETRIES}
                   />
                   </>
 

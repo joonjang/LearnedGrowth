@@ -17,6 +17,9 @@ type Props = {
    contentTopPadding?: number;
    onExit?: () => void;
     onGoToSteps?: () => void;
+    onRefresh: () => void;
+   retryCount: number;
+   maxRetries: number;
 };
 
 export default function ABCAnalysis({
@@ -27,11 +30,13 @@ export default function ABCAnalysis({
    streamingText,
    contentTopPadding,
    onExit,
-   onGoToSteps
+   onGoToSteps,
+   onRefresh,
+   retryCount,
+   maxRetries,
 }: Props) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
    const iosShadowSm = useMemo(
       () => getIosShadowStyle({ isDark, preset: 'sm' }),
       [isDark]
@@ -108,6 +113,9 @@ export default function ABCAnalysis({
                streamingText={streamingText}
                loading={loading}
                error={error}
+               onRefresh={onRefresh}
+                retryCount={retryCount}
+                maxRetries={maxRetries}
             />
             {onGoToSteps && aiData ? (
                <Pressable 

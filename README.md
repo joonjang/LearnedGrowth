@@ -6,7 +6,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the Expo app (add them as EAS secrets for TestFlight).
 - Optional overrides: `EXPO_PUBLIC_SUPABASE_AI_FUNCTION` (defaults to `learned-growth`) and `EXPO_PUBLIC_SUPABASE_AI_STREAM_FUNCTION` (defaults to the same function).
 - Keep `EXPO_PUBLIC_API_BASE_URL` only if you want to hit a non-Supabase API; otherwise the app will target `https://<supabase>/functions/v1/{function}` automatically.
-- Dev without OpenAI: set `MOCK_AI=true` (or `DEV_MOCK_AI=true`) in `api/supabase/.env` when serving locally to return a canned JSON response from the Supabase function without calling OpenAI.
+- Dev without OpenAI: set `MOCK_AI=true` in `api/supabase/.env` when serving locally to return a canned JSON response from the Supabase function without calling OpenAI.
 - RevenueCat:
   - Set `EXPO_PUBLIC_REVENUECAT_API_KEY` in `.env` / EAS secrets.
   - Configure your Offering + Paywall + Customer Center in the RevenueCat dashboard (`Growth Plus` entitlement, `monthly` package, optional `consumable` product).
