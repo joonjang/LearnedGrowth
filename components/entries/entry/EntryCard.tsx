@@ -1,4 +1,5 @@
-import NextButton from '@/components/buttons/NextButton';
+
+import CardNextButton from '@/components/buttons/CardNextButton';
 import { getIosShadowStyle } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
 import { Ionicons } from '@expo/vector-icons';
@@ -301,7 +302,7 @@ export default function EntryCard({
          {!entry.dispute ? (
             <View className="mt-2">
                <View className="h-[1px] bg-slate-100 dark:bg-slate-800 mb-2" />
-               <NextButton id={entry.id} />
+               <CardNextButton id={entry.id} />
             </View>
          ) : (
             <>

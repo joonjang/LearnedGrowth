@@ -28,6 +28,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - added new property in aiResponse
 - Counts the amount of ai calls made in respect to entry
 - Display outdated analysis sign if entry changed
+- Button abstracted and flow improved for EntryCard vs [id]/index
 
 ### 2025-12-16
 - Credit pack established
@@ -259,6 +260,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Next Steps
+
 
 
 - Limit same entry change

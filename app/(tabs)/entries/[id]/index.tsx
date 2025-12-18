@@ -1,4 +1,5 @@
-import NextButton from '@/components/buttons/NextButton';
+import CardNextButton from '@/components/buttons/CardNextButton';
+import WideButton from '@/components/buttons/WideButton';
 import { MAX_AI_RETRIES, ROUTE_ENTRIES } from '@/components/constants';
 import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
 import { useEntries } from '@/hooks/useEntries';
@@ -104,12 +105,12 @@ export default function EntryDetailScreen() {
 
    // Theme Hooks
    const { colorScheme } = useColorScheme();
-      const isDark = colorScheme === 'dark';
-      const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
-      const iosShadowSm = useMemo(
-         () => getIosShadowStyle({ isDark, preset: 'sm' }),
-         [isDark]
-      );
+   const isDark = colorScheme === 'dark';
+   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
+   const iosShadowSm = useMemo(
+      () => getIosShadowStyle({ isDark, preset: 'sm' }),
+      [isDark]
+   );
 
    const [form, setForm] = useState<Record<FieldKey, string>>(() =>
       buildFieldRecord((key) => entry?.[key] ?? '')
@@ -157,8 +158,6 @@ export default function EntryDetailScreen() {
       });
    }, [baseline, trimmed]);
 
-
-
    const setField = useCallback(
       (key: FieldKey) => (value: string) => {
          setForm((prev) => ({ ...prev, [key]: value }));
@@ -188,7 +187,7 @@ export default function EntryDetailScreen() {
 
       if (entry.aiResponse) {
          const coreFields: FieldKey[] = ['adversity', 'belief', 'consequence'];
-         
+
          const analysisChanged = coreFields.some(
             (key) => trimmed[key] !== baseline[key]
          );
@@ -233,13 +232,12 @@ export default function EntryDetailScreen() {
 
    const handleOpenDisputeAndUpdate = useCallback(() => {
       if (!entry) return;
-      
+
       router.push({
          pathname: '/dispute/[id]',
-         params: { id: entry.id, view: 'analysis', refresh: 'true' }
+         params: { id: entry.id, view: 'analysis', refresh: 'true' },
       });
    }, [entry]);
-
 
    const formattedTimestamp = entry
       ? formatDateTimeWithWeekday(entry.createdAt)
@@ -247,8 +245,8 @@ export default function EntryDetailScreen() {
    const statusMessage = justSaved
       ? 'Saved'
       : hasChanges
-      ? 'Unsaved changes'
-      : '';
+        ? 'Unsaved changes'
+        : '';
    const statusDisplay = statusMessage || 'Saved';
 
    useEffect(() => {
@@ -265,6 +263,13 @@ export default function EntryDetailScreen() {
       },
       [hasScrolled]
    );
+
+   const handleContinueToDispute = () => {
+      router.push({
+         pathname: '/dispute/[id]',
+         params: { id: entryId },
+      });
+   };
 
    if (!entry) {
       return (
@@ -296,9 +301,10 @@ export default function EntryDetailScreen() {
                {!isEditing ? (
                   <>
                      <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
-                        {formattedTimestamp || ' '}{` - DEBUG: ${entry.aiRetryCount}`}
+                        {formattedTimestamp || ' '}
+                        {` - DEBUG: ${entry.aiRetryCount}`}
                      </Text>
-                     
+
                      {/* --- ABSOLUTE STATUS TEXT --- */}
                      {/* Hanging off the bottom of the title, transparent background */}
                      <Text
@@ -312,11 +318,11 @@ export default function EntryDetailScreen() {
                   </>
                ) : (
                   <>
-                  <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
-                     Editing
-                  </Text>
-                   {/* --- ABSOLUTE STATUS TEXT (Edit Mode) --- */}
-                   <Text
+                     <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
+                        Editing
+                     </Text>
+                     {/* --- ABSOLUTE STATUS TEXT (Edit Mode) --- */}
+                     <Text
                         className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 w-[200px] text-center ${
                            !statusMessage ? 'opacity-0' : 'opacity-100'
                         }`}
@@ -353,7 +359,7 @@ export default function EntryDetailScreen() {
 
             {/* Divider: Absolute Bottom (y=44px) */}
             {hasScrolled && (
-                <View className="absolute bottom-0 left-0 right-0 h-[1px] bg-slate-200 dark:bg-slate-700" />
+               <View className="absolute bottom-0 left-0 right-0 h-[1px] bg-slate-200 dark:bg-slate-700" />
             )}
          </View>
 
@@ -411,53 +417,62 @@ export default function EntryDetailScreen() {
                         {field.hint}
                      </Text>
 
-                        {isEditing ? (
-                           <TextInput
-                              multiline
-                              value={form[field.key]}
-                              onChangeText={setField(field.key)}
-                              placeholder={field.placeholder}
-                              placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                              className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${containerClass} ${textColorClass}`}
-                              style={iosShadowSm}
-                              scrollEnabled={true}
-                              textAlignVertical="top"
-                           />
-                        ) : (
-                           <View
-                              className={`mt-1.5 px-3 rounded-xl border shadow-sm ${containerClass}`}
-                              style={iosShadowSm}
+                     {isEditing ? (
+                        <TextInput
+                           multiline
+                           value={form[field.key]}
+                           onChangeText={setField(field.key)}
+                           placeholder={field.placeholder}
+                           placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
+                           className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${containerClass} ${textColorClass}`}
+                           style={iosShadowSm}
+                           scrollEnabled={true}
+                           textAlignVertical="top"
+                        />
+                     ) : (
+                        <View
+                           className={`mt-1.5 px-3 rounded-xl border shadow-sm ${containerClass}`}
+                           style={iosShadowSm}
+                        >
+                           <Text
+                              className={`text-sm leading-5 ${textColorClass}`}
                            >
-                              <Text className={`text-sm leading-5 ${textColorClass}`}>
-                                 {form[field.key] || (
-                                    <Text className="italic opacity-50 text-slate-400">
-                                       Empty
-                                    </Text>
-                                 )}
-                              </Text>
-                           </View>
+                              {form[field.key] || (
+                                 <Text className="italic opacity-50 text-slate-400">
+                                    Empty
+                                 </Text>
+                              )}
+                           </Text>
+                        </View>
                      )}
                   </View>
                );
             })}
 
-               {/* Inline AI Analysis */}
-               {aiVisible && aiDisplayData ? (
-                  <>
+            {/* Inline AI Analysis */}
+            {aiVisible && aiDisplayData ? (
+               <>
                   <View className="h-[1px] bg-slate-200 dark:bg-slate-700 my-5" />
                   <AiInsightCard
                      data={aiDisplayData}
-                     onRefresh={handleOpenDisputeAndUpdate} 
+                     onRefresh={entry.dispute ? undefined : handleOpenDisputeAndUpdate}
                      retryCount={entry.aiRetryCount ?? 0}
                      maxRetries={MAX_AI_RETRIES}
                   />
-                  </>
-
+               </>
             ) : null}
 
             {!entry.dispute?.trim() && (
                <>
-                  <NextButton id={entry.id} />
+                  {aiDisplayData ? (
+                     <WideButton
+                        label="Continue"
+                        icon="arrow-forward"
+                        onPress={handleContinueToDispute}
+                     />
+                  ) : (
+                     <CardNextButton id={entry.id} />
+                  )}
                </>
             )}
          </KeyboardAwareScrollView>
