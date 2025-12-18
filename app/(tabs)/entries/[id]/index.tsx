@@ -104,12 +104,12 @@ export default function EntryDetailScreen() {
 
    // Theme Hooks
    const { colorScheme } = useColorScheme();
-	   const isDark = colorScheme === 'dark';
-	   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
-	   const iosShadowSm = useMemo(
-	      () => getIosShadowStyle({ isDark, preset: 'sm' }),
-	      [isDark]
-	   );
+      const isDark = colorScheme === 'dark';
+      const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
+      const iosShadowSm = useMemo(
+         () => getIosShadowStyle({ isDark, preset: 'sm' }),
+         [isDark]
+      );
 
    const [form, setForm] = useState<Record<FieldKey, string>>(() =>
       buildFieldRecord((key) => entry?.[key] ?? '')
@@ -234,8 +234,6 @@ export default function EntryDetailScreen() {
    const handleOpenDisputeAndUpdate = useCallback(() => {
       if (!entry) return;
       
-      // Navigate to the analysis view and explicitly request regeneration.
-      // Keeping view/refresh separate avoids accidental API calls when just viewing.
       router.push({
          pathname: '/dispute/[id]',
          params: { id: entry.id, view: 'analysis', refresh: 'true' }
@@ -283,7 +281,8 @@ export default function EntryDetailScreen() {
          {/* Safe Area Spacer */}
          <View style={{ height: insets.top }} />
 
-         <View className="h-11 flex-row items-center justify-center mb-4 relative z-10">
+         {/* 1. Header (No Extra Margins) */}
+         <View className="h-14 flex-row items-center justify-center relative z-10">
             <Pressable
                onPress={() => router.replace(ROUTE_ENTRIES)}
                hitSlop={8}
@@ -292,24 +291,40 @@ export default function EntryDetailScreen() {
                <Ionicons name="chevron-back" size={18} color={iconColor} />
             </Pressable>
 
+            {/* Title Column - Contains both Time/Editing and Absolute Status Text */}
             <View className="items-center justify-center gap-1 h-full">
                {!isEditing ? (
                   <>
                      <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
                         {formattedTimestamp || ' '}{` - DEBUG: ${entry.aiRetryCount}`}
                      </Text>
+                     
+                     {/* --- ABSOLUTE STATUS TEXT --- */}
+                     {/* Hanging off the bottom of the title, transparent background */}
                      <Text
-                        className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 ${
+                        className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 w-[200px] text-center ${
                            !statusMessage ? 'opacity-0' : 'opacity-100'
                         }`}
+                        numberOfLines={1}
                      >
                         {statusDisplay}
                      </Text>
                   </>
                ) : (
+                  <>
                   <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
                      Editing
                   </Text>
+                   {/* --- ABSOLUTE STATUS TEXT (Edit Mode) --- */}
+                   <Text
+                        className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 w-[200px] text-center ${
+                           !statusMessage ? 'opacity-0' : 'opacity-100'
+                        }`}
+                        numberOfLines={1}
+                     >
+                        {statusDisplay}
+                     </Text>
+                  </>
                )}
             </View>
 
@@ -335,13 +350,16 @@ export default function EntryDetailScreen() {
                   </Text>
                </Pressable>
             </View>
+
+            {/* Divider: Absolute Bottom (y=44px) */}
+            {hasScrolled && (
+                <View className="absolute bottom-0 left-0 right-0 h-[1px] bg-slate-200 dark:bg-slate-700" />
+            )}
          </View>
 
-         {hasScrolled && (
-            <View className="h-[1px] bg-slate-200 dark:bg-slate-700 mb-0" />
-         )}
-
          <KeyboardAwareScrollView
+            // pt-6: Creates space for the absolute status text so fields don't overlap it initially.
+            // p-1: Horizontal/bottom padding.
             className="flex-1 pt-6 p-1"
             contentContainerStyle={[{ paddingBottom: insets.bottom + 16 }]}
             keyboardShouldPersistTaps="handled"
@@ -363,15 +381,12 @@ export default function EntryDetailScreen() {
                      textColorClass = 'text-dispute-text font-semibold';
                }
 
-               // 2. Container Style (Background, Border Color, Spacing)
+               // 2. Container Style
                let containerClass = '';
-
                if (isEditing) {
-                  // Edit Mode: Standard look for all fields
                   containerClass =
                      'bg-zinc-50 dark:bg-slate-700 border-slate-200 dark:border-slate-700 min-h-[80px] py-3';
                } else {
-                  // View Mode: Custom colors for Belief/Dispute, Standard for others
                   if (field.key === 'belief') {
                      containerClass =
                         'bg-belief-bg border-belief-border py-3 min-h-0 h-auto';
@@ -379,7 +394,6 @@ export default function EntryDetailScreen() {
                      containerClass =
                         'bg-dispute-bg border-dispute-border py-3 min-h-0 h-auto';
                   } else {
-                     // Normal fields (Adversity, etc.)
                      containerClass =
                         'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 py-3 min-h-0 h-auto';
                   }
@@ -397,48 +411,42 @@ export default function EntryDetailScreen() {
                         {field.hint}
                      </Text>
 
-	                     {isEditing ? (
-	                        <TextInput
-	                           multiline
-	                           value={form[field.key]}
-	                           onChangeText={setField(field.key)}
-	                           placeholder={field.placeholder}
-	                           placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-	                           className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${containerClass} ${textColorClass}`}
-	                           style={iosShadowSm}
-	                           scrollEnabled={true}
-	                           textAlignVertical="top"
-	                        />
-	                     ) : (
-                        /* FIX 2: Disable Touch-to-Edit 
-                           - Changed Pressable to View
-                           - Removed onPress event
-	                        */
-	                        <View
-	                           className={`mt-1.5 px-3 rounded-xl border shadow-sm ${containerClass}`}
-	                           style={iosShadowSm}
-	                        >
-	                           <Text
-	                              className={`text-sm leading-5 ${textColorClass}`}
-	                           >
-                              {form[field.key] || (
-                                 <Text className="italic opacity-50 text-slate-400">
-                                    Empty
-                                 </Text>
-                              )}
-                           </Text>
-                        </View>
+                        {isEditing ? (
+                           <TextInput
+                              multiline
+                              value={form[field.key]}
+                              onChangeText={setField(field.key)}
+                              placeholder={field.placeholder}
+                              placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
+                              className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${containerClass} ${textColorClass}`}
+                              style={iosShadowSm}
+                              scrollEnabled={true}
+                              textAlignVertical="top"
+                           />
+                        ) : (
+                           <View
+                              className={`mt-1.5 px-3 rounded-xl border shadow-sm ${containerClass}`}
+                              style={iosShadowSm}
+                           >
+                              <Text className={`text-sm leading-5 ${textColorClass}`}>
+                                 {form[field.key] || (
+                                    <Text className="italic opacity-50 text-slate-400">
+                                       Empty
+                                    </Text>
+                                 )}
+                              </Text>
+                           </View>
                      )}
                   </View>
                );
             })}
 
-	            {/* Inline AI Analysis */}
-	            {aiVisible && aiDisplayData ? (
+               {/* Inline AI Analysis */}
+               {aiVisible && aiDisplayData ? (
                   <>
                   <View className="h-[1px] bg-slate-200 dark:bg-slate-700 my-5" />
-	               <AiInsightCard
-	                  data={aiDisplayData}
+                  <AiInsightCard
+                     data={aiDisplayData}
                      onRefresh={handleOpenDisputeAndUpdate} 
                      retryCount={entry.aiRetryCount ?? 0}
                      maxRetries={MAX_AI_RETRIES}

@@ -110,6 +110,7 @@ export default function DisputeScreen() {
    });
 
    const [analysisTriggered, setAnalysisTriggered] = useState(false);
+   const [isRegenerating, setIsRegenerating] = useState(shouldRegenerate);
 
    const initialViewMode: 'steps' | 'analysis' =
       allowAnalysis && viewQuery === 'analysis' ? 'analysis' : 'steps';
@@ -131,6 +132,7 @@ export default function DisputeScreen() {
       if (!shouldRegenerate || analysisTriggered || lastResult) return;
 
       setAnalysisTriggered(true);
+      setIsRegenerating(true);
 
       (async () => {
          try {
@@ -140,12 +142,14 @@ export default function DisputeScreen() {
                consequence: entry.consequence ?? undefined,
             });
 
+            setIsRegenerating(false);
             const nextRetryCount = (entry.aiRetryCount ?? 0) + 1;
             await updateEntry(entry.id, {
                aiResponse: result.data,
                aiRetryCount: nextRetryCount,
             });
          } catch (e) {
+            setIsRegenerating(false);
             console.log(e);
          }
       })();
@@ -210,9 +214,10 @@ export default function DisputeScreen() {
    }, [entry?.aiResponse?.suggestions, lastResult?.data?.suggestions, prompts]);
 
    const aiData: LearnedGrowthResponse | null = useMemo(() => {
+      if (isRegenerating) return null;
       if (lastResult?.data) return lastResult.data;
       return entry?.aiResponse ?? null;
-   }, [entry?.aiResponse, lastResult?.data]);
+   }, [entry?.aiResponse, isRegenerating, lastResult?.data]);
 
    const currentEmpty = !trimmedForm[currKey];
    const scrollRef = useRef<ScrollView | null>(null);
@@ -265,6 +270,7 @@ export default function DisputeScreen() {
 
    const handleRefreshAnalysis = useCallback(async () => {
       if (!entry) return;
+      setIsRegenerating(true);
       try {
          // Trigger the hook's analyze function
          const result = await analyze({
@@ -273,6 +279,7 @@ export default function DisputeScreen() {
              consequence: entry.consequence
          });
 
+         setIsRegenerating(false);
          // Increment and Save
          const nextRetryCount = (entry.aiRetryCount ?? 0) + 1;
          
@@ -283,6 +290,7 @@ export default function DisputeScreen() {
 
          if (hapticsEnabled && hapticsAvailable) triggerHaptic();
       } catch (e) {
+         setIsRegenerating(false);
          console.error("Refresh failed", e);
       }
    }, [entry, analyze, updateEntry, hapticsEnabled, hapticsAvailable, triggerHaptic]);
