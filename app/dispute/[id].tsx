@@ -8,6 +8,7 @@ import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { usePromptLayout } from '@/hooks/usePromptLayout';
 import { usePrompts } from '@/hooks/usePrompts';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
+import { buildDisputeText } from '@/lib/textUtils';
 import type { AbcdeJson } from '@/models/abcdeJson';
 import type { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
@@ -15,7 +16,7 @@ import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme } from 'nativewind'; // <--- Added
+import { useColorScheme } from 'nativewind';
 import React, {
    useCallback,
    useEffect,
@@ -47,23 +48,6 @@ const STEP_ORDER = [
    'usefulness',
    'energy',
 ] as const;
-
-function endWithPeriod(text: string) {
-   const trimmed = text.trim();
-   if (!trimmed) return '';
-   const lastChar = trimmed.slice(-1);
-   return ['.', '!', '?'].includes(lastChar) ? trimmed : `${trimmed}.`;
-}
-
-function buildDisputeText(form: Record<NewInputDisputeType, string>) {
-   const sentences = [
-      endWithPeriod(form.evidence ?? ''),
-      endWithPeriod(form.alternatives ?? ''),
-      endWithPeriod(form.usefulness ?? ''),
-   ].filter(Boolean);
-
-   return sentences.join(' ');
-}
 
 export default function DisputeScreen() {
    const params = useLocalSearchParams<{

@@ -3,14 +3,13 @@ module.exports = {
   preset: "jest-expo",
   testMatch: ["**/?(*.)+(test).[tj]s?(x)"],
   transformIgnorePatterns: [
-    // Allowlist ESM packages from node_modules so Babel transpiles them
-    "node_modules/(?!(?:@react-native|react-native|react-native-.*"
-      + "|expo|expo-asset|expo-constants|expo-file-system|expo-sqlite"
-      + "|expo-sqlite-mock"              // 👈 add this
-      + "|expo-modules-core|@expo/.*|@react-native/.*)/)"
+    // FIX: Updated regex to include 'nativewind', 'expo-font', and '@expo/vector-icons'
+    "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|nativewind|expo-sqlite|expo-sqlite-mock)"
   ],
   moduleNameMapper: { "^@/(.*)$": "<rootDir>/$1" },
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts","<rootDir>/test-utils/mockUuid.ts"],  // 👈 use a local setup file
+  setupFilesAfterEnv: [
+    "<rootDir>/jest.setup.ts",
+    "<rootDir>/__test__/test-utils/mockUuid.ts"
+  ],
   testTimeout: 10000,
-  
 };

@@ -22,8 +22,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import EntryCard, { type MenuBounds } from './EntryCard';
 
-const ACTION_PANEL_WIDTH = 150;
-
 type EntryRowProps = {
    entry: Entry;
    timeLabel: string;
@@ -36,7 +34,7 @@ type EntryRowProps = {
    style?: StyleProp<ViewStyle>;
    onSwipeOpen?: (ref: SwipeableMethods) => void;
    onSwipeClose?: () => void;
-   closeActiveSwipeable?: () => boolean; // <--- NEW PROP
+   closeActiveSwipeable?: () => boolean;
 };
 
 export function UndoRow({
@@ -76,6 +74,7 @@ export function UndoRow({
             <Pressable
                accessibilityRole="button"
                accessibilityLabel="Undo delete"
+               testID="entry-undo-btn" // <--- ADDED TEST ID
                onPress={onUndo}
             >
                <Text
@@ -111,10 +110,10 @@ export default function EntryRow({
    style,
    onSwipeOpen,
    onSwipeClose,
-   closeActiveSwipeable, // <--- Destructure
+   closeActiveSwipeable,
 }: EntryRowProps) {
    const swipeableRef = useRef<SwipeableMethods | null>(null);
-   const { colors, isDark } = useThemeColor();
+   const { isDark } = useThemeColor();
 
    const iosShadowSm = useMemo(
       () => getIosShadowStyle({ isDark, preset: 'sm' }),
@@ -138,13 +137,13 @@ export default function EntryRow({
          className="pt-4 pb-10"
          style={[
             style,
-            { zIndex: isMenuOpen ? 50 : 1 },
+            { zIndex: isMenuOpen ? 100 : 1, elevation: isMenuOpen ? 100 : 0 },
          ]}
       >
          <Swipeable
             ref={swipeableRef}
             overshootRight={false}
-            friction={2}
+            friction={1}
             enableTrackpadTwoFingerGesture
             onSwipeableWillOpen={() => {
                onCloseMenu();
@@ -152,21 +151,21 @@ export default function EntryRow({
                   onSwipeOpen(swipeableRef.current);
                }
             }}
+            rightThreshold={25}
             onSwipeableClose={() => {
                if (onSwipeClose) onSwipeClose();
             }}
             renderRightActions={() => (
-               <View 
-                  className="flex-row items-center h-full ml-3 mr-5 gap-2"
-                  // FIX: Control Slide Distance
-                  style={{ width: ACTION_PANEL_WIDTH }}
+               <View
+                  className="flex-row items-center justify-center h-full gap-1 mr-7"
                >
                   {/* Edit Action */}
-                  <View className="items-center ml-3 gap-1.5">
+                  <View className="items-center gap-1.5">
                      <Pressable
                         className="w-14 h-14 rounded-full items-center justify-center bg-amber-500 shadow-sm active:opacity-90"
                         style={iosShadowSm}
                         onPress={handleEdit}
+                        testID="entry-swipe-edit-btn" // <--- ADDED TEST ID
                      >
                         <Ionicons
                            name="pencil-outline"
@@ -185,6 +184,7 @@ export default function EntryRow({
                         className="w-14 h-14 rounded-full items-center justify-center bg-rose-600 shadow-sm active:opacity-90"
                         style={iosShadowSm}
                         onPress={handleDelete}
+                        testID="entry-swipe-delete-btn" // <--- ADDED TEST ID
                      >
                         <Ionicons
                            name="trash-outline"
@@ -210,7 +210,6 @@ export default function EntryRow({
                   onCloseMenu={onCloseMenu}
                   onMenuLayout={onMenuLayout}
                   onDelete={onDelete}
-                  // FIX: Pass closer down
                   closeActiveSwipeable={closeActiveSwipeable}
                />
             </View>

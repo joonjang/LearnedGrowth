@@ -22,6 +22,12 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-18
+- Integrated front end tests
+  - End-to-End (E2E): Implemented Maestro workflows to validate critical user journeys (Entry Creation Swipe-to-Delete interactions) with robust testID selectors and dynamic UI handling.
+  - Unit & Integration: Configured Jest environment with custom transformIgnorePatterns and manual mocks (Reanimated, Navigation) to support NativeWind and Expo dependencies.
+
+
 ### 2025-12-17
 - Restyled AiInsightCard
 - Displays if ai analysis is stale
@@ -30,7 +36,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Display outdated analysis sign if entry changed
 - Button abstracted and flow improved for EntryCard vs [id]/index
 - Cooldown added
-- If AI insight is fetched and then closed, it should still appear on the [id]/index once the aiResponse is received and should be cached
+- AI insight is fetched and then closed, it still appears on the [id]/index once the aiResponse is received and is cached
 
 ### 2025-12-16
 - Credit pack established
@@ -229,9 +235,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - Cover optimistic updates, rollback on failure, concurrency guards, error handling
   - Cover `hydrate`, `refresh`, `create`, `update`, `remove`, `clearErrors`
 - Testing layout:
-  - `useEntriesStore.test.ts` — unit tests (mocked service)
-  - `entriesService.test.ts` — service logic
-  - `entriesAdapter.test.ts` — adapter/DB contract integration
+  - `__test__/store/useEntriesStore.test.ts` — unit tests (mocked service)
+  - `__test__/services/entriesService.test.ts` — service logic
+  - `__test__/db/entriesAdapter.test.ts` — adapter/DB contract integration
 
 ### 2025-09-28
 - Add base UI screens under `(tabs)`: entries, feeds, settings, dev
@@ -276,6 +282,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Fine tune dark mode
   - prompt text white
   - loading ellipse white
+
+- Change setting toggle colors
 
 - Add test to for API
 - Have a distinction for production tables and edge functions and development versions

@@ -292,6 +292,7 @@ export default function EntryDetailScreen() {
                onPress={() => router.replace(ROUTE_ENTRIES)}
                hitSlop={8}
                className="absolute left-0 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
+               testID="detail-back-btn" // <--- ADDED TEST ID
             >
                <Ionicons name="chevron-back" size={18} color={iconColor} />
             </Pressable>
@@ -339,6 +340,7 @@ export default function EntryDetailScreen() {
                      onPress={handleCancel}
                      hitSlop={8}
                      className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
+                     testID="detail-cancel-btn" // <--- ADDED TEST ID
                   >
                      <Text className="text-sm text-slate-900 dark:text-slate-100">
                         Cancel
@@ -349,6 +351,7 @@ export default function EntryDetailScreen() {
                   onPress={isEditing ? handleSave : startEditing}
                   hitSlop={8}
                   className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
+                  testID="detail-action-btn" // <--- ADDED TEST ID
                >
                   <Text className="text-sm text-slate-900 dark:text-slate-100">
                      {isEditing ? 'Save' : 'Edit'}

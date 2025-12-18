@@ -1,13 +1,13 @@
 import { SQLEntriesAdapter } from '@/db/entriesAdapter.sqlite';
-import { makeMemory } from '@/test-utils/adapterFactory';
-import { baseEntry } from '@/test-utils/builders';
-import { TestClock } from '@/test-utils/testClock';
+import { makeMemory } from '@/__test__/test-utils/adapterFactory';
+import { baseEntry } from '@/__test__/test-utils/builders';
+import { TestClock } from '@/__test__/test-utils/testClock';
 import {
    createEntry,
    listEntries,
    removeEntry,
    updateEntry,
-} from './entriesService';
+} from '@/services/entriesService';
 import * as Crypto from 'expo-crypto';
 
 const uuid = Crypto as any;

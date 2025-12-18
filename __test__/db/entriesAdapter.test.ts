@@ -1,8 +1,8 @@
 import { SQLEntriesAdapter } from '@/db/entriesAdapter.sqlite';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
-import { makeMemory, makeSqlite } from '@/test-utils/adapterFactory';
-import { TestClock } from '@/test-utils/testClock';
+import { makeMemory, makeSqlite } from '@/__test__/test-utils/adapterFactory';
+import { TestClock } from '@/__test__/test-utils/testClock';
 
 const baseAiResponse: LearnedGrowthResponse = {
    safety: { isCrisis: false, crisisMessage: null },

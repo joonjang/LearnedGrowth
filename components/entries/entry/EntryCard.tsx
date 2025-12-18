@@ -1,4 +1,3 @@
-
 import CardNextButton from '@/components/buttons/CardNextButton';
 import { getIosShadowStyle } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
@@ -36,7 +35,7 @@ type Prop = {
    onCloseMenu: () => void;
    onDelete: (entry: Entry) => void;
    onMenuLayout?: (bounds: MenuBounds) => void;
-   closeActiveSwipeable?: () => boolean; // <--- NEW PROP
+   closeActiveSwipeable?: () => boolean;
 };
 
 // --- Truncation Constants ---
@@ -109,7 +108,7 @@ export default function EntryCard({
    onCloseMenu,
    onDelete,
    onMenuLayout,
-   closeActiveSwipeable, // <--- Destructure
+   closeActiveSwipeable,
 }: Prop) {
    const menuRef = useRef<View | null>(null);
    const { colorScheme } = useColorScheme();
@@ -186,7 +185,7 @@ export default function EntryCard({
          menuTranslateX.value = withTiming(20, { duration: 150 });
          menuTranslateY.value = withTiming(-20, { duration: 150 });
       }
-   }, [isMenuOpen]);
+   }, [isMenuOpen, menuOpacity, menuScale, menuTranslateX, menuTranslateY]);
 
    const measureMenu = useCallback(() => {
       if (!menuRef.current || !onMenuLayout) return;
@@ -232,6 +231,7 @@ export default function EntryCard({
          <View className="absolute top-3 right-3 z-30">
             <Pressable
                hitSlop={12}
+               testID="entry-menu-btn" // <--- ADDED TEST ID
                className="w-8 h-8 rounded-full items-center justify-center active:bg-slate-100 dark:active:bg-slate-800"
                onPress={onToggleMenu}
             >
@@ -248,6 +248,7 @@ export default function EntryCard({
                <Pressable
                   className="flex-row items-center gap-3 py-3 px-4 active:bg-slate-50 dark:active:bg-slate-700/50"
                   onPress={() => { onCloseMenu(); router.push({ pathname: '/(tabs)/entries/[id]', params: { id: entry.id } }); }}
+                  testID="entry-edit-menu-btn" // <--- ADDED TEST ID
                >
                   <Ionicons name="pencil-outline" size={18} color={isDark ? '#f8fafc' : '#334155'} />
                   <Text className="text-[15px] font-medium text-slate-700 dark:text-slate-200">Edit Entry</Text>
@@ -256,6 +257,7 @@ export default function EntryCard({
                <Pressable
                   className="flex-row items-center gap-3 py-3 px-4 active:bg-rose-50 dark:active:bg-rose-900/20"
                   onPress={() => { onCloseMenu(); onDelete(entry); }}
+                  testID="entry-delete-btn" // <--- ADDED TEST ID
                >
                   <Ionicons name="trash-outline" size={18} color={colors.delete} />
                   <Text className="text-[15px] font-medium text-rose-600 dark:text-rose-400">Delete</Text>

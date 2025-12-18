@@ -61,6 +61,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
       >
          <TextInput
             ref={ref}
+            testID="entry-input"
             placeholder={placeholder}
             value={value}
             onChangeText={onChangeText}

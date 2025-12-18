@@ -3,16 +3,16 @@
 import { EntriesService } from '@/models/entriesService';
 import { Entry } from '@/models/entry';
 import { EntriesState } from '@/models/entryState';
-import { customEntry } from '@/test-utils/builders';
+import { customEntry } from '@/__test__/test-utils/builders';
 import {
    makeEntriesServiceMock,
    storeGetEntryId,
    storeHasError,
    storeHasPending,
-} from '@/test-utils/makeEntriesServiceMock';
-import { TestClock } from '@/test-utils/testClock';
+} from '@/__test__/test-utils/makeEntriesServiceMock';
+import { TestClock } from '@/__test__/test-utils/testClock';
 import { StoreApi, UseBoundStore } from 'zustand';
-import { createEntriesStore } from './useEntriesStore';
+import { createEntriesStore } from '@/store/useEntriesStore';
 
 describe('useEntries store tests', () => {
    let clock: TestClock;

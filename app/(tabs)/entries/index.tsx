@@ -224,6 +224,7 @@ export default function EntriesScreen() {
                      className="h-14 w-14 items-center justify-center rounded-full bg-amber-500 shadow-sm active:opacity-90"
                      style={iosShadowSm}
                      accessibilityLabel="Create new entry"
+                     testID='new-entry-button'
                   >
                      <Text className="text-center text-[28px] font-bold leading-[30px] text-white">
                         +

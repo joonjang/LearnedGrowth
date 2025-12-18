@@ -1,0 +1,57 @@
+appId: com.joonjang.LearnedGrowth
+---
+- launchApp:
+    clearState: false
+
+# --- PART 1: STARTUP (The only Long Wait) ---
+# We give the app 15 seconds to warm up, just in case.
+- extendedWaitUntil:
+    visible: 
+        id: "new-entry-button"
+    timeout: 15000
+
+- tapOn: 
+    id: "new-entry-button"
+
+# --- PART 2: CREATE (Fast) ---
+# Maestro automatically waits for 'entry-input' to appear. No extra code needed.
+- tapOn:
+    id: "entry-input"
+- inputText: "Maestro Swipe Test"
+- tapOn: "Next"
+
+- tapOn:
+    id: "entry-input"
+- inputText: "Belief"
+- tapOn: "Next"
+
+- tapOn:
+    id: "entry-input"
+- inputText: "Consequence"
+
+- hideKeyboard
+- tapOn: "Submit"
+
+# --- PART 3: CONFIRM & RETURN ---
+# assertVisible is instantaneous if the element is there.
+- assertVisible: "Maestro Swipe Test"
+- tapOn:
+    id: "detail-back-btn"
+
+# --- PART 4: SWIPE TO DELETE ---
+# REMOVED: The 'extendedWaitUntil' block.
+# REASON: The 'swipe' command below automatically waits for the text to appear.
+# This cuts out the redundant check and makes the test run smoother.
+
+- swipe:
+    direction: LEFT
+    from:
+        text: "Maestro Swipe Test"
+    duration: 400
+
+- tapOn: 
+    id: "entry-swipe-delete-btn"
+
+# --- PART 5: VERIFY ---
+# Verify the text is gone
+- assertNotVisible: "Maestro Swipe Test"

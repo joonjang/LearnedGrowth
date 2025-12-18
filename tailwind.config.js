@@ -10,7 +10,7 @@ module.exports = {
     "./store/**/*.{js,jsx,ts,tsx}",
     "./services/**/*.{js,jsx,ts,tsx}",
     "./models/**/*.{js,jsx,ts,tsx}",
-    "./test-utils/**/*.{js,jsx,ts,tsx}",
+    "./__test__/test-utils/**/*.{js,jsx,ts,tsx}",
   ],
   presets: [require("nativewind/preset")],
   darkMode: "class",
