@@ -458,6 +458,7 @@ export default function EntryDetailScreen() {
                      onRefresh={entry.dispute ? undefined : handleOpenDisputeAndUpdate}
                      retryCount={entry.aiRetryCount ?? 0}
                      maxRetries={MAX_AI_RETRIES}
+                     updatedAt={entry.updatedAt}
                   />
                </>
             ) : null}
