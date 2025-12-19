@@ -12,7 +12,6 @@ import {
 import {
    ScrollView,
    StyleProp,
-   StyleSheet,
    Text,
    TextStyle,
    View,
@@ -205,15 +204,21 @@ function PromptDisplay(
    );
 
    const mergedStyle = useMemo(
-      () => [styles.promptText, textStyle],
+      () => [{ flexWrap: 'wrap' as const }, textStyle],
       [textStyle]
    );
+   const containerClasses =
+      'justify-center min-h-0 px-4 self-stretch w-full pb-4';
+   const scrollContentStyle = useMemo(
+      () => ({ flexGrow: 0, paddingVertical: 12 }),
+      []
+   );
+   const loaderClasses = 'items-center min-h-[1px]';
+   const textClasses = `font-bold shrink ${textClassName ?? ''}`.trim();
 
    const loader = (
       <View
-         style={[
-            styles.loaderBase,
-         ]}
+         className={loaderClasses}
       >
          <ThreeDotsLoader />
       </View>
@@ -221,7 +226,7 @@ function PromptDisplay(
 
    const content = visited ? (
       <Text
-         className={textClassName}
+         className={textClasses}
          style={mergedStyle}
          numberOfLines={numberOfLines}
          adjustsFontSizeToFit
@@ -235,7 +240,7 @@ function PromptDisplay(
          ref={typewriterRef}
          key={text}
          text={text}
-         className={textClassName}
+         className={textClasses}
          style={mergedStyle}
          numberOfLines={numberOfLines}
          onFinished={onVisited}
@@ -246,7 +251,10 @@ function PromptDisplay(
 
    if (!scrollEnabled) {
       return (
-         <View className={containerClassName} style={[styles.container, containerStyle]}>
+         <View
+            className={`${containerClasses} ${containerClassName ?? ''}`}
+            style={containerStyle}
+         >
             {content}
          </View>
       );
@@ -254,16 +262,15 @@ function PromptDisplay(
 
    return (
       <View
-         className={containerClassName}
+         className={`${containerClasses} ${containerClassName ?? ''}`}
          style={[
-            styles.container,
             containerStyle,
             maxHeight ? { maxHeight, overflow: 'hidden' } : null,
          ]}
       >
          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
+            className="grow-0"
+            contentContainerStyle={scrollContentStyle}
             scrollEnabled
             showsVerticalScrollIndicator={false}
             bounces={false}
@@ -275,30 +282,3 @@ function PromptDisplay(
 }
 
 export default forwardRef(PromptDisplay);
-
-const styles = StyleSheet.create({
-   container: {
-      justifyContent: 'center',
-      minHeight: 0,
-      paddingHorizontal: 16,
-      alignSelf: 'stretch',
-      width: '100%',
-      paddingBottom: 16
-   },
-   promptText: {
-      fontWeight: '600',
-      flexShrink: 1,
-      flexWrap: 'wrap',
-   },
-   scroll: {
-      flexGrow: 0,
-   },
-   scrollContent: {
-      flexGrow: 0,
-      paddingVertical: 12,
-   },
-   loaderBase: {
-      alignItems: 'center',
-      minHeight: 1,
-   }
-});

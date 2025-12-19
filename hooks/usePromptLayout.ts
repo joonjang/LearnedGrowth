@@ -27,7 +27,6 @@ export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
          ? fontSizes.minFont
          : fontSizes.baseFont;
       return {
-         fontWeight: '600',
          fontSize,
          // lineHeight: Math.round(fontSize * 1.18),
          flexShrink: 1,
