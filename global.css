@@ -2,30 +2,3 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    /* Brand: Belief */
-    --accent-belief-bg: #fef2f2;      /* red-50 */
-    --accent-belief-border: #fecaca;  /* red-200 */
-    --accent-belief-text: #991b1b;    /* red-800 */
-
-    /* Brand: Dispute */
-    --accent-dispute-bg: #ecfdf3;     /* emerald-50 */
-    --accent-dispute-border: #a7f3d0; /* emerald-200 */
-    --accent-dispute-text: #065f46;   /* emerald-800 */
-    --dispute-cta: #10b981;           /* emerald-500 */
-  }
-
-  .dark {
-    /* Brand: Belief (Glassy) */
-    --accent-belief-bg: rgba(244, 63, 94, 0.15);
-    --accent-belief-border: rgba(244, 63, 94, 0.30);
-    --accent-belief-text: #fecdd3;    /* rose-200 */
-
-    /* Brand: Dispute (Glassy) */
-    --accent-dispute-bg: rgba(16, 185, 129, 0.15);
-    --accent-dispute-border: rgba(16, 185, 129, 0.30);
-    --accent-dispute-text: #d1fae5;   /* emerald-100 */
-    --dispute-cta: #6ee7b7;           /* emerald-300 */
-  }
-}

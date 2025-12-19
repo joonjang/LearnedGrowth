@@ -16,18 +16,24 @@ module.exports = {
   darkMode: "class",
   theme: {
     extend: {
-      colors: {
+       colors: {
         belief: {
-          bg: "var(--accent-belief-bg)",
-          border: "var(--accent-belief-border)",
-          text: "var(--accent-belief-text)",
+          bg: "#fef2f2",
+          border: "#fecaca",
+          text: "#991b1b",
+          bgDark: "rgba(244, 63, 94, 0.15)",
+          borderDark: "rgba(244, 63, 94, 0.30)",
+          textDark: "#fecdd3",
         },
-        
         dispute: {
-          bg: "var(--accent-dispute-bg)",
-          border: "var(--accent-dispute-border)",
-          text: "var(--accent-dispute-text)",
-          cta: "var(--dispute-cta)",
+          bg: "#ecfdf3",
+          border: "#a7f3d0",
+          text: "#065f46",
+          cta: "#10b981",
+          bgDark: "rgba(16, 185, 129, 0.15)",
+          borderDark: "rgba(16, 185, 129, 0.30)",
+          textDark: "#d1fae5",
+          ctaDark: "#6ee7b7",
         },
       },
     },

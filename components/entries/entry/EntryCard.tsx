@@ -69,15 +69,15 @@ const SectionBlock = memo(({
    onLayout: (e: TextLayoutEvent) => void
 }) => {
    const boxClass = type === 'belief' 
-      ? 'bg-belief-bg border-belief-border border'
+      ? 'bg-belief-bg dark:bg-belief-bgDark border border-belief-border dark:border-belief-borderDark'
       : type === 'dispute'
-         ? 'bg-dispute-bg border-dispute-border border'
+         ? 'bg-dispute-bg dark:bg-dispute-bgDark border border-dispute-border dark:border-dispute-borderDark'
          : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700';
    
    const textClass = type === 'belief'
-      ? 'text-[15px] font-semibold text-belief-text'
+      ? 'text-[15px] font-semibold text-belief-text dark:text-belief-textDark'
       : type === 'dispute'
-         ? 'text-[15px] font-semibold text-dispute-text'
+         ? 'text-[15px] font-semibold text-dispute-text dark:text-dispute-textDark'
          : 'text-[15px] text-slate-900 dark:text-slate-100 leading-[22px]';
 
    return (

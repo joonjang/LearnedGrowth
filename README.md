@@ -29,6 +29,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Fixed pressing next doesnt clear the text input sometimes
 - Added placeholder text for input
 - Made in-house type writing effect to substitute react-native-type-animation
+- Fixed belief/dispute dark mode css call
 
 ### 2025-12-17
 - Restyled AiInsightCard
@@ -284,7 +285,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - Fine tune dark mode
   - loading ellipse white
-  - belief and dispute dark mode
 
 - Change setting toggle colors
 
@@ -296,6 +296,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - BACKLOG -
 - add a report problem button to send a snapshot of the issue
 - enable user to get extra analysis if someone signs up using their referal code
+- Change positioning of delete account
 
 ## Steps
 
