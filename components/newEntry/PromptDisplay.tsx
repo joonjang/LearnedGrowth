@@ -214,7 +214,7 @@ function PromptDisplay(
       []
    );
    const loaderClasses = 'items-center min-h-[1px]';
-   const textClasses = `font-bold shrink ${textClassName ?? ''}`.trim();
+   const textClasses = `font-bold text-slate-900 dark:text-slate-200 shrink ${textClassName ?? ''}`.trim();
 
    const loader = (
       <View

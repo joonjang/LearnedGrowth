@@ -274,10 +274,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Display disclaimer that this is a tool
 - Display empty entry helper information 
 
-- Stop the prompt display from animating when next button is pressed
-
-- After dispute, display the detail screen
-
 - Seeing setting screen should update revenue cat credits 
 
 - Encrypt entries when in cloud
@@ -287,8 +283,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Revenuecat failed purchase screens
 
 - Fine tune dark mode
-  - prompt text white
   - loading ellipse white
+  - belief and dispute dark mode
 
 - Change setting toggle colors
 
@@ -296,6 +292,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Have a distinction for production tables and edge functions and development versions
 
 - Implement a home page summary screen showing weekly optimism/mix/pessimism meter
+
+- BACKLOG -
+- add a report problem button to send a snapshot of the issue
+- enable user to get extra analysis if someone signs up using their referal code
 
 ## Steps
 
