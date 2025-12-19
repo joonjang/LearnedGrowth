@@ -1,13 +1,13 @@
 import { BTN_HEIGHT } from '@/components/constants';
 import { getIosShadowStyle } from '@/lib/shadow';
-import { Ionicons } from '@expo/vector-icons';
+import { LucideIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 type Props = {
    label: string;
-   icon?: keyof typeof Ionicons.glyphMap;
+   icon?: LucideIcon;
    onPress: () => void;
    variant?: 'primary' | 'neutral'; // specific color schemes
 };
@@ -15,6 +15,7 @@ type Props = {
 export default function WideButton({ label, icon, onPress, variant = 'primary' }: Props) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const Icon = icon;
 
    const iosShadowStyle = useMemo(
       () => getIosShadowStyle({ isDark, preset: 'md' }),
@@ -42,9 +43,9 @@ export default function WideButton({ label, icon, onPress, variant = 'primary' }
                {label}
             </Text>
 
-            {icon && (
+            {Icon && (
                <View className="absolute right-5">
-                  <Ionicons name={icon} size={18} color="white" style={{ opacity: 0.9 }} />
+                  <Icon size={18} color="white" style={{ opacity: 0.9 }} />
                </View>
             )}
          </Pressable>

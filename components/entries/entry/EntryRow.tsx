@@ -1,7 +1,7 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { getIosShadowStyle } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
-import { Ionicons } from '@expo/vector-icons';
+import { Pencil, Trash2 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
    Pressable,
@@ -167,11 +167,7 @@ export default function EntryRow({
                         onPress={handleEdit}
                         testID="entry-swipe-edit-btn" // <--- ADDED TEST ID
                      >
-                        <Ionicons
-                           name="pencil-outline"
-                           size={24}
-                           color="#ffffff"
-                        />
+                        <Pencil size={24} color="#ffffff" />
                      </Pressable>
                      <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">
                         Edit
@@ -186,11 +182,7 @@ export default function EntryRow({
                         onPress={handleDelete}
                         testID="entry-swipe-delete-btn" // <--- ADDED TEST ID
                      >
-                        <Ionicons
-                           name="trash-outline"
-                           size={24}
-                           color="#ffffff"
-                        />
+                        <Trash2 size={24} color="#ffffff" />
                      </Pressable>
                      <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">
                         Delete

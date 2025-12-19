@@ -1,8 +1,8 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
 import { getIosShadowStyle } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -235,7 +235,7 @@ export default function EntryCard({
                className="w-8 h-8 rounded-full items-center justify-center active:bg-slate-100 dark:active:bg-slate-800"
                onPress={onToggleMenu}
             >
-               <Ionicons name="ellipsis-horizontal" size={20} color={colors.hint} />
+               <MoreHorizontal size={20} color={colors.hint} />
             </Pressable>
 
             <Animated.View
@@ -250,7 +250,7 @@ export default function EntryCard({
                   onPress={() => { onCloseMenu(); router.push({ pathname: '/(tabs)/entries/[id]', params: { id: entry.id } }); }}
                   testID="entry-edit-menu-btn" // <--- ADDED TEST ID
                >
-                  <Ionicons name="pencil-outline" size={18} color={isDark ? '#f8fafc' : '#334155'} />
+                  <Pencil size={18} color={isDark ? '#f8fafc' : '#334155'} />
                   <Text className="text-[15px] font-medium text-slate-700 dark:text-slate-200">Edit Entry</Text>
                </Pressable>
                <View className="h-[1px] bg-slate-100 dark:bg-slate-700 mx-2" />
@@ -259,7 +259,7 @@ export default function EntryCard({
                   onPress={() => { onCloseMenu(); onDelete(entry); }}
                   testID="entry-delete-btn" // <--- ADDED TEST ID
                >
-                  <Ionicons name="trash-outline" size={18} color={colors.delete} />
+                  <Trash2 size={18} color={colors.delete} />
                   <Text className="text-[15px] font-medium text-rose-600 dark:text-rose-400">Delete</Text>
                </Pressable>
             </Animated.View>

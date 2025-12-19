@@ -5,7 +5,6 @@ import {
    BOTTOM_SHEET_RADIUS,
    ROUTE_ENTRIES,
 } from '@/components/constants';
-import { Ionicons } from '@expo/vector-icons';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -14,6 +13,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Chrome } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -211,11 +211,7 @@ export default function AuthModal() {
                      <ActivityIndicator color={theme.text} />
                   ) : (
                      <>
-                        <Ionicons
-                           name="logo-google"
-                           size={20}
-                           color={theme.text}
-                        />
+                        <Chrome size={20} color={theme.text} />
                         <Text
                            className="ml-2 font-semibold"
                            style={{ color: theme.text }}

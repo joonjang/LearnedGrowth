@@ -1,11 +1,17 @@
-import { getIosShadowStyle } from '@/lib/shadow';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEntriesStore } from '@/providers/EntriesStoreProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
-import { useColorScheme } from 'nativewind';
+import { ArrowRight, FileText, Sparkles, type LucideIcon } from 'lucide-react-native';
 import { useMemo } from 'react';
 import WideButton from './WideButton';
+
+type ButtonConfig = {
+   label: string;
+   icon: LucideIcon;
+   bgColor: string;
+   textColor: string;
+};
 
 type Prop = {
    id: string;
@@ -16,24 +22,16 @@ export default function CardNextButton({ id }: Prop) {
    const { isGrowthPlusActive } = useRevenueCat();
    const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
 
-   const { colorScheme } = useColorScheme();
-   const isDark = colorScheme === 'dark';
-
    const entriesStore = useEntriesStore();
    const hasCachedAnalysis = entriesStore((state) =>
       Boolean(state.byId[id]?.aiResponse)
    );
 
-   const iosShadowStyle = useMemo(
-      () => getIosShadowStyle({ isDark, preset: 'md' }),
-      [isDark]
-   );
-
-   const config = useMemo(() => {
+   const config = useMemo<ButtonConfig>(() => {
       if (hasCachedAnalysis) {
          return {
             label: 'View Analysis',
-            icon: 'document-text',
+            icon: FileText,
             bgColor: 'bg-blue-500 dark:bg-blue-800',
             textColor: 'text-white',
          };
@@ -41,14 +39,14 @@ export default function CardNextButton({ id }: Prop) {
       if (isSubscribed) {
          return {
             label: 'Analyze with AI',
-            icon: 'sparkles',
+            icon: Sparkles,
             bgColor: 'bg-dispute-cta dark:bg-green-800',
             textColor: 'text-white',
          };
       }
       return {
          label: 'Continue',
-         icon: 'arrow-forward',
+         icon: ArrowRight,
          bgColor: 'bg-dispute-cta dark:bg-green-800',
          textColor: 'text-white',
       };
@@ -73,7 +71,7 @@ export default function CardNextButton({ id }: Prop) {
    return (
       <WideButton
          label={config.label}
-         icon={config.icon as any}
+         icon={config.icon}
          onPress={handlePress}
          variant={hasCachedAnalysis ? 'neutral' : 'primary'}
       />

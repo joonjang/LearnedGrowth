@@ -7,8 +7,8 @@ import { formatDateTimeWithWeekday } from '@/lib/date';
 import { getIosShadowStyle } from '@/lib/shadow';
 import type { Entry } from '@/models/entry';
 import { usePreferences } from '@/providers/PreferencesProvider';
-import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { ArrowRight, ChevronLeft } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -244,7 +244,7 @@ export default function EntryDetailScreen() {
                className="absolute left-0 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
                testID="detail-back-btn" // <--- ADDED TEST ID
             >
-               <Ionicons name="chevron-back" size={18} color={iconColor} />
+               <ChevronLeft size={18} color={iconColor} />
             </Pressable>
 
             {/* Title Column - Contains both Time/Editing and Absolute Status Text */}
@@ -420,7 +420,7 @@ export default function EntryDetailScreen() {
                   {aiDisplayData ? (
                      <WideButton
                         label="Continue"
-                        icon="arrow-forward"
+                        icon={ArrowRight}
                         onPress={handleContinueToDispute}
                      />
                   ) : (

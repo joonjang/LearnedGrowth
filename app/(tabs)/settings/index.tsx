@@ -6,11 +6,11 @@ import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
-import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
+import { ChevronDown, ChevronRight } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import {
    useCallback,
@@ -526,15 +526,14 @@ export default function SettingsScreen() {
                                  </Text>
 
                                  <View className="absolute right-4">
-                                    <Ionicons
-                                       name={
-                                          isShopOpen
-                                             ? 'chevron-down'
-                                             : 'chevron-forward'
-                                       }
-                                       size={20}
-                                       color="#94a3b8"
-                                    />
+                                    {isShopOpen ? (
+                                       <ChevronDown size={20} color="#94a3b8" />
+                                    ) : (
+                                       <ChevronRight
+                                          size={20}
+                                          color="#94a3b8"
+                                       />
+                                    )}
                                  </View>
                               </Pressable>
 
@@ -699,20 +698,18 @@ export default function SettingsScreen() {
 	                  className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 shadow-sm"
 	                  style={iosShadowSm}
 	               >
-	                  <Pressable
-	                     className="flex-row justify-between items-center active:opacity-60"
-	                     onPress={() => setActionsCollapsed((c) => !c)}
-	                  >
+                     <Pressable
+                        className="flex-row justify-between items-center active:opacity-60"
+                        onPress={() => setActionsCollapsed((c) => !c)}
+                     >
                      <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
                         Account actions
                      </Text>
-                     <Ionicons
-                        name={
-                           actionsCollapsed ? 'chevron-forward' : 'chevron-down'
-                        }
-                        size={18}
-                        color={iconColor}
-                     />
+                     {actionsCollapsed ? (
+                        <ChevronRight size={18} color={iconColor} />
+                     ) : (
+                        <ChevronDown size={18} color={iconColor} />
+                     )}
                   </Pressable>
 
 	                  {!actionsCollapsed && (

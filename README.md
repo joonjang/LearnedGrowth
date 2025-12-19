@@ -22,6 +22,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-19
+- Migrated icon style to lucide
+
 ### 2025-12-18
 - Integrated front end tests
   - End-to-End (E2E): Implemented Maestro workflows to validate critical user journeys (Entry Creation Swipe-to-Delete interactions) with robust testID selectors and dynamic UI handling.

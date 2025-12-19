@@ -1,7 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import React from 'react';
 import { Pressable } from 'react-native';
+import { X } from 'lucide-react-native';
 
 type Props = {
    onPress: () => void;
@@ -18,7 +18,7 @@ export default function RoundedCloseButton({ onPress: handleClose}: Props) {
          hitSlop={12}
          className="p-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
       >
-         <Ionicons name="close" size={22} color={iconColor} />
+         <X size={22} color={iconColor} />
       </Pressable>
    );
 }

@@ -1,6 +1,6 @@
 import { ThemedTabs } from '@/components/Navigation';
-import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { BarChart3, BookOpen, Settings } from 'lucide-react-native';
 
 export default function TabsLayout() {
    return (
@@ -10,7 +10,7 @@ export default function TabsLayout() {
             options={{ 
                title: 'Summary',
                tabBarIcon: ({ color, size }) => (
-                  <Ionicons name="stats-chart" size={size} color={color} />
+                  <BarChart3 color={color} size={size} />
                ),
             }} 
          />
@@ -19,7 +19,7 @@ export default function TabsLayout() {
             options={{ 
                title: 'Entries',
                tabBarIcon: ({ color, size }) => (
-                  <Ionicons name="reader" size={size} color={color} />
+                  <BookOpen color={color} size={size} />
                ),
             }} 
          />
@@ -28,7 +28,7 @@ export default function TabsLayout() {
             options={{ 
                title: 'Settings',
                tabBarIcon: ({ color, size }) => (
-                  <Ionicons name="id-card" size={size} color={color} />
+                  <Settings color={color} size={size} />
                ),
             }} 
          />

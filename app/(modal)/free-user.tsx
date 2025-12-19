@@ -8,7 +8,6 @@ import {
 } from '@/components/constants';
 import CreditShop from '@/components/CreditShop';
 import { useAuth } from '@/providers/AuthProvider';
-import { Ionicons } from '@expo/vector-icons';
 import {
    BottomSheetBackdrop,
    BottomSheetBackdropProps,
@@ -16,6 +15,13 @@ import {
    BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import {
+   AlertCircle,
+   ArrowRight,
+   PlusCircle,
+   Sparkles,
+   Ticket,
+} from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LayoutAnimation, Pressable, Text, View } from 'react-native';
@@ -201,15 +207,11 @@ export default function FreeUserChoiceScreen() {
                         </Text>
 
                         <View className="flex-row items-center mt-2 gap-1">
-                           <Ionicons
-                              name={
-                                 availableCredits === 0
-                                    ? 'alert-circle'
-                                    : 'ticket'
-                              }
-                              size={14}
-                              color={theme.amberText}
-                           />
+                           {availableCredits === 0 ? (
+                              <AlertCircle size={14} color={theme.amberText} />
+                           ) : (
+                              <Ticket size={14} color={theme.amberText} />
+                           )}
                            <Text
                               className="text-xs font-bold"
                               style={{ color: theme.amberText }}
@@ -224,13 +226,11 @@ export default function FreeUserChoiceScreen() {
                      </View>
 
                      {/* Icon changes if 0 credits */}
-                     <Ionicons
-                        name={
-                           availableCredits === 0 ? 'add-circle' : 'sparkles'
-                        }
-                        size={24}
-                        color={theme.amberText}
-                     />
+                     {availableCredits === 0 ? (
+                        <PlusCircle size={24} color={theme.amberText} />
+                     ) : (
+                        <Sparkles size={24} color={theme.amberText} />
+                     )}
                   </Pressable>
 
                   {/* Manual Option (Always available) */}
@@ -252,11 +252,7 @@ export default function FreeUserChoiceScreen() {
                            Work through the guided prompts without AI.
                         </Text>
                      </View>
-                     <Ionicons
-                        name="arrow-forward"
-                        size={20}
-                        color={theme.text}
-                     />
+                     <ArrowRight size={20} color={theme.text} />
                   </Pressable>
                </View>
             )}

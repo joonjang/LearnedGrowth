@@ -1,3 +1,4 @@
+import QuickStart from '@/components/appInfo/QuickStart';
 import { type MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow, { UndoRow } from '@/components/entries/entry/EntryRow';
 import { useEntries } from '@/hooks/useEntries';
@@ -14,10 +15,7 @@ import {
    View
 } from 'react-native';
 import { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
-import {
-   SafeAreaView,
-   useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type RowItem = { kind: 'entry'; entry: Entry } | { kind: 'undo'; entry: Entry };
 
@@ -153,8 +151,7 @@ export default function EntriesScreen() {
             }}
             stickySectionHeadersEnabled
             showsVerticalScrollIndicator={false}
-
-            // FIX: This triggers when you start scrolling/dragging the list
+            ListEmptyComponent={<QuickStart />}
             onScrollBeginDrag={() => {
                closeMenu();
                closeActiveSwipeable(); 
@@ -214,8 +211,7 @@ export default function EntriesScreen() {
             }}
          />
 
-         <SafeAreaView
-            edges={['bottom']}
+         <View
             className="absolute bottom-0 right-0 left-0 items-end px-6 pointer-events-box-none"
          >
             <View className="mb-4">
@@ -232,7 +228,7 @@ export default function EntriesScreen() {
                   </Pressable>
                </Link>
             </View>
-         </SafeAreaView>
+         </View>
       </View>
    );
 }

@@ -1,6 +1,6 @@
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
-import { Ionicons } from '@expo/vector-icons';
+import { ChevronDown, ChevronRight } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useState } from 'react';
 import {
@@ -58,11 +58,11 @@ export default function SendFeedback() {
             <Text className="text-xs uppercase text-slate-500 dark:text-slate-400 tracking-wider">
                Send feedback
             </Text>
-            <Ionicons
-               name={collapsed ? 'chevron-forward' : 'chevron-down'}
-               size={18}
-               color={iconColor}
-            />
+            {collapsed ? (
+               <ChevronRight size={18} color={iconColor} />
+            ) : (
+               <ChevronDown size={18} color={iconColor} />
+            )}
          </Pressable>
 
          {!collapsed && (

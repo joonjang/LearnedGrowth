@@ -1,6 +1,6 @@
 import { getIosShadowStyle } from '@/lib/shadow';
 import { LearnedGrowthResponse } from '@/models/aiService';
-import { Ionicons } from '@expo/vector-icons';
+import { Clock3, Hourglass, RefreshCw } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -138,14 +138,18 @@ export function AiInsightCard({
                }`}
             >
                <View className="flex-1 gap-1 mr-2">
-                  <View className="flex-row items-center gap-2">
-                     <Ionicons
-                        name={
-                           isCoolingDown ? 'hourglass-outline' : 'time-outline'
-                        }
-                        size={16}
-                        color={isDark ? '#94a3b8' : '#64748b'}
-                     />
+               <View className="flex-row items-center gap-2">
+                     {isCoolingDown ? (
+                        <Hourglass
+                           size={16}
+                           color={isDark ? '#94a3b8' : '#64748b'}
+                        />
+                     ) : (
+                        <Clock3
+                           size={16}
+                           color={isDark ? '#94a3b8' : '#64748b'}
+                        />
+                     )}
                      <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
                         {isCoolingDown
                            ? 'Analysis Paused'
@@ -173,8 +177,7 @@ export function AiInsightCard({
                      hitSlop={12}
                      className="p-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70 shadow-xs"
                   >
-                     <Ionicons
-                        name="refresh"
+                     <RefreshCw
                         size={18}
                         color={isDark ? '#f8fafc' : '#0f172a'}
                      />
