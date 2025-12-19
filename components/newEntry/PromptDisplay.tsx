@@ -1,5 +1,14 @@
 import { useDeferredReady } from '@/hooks/useDeferredReady';
-import { useMemo } from 'react';
+import {
+   forwardRef,
+   Ref,
+   useCallback,
+   useEffect,
+   useImperativeHandle,
+   useMemo,
+   useRef,
+   useState,
+} from 'react';
 import {
    ScrollView,
    StyleProp,
@@ -9,46 +18,196 @@ import {
    View,
    ViewStyle,
 } from 'react-native';
-import { TypeAnimation } from 'react-native-type-animation';
 import ThreeDotsLoader from '../ThreeDotLoader';
+
+const TYPING_SPEED = 35;
+const CHAR_PER_TICK = 1;
+
+type StopOptions = {
+   finish?: boolean;
+};
+
+type TypewriterHandle = {
+   stop: (options?: StopOptions) => void;
+   finish: () => void;
+};
+
+type TypewriterProps = {
+   text: string;
+   className?: string;
+   style?: StyleProp<TextStyle>;
+   numberOfLines?: number;
+   onFinished?: () => void;
+   allowFontScaling?: boolean;
+   adjustsFontSizeToFit?: boolean;
+   minimumFontScale?: number;
+   tickMs?: number;
+   charsPerTick?: number;
+};
+
+function Typewriter(
+   {
+      text,
+      className,
+      style,
+      numberOfLines,
+      onFinished,
+      allowFontScaling = true,
+      adjustsFontSizeToFit = true,
+      minimumFontScale = 0.85,
+      tickMs = TYPING_SPEED,
+      charsPerTick = CHAR_PER_TICK,
+   }: TypewriterProps,
+   ref: Ref<TypewriterHandle>
+) {
+   const [displayed, setDisplayed] = useState('');
+   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+   const progressRef = useRef(0);
+   const finishedRef = useRef(false);
+   const textRef = useRef(text);
+   const onFinishedRef = useRef(onFinished);
+
+   useEffect(() => {
+      textRef.current = text;
+   }, [text]);
+
+   useEffect(() => {
+      onFinishedRef.current = onFinished;
+   }, [onFinished]);
+
+   const clearTimer = useCallback(() => {
+      if (timerRef.current) {
+         clearInterval(timerRef.current);
+         timerRef.current = null;
+      }
+   }, []);
+
+   const runFinished = useCallback(() => {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
+      onFinishedRef.current?.();
+   }, []);
+
+   const stop = useCallback(
+      (finish = false) => {
+         clearTimer();
+         if (finish) {
+            progressRef.current = textRef.current.length;
+            setDisplayed(textRef.current);
+            runFinished();
+         }
+      },
+      [clearTimer, runFinished]
+   );
+
+   useImperativeHandle(
+      ref,
+      () => ({
+         stop: (options?: StopOptions) => stop(options?.finish ?? false),
+         finish: () => stop(true),
+      }),
+      [stop]
+   );
+
+   useEffect(() => {
+      clearTimer();
+      finishedRef.current = false;
+      progressRef.current = 0;
+
+      if (!textRef.current) {
+         setDisplayed('');
+         runFinished();
+         return;
+      }
+
+      setDisplayed('');
+
+      timerRef.current = setInterval(() => {
+         const nextIndex = Math.min(
+            progressRef.current + charsPerTick,
+            textRef.current.length
+         );
+
+         progressRef.current = nextIndex;
+         setDisplayed(textRef.current.slice(0, nextIndex));
+
+         if (nextIndex >= textRef.current.length) {
+            clearTimer();
+            runFinished();
+         }
+      }, tickMs);
+
+      return clearTimer;
+   }, [charsPerTick, clearTimer, runFinished, tickMs, text]);
+
+   return (
+      <Text
+         className={className}
+         style={style}
+         numberOfLines={numberOfLines}
+         allowFontScaling={allowFontScaling}
+         adjustsFontSizeToFit={adjustsFontSizeToFit}
+         minimumFontScale={minimumFontScale}
+      >
+         {displayed}
+      </Text>
+   );
+}
+
+const ForwardedTypewriter = forwardRef<TypewriterHandle, TypewriterProps>(
+   Typewriter
+);
+
+export type PromptDisplayHandle = {
+   stop: (options?: StopOptions) => void;
+   finish: () => void;
+};
 
 type Props = {
    text: string;
    visited: boolean;
    onVisited?: () => void;
    textStyle: TextStyle;
+   textClassName?: string;
+   containerClassName?: string;
    containerStyle?: StyleProp<ViewStyle>;
    numberOfLines?: number;
    maxHeight?: number;
    scrollEnabled?: boolean;
 };
 
-export default function PromptDisplay({
-   text,
-   visited,
-   onVisited,
-   textStyle,
-   containerStyle,
-   numberOfLines,
-   maxHeight,
-   scrollEnabled = false,
-}: Props) {
+function PromptDisplay(
+   {
+      text,
+      visited,
+      onVisited,
+      textStyle,
+      textClassName,
+      containerClassName,
+      containerStyle,
+      numberOfLines,
+      maxHeight,
+      scrollEnabled = false,
+   }: Props,
+   ref: Ref<PromptDisplayHandle>
+) {
    const readyToAnimate = useDeferredReady(1200);
+   const typewriterRef = useRef<TypewriterHandle | null>(null);
+
+   useImperativeHandle(
+      ref,
+      () => ({
+         stop: (options?: StopOptions) =>
+            typewriterRef.current?.stop(options),
+         finish: () => typewriterRef.current?.finish(),
+      }),
+      []
+   );
+
    const mergedStyle = useMemo(
       () => [styles.promptText, textStyle],
       [textStyle]
    );
-   const flatStyle = useMemo(
-      () => StyleSheet.flatten(mergedStyle) as TextStyle,
-      [mergedStyle]
-   );
-
-   const sequence = [
-      { text },
-      {
-         action: () => onVisited?.(),
-      },
-   ];
 
    const loader = (
       <View
@@ -62,6 +221,7 @@ export default function PromptDisplay({
 
    const content = visited ? (
       <Text
+         className={textClassName}
          style={mergedStyle}
          numberOfLines={numberOfLines}
          adjustsFontSizeToFit
@@ -71,24 +231,30 @@ export default function PromptDisplay({
          {text}
       </Text>
    ) : readyToAnimate ? (
-      <TypeAnimation
+      <ForwardedTypewriter
+         ref={typewriterRef}
          key={text}
-         sequence={sequence}
-         cursor={false}
-         typeSpeed={35}
-         style={flatStyle}
-         cursorStyle={flatStyle}
+         text={text}
+         className={textClassName}
+         style={mergedStyle}
+         numberOfLines={numberOfLines}
+         onFinished={onVisited}
       />
    ) : (
       loader
    );
 
    if (!scrollEnabled) {
-      return <View style={[styles.container, containerStyle]}>{content}</View>;
+      return (
+         <View className={containerClassName} style={[styles.container, containerStyle]}>
+            {content}
+         </View>
+      );
    }
 
    return (
       <View
+         className={containerClassName}
          style={[
             styles.container,
             containerStyle,
@@ -107,6 +273,8 @@ export default function PromptDisplay({
       </View>
    );
 }
+
+export default forwardRef(PromptDisplay);
 
 const styles = StyleSheet.create({
    container: {

@@ -12,7 +12,7 @@ import {
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import EntryContextView from '@/components/entries/dispute/EntryContextView';
 import InputBox from '@/components/newEntry/InputBox';
-import PromptDisplay from '@/components/newEntry/PromptDisplay';
+import PromptDisplay, { PromptDisplayHandle } from '@/components/newEntry/PromptDisplay';
 import StepperButton from '@/components/newEntry/StepperButton';
 import StepperHeader from '@/components/newEntry/StepperHeader';
 import { Entry } from '@/models/entry';
@@ -83,6 +83,8 @@ export default function DisputeSteps({
    promptContainerStyle,
    contentTopPadding,
 }: Props) {
+   const promptRef = React.useRef<PromptDisplayHandle | null>(null);
+
    const handleClose = useCallback(() => {
       if (!hasUnsavedChanges) {
          onExit();
@@ -101,6 +103,7 @@ export default function DisputeSteps({
 
    const handleStepChange = useCallback(
       (direction: 'next' | 'back') => {
+         promptRef.current?.stop({ finish: true });
          const delta = direction === 'next' ? 1 : -1;
          const nextIdx = Math.min(
             Math.max(idx + delta, 0),
@@ -153,6 +156,7 @@ export default function DisputeSteps({
             />
 
             <PromptDisplay
+               ref={promptRef}
                text={prompts[currKey]}
                visited={hasVisited(currKey)}
                onVisited={() => markVisited(currKey)}

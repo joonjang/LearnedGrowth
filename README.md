@@ -28,6 +28,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - Unit & Integration: Configured Jest environment with custom transformIgnorePatterns and manual mocks (Reanimated, Navigation) to support NativeWind and Expo dependencies.
 - Fixed pressing next doesnt clear the text input sometimes
 - Added placeholder text for input
+- Made in-house type writing effect to substitute react-native-type-animation
 
 ### 2025-12-17
 - Restyled AiInsightCard

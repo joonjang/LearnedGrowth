@@ -1,7 +1,7 @@
 import rawAbcde from '@/assets/data/abcde.json';
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import InputBox from '@/components/newEntry/InputBox';
-import PromptDisplay from '@/components/newEntry/PromptDisplay';
+import PromptDisplay, { PromptDisplayHandle } from '@/components/newEntry/PromptDisplay';
 import StepperButton from '@/components/newEntry/StepperButton';
 import StepperHeader from '@/components/newEntry/StepperHeader';
 import { useEntries } from '@/hooks/useEntries';
@@ -43,6 +43,7 @@ export default function NewEntryModal() {
 
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
+   const promptRef = useRef<PromptDisplayHandle | null>(null);
    const { promptTextStyle, inputBoxDims, promptMaxHeight } = usePromptLayout();
    const isKeyboardVisible = useKeyboardVisible();
    
@@ -102,6 +103,7 @@ export default function NewEntryModal() {
 
    const handleStepChange = useCallback(
       (direction: 'next' | 'back') => {
+         promptRef.current?.stop({ finish: true });
          const delta = direction === 'next' ? 1 : -1;
          const nextIdx = Math.min(
             Math.max(idx + delta, 0),
@@ -167,6 +169,7 @@ export default function NewEntryModal() {
                   </View>
 
                   <PromptDisplay
+                     ref={promptRef}
                      text={prompts[currKey]}
                      visited={hasVisited(currKey)}
                      onVisited={() => markVisited(currKey)}
