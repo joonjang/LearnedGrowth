@@ -43,7 +43,7 @@ export default function RootLayout() {
                         <Stack.Screen
                            name="dispute/[id]"
                            options={{
-                              presentation: 'fullScreenModal',
+                              presentation: 'containedModal',
                               animation: 'slide_from_bottom',
                               headerShown: false,
                            }}

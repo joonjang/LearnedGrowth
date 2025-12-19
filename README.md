@@ -270,6 +270,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- Display disclaimer that this is a tool
+- Display empty entry helper information 
+
+- Stop the prompt display from animating when next button is pressed
+
 - After dispute, display the detail screen
 
 - Seeing setting screen should update revenue cat credits 

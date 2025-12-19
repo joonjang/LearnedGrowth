@@ -14,7 +14,7 @@ import type { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { usePreferences } from '@/providers/PreferencesProvider';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import React, {
@@ -241,7 +241,7 @@ export default function DisputeScreen() {
          setForm((f) => ({ ...f, [k]: v })),
       []
    );
-
+const navigation = useNavigation();
    const submit = useCallback(async () => {
       if (!entry) return;
       const dispute = buildDisputeText(trimmedForm);
@@ -251,18 +251,27 @@ export default function DisputeScreen() {
       if (nextEnergy !== (entry.energy ?? '')) patch.energy = nextEnergy;
       if (Object.keys(patch).length) await updateEntry(entry.id, patch);
       if (hapticsEnabled && hapticsAvailable) triggerHaptic();
-      router.replace({
-         pathname: '/(tabs)/entries/[id]',
-         params: { id: entry.id, animateInstant: '1' },
-      });
-   }, [
-      entry,
-      hapticsAvailable,
-      hapticsEnabled,
-      triggerHaptic,
-      trimmedForm,
-      updateEntry,
-   ]);
+      
+      const state = navigation.getState();
+  const routes = state!.routes as any[];
+  const prev = routes[routes.length - 2];
+
+  const prevName = prev?.name as string | undefined;
+  const prevId = prev?.params?.id;
+
+  const cameFromDetail =
+    !!prevName?.includes('entries/[id]') && String(prevId) === String(entry.id);
+
+  if (cameFromDetail) {
+    router.back(); // no duplicate detail, no extra animation
+    return;
+  }
+
+  router.replace({
+    pathname: '/(tabs)/entries/[id]',
+    params: { id: String(entry.id), animateInstant: '1' },
+  });
+   }, [entry, hapticsAvailable, hapticsEnabled, navigation, triggerHaptic, trimmedForm, updateEntry]);
 
    const scrollToBottom = useCallback((animated = true) => {
       const ref = scrollRef.current;
