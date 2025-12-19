@@ -12,7 +12,6 @@ import { useVisitedSet } from '@/hooks/useVisitedSet';
 import { NewInputEntryType } from '@/models/newInputEntryType';
 // REMOVED: import { useTheme } ...
 import { router } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
    Alert,
@@ -32,14 +31,15 @@ const STEP_LABEL: Record<NewInputEntryType, string> = {
    belief: 'Belief',
    consequence: 'Consequence',
 };
+const STEP_PLACEHOLDER: Record<NewInputEntryType, string> = {
+   adversity: 'Describe the situation briefly',
+   belief: 'Capture the core thought',
+   consequence: 'Feelings, reactions, and behaviors',
+};
 
 export default function NewEntryModal() {
    const store = useEntries();
    const insets = useSafeAreaInsets(); // <-- The correct tool for Edge-to-Edge
-   
-   const { colorScheme } = useColorScheme();
-   const isDark = colorScheme === 'dark';
-   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
 
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
@@ -185,6 +185,7 @@ export default function NewEntryModal() {
                      ref={inputRef}
                      value={form[currKey]}
                      onChangeText={setField(currKey)}
+                     placeholder={STEP_PLACEHOLDER[currKey]}
                      dims={inputBoxDims}
                      scrollEnabled
                   />

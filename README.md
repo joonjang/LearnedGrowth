@@ -27,6 +27,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - End-to-End (E2E): Implemented Maestro workflows to validate critical user journeys (Entry Creation Swipe-to-Delete interactions) with robust testID selectors and dynamic UI handling.
   - Unit & Integration: Configured Jest environment with custom transformIgnorePatterns and manual mocks (Reanimated, Navigation) to support NativeWind and Expo dependencies.
 - Fixed pressing next doesnt clear the text input sometimes
+- Added placeholder text for input
 
 ### 2025-12-17
 - Restyled AiInsightCard

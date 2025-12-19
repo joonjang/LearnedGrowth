@@ -44,7 +44,7 @@ export default function StepperButton({
    const isLast = useMemo(() => idx === totalSteps - 1, [idx, totalSteps]);
    const canGoBack = useMemo(() => idx > 0, [idx]);
    const backLabel = !canGoBack ? 'Close' : 'Back';
-   const nextLabel = isLast ? 'Submit' : 'Next';
+   const nextLabel = isLast ? 'Finish' : 'Next';
 
    const confirmExitTitle = 'Discard changes?';
    const confirmExitMessage = 'You have unsaved changes. Close without saving?';
@@ -128,7 +128,7 @@ export default function StepperButton({
                hitSlop={12}
                className={`items-center justify-center py-2.5 ${disableNext ? 'opacity-40' : 'active:opacity-60'}`}
             >
-               <Text className={`text-base font-semibold ${disableNext ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-100'}`}>
+               <Text className={`text-base font-semibold ${disableNext ? 'text-slate-500 dark:text-slate-400' : isLast ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-slate-100'}`}>
                   {nextLabel}
                </Text>
             </Pressable>

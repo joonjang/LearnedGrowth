@@ -251,7 +251,10 @@ export default function DisputeScreen() {
       if (nextEnergy !== (entry.energy ?? '')) patch.energy = nextEnergy;
       if (Object.keys(patch).length) await updateEntry(entry.id, patch);
       if (hapticsEnabled && hapticsAvailable) triggerHaptic();
-      router.back();
+      router.replace({
+         pathname: '/(tabs)/entries/[id]',
+         params: { id: entry.id, animateInstant: '1' },
+      });
    }, [
       entry,
       hapticsAvailable,

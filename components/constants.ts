@@ -10,3 +10,36 @@ export const BOTTOM_SHEET_CONTENT_PADDING = 24;
 
 export const ROUTE_LOGIN = '/(modal)/login' as const;
 export const ROUTE_ENTRIES = '/(tabs)/entries' as const;
+
+export const ABCDE_FIELD = [
+   {
+      key: 'adversity',
+      label: 'Adversity',
+      hint: 'What happened?',
+      placeholder: 'Describe the situation briefly',
+   },
+   {
+      key: 'belief',
+      label: 'Belief',
+      hint: 'What were you telling yourself?',
+      placeholder: 'Capture the core thought',
+   },
+   {
+      key: 'consequence',
+      label: 'Consequence',
+      hint: 'How did you feel and act?',
+      placeholder: 'Feelings, reactions, and behaviors',
+   },
+   {
+      key: 'dispute',
+      label: 'Dispute',
+      hint: 'Your response to the belief.',
+      placeholder: 'Collect the key sentences you used to dispute',
+   },
+   {
+      key: 'energy',
+      label: 'Energy',
+      hint: 'How you feel after thinking through it all.',
+      placeholder: 'Note any shift in mood or energy',
+   },
+] as const;

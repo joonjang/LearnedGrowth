@@ -1,6 +1,6 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
 import WideButton from '@/components/buttons/WideButton';
-import { MAX_AI_RETRIES, ROUTE_ENTRIES } from '@/components/constants';
+import { ABCDE_FIELD, MAX_AI_RETRIES, ROUTE_ENTRIES } from '@/components/constants';
 import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
 import { useEntries } from '@/hooks/useEntries';
 import { formatDateTimeWithWeekday } from '@/lib/date';
@@ -13,12 +13,10 @@ import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
    LayoutAnimation,
-   Platform,
    Pressable,
    Text,
    TextInput,
-   UIManager,
-   View,
+   View
 } from 'react-native';
 import {
    KeyboardAwareScrollView,
@@ -26,47 +24,9 @@ import {
 } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type FieldKey = 'adversity' | 'belief' | 'consequence' | 'dispute' | 'energy';
+type FieldKey = (typeof ABCDE_FIELD)[number]['key'];
 
-const FIELD_META = [
-   {
-      key: 'adversity',
-      label: 'Adversity',
-      hint: 'What happened?',
-      placeholder: 'Describe the situation briefly',
-   },
-   {
-      key: 'belief',
-      label: 'Belief',
-      hint: 'What were you telling yourself?',
-      placeholder: 'Capture the core thought',
-   },
-   {
-      key: 'consequence',
-      label: 'Consequence',
-      hint: 'How did you feel and act?',
-      placeholder: 'Feelings, reactions, and behaviors',
-   },
-   {
-      key: 'dispute',
-      label: 'Dispute',
-      hint: 'Your response to the belief.',
-      placeholder: 'Collect the key sentences you used to dispute',
-   },
-   {
-      key: 'energy',
-      label: 'Energy',
-      hint: 'How you feel after thinking through it all.',
-      placeholder: 'Note any shift in mood or energy',
-   },
-] satisfies {
-   key: FieldKey;
-   label: string;
-   hint: string;
-   placeholder: string;
-}[];
-
-const FIELD_KEYS: FieldKey[] = FIELD_META.map((f) => f.key);
+const FIELD_KEYS: FieldKey[] = ABCDE_FIELD.map((f) => f.key);
 
 function buildFieldRecord(getValue: (key: FieldKey) => string) {
    return FIELD_KEYS.reduce(
@@ -79,16 +39,6 @@ function buildFieldRecord(getValue: (key: FieldKey) => string) {
 }
 
 export default function EntryDetailScreen() {
-   // Enable LayoutAnimation for Android
-   useEffect(() => {
-      if (
-         Platform.OS === 'android' &&
-         UIManager.setLayoutAnimationEnabledExperimental
-      ) {
-         UIManager.setLayoutAnimationEnabledExperimental(true);
-      }
-   }, []);
-
    const { id } = useLocalSearchParams();
    const entryId = Array.isArray(id) ? id[0] : id;
    const store = useEntries();
@@ -151,7 +101,7 @@ export default function EntryDetailScreen() {
 
    const visibleFields = useMemo(() => {
       const showDispute = Boolean(baseline.dispute || trimmed.dispute);
-      return FIELD_META.filter((field) => {
+      return ABCDE_FIELD.filter((field) => {
          if (field.key === 'dispute') return showDispute;
          if (field.key === 'energy') return showDispute;
          return true;

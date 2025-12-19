@@ -25,6 +25,13 @@ const DISPUTE_STEP_ORDER: NewInputDisputeType[] = [
    'energy',
 ];
 
+const DISPUTE_PLACEHOLDER: Partial<Record<NewInputDisputeType, string>> = {
+   evidence: 'Separate facts from assumptions',
+   alternatives: 'Describe another way to see it',
+   usefulness: 'Impact on goals and actions',
+   energy: 'Note any shift in mood or energy',
+};
+
 type Props = {
    entry: Entry;
    idx: number;
@@ -166,6 +173,7 @@ export default function DisputeSteps({
                ref={inputRef}
                value={form[currKey]}
                onChangeText={setField(currKey)}
+               placeholder={DISPUTE_PLACEHOLDER[currKey]}
                dims={inputBoxDims}
                scrollEnabled
                compact
