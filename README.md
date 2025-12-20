@@ -27,6 +27,12 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Quick start screen established
 - Fixed navigation double swipe bug
 
+### 2025-12-20
+- Found the bug where my code was working for one instance and didnt work in another instance for AiInsightCard.tsx
+  - shadow-sm Class: Your specific Tailwind/NativeWind configuration didn't like the shadow-sm class on that specific View container. Removing it fixed the main crash.
+  - Missing Colors: Your project doesn't have the default indigo, blue, emerald, or rose palettes enabled. Switching to slate (which usually exists) and your custom dispute-* / belief-* colors fixed the rendering.
+  - Loader Component: The ThreeDotsLoader likely had similar color/shadow issues inside it, so swapping to the native ActivityIndicator made it 100% safe.
+
 ### 2025-12-18
 - Integrated front end tests
   - End-to-End (E2E): Implemented Maestro workflows to validate critical user journeys (Entry Creation Swipe-to-Delete interactions) with robust testID selectors and dynamic UI handling.
@@ -279,7 +285,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - Display disclaimer that this is a tool
 
+- Display that refresh takes tokens
+  - enable in app purchase 
+
 - Button idempotency for modals login and free-user 
+  - edit button multiple press makes it viewed multiple times
 
 - put in an option to become a subscriber for the free-user screen
 

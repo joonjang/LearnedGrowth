@@ -17,7 +17,6 @@ import { usePreferences } from '@/providers/PreferencesProvider';
 import {
    router,
    useLocalSearchParams,
-   useRootNavigationState,
 } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
@@ -56,28 +55,6 @@ const STEP_ORDER = [
    'energy',
 ] as const;
 
-const routeTreeHasEntryDetail = (state: any, entryId: string | number) => {
-   if (!state?.routes?.length) return false;
-   for (const route of state.routes as any[]) {
-      const name = route?.name as string | undefined;
-      const paramsId = route?.params?.id;
-      const isEntryDetailRoute =
-         !!name &&
-         (name.includes('entries/[id]') || name === '[id]/index');
-
-      if (
-         isEntryDetailRoute &&
-         paramsId !== undefined &&
-         String(paramsId) === String(entryId)
-      ) {
-         return true;
-      }
-      if (route?.state && routeTreeHasEntryDetail(route.state, entryId)) {
-         return true;
-      }
-   }
-   return false;
-};
 
 export default function DisputeScreen() {
    const params = useLocalSearchParams<{
@@ -269,51 +246,46 @@ export default function DisputeScreen() {
          setForm((f) => ({ ...f, [k]: v })),
       []
    );
-   const rootNavigationState = useRootNavigationState();
-   const submit = useCallback(async () => {
-      if (!entry) return;
-      const dispute = buildDisputeText(trimmedForm);
-      const nextEnergy = trimmedForm.energy;
-      const patch: Partial<Entry> = {};
-      if (dispute !== (entry.dispute ?? '')) patch.dispute = dispute;
-      if (nextEnergy !== (entry.energy ?? '')) patch.energy = nextEnergy;
+const submit = useCallback(async () => {
+  if (!entry) return;
 
-      const hasChanges = Object.keys(patch).length > 0;
-      if (hasChanges) {
-         // Save in the background to avoid blocking the navigation transition.
-         void updateEntry(entry.id, patch).catch((e) =>
-            console.error('Failed to save dispute', e)
-         );
-      }
-      if (hapticsEnabled && hapticsAvailable) triggerHaptic();
+  const dispute = buildDisputeText(trimmedForm);
+  const nextEnergy = trimmedForm.energy;
 
-      const hasExistingDetail = routeTreeHasEntryDetail(
-         rootNavigationState,
-         entry.id
-      );
+  const patch: Partial<Entry> = {};
+  if (dispute !== (entry.dispute ?? '')) patch.dispute = dispute;
+  if (nextEnergy !== (entry.energy ?? '')) patch.energy = nextEnergy;
 
-      const targetRoute = {
-         pathname: '/(tabs)/entries/[id]',
-         params: { id: String(entry.id), animateInstant: '1' },
-      } as const;
+  const hasChanges = Object.keys(patch).length > 0;
+  if (hasChanges) {
+    void updateEntry(entry.id, patch).catch((e) =>
+      console.error('Failed to save dispute', e)
+    );
+  }
 
-      if (hasExistingDetail) {
-         // We came from detail -> just go back to it (avoids a duplicate stack entry).
-         router.back();
-         return;
-      }
+  if (hapticsEnabled && hapticsAvailable) triggerHaptic();
 
-      // No detail in the stack yet: replace the modal with the detail screen.
-      router.replace(targetRoute);
-   }, [
-      entry,
-      hapticsAvailable,
-      hapticsEnabled,
-      rootNavigationState,
-      triggerHaptic,
-      trimmedForm,
-      updateEntry,
-   ]);
+  const targetRoute = {
+    pathname: '/(tabs)/entries/[id]',
+    params: { id: String(entry.id), animateInstant: '1' },
+  } as const;
+
+  // ✅ No nav-state hook. No route-tree scan. No crash.
+  if (router.canGoBack()) {
+    router.back();
+    return;
+  }
+
+  router.replace(targetRoute);
+}, [
+  entry,
+  hapticsAvailable,
+  hapticsEnabled,
+  triggerHaptic,
+  trimmedForm,
+  updateEntry,
+]);
+
 
    const scrollToBottom = useCallback((animated = true) => {
       const ref = scrollRef.current;

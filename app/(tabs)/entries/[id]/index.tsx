@@ -1,7 +1,7 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
 import WideButton from '@/components/buttons/WideButton';
 import { ABCDE_FIELD, MAX_AI_RETRIES, ROUTE_ENTRIES } from '@/components/constants';
-import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
+import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
 import { TimelineItem, TimelinePivot, TimelineStepDef } from '@/components/entries/entry/Timeline';
 import { useEntries } from '@/hooks/useEntries';
 import { formatDateTimeWithWeekday } from '@/lib/date';

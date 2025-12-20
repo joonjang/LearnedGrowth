@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
-import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
+import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { useColorScheme } from 'nativewind';

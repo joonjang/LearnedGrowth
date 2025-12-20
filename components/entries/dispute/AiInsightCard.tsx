@@ -1,16 +1,15 @@
 import { LearnedGrowthResponse } from '@/models/aiService';
 import {
-   Clock3,
+   Clock3, // Try Sparkles now. If it crashes, swap to 'Activity' or 'Zap'
    HelpCircle,
    Hourglass,
    RefreshCw,
-   Sparkles,
+   Sparkles, // Try HelpCircle. If it crashes, swap to 'CircleHelp' or 'Info'
    X,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useMemo, useState } from 'react';
-import { LayoutAnimation, Pressable, Text, View } from 'react-native';
-import ThreeDotsLoader from '../../ThreeDotLoader';
+import { ActivityIndicator, LayoutAnimation, Pressable, Text, View } from 'react-native';
 
 type Props = {
    data?: LearnedGrowthResponse | null;
@@ -35,8 +34,13 @@ export function AiInsightCard({
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
 
-   // Toggle for the "Helper" definitions
    const [showDefinitions, setShowDefinitions] = useState(false);
+
+   const toggleHelp = () => {
+      // Optional: smooth animation for the help text
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setShowDefinitions(!showDefinitions);
+   };
 
    // --- COOLDOWN LOGIC ---
    const COOLDOWN_MINUTES = 2;
@@ -75,12 +79,7 @@ export function AiInsightCard({
       return () => clearInterval(interval);
    }, [isCoolingDown, lastUpdate]);
 
-   const toggleHelp = () => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setShowDefinitions(!showDefinitions);
-   };
-
-   // --- LOADING / ERROR STATES ---
+   // --- ERROR STATE ---
    if (error) {
       return (
          <View className="py-2">
@@ -91,6 +90,7 @@ export function AiInsightCard({
       );
    }
 
+   // --- LOADING STATE (Indigo Theme) ---
    const MAX_VISIBLE_CHARS = 120;
    const renderStreamingText =
       streamingText && streamingText.length > MAX_VISIBLE_CHARS
@@ -99,10 +99,11 @@ export function AiInsightCard({
 
    if (!data) {
       return (
-         <View className="my-1 rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-            {/* Header: Active Status */}
+         <View className="my-1 rounded-2xl border border-indigo-100 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+            {/* Header */}
             <View className="mb-4 flex-row items-center gap-3">
                <View className="flex items-center justify-center rounded-full bg-indigo-50 p-2 dark:bg-indigo-500/20">
+                  {/* Using Sparkles now that config is fixed. If it crashes, use Clock3 */}
                   <Sparkles size={18} color={isDark ? '#818cf8' : '#4f46e5'} />
                </View>
                <View className="flex-1">
@@ -115,13 +116,11 @@ export function AiInsightCard({
                </View>
             </View>
 
-            {/* Content: Streaming Area */}
+            {/* Content Area */}
             <View className="min-h-[80px] rounded-xl bg-slate-50 px-4 py-3 dark:bg-black/20">
-               {/* Loader creates a nice 'activity' rhythm above the text */}
                <View className="mb-2 flex-row opacity-60">
-                  <ThreeDotsLoader />
+                  <ActivityIndicator size="small" color="#6366f1" />
                </View>
-
                <Text className="font-mono text-xs leading-5 text-indigo-900/70 dark:text-indigo-200/70">
                   {renderStreamingText || 'Connecting to insight engine...'}
                </Text>
@@ -140,33 +139,23 @@ export function AiInsightCard({
             <View
                className={`flex-row items-center justify-between p-3 rounded-lg border mb-2 ${
                   isCoolingDown
-                     ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700' // GREY (Locked)
+                     ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
                      : isNudgeStep
-                       ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' // AMBER (Nudge)
-                       : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' // BLUE (Standard)
+                       ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                       : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
                }`}
             >
                <View className="flex-1 gap-1 mr-2">
                   <View className="flex-row items-center gap-2">
                      {isCoolingDown ? (
-                        <Hourglass
-                           size={16}
-                           color={isDark ? '#94a3b8' : '#64748b'}
-                        />
+                        <Hourglass size={16} color={isDark ? '#94a3b8' : '#64748b'} />
                      ) : (
-                        <Clock3
-                           size={16}
-                           color={isDark ? '#94a3b8' : '#64748b'}
-                        />
+                        <Clock3 size={16} color={isDark ? '#94a3b8' : '#64748b'} />
                      )}
                      <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-                        {isCoolingDown
-                           ? 'Analysis Paused'
-                           : 'Previous Analysis'}
+                        {isCoolingDown ? 'Analysis Paused' : 'Previous Analysis'}
                      </Text>
                   </View>
-
-                  {/* RESTORED LOGIC HERE */}
                   <Text className="text-[11px] text-slate-600 dark:text-slate-400 leading-4">
                      {!onRefresh
                         ? 'This insight is based on an older version of your entry.'
@@ -177,22 +166,15 @@ export function AiInsightCard({
                             : 'Entry has changed. Update analysis?'}
                   </Text>
                </View>
-
-               {/* BUTTON: Show if NOT cooling down */}
                {onRefresh && !isCoolingDown && (
                   <Pressable
                      onPress={onRefresh}
                      hitSlop={12}
-                     className="p-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70 shadow-xs"
+                     className="p-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
                   >
-                     <RefreshCw
-                        size={18}
-                        color={isDark ? '#f8fafc' : '#0f172a'}
-                     />
+                     <RefreshCw size={18} color={isDark ? '#f8fafc' : '#0f172a'} />
                   </Pressable>
                )}
-
-               {/* LOCKED BADGE: Show if cooling down */}
                {isCoolingDown && timeLabel !== '' && (
                   <View className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">
                      <Text
@@ -205,6 +187,7 @@ export function AiInsightCard({
                )}
             </View>
          )}
+
          {/* 2. Crisis Banner */}
          {safety.isCrisis && (
             <View className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 border border-red-100 dark:border-red-800">
@@ -227,7 +210,7 @@ export function AiInsightCard({
             </Text>
          </View>
 
-         {/* 4. The 3 Ps (Redesigned) */}
+         {/* 4. The 3 Ps */}
          <View>
             <View className="flex-row items-center justify-between mb-3">
                <Text className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -241,15 +224,11 @@ export function AiInsightCard({
                   {showDefinitions ? (
                      <X size={16} color={isDark ? '#94a3b8' : '#64748b'} />
                   ) : (
-                     <HelpCircle
-                        size={16}
-                        color={isDark ? '#94a3b8' : '#64748b'}
-                     />
+                     <HelpCircle size={16} color={isDark ? '#94a3b8' : '#64748b'} />
                   )}
                </Pressable>
             </View>
 
-            {/* EXPANDABLE HELPER SECTION */}
             {showDefinitions && (
                <View className="mb-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 gap-2">
                   <Text className="text-xs text-slate-500 dark:text-slate-400 leading-5">
@@ -262,15 +241,13 @@ export function AiInsightCard({
                      <Text className="font-bold text-slate-700 dark:text-slate-300">
                         Scope (Pervasiveness):{' '}
                      </Text>
-                     Is this just one specific problem, or does it ruin
-                     everything?
+                     Is this just one specific problem, or does it ruin everything?
                   </Text>
                   <Text className="text-xs text-slate-500 dark:text-slate-400 leading-5">
                      <Text className="font-bold text-slate-700 dark:text-slate-300">
                         Blame (Personalization):{' '}
                      </Text>
-                     Was this entirely my fault, or did circumstances play a
-                     role?
+                     Was this entirely my fault, or did circumstances play a role?
                   </Text>
                </View>
             )}
@@ -324,9 +301,7 @@ export function AiInsightCard({
    );
 }
 
-// --- NEW HELPER COMPONENT: SpectrumRow ---
-// Layout: [ Left Pill ] -- [ Mixed Pill ] -- [ Right Pill ]
-
+// --- COLORFUL SPECTRUM ROW ---
 function SpectrumRow({
    label,
    subLabel,
@@ -350,26 +325,26 @@ function SpectrumRow({
    const isPessimistic = lowerScore === 'pessimistic';
    const isMixed = lowerScore === 'mixed';
 
-   // --- STYLES ---
-   // Bigger base text for pills
+   // --- VIBRANT COLORS ---
    const basePill = 'flex-1 py-2 rounded-lg items-center justify-center border';
 
-   // Inactive State
    const inactivePill =
       'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800';
    const inactiveText =
-      'text-slate-400 dark:text-slate-600 font-medium text-xs'; // Bumped to 12px
+      'text-slate-400 dark:text-slate-600 font-medium text-xs';
 
-   // Active States
+   // Optimistic = Emerald (Green)
    const activeLeft =
       'bg-emerald-100 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-800';
    const textLeftActive =
       'text-emerald-800 dark:text-emerald-200 font-bold text-xs';
 
+   // Pessimistic = Rose (Red)
    const activeRight =
       'bg-rose-100 dark:bg-rose-900/40 border-rose-200 dark:border-rose-800';
    const textRightActive = 'text-rose-800 dark:text-rose-200 font-bold text-xs';
 
+   // Mixed = Slate/Gray
    const activeMixed =
       'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600';
    const textMixedActive =
@@ -377,7 +352,6 @@ function SpectrumRow({
 
    return (
       <View className="gap-3">
-         {/* Label Header */}
          <View className="flex-row items-baseline gap-2">
             <Text className="text-sm font-bold text-slate-900 dark:text-slate-100">
                {label}
@@ -387,9 +361,8 @@ function SpectrumRow({
             </Text>
          </View>
 
-         {/* The Spectrum Visual (3-Pill Layout) */}
          <View className="flex-row items-center gap-1.5">
-            {/* Left (Optimistic) */}
+            {/* Left */}
             <View
                className={`${basePill} ${isOptimistic ? activeLeft : inactivePill}`}
             >
@@ -398,7 +371,7 @@ function SpectrumRow({
                </Text>
             </View>
 
-            {/* Middle (Mixed) */}
+            {/* Mixed */}
             <View
                className={`${basePill} ${isMixed ? activeMixed : inactivePill} max-w-[20%]`}
             >
@@ -407,7 +380,7 @@ function SpectrumRow({
                </Text>
             </View>
 
-            {/* Right (Pessimistic) */}
+            {/* Right */}
             <View
                className={`${basePill} ${isPessimistic ? activeRight : inactivePill}`}
             >
@@ -417,7 +390,6 @@ function SpectrumRow({
             </View>
          </View>
 
-         {/* Insight & Quote */}
          <View className="pl-1 gap-1">
             {detectedPhrase && (
                <Text className="text-sm italic text-slate-500 dark:text-slate-400">
