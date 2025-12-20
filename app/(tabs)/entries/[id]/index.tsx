@@ -1,10 +1,9 @@
-import CardNextButton from '@/components/buttons/CardNextButton';
 import WideButton from '@/components/buttons/WideButton';
 import { ABCDE_FIELD, MAX_AI_RETRIES, ROUTE_ENTRIES } from '@/components/constants';
 import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
+import { TimelineItem, TimelinePivot, TimelineStepDef } from '@/components/entries/entry/Timeline';
 import { useEntries } from '@/hooks/useEntries';
 import { formatDateTimeWithWeekday } from '@/lib/date';
-import { getIosShadowStyle } from '@/lib/shadow';
 import { FieldTone, getFieldStyles } from '@/lib/theme';
 import type { Entry } from '@/models/entry';
 import { usePreferences } from '@/providers/PreferencesProvider';
@@ -26,8 +25,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type FieldKey = (typeof ABCDE_FIELD)[number]['key'];
-
 const FIELD_KEYS: FieldKey[] = ABCDE_FIELD.map((f) => f.key);
+const LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
 
 function buildFieldRecord(getValue: (key: FieldKey) => string) {
    return FIELD_KEYS.reduce(
@@ -39,7 +38,6 @@ function buildFieldRecord(getValue: (key: FieldKey) => string) {
    );
 }
 
-// Helper to map DB keys to Theme Tones
 const getToneForKey = (key: FieldKey): FieldTone => {
    if (key === 'belief') return 'belief';
    if (key === 'dispute') return 'dispute';
@@ -62,14 +60,9 @@ export default function EntryDetailScreen() {
    const insets = useSafeAreaInsets();
    const keyboardOffset = insets.bottom + 32;
 
-   // Theme Hooks
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const iconColor = isDark ? '#f8fafc' : '#0f172a'; // text vs text-inverse
-   const iosShadowSm = useMemo(
-      () => getIosShadowStyle({ isDark, preset: 'sm' }),
-      [isDark]
-   );
+   const iconColor = isDark ? '#f8fafc' : '#0f172a';
 
    const [form, setForm] = useState<Record<FieldKey, string>>(() =>
       buildFieldRecord((key) => entry?.[key] ?? '')
@@ -77,10 +70,7 @@ export default function EntryDetailScreen() {
    const [justSaved, setJustSaved] = useState(false);
    const [hasScrolled, setHasScrolled] = useState(false);
    const [isEditing, setIsEditing] = useState(false);
-   const [editSnapshot, setEditSnapshot] = useState<Record<
-      FieldKey,
-      string
-   > | null>(null);
+   const [editSnapshot, setEditSnapshot] = useState<Record<FieldKey,string> | null>(null);
 
    useEffect(() => {
       if (!entry) return;
@@ -91,31 +81,26 @@ export default function EntryDetailScreen() {
       setEditSnapshot(null);
    }, [entry]);
 
-   const trimmed = useMemo(
-      () => buildFieldRecord((key) => form[key].trim()),
-      [form]
-   );
-
-   const baseline = useMemo(
-      () => buildFieldRecord((key) => (entry?.[key] ?? '').trim()),
-      [entry]
-   );
-
+   const trimmed = useMemo(() => buildFieldRecord((key) => form[key].trim()), [form]);
+   const baseline = useMemo(() => buildFieldRecord((key) => (entry?.[key] ?? '').trim()), [entry]);
    const aiDisplayData = entry?.aiResponse ?? null;
+   const hasChanges = useMemo(() => FIELD_KEYS.some((key) => trimmed[key] !== baseline[key]), [baseline, trimmed]);
 
-   const hasChanges = useMemo(
-      () => FIELD_KEYS.some((key) => trimmed[key] !== baseline[key]),
-      [baseline, trimmed]
-   );
-
-   const visibleFields = useMemo(() => {
-      const showDispute = Boolean(baseline.dispute || trimmed.dispute);
-      return ABCDE_FIELD.filter((field) => {
-         if (field.key === 'dispute') return showDispute;
-         if (field.key === 'energy') return showDispute;
+   // Create timeline data structure
+   const timelineSteps = useMemo(() => {
+      const showDispute = Boolean(baseline.dispute || trimmed.dispute || isEditing); 
+      
+      return ABCDE_FIELD.map((f, idx) => ({
+         key: f.key,
+         letter: LETTERS[idx],
+         label: f.label,
+         desc: f.hint,
+         tone: getToneForKey(f.key),
+      } as TimelineStepDef)).filter(step => {
+         if (step.key === 'dispute' || step.key === 'energy') return showDispute;
          return true;
       });
-   }, [baseline, trimmed]);
+   }, [baseline, trimmed, isEditing]);
 
    const setField = useCallback(
       (key: FieldKey) => (value: string) => {
@@ -146,38 +131,19 @@ export default function EntryDetailScreen() {
 
       if (entry.aiResponse) {
          const coreFields: FieldKey[] = ['adversity', 'belief', 'consequence'];
-
-         const analysisChanged = coreFields.some(
-            (key) => trimmed[key] !== baseline[key]
-         );
-
-         if (analysisChanged) {
-            patch.aiResponse = {
-               ...entry.aiResponse,
-               isStale: true,
-            };
+         if (coreFields.some((key) => trimmed[key] !== baseline[key])) {
+            patch.aiResponse = { ...entry.aiResponse, isStale: true };
          }
       }
 
       await store.updateEntry(entry.id, patch);
-      if (hapticsEnabled && hapticsAvailable) {
-         triggerHaptic();
-      }
+      if (hapticsEnabled && hapticsAvailable) triggerHaptic();
       setJustSaved(true);
       setIsEditing(false);
       setEditSnapshot(null);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       KeyboardController.dismiss();
-   }, [
-      baseline,
-      entry,
-      hapticsAvailable,
-      hapticsEnabled,
-      hasChanges,
-      store,
-      triggerHaptic,
-      trimmed,
-   ]);
+   }, [baseline, entry, hapticsAvailable, hapticsEnabled, hasChanges, store, triggerHaptic, trimmed]);
 
    const handleCancel = useCallback(() => {
       if (!isEditing) return;
@@ -191,37 +157,11 @@ export default function EntryDetailScreen() {
 
    const handleOpenDisputeAndUpdate = useCallback(() => {
       if (!entry) return;
-
       router.push({
          pathname: '/dispute/[id]',
          params: { id: entry.id, view: 'analysis', refresh: 'true' },
       });
    }, [entry]);
-
-   const formattedTimestamp = entry
-      ? formatDateTimeWithWeekday(entry.createdAt)
-      : '';
-   const statusMessage = justSaved
-      ? 'Saved'
-      : hasChanges
-        ? 'Unsaved changes'
-        : '';
-   const statusDisplay = statusMessage || 'Saved';
-
-   useEffect(() => {
-      if (!justSaved) return;
-      const timer = setTimeout(() => setJustSaved(false), 2000);
-      return () => clearTimeout(timer);
-   }, [justSaved]);
-
-   const handleScroll = useCallback(
-      (e: any) => {
-         const y = e?.nativeEvent?.contentOffset?.y ?? 0;
-         if (y <= 0 && hasScrolled) setHasScrolled(false);
-         else if (y > 0 && !hasScrolled) setHasScrolled(true);
-      },
-      [hasScrolled]
-   );
 
    const handleContinueToDispute = () => {
       router.push({
@@ -230,175 +170,151 @@ export default function EntryDetailScreen() {
       });
    };
 
+   const formattedTimestamp = entry ? formatDateTimeWithWeekday(entry.createdAt) : '';
+   const statusMessage = justSaved ? 'Saved' : hasChanges ? 'Unsaved changes' : '';
+   const statusDisplay = statusMessage || 'Saved';
+
+   useEffect(() => {
+      if (!justSaved) return;
+      const timer = setTimeout(() => setJustSaved(false), 2000);
+      return () => clearTimeout(timer);
+   }, [justSaved]);
+
+   const handleScroll = useCallback((e: any) => {
+      const y = e?.nativeEvent?.contentOffset?.y ?? 0;
+      if (y <= 0 && hasScrolled) setHasScrolled(false);
+      else if (y > 0 && !hasScrolled) setHasScrolled(true);
+   }, [hasScrolled]);
+
    if (!entry) {
       return (
          <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-slate-900">
-            <Text className="text-slate-900 dark:text-slate-100">
-               Entry not found.
-            </Text>
+            <Text className="text-slate-900 dark:text-slate-100">Entry not found.</Text>
          </View>
       );
    }
 
    return (
-      <View className="flex-1 px-4 bg-white dark:bg-slate-900">
-         {/* Safe Area Spacer */}
+      <View className="flex-1 bg-white dark:bg-slate-900">
          <View style={{ height: insets.top }} />
 
-         {/* 1. Header (No Extra Margins) */}
+         {/* Header */}
          <View className="h-14 flex-row items-center justify-center relative z-10">
             <Pressable
                onPress={() => router.replace(ROUTE_ENTRIES)}
                hitSlop={8}
-               className="absolute left-0 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
-               testID="detail-back-btn"
+               className="absolute left-4 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
             >
-               <ChevronLeft size={18} color={iconColor} />
+               <ChevronLeft size={20} color={iconColor} />
             </Pressable>
 
-            {/* Title Column - Contains both Time/Editing and Absolute Status Text */}
             <View className="items-center justify-center gap-1 h-full">
                <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
                   {isEditing ? 'Editing' : formattedTimestamp || ' '}
                </Text>
-               <Text
-                  className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 w-[200px] text-center ${
-                     !statusMessage ? 'opacity-0' : 'opacity-100'
-                  }`}
-                  numberOfLines={1}
-               >
+               <Text className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 w-[200px] text-center ${!statusMessage ? 'opacity-0' : 'opacity-100'}`} numberOfLines={1}>
                   {statusDisplay}
                </Text>
             </View>
 
-            <View className="absolute right-0 flex-row items-center gap-2">
+            <View className="absolute right-4 flex-row items-center gap-2">
                {isEditing && (
-                  <Pressable
-                     onPress={handleCancel}
-                     hitSlop={8}
-                     className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
-                     testID="detail-cancel-btn"
-                  >
-                     <Text className="text-sm text-slate-900 dark:text-slate-100">
-                        Cancel
-                     </Text>
+                  <Pressable onPress={handleCancel} className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                     <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">Cancel</Text>
                   </Pressable>
                )}
-               <Pressable
-                  onPress={isEditing ? handleSave : startEditing}
-                  hitSlop={8}
-                  className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
-                  testID="detail-action-btn"
-               >
-                  <Text className="text-sm text-slate-900 dark:text-slate-100">
-                     {isEditing ? 'Save' : 'Edit'}
-                  </Text>
+               <Pressable onPress={isEditing ? handleSave : startEditing} className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                  <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">{isEditing ? 'Save' : 'Edit'}</Text>
                </Pressable>
             </View>
 
-            {/* Divider: Absolute Bottom */}
-            {hasScrolled && (
-               <View className="absolute bottom-0 left-0 right-0 h-[1px] bg-slate-200 dark:bg-slate-700" />
-            )}
+            {hasScrolled && <View className="absolute bottom-0 left-0 right-0 h-[1px] bg-slate-200 dark:bg-slate-800" />}
          </View>
 
+         {/* Content */}
          <KeyboardAwareScrollView
-            // pt-6: Creates space for the absolute status text so fields don't overlap it initially.
-            // p-1: Horizontal/bottom padding.
-            className="flex-1 pt-6 p-1"
-            contentContainerStyle={[{ paddingBottom: insets.bottom + 16 }]}
+            className="flex-1 px-4 pt-4"
+            contentContainerStyle={[{ paddingBottom: insets.bottom + 40 }]}
             keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
             bottomOffset={keyboardOffset}
-            extraKeyboardSpace={12}
             onScroll={handleScroll}
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
          >
-            {/* Form Fields */}
-            {visibleFields.map((field) => {
-               // --- USE SHARED THEME UTILITY ---
-               const tone = getToneForKey(field.key);
-               const styles = getFieldStyles(tone, isEditing);
+            {timelineSteps.map((step) => {
+               const fieldStyles = getFieldStyles(step.tone, isEditing);
                
-               // Specific layout for detail screen (heights, padding)
-               // This is strictly structural/layout, not thematic color.
-               const layoutClass = isEditing 
-                  ? 'min-h-[80px] py-3' 
-                  : 'py-3 min-h-0 h-auto';
+               // Background logic for the "Grey Box" Input Area
+               // If Card is White (Neutral), input should be slate-50.
+               // If Card is Colored (B/D/E), input should be white/50 (semi-transparent white).
+               const inputBg = step.tone === 'default' || step.tone === 'neutral' 
+                  ? 'bg-slate-50 dark:bg-slate-800' 
+                  : 'bg-white/60 dark:bg-black/10';
 
                return (
-                  <View
-                     className="mb-4 gap-1"
-                     key={`${field.key}-${isEditing ? 'edit' : 'view'}`}
-                  >
-                     <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
-                        {field.label}
-                     </Text>
-                     <Text className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">
-                        {field.hint}
-                     </Text>
+                  <View key={step.key}>
+                     <TimelineItem step={step} variant="full">
+                        {isEditing ? (
+                            <TextInput
+                                multiline
+                                value={form[step.key as FieldKey]}
+                                onChangeText={setField(step.key as FieldKey)}
+                                placeholder={`Write your ${step.label.toLowerCase()} here...`}
+                                placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
+                                className={`min-h-[60px] rounded-lg px-3 py-2 text-sm leading-6 ${inputBg} ${fieldStyles.text}`}
+                                scrollEnabled={false}
+                                textAlignVertical="top"
+                            />
+                        ) : (
+                            <View className={`min-h-[40px] rounded-lg px-3 py-2 ${inputBg}`}>
+                                <Text className={`text-sm leading-6 ${fieldStyles.text}`}>
+                                    {form[step.key as FieldKey] || <Text className="italic opacity-50">Empty</Text>}
+                                </Text>
+                            </View>
+                        )}
+                     </TimelineItem>
 
-                     {isEditing ? (
-                        <TextInput
-                           multiline
-                           value={form[field.key]}
-                           onChangeText={setField(field.key)}
-                           placeholder={field.placeholder}
-                           placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                           // Combine shared theme styles with local layout props
-                           className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${styles.container} ${styles.text} ${layoutClass}`}
-                           style={iosShadowSm}
-                           scrollEnabled={true}
-                           textAlignVertical="top"
-                        />
-                     ) : (
-                        <View
-                           className={`mt-1.5 px-3 rounded-xl border shadow-sm ${styles.container} ${layoutClass}`}
-                           style={iosShadowSm}
-                        >
-                           <Text
-                              className={`text-sm leading-5 ${styles.text}`}
-                           >
-                              {form[field.key] || (
-                                 <Text className="italic opacity-50 text-slate-400">
-                                    Empty
-                                 </Text>
-                              )}
-                           </Text>
-                        </View>
+                     {/* PIVOT POINT (Between C and D) */}
+                     {step.key === 'consequence' && (
+                        <TimelinePivot variant="full">
+                             {aiVisible && aiDisplayData ? (
+                                 <View>
+                                    <View className="mb-2 flex-row items-center gap-2">
+                                        <Text className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                                            AI Analysis
+                                        </Text>
+                                    </View>
+                                    <AiInsightCard
+                                        data={aiDisplayData}
+                                        onRefresh={entry.dispute || isEditing ? undefined : handleOpenDisputeAndUpdate}
+                                        retryCount={entry.aiRetryCount ?? 0}
+                                        maxRetries={MAX_AI_RETRIES}
+                                        updatedAt={entry.updatedAt}
+                                    />
+                                 </View>
+                             ) : (
+                                 <View className="items-center py-2">
+                                     <Text className="text-sm text-center text-slate-500 dark:text-slate-400">
+                                         Reflect on your A-B-C connection.{'\n'}
+                                         Ready to challenge it?
+                                     </Text>
+                                 </View>
+                             )}
+
+                             {!entry.dispute?.trim() && !isEditing && (
+                                 <View className="mt-4">
+                                     <WideButton
+                                        label="Start Disputation (D)"
+                                        icon={ArrowRight}
+                                        onPress={handleContinueToDispute}
+                                     />
+                                 </View>
+                             )}
+                        </TimelinePivot>
                      )}
                   </View>
                );
             })}
-
-            {/* Inline AI Analysis */}
-            {aiVisible && aiDisplayData ? (
-               <>
-                  <View className="h-[1px] bg-slate-200 dark:bg-slate-700 my-5" />
-                  <AiInsightCard
-                     data={aiDisplayData}
-                     onRefresh={entry.dispute || isEditing ? undefined : handleOpenDisputeAndUpdate}
-                     retryCount={entry.aiRetryCount ?? 0}
-                     maxRetries={MAX_AI_RETRIES}
-                     updatedAt={entry.updatedAt}
-                  />
-               </>
-            ) : null}
-
-            {!entry.dispute?.trim() && (
-               <>
-                  {aiDisplayData ? (
-                     <WideButton
-                        label="Continue"
-                        icon={ArrowRight}
-                        onPress={handleContinueToDispute}
-                     />
-                  ) : (
-                     <CardNextButton id={entry.id} />
-                  )}
-               </>
-            )}
          </KeyboardAwareScrollView>
       </View>
    );
