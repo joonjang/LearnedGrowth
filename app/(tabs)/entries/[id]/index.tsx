@@ -1,3 +1,4 @@
+import CardNextButton from '@/components/buttons/CardNextButton';
 import WideButton from '@/components/buttons/WideButton';
 import { ABCDE_FIELD, MAX_AI_RETRIES, ROUTE_ENTRIES } from '@/components/constants';
 import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
@@ -88,7 +89,8 @@ export default function EntryDetailScreen() {
 
    // Create timeline data structure
    const timelineSteps = useMemo(() => {
-      const showDispute = Boolean(baseline.dispute || trimmed.dispute || isEditing); 
+      // Determine visibility based on content existence
+      const showDispute = Boolean(baseline.dispute || trimmed.dispute); 
       
       return ABCDE_FIELD.map((f, idx) => ({
          key: f.key,
@@ -100,7 +102,7 @@ export default function EntryDetailScreen() {
          if (step.key === 'dispute' || step.key === 'energy') return showDispute;
          return true;
       });
-   }, [baseline, trimmed, isEditing]);
+   }, [baseline, trimmed]);
 
    const setField = useCallback(
       (key: FieldKey) => (value: string) => {
@@ -124,8 +126,20 @@ export default function EntryDetailScreen() {
          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
          return;
       }
+
       const patch = FIELD_KEYS.reduce((acc, key) => {
-         if (trimmed[key] !== baseline[key]) acc[key] = trimmed[key];
+         let newValue = trimmed[key];
+         const previousValue = baseline[key];
+
+         // If we had a dispute before, and the user clears it, force it to "Empty"
+         // This ensures the field never becomes falsy for Layout logic
+         if (key === 'dispute' && newValue === '' && !!previousValue) {
+             newValue = 'Empty';
+         }
+
+         if (newValue !== previousValue) {
+             acc[key] = newValue;
+         }
          return acc;
       }, {} as Partial<Entry>);
 
@@ -244,12 +258,21 @@ export default function EntryDetailScreen() {
             {timelineSteps.map((step) => {
                const fieldStyles = getFieldStyles(step.tone, isEditing);
                
-               // Background logic for the "Grey Box" Input Area
-               // If Card is White (Neutral), input should be slate-50.
-               // If Card is Colored (B/D/E), input should be white/50 (semi-transparent white).
-               const inputBg = step.tone === 'default' || step.tone === 'neutral' 
+               // Background logic
+               const isNeutral = step.tone === 'default' || step.tone === 'neutral';
+               const readOnlyBg = isNeutral 
                   ? 'bg-slate-50 dark:bg-slate-800' 
                   : 'bg-white/60 dark:bg-black/10';
+
+               const finalBg = isEditing 
+                  ? 'bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800'
+                  : readOnlyBg;
+
+               // --- MASKING LOGIC ---
+               // Get raw value from form
+               const rawValue = form[step.key as FieldKey];
+               // If it's the specific "Empty" string, treat it as actual empty string
+               const effectiveValue = rawValue === 'Empty' ? '' : rawValue;
 
                return (
                   <View key={step.key}>
@@ -257,60 +280,63 @@ export default function EntryDetailScreen() {
                         {isEditing ? (
                             <TextInput
                                 multiline
-                                value={form[step.key as FieldKey]}
+                                value={effectiveValue} // Masked value for Input
                                 onChangeText={setField(step.key as FieldKey)}
                                 placeholder={`Write your ${step.label.toLowerCase()} here...`}
                                 placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                                className={`min-h-[60px] rounded-lg px-3 py-2 text-sm leading-6 ${inputBg} ${fieldStyles.text}`}
+                                className={`min-h-[48px] rounded-lg px-3 py-2 text-sm leading-6 ${finalBg} ${fieldStyles.text}`}
                                 scrollEnabled={false}
                                 textAlignVertical="top"
                             />
                         ) : (
-                            <View className={`min-h-[40px] rounded-lg px-3 py-2 ${inputBg}`}>
+                            <View className={`min-h-[48px] rounded-lg px-3 py-2 ${finalBg}`}>
                                 <Text className={`text-sm leading-6 ${fieldStyles.text}`}>
-                                    {form[step.key as FieldKey] || <Text className="italic opacity-50">Empty</Text>}
+                                    {/* Masked value for Display */}
+                                    {effectiveValue || <Text className="italic opacity-50">Empty</Text>}
                                 </Text>
                             </View>
                         )}
                      </TimelineItem>
 
-                     {/* PIVOT POINT (Between C and D) */}
+                     {/* PIVOT POINT */}
                      {step.key === 'consequence' && (
-                        <TimelinePivot variant="full">
-                             {aiVisible && aiDisplayData ? (
-                                 <View>
+                        <View>
+                           {/* AI Pivot */}
+                           {aiVisible && aiDisplayData && (
+                              <TimelinePivot variant="full">
                                     <View className="mb-2 flex-row items-center gap-2">
-                                        <Text className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                                            AI Analysis
-                                        </Text>
+                                       <Text className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                                          AI Analysis
+                                       </Text>
                                     </View>
                                     <AiInsightCard
-                                        data={aiDisplayData}
-                                        onRefresh={entry.dispute || isEditing ? undefined : handleOpenDisputeAndUpdate}
-                                        retryCount={entry.aiRetryCount ?? 0}
-                                        maxRetries={MAX_AI_RETRIES}
-                                        updatedAt={entry.updatedAt}
+                                       data={aiDisplayData}
+                                       onRefresh={entry.dispute || isEditing ? undefined : handleOpenDisputeAndUpdate}
+                                       retryCount={entry.aiRetryCount ?? 0}
+                                       maxRetries={MAX_AI_RETRIES}
+                                       updatedAt={entry.updatedAt}
                                     />
-                                 </View>
-                             ) : (
-                                 <View className="items-center py-2">
-                                     <Text className="text-sm text-center text-slate-500 dark:text-slate-400">
-                                         Reflect on your A-B-C connection.{'\n'}
-                                         Ready to challenge it?
-                                     </Text>
-                                 </View>
-                             )}
+                              </TimelinePivot>
+                           )}
 
-                             {!entry.dispute?.trim() && !isEditing && (
-                                 <View className="mt-4">
-                                     <WideButton
-                                        label="Start Disputation (D)"
-                                        icon={ArrowRight}
-                                        onPress={handleContinueToDispute}
-                                     />
+                           {/* Continue Button Logic:
+                             Show if dispute is ACTUALLY empty (falsy or "Empty") 
+                             AND not currently editing.
+                           */}
+                           {!entry.dispute && !isEditing && (
+                                 <View className="mt-4 mb-2">
+                                    {aiDisplayData ? (
+                                       <WideButton
+                                          label="Continue"
+                                          icon={ArrowRight}
+                                          onPress={handleContinueToDispute}
+                                       />
+                                    ) : (
+                                       <CardNextButton id={entry.id} />
+                                    )}
                                  </View>
-                             )}
-                        </TimelinePivot>
+                           )}
+                        </View>
                      )}
                   </View>
                );

@@ -76,7 +76,7 @@ export function TimelineItem({
                   {step.label}
                </Text>
             </View>
-            <View className="bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-1">
+            <View className="rounded-full px-2 py-1">
                <Icon size={14} color={iconColor} strokeWidth={2.5} />
             </View>
           </View>
@@ -117,7 +117,7 @@ export function TimelineItem({
             <Text className={`text-base font-bold ${styles.text}`}>
               {step.label}
             </Text>
-            <View className="bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-1">
+            <View className="rounded-full px-2 py-1">
               <Icon size={14} color={iconColor} strokeWidth={2.5} />
             </View>
           </View>
