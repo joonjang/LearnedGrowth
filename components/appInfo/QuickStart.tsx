@@ -190,23 +190,36 @@ export default function QuickStartScreen() {
             you tell yourself often decides how it lands.
           </Text>
 
-          <View className="mt-6 rounded-2xl bg-white p-5 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-            <View className="flex-row items-center mb-2">
-              <BookOpen size={16} color="#6366f1" />
-              <Text className="ml-2 font-bold text-sm text-slate-900 dark:text-slate-100">
-                The Science
-              </Text>
-            </View>
+<View className="mt-6 rounded-2xl bg-white p-5 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+  <View className="flex-row items-center mb-2">
+    <BookOpen size={16} color="#6366f1" />
+    <Text className="ml-2 font-bold text-sm text-slate-900 dark:text-slate-100">
+      The Science
+    </Text>
+  </View>
 
-            <Text className="text-sm leading-6 text-slate-600 dark:text-slate-400">
-              We often think <Text className="font-bold">Adversity (A)</Text>{' '}
-              causes the <Text className="font-bold">Consequence (C)</Text>. Actually, your{' '}
-              <Text className="font-bold text-amber-600 dark:text-amber-500">
-                Beliefs (B)
-              </Text>{' '}
-              often shape how you feel and what you do next.
-            </Text>
-          </View>
+  <Text className="text-sm leading-6 text-slate-600 dark:text-slate-400">
+    The ABCDE method—{'\n'}
+    <Text className="font-bold">Adversity</Text>,{" "}
+    <Text className="font-bold text-amber-600 dark:text-amber-500">Beliefs</Text>,{" "}
+    <Text className="font-bold">Consequences</Text>,{" "}
+    <Text className="font-bold">Disputation</Text>, and{" "}
+    <Text className="font-bold">Energization</Text>—describes a common pattern:
+    setbacks trigger an explanation, and that explanation shapes how you feel and what you do next.
+
+    {"\n\n"}
+    The turning point is <Text className="font-bold">Disputation</Text>: when the first explanation is
+    questioned, the <Text className="font-bold">Consequences</Text> can shift—often followed by{" "}
+    <Text className="font-bold">Energization</Text>, a return of clarity, steadiness, or momentum.
+  </Text>
+
+  <Text className="mt-3 text-xs text-slate-500 dark:text-slate-500">
+    Seligman, M. E. P. (1991). <Text className="italic">Learned optimism.</Text> A.A. Knopf.
+  </Text>
+</View>
+
+
+
         </View>
 
         {/* Scenario Selector */}
@@ -357,33 +370,33 @@ function TimelineItem({
     switch (def.tone) {
       case 'belief':
         return {
-          nodeBg: 'bg-amber-100 dark:bg-amber-900/30',
-          nodeText: 'text-amber-900 dark:text-amber-100',
-          border: 'border-amber-200 dark:border-amber-800/50',
-          bg: 'bg-amber-50/50 dark:bg-amber-950/10',
-          title: 'text-amber-900 dark:text-amber-100',
-          iconColor: '#d97706',
-          iconChipBg: 'bg-amber-100/70 dark:bg-amber-900/20',
+          nodeBg: 'bg-belief-bg dark:bg-belief-bgDark',
+          nodeText: 'text-belief-text dark:text-belief-textDark',
+          border: 'border-belief-border dark:border-belief-borderDark',
+          bg: 'bg-belief-bg dark:bg-belief-bgDark',
+          title: 'text-belief-text dark:text-belief-textDark',
+          iconColor: '#9a3412',
+          iconChipBg: 'bg-belief-bg dark:bg-belief-bgDark',
         };
       case 'dispute':
         return {
-          nodeBg: 'bg-indigo-100 dark:bg-indigo-900/30',
-          nodeText: 'text-indigo-900 dark:text-indigo-100',
-          border: 'border-indigo-200 dark:border-indigo-800/50',
-          bg: 'bg-indigo-50/50 dark:bg-indigo-950/10',
-          title: 'text-indigo-900 dark:text-indigo-100',
-          iconColor: '#4f46e5',
-          iconChipBg: 'bg-indigo-100/70 dark:bg-indigo-900/20',
+          nodeBg: 'bg-dispute-bg dark:bg-dispute-bgDark',
+          nodeText: 'text-dispute-text dark:text-dispute-textDark',
+          border: 'border-dispute-border dark:border-dispute-borderDark',
+          bg: 'bg-dispute-bg dark:bg-dispute-bgDark',
+          title: 'text-dispute-text dark:text-dispute-textDark',
+          iconColor: '#3730a3',
+          iconChipBg: 'bg-dispute-bg dark:bg-dispute-bgDark',
         };
       case 'energy':
         return {
-          nodeBg: 'bg-teal-100 dark:bg-teal-900/30',
-          nodeText: 'text-teal-900 dark:text-teal-100',
-          border: 'border-teal-200 dark:border-teal-800/50',
-          bg: 'bg-teal-50/50 dark:bg-teal-950/10',
-          title: 'text-teal-900 dark:text-teal-100',
-          iconColor: '#0d9488',
-          iconChipBg: 'bg-teal-100/70 dark:bg-teal-900/20',
+          nodeBg: 'bg-energy-bg dark:bg-energy-bgDark',
+          nodeText: 'text-energy-text dark:text-energy-textDark',
+          border: 'border-energy-border dark:border-energy-borderDark',
+          bg: 'bg-energy-bg dark:bg-energy-bgDark',
+          title: 'text-energy-text dark:text-energy-textDark',
+          iconColor: '#065f46',
+          iconChipBg: 'bg-energy-bg dark:bg-energy-bgDark',
         };
       default:
         return {
