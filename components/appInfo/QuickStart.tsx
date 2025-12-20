@@ -2,7 +2,6 @@ import { ABCDE_FIELD } from '@/components/constants';
 import { Link } from 'expo-router';
 import {
     ArrowRight,
-    BookOpen,
     Camera,
     CloudRainWind,
     MessageSquareText,
@@ -23,6 +22,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+// 1. Updated Type Definitions to match your logic
 type StepTone = 'neutral' | 'belief' | 'dispute' | 'energy';
 
 type StepDefinition = {
@@ -34,6 +34,7 @@ type StepDefinition = {
   icon: React.ElementType;
 };
 
+// 2. META: A & C are Neutral, B/D/E are Themed
 const STEP_META: Record<string, { tone: StepTone; icon: React.ElementType }> = {
   adversity: { tone: 'neutral', icon: TriangleAlert },
   belief: { tone: 'belief', icon: MessageSquareText },
@@ -44,6 +45,7 @@ const STEP_META: Record<string, { tone: StepTone; icon: React.ElementType }> = {
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
 
+// ... (SCENARIOS array remains the same) ...
 const SCENARIOS = [
   {
     id: 'work',
@@ -99,38 +101,33 @@ export default function QuickStartScreen() {
     }));
   }, []);
 
-  // Fade animation for scenario changes (no LayoutAnimation)
+  // ... (Animation logic remains the same) ...
   const fade = useRef(new Animated.Value(1)).current;
-
-  // Line geometry computed from onLayout (no measureLayout)
-  const NODE_SIZE = 40; // h-10 / w-10
+  const NODE_SIZE = 40;
   const LINE_TAIL = 14;
-
-  const [stepsLayout, setStepsLayout] = useState<{ y: number; height: number } | null>(null);
+  const [stepsLayout, setStepsLayout] = useState<{
+    y: number;
+    height: number;
+  } | null>(null);
   const [adversityRowY, setAdversityRowY] = useState<number | null>(null);
 
   const lineGeom = useMemo(() => {
     if (!stepsLayout || adversityRowY == null) return null;
-
     const top = stepsLayout.y + adversityRowY + NODE_SIZE / 2;
     const bottom = stepsLayout.y + stepsLayout.height + LINE_TAIL;
     const height = Math.max(0, bottom - top);
-
     return { top, height };
   }, [stepsLayout, adversityRowY]);
 
   useEffect(() => {
     let mounted = true;
-
     AccessibilityInfo.isReduceMotionEnabled()
       .then((val) => mounted && setReduceMotion(val))
       .catch(() => {});
-
     const sub = AccessibilityInfo.addEventListener?.(
       'reduceMotionChanged',
       (val) => setReduceMotion(val)
     );
-
     return () => {
       mounted = false;
       sub?.remove?.();
@@ -139,21 +136,17 @@ export default function QuickStartScreen() {
 
   const handleScenarioChange = (index: number) => {
     if (index === activeScenarioIndex) return;
-
     if (reduceMotion) {
       setActiveScenarioIndex(index);
       return;
     }
-
     fade.stopAnimation();
-
     Animated.timing(fade, {
       toValue: 0,
       duration: 120,
       useNativeDriver: true,
     }).start(() => {
       setActiveScenarioIndex(index);
-
       requestAnimationFrame(() => {
         Animated.timing(fade, {
           toValue: 1,
@@ -179,47 +172,67 @@ export default function QuickStartScreen() {
             className="text-3xl font-black tracking-tight text-slate-900 dark:text-white"
             accessibilityRole="header"
           >
-            How it works
+            Let&apos;s untangle your thoughts.
           </Text>
 
           <Text className="mt-3 text-base leading-7 text-slate-600 dark:text-slate-400">
-            What happened matters. The{' '}
-            <Text className="font-bold text-slate-900 dark:text-slate-200">
+            When things go wrong, we often tell ourselves a{' '}
+            <Text className="font-semibold text-slate-900 dark:text-slate-100">
               story
             </Text>{' '}
-            you tell yourself often decides how it lands.
+            about why it happened.
           </Text>
 
-<View className="mt-6 rounded-2xl bg-white p-5 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-  <View className="flex-row items-center mb-2">
-    <BookOpen size={16} color="#6366f1" />
-    <Text className="ml-2 font-bold text-sm text-slate-900 dark:text-slate-100">
-      The Science
-    </Text>
-  </View>
+          {/* The ABC Card - Updated colors to match Theme */}
+          <View className="mt-6 rounded-2xl bg-white p-5 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <Text className="text-base leading-7 text-slate-700 dark:text-slate-300">
+              <Text className="font-bold text-slate-900 dark:text-slate-100">
+                The ABCs
+              </Text>
+              {'\n'}
+              An{' '}
+              <Text className="font-bold text-slate-900 dark:text-slate-100">
+                Adversity (A)
+              </Text>{' '}
+              happens. You form a{' '}
+              <Text className="font-bold text-belief-text dark:text-belief-textDark">
+                Belief (B)
+              </Text>{' '}
+              about it. That belief drives the{' '}
+              <Text className="font-bold text-slate-900 dark:text-slate-100">
+                Consequence (C)
+              </Text>
+              , how you feel and act.
+            </Text>
 
-  <Text className="text-sm leading-6 text-slate-600 dark:text-slate-400">
-    The ABCDE method—{'\n'}
-    <Text className="font-bold">Adversity</Text>,{" "}
-    <Text className="font-bold text-amber-600 dark:text-amber-500">Beliefs</Text>,{" "}
-    <Text className="font-bold">Consequences</Text>,{" "}
-    <Text className="font-bold">Disputation</Text>, and{" "}
-    <Text className="font-bold">Energization</Text>—describes a common pattern:
-    setbacks trigger an explanation, and that explanation shapes how you feel and what you do next.
+            <View className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <Text className="text-xs leading-5 text-slate-400 dark:text-slate-500">
+                Source: Seligman, M. E. P. (1991).{' '}
+                <Text className="italic">Learned optimism</Text>. A.A. Knopf.
+              </Text>
+            </View>
+          </View>
 
-    {"\n\n"}
-    The turning point is <Text className="font-bold">Disputation</Text>: when the first explanation is
-    questioned, the <Text className="font-bold">Consequences</Text> can shift—often followed by{" "}
-    <Text className="font-bold">Energization</Text>, a return of clarity, steadiness, or momentum.
-  </Text>
+          <Text className="mt-6 text-base leading-7 text-slate-600 dark:text-slate-400">
+            We can change how you feel by looking at that{' '}
+            <Text className="font-semibold text-slate-900 dark:text-slate-100">
+              story
+            </Text>{' '}
+            again.
+          </Text>
 
-  <Text className="mt-3 text-xs text-slate-500 dark:text-slate-500">
-    Seligman, M. E. P. (1991). <Text className="italic">Learned optimism.</Text> A.A. Knopf.
-  </Text>
-</View>
-
-
-
+          {/* Solution Text - Updated colors to match Theme */}
+          <Text className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-400">
+            Together, we’ll use{' '}
+            <Text className="font-bold text-dispute-text dark:text-dispute-textDark">
+              Disputation (D)
+            </Text>{' '}
+            to challenge negative thoughts, helping you find{' '}
+            <Text className="font-bold text-energy-text dark:text-energy-textDark">
+              Energy (E)
+            </Text>{' '}
+            and a clearer perspective.
+          </Text>
         </View>
 
         {/* Scenario Selector */}
@@ -237,15 +250,12 @@ export default function QuickStartScreen() {
           >
             {SCENARIOS.map((scenario, index) => {
               const isActive = index === activeScenarioIndex;
-
               return (
                 <Pressable
                   key={scenario.id}
                   onPress={() => handleScenarioChange(index)}
                   hitSlop={10}
                   accessibilityRole="button"
-                  accessibilityLabel={`Scenario: ${scenario.label}`}
-                  accessibilityHint="Shows an example timeline for this scenario"
                   className={`flex-row items-center justify-center rounded-full px-4 py-2 border ${
                     isActive
                       ? 'bg-slate-900 border-slate-900 dark:bg-white dark:border-white'
@@ -276,7 +286,7 @@ export default function QuickStartScreen() {
 
         {/* Timeline */}
         <View className="relative px-6 mt-2">
-          {/* Line behind nodes */}
+          {/* Connecting Line */}
           {lineGeom && (
             <View
               pointerEvents="none"
@@ -292,11 +302,9 @@ export default function QuickStartScreen() {
             </View>
           )}
 
-          {/* Fade the step content on scenario switch */}
+          {/* Steps List */}
           <Animated.View
             style={{ opacity: fade }}
-            // nativewind usually supports className on Animated.View.
-            // If your setup complains, tell me and I will show the 1-line wrapper fix.
             className="gap-8 z-10"
             onLayout={(e) => {
               const { y, height } = e.nativeEvent.layout;
@@ -333,12 +341,7 @@ export default function QuickStartScreen() {
         style={{ paddingBottom: insets.bottom + 16 }}
       >
         <Link href="/new" asChild>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Try a two-minute entry"
-            accessibilityHint="Starts a new entry"
-            className="relative flex-row items-center justify-center overflow-hidden rounded-2xl bg-indigo-600 px-6 py-4 active:bg-indigo-700"
-          >
+          <Pressable className="relative flex-row items-center justify-center overflow-hidden rounded-2xl bg-indigo-600 px-6 py-4 active:bg-indigo-700">
             <View className="mr-3 rounded-full bg-white/20 p-1">
               <Zap size={16} color="white" />
             </View>
@@ -350,7 +353,6 @@ export default function QuickStartScreen() {
             </View>
           </Pressable>
         </Link>
-
         <Text className="mt-3 text-center text-xs font-medium text-slate-400">
           No perfection required. Just start.
         </Text>
@@ -359,6 +361,7 @@ export default function QuickStartScreen() {
   );
 }
 
+// 3. Updated TimelineItem to use your specific Tailwind Theme keys
 function TimelineItem({
   def,
   exampleText,
@@ -370,43 +373,47 @@ function TimelineItem({
     switch (def.tone) {
       case 'belief':
         return {
+          // B - Orange Theme
           nodeBg: 'bg-belief-bg dark:bg-belief-bgDark',
           nodeText: 'text-belief-text dark:text-belief-textDark',
           border: 'border-belief-border dark:border-belief-borderDark',
           bg: 'bg-belief-bg dark:bg-belief-bgDark',
           title: 'text-belief-text dark:text-belief-textDark',
-          iconColor: '#9a3412',
-          iconChipBg: 'bg-belief-bg dark:bg-belief-bgDark',
+          iconColor: '#9a3412', // Matches text-orange-800
+          iconChipBg: 'bg-white/50 dark:bg-black/10',
         };
       case 'dispute':
         return {
+          // D - Indigo Theme
           nodeBg: 'bg-dispute-bg dark:bg-dispute-bgDark',
           nodeText: 'text-dispute-text dark:text-dispute-textDark',
           border: 'border-dispute-border dark:border-dispute-borderDark',
           bg: 'bg-dispute-bg dark:bg-dispute-bgDark',
           title: 'text-dispute-text dark:text-dispute-textDark',
-          iconColor: '#3730a3',
-          iconChipBg: 'bg-dispute-bg dark:bg-dispute-bgDark',
+          iconColor: '#3730a3', // Matches text-indigo-800
+          iconChipBg: 'bg-white/50 dark:bg-black/10',
         };
       case 'energy':
         return {
+          // E - Emerald Theme
           nodeBg: 'bg-energy-bg dark:bg-energy-bgDark',
           nodeText: 'text-energy-text dark:text-energy-textDark',
           border: 'border-energy-border dark:border-energy-borderDark',
           bg: 'bg-energy-bg dark:bg-energy-bgDark',
           title: 'text-energy-text dark:text-energy-textDark',
-          iconColor: '#065f46',
-          iconChipBg: 'bg-energy-bg dark:bg-energy-bgDark',
+          iconColor: '#065f46', // Matches text-emerald-800
+          iconChipBg: 'bg-white/50 dark:bg-black/10',
         };
       default:
+        // Neutral (A & C) - Slate Theme
         return {
           nodeBg: 'bg-slate-100 dark:bg-slate-800',
-          nodeText: 'text-slate-700 dark:text-slate-200',
+          nodeText: 'text-slate-600 dark:text-slate-400',
           border: 'border-slate-200 dark:border-slate-800',
           bg: 'bg-white dark:bg-slate-900',
           title: 'text-slate-900 dark:text-slate-100',
-          iconColor: '#64748b',
-          iconChipBg: 'bg-slate-100/70 dark:bg-slate-800/40',
+          iconColor: '#64748b', // Slate-500
+          iconChipBg: 'bg-slate-100 dark:bg-slate-800',
         };
     }
   };
@@ -416,7 +423,7 @@ function TimelineItem({
 
   return (
     <View className="flex-row items-start">
-      {/* Left node is the letter */}
+      {/* Left node (Letter) */}
       <View
         className={`z-10 h-10 w-10 items-center justify-center rounded-full border-2 border-white dark:border-slate-950 ${s.nodeBg}`}
         accessibilityRole="text"
@@ -425,7 +432,7 @@ function TimelineItem({
         <Text className={`text-sm font-black ${s.nodeText}`}>{def.letter}</Text>
       </View>
 
-      {/* Content */}
+      {/* Content Card */}
       <View className="ml-4 flex-1 pt-1">
         <View className={`rounded-2xl border p-4 ${s.bg} ${s.border}`}>
           <View className="flex-row items-center justify-between">
@@ -437,11 +444,12 @@ function TimelineItem({
           </View>
 
           <Text className="mt-1 text-sm leading-5 text-slate-600 dark:text-slate-400">
-            <Text className="font-bold text-slate-900 dark:text-slate-200">
+            <Text className="text-slate-900 dark:text-slate-200">
               {def.desc}
             </Text>
           </Text>
 
+          {/* Example Box */}
           <View className="mt-3 overflow-hidden rounded-lg bg-white/60 px-3 py-2.5 dark:bg-black/20">
             <Text className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400/80">
               Example
@@ -455,19 +463,18 @@ function TimelineItem({
     </View>
   );
 }
+
+// 4. PivotPoint remains mostly neutral but I updated colors slightly for better dark mode contrast
 function PivotPoint() {
   return (
     <View className="mb-8">
       <View className="flex-row items-start">
-        {/* Dot at the top-left instead of centered */}
         <View className="z-10 relative w-10 items-center">
-          {/* tweak mt-[2px] if you want it perfectly aligned with header text */}
           <View className="mt-[2px] h-10 w-10 items-start justify-start rounded-full bg-slate-50 dark:bg-slate-950">
             <View className="mt-4 ml-4 h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-700" />
           </View>
         </View>
 
-        {/* Card aligned with the normal right column */}
         <View className="ml-4 flex-1 pt-1">
           <View className="rounded-2xl border-2 border-dashed border-slate-300 bg-white/90 p-4 shadow-md dark:border-slate-700 dark:bg-slate-900/50">
             <Text className="text-xs font-bold uppercase tracking-widest text-slate-400">
@@ -475,7 +482,8 @@ function PivotPoint() {
             </Text>
 
             <Text className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-              You can continue on your own, or get an optional AI assisted analysis based on your{' '}
+              You can continue on your own, or get an optional AI assisted
+              analysis based on your{' '}
               <Text className="font-bold text-slate-900 dark:text-slate-200">
                 A + B + C
               </Text>
@@ -490,8 +498,14 @@ function PivotPoint() {
                 <Text className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   Continue with the{' '}
                   <Text className="font-bold">standard questions</Text> for{' '}
-                  <Text className="font-bold">Dispute (D)</Text> and{' '}
-                  <Text className="font-bold">Energy (E)</Text>.
+                  <Text className="font-bold text-dispute-text dark:text-dispute-textDark">
+                    Dispute (D)
+                  </Text>{' '}
+                  and{' '}
+                  <Text className="font-bold text-energy-text dark:text-energy-textDark">
+                    Energy (E)
+                  </Text>
+                  .
                 </Text>
               </View>
 
@@ -500,11 +514,9 @@ function PivotPoint() {
                   Guided Path
                 </Text>
                 <Text className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Get an <Text className="font-bold">analysis</Text> of your entry and{' '}
-                  <Text className="font-bold">tailored questions</Text> specific to your
-                  entry, then continue to{' '}
-                  <Text className="font-bold">Dispute (D)</Text> and{' '}
-                  <Text className="font-bold">Energy (E)</Text>.
+                  Get an <Text className="font-bold">analysis</Text> of your
+                  entry and <Text className="font-bold">tailored questions</Text>{' '}
+                  specific to your entry.
                 </Text>
               </View>
             </View>
