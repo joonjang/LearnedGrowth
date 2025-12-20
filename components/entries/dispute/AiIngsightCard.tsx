@@ -90,18 +90,33 @@ export function AiInsightCard({
          ? '…' + streamingText.slice(-MAX_VISIBLE_CHARS)
          : streamingText;
 
-   if (!data) {
+if (!data) {
       return (
-         <View className="py-2 gap-4">
-            <View className="flex-row items-center gap-3">
-                <ThreeDotsLoader />
-                <Text className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                    Analyzing your story...
-                </Text>
+         <View className="my-1 rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            {/* Header: Active Status */}
+            <View className="mb-4 flex-row items-center gap-3">
+               <View className="flex items-center justify-center rounded-full bg-indigo-50 p-2 dark:bg-indigo-500/20">
+                  <Sparkles size={18} color={isDark ? '#818cf8' : '#4f46e5'} />
+               </View>
+               <View className="flex-1">
+                  <Text className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                     Analyzing your story...
+                  </Text>
+                  <Text className="text-xs text-slate-500 dark:text-slate-400">
+                     Looking for patterns in the 3 Ps
+                  </Text>
+               </View>
             </View>
-            <View className="pl-3 border-l-2 border-slate-200 dark:border-slate-700">
-               <Text className="text-xs text-slate-400 font-mono leading-5">
-                  {renderStreamingText || 'Connecting...'}
+
+            {/* Content: Streaming Area */}
+            <View className="min-h-[80px] rounded-xl bg-slate-50 px-4 py-3 dark:bg-black/20">
+               {/* Loader creates a nice 'activity' rhythm above the text */}
+               <View className="mb-2 flex-row opacity-60">
+                  <ThreeDotsLoader />
+               </View>
+
+               <Text className="font-mono text-xs leading-5 text-indigo-900/70 dark:text-indigo-200/70">
+                  {renderStreamingText || 'Connecting to insight engine...'}
                </Text>
             </View>
          </View>
