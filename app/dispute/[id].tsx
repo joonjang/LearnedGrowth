@@ -32,9 +32,12 @@ import {
    ScrollView,
    Text,
    TextInput,
-   View
+   View,
 } from 'react-native';
-import { KeyboardAvoidingView, KeyboardEvents } from 'react-native-keyboard-controller';
+import {
+   KeyboardAvoidingView,
+   KeyboardEvents,
+} from 'react-native-keyboard-controller';
 import Animated, {
    useAnimatedStyle,
    useSharedValue,
@@ -48,6 +51,29 @@ const STEP_ORDER = [
    'usefulness',
    'energy',
 ] as const;
+
+const routeTreeHasEntryDetail = (state: any, entryId: string | number) => {
+   if (!state?.routes?.length) return false;
+   for (const route of state.routes as any[]) {
+      const name = route?.name as string | undefined;
+      const paramsId = route?.params?.id;
+      const isEntryDetailRoute =
+         !!name &&
+         (name.includes('entries/[id]') || name === '[id]/index');
+
+      if (
+         isEntryDetailRoute &&
+         paramsId !== undefined &&
+         String(paramsId) === String(entryId)
+      ) {
+         return true;
+      }
+      if (route?.state && routeTreeHasEntryDetail(route.state, entryId)) {
+         return true;
+      }
+   }
+   return false;
+};
 
 export default function DisputeScreen() {
    const params = useLocalSearchParams<{
@@ -79,7 +105,6 @@ export default function DisputeScreen() {
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
    const insets = useSafeAreaInsets();
    const isKeyboardVisible = useKeyboardVisible();
-
 
    // Unified Edge-to-Edge Padding Logic
    const topPadding = insets.top + 12;
@@ -234,14 +259,13 @@ export default function DisputeScreen() {
    const inputRef = useRef<TextInput>(null);
    const { promptTextStyle, inputBoxDims, promptMaxHeight } =
       usePromptLayout('compact');
-      
 
    const setField = useCallback(
       (k: NewInputDisputeType) => (v: string) =>
          setForm((f) => ({ ...f, [k]: v })),
       []
    );
-const navigation = useNavigation();
+   const navigation = useNavigation();
    const submit = useCallback(async () => {
       if (!entry) return;
       const dispute = buildDisputeText(trimmedForm);
@@ -249,29 +273,41 @@ const navigation = useNavigation();
       const patch: Partial<Entry> = {};
       if (dispute !== (entry.dispute ?? '')) patch.dispute = dispute;
       if (nextEnergy !== (entry.energy ?? '')) patch.energy = nextEnergy;
-      if (Object.keys(patch).length) await updateEntry(entry.id, patch);
+
+      const hasChanges = Object.keys(patch).length > 0;
+      if (hasChanges) {
+         // Save in the background to avoid blocking the navigation transition.
+         void updateEntry(entry.id, patch).catch((e) =>
+            console.error('Failed to save dispute', e)
+         );
+      }
       if (hapticsEnabled && hapticsAvailable) triggerHaptic();
-      
-      const state = navigation.getState();
-  const routes = state!.routes as any[];
-  const prev = routes[routes.length - 2];
 
-  const prevName = prev?.name as string | undefined;
-  const prevId = prev?.params?.id;
+      const navState = navigation?.getState?.();
+      const hasExistingDetail = routeTreeHasEntryDetail(navState, entry.id);
 
-  const cameFromDetail =
-    !!prevName?.includes('entries/[id]') && String(prevId) === String(entry.id);
+      const targetRoute = {
+         pathname: '/(tabs)/entries/[id]',
+         params: { id: String(entry.id), animateInstant: '1' },
+      } as const;
 
-  if (cameFromDetail) {
-    router.back(); // no duplicate detail, no extra animation
-    return;
-  }
+      if (hasExistingDetail) {
+         // We came from detail -> just go back to it (avoids a duplicate stack entry).
+         router.back();
+         return;
+      }
 
-  router.replace({
-    pathname: '/(tabs)/entries/[id]',
-    params: { id: String(entry.id), animateInstant: '1' },
-  });
-   }, [entry, hapticsAvailable, hapticsEnabled, navigation, triggerHaptic, trimmedForm, updateEntry]);
+      // No detail in the stack yet: replace the modal with the detail screen.
+      router.replace(targetRoute);
+   }, [
+      entry,
+      hapticsAvailable,
+      hapticsEnabled,
+      navigation,
+      triggerHaptic,
+      trimmedForm,
+      updateEntry,
+   ]);
 
    const scrollToBottom = useCallback((animated = true) => {
       const ref = scrollRef.current;
@@ -296,15 +332,15 @@ const navigation = useNavigation();
       try {
          // Trigger the hook's analyze function
          const result = await analyze({
-             adversity: entry.adversity,
-             belief: entry.belief,
-             consequence: entry.consequence
+            adversity: entry.adversity,
+            belief: entry.belief,
+            consequence: entry.consequence,
          });
 
          setIsRegenerating(false);
          // Increment and Save
          const nextRetryCount = (entry.aiRetryCount ?? 0) + 1;
-         
+
          await updateEntry(entry.id, {
             aiResponse: result.data,
             aiRetryCount: nextRetryCount,
@@ -313,9 +349,16 @@ const navigation = useNavigation();
          if (hapticsEnabled && hapticsAvailable) triggerHaptic();
       } catch (e) {
          setIsRegenerating(false);
-         console.error("Refresh failed", e);
+         console.error('Refresh failed', e);
       }
-   }, [entry, analyze, updateEntry, hapticsEnabled, hapticsAvailable, triggerHaptic]);
+   }, [
+      entry,
+      analyze,
+      updateEntry,
+      hapticsEnabled,
+      hapticsAvailable,
+      triggerHaptic,
+   ]);
 
    useEffect(() => {
       requestAnimationFrame(() => scrollToBottom(false));
@@ -399,7 +442,9 @@ const navigation = useNavigation();
                backgroundColor="transparent"
                style={isDark ? 'light' : 'dark'}
             />
-            <Text className="text-slate-900 dark:text-slate-100">Entry not found.</Text>
+            <Text className="text-slate-900 dark:text-slate-100">
+               Entry not found.
+            </Text>
          </View>
       );
    }
@@ -467,14 +512,13 @@ const navigation = useNavigation();
                         onExit={handleClose}
                         onGoToSteps={() => setViewMode('steps')}
                         onRefresh={handleRefreshAnalysis}
-                  retryCount={entry?.aiRetryCount ?? 0}
-                  maxRetries={MAX_AI_RETRIES}
+                        retryCount={entry?.aiRetryCount ?? 0}
+                        maxRetries={MAX_AI_RETRIES}
                      />
                   </Animated.View>
                ) : null}
             </View>
          </KeyboardAvoidingView>
-         
       </>
    );
 }

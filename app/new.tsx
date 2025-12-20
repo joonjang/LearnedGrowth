@@ -11,7 +11,7 @@ import { usePrompts } from '@/hooks/usePrompts';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
 import { NewInputEntryType } from '@/models/newInputEntryType';
 // REMOVED: import { useTheme } ...
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
    Alert,
@@ -37,9 +37,33 @@ const STEP_PLACEHOLDER: Record<NewInputEntryType, string> = {
    consequence: 'Feelings, reactions, and behaviors',
 };
 
+const routeTreeHasEntryDetail = (state: any, entryId: string | number) => {
+   if (!state?.routes?.length) return false;
+   for (const route of state.routes as any[]) {
+      const name = route?.name as string | undefined;
+      const paramsId = route?.params?.id;
+      const isEntryDetailRoute =
+         !!name &&
+         (name.includes('entries/[id]') || name === '[id]/index');
+
+      if (
+         isEntryDetailRoute &&
+         paramsId !== undefined &&
+         String(paramsId) === String(entryId)
+      ) {
+         return true;
+      }
+      if (route?.state && routeTreeHasEntryDetail(route.state, entryId)) {
+         return true;
+      }
+   }
+   return false;
+};
+
 export default function NewEntryModal() {
    const store = useEntries();
    const insets = useSafeAreaInsets(); // <-- The correct tool for Edge-to-Edge
+   const navigation = useNavigation();
 
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
@@ -95,11 +119,22 @@ export default function NewEntryModal() {
 
       const newEntry = await store.createEntry(adversity, belief, consequence);
 
-      router.replace({
+      const targetRoute = {
          pathname: '/(tabs)/entries/[id]',
          params: { id: newEntry.id, animateInstant: '1' },
-      });
-   }, [store, trimmedForm]);
+      } as const;
+
+      const navState = navigation?.getState?.();
+      const hasExistingDetail = routeTreeHasEntryDetail(navState, newEntry.id);
+
+      if (hasExistingDetail) {
+         router.back();
+         return;
+      }
+
+      // Replace the modal with the new entry detail to avoid duplicate stacking.
+      router.replace(targetRoute);
+   }, [navigation, store, trimmedForm]);
 
    const handleStepChange = useCallback(
       (direction: 'next' | 'back') => {

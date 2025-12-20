@@ -1,6 +1,5 @@
-// lib/theme.ts
-
-export type FieldTone = 'default' | 'belief' | 'dispute' | 'energy';
+// 1. Add 'neutral' to the type definition
+export type FieldTone = 'default' | 'neutral' | 'belief' | 'dispute' | 'energy';
 
 export const getFieldStyles = (tone: FieldTone, isEditing: boolean = false) => {
   // 1. EDIT MODE: Uniform styling
@@ -32,10 +31,11 @@ export const getFieldStyles = (tone: FieldTone, isEditing: boolean = false) => {
         text: 'text-energy-text dark:text-energy-textDark font-semibold',
         label: 'text-slate-500 dark:text-slate-400',
       };
+    
+    // 3. Add 'neutral' case here to fall through to default
+    case 'neutral':
     default:
       return {
-        // CHANGED: bg-white -> bg-slate-50
-        // This makes the block visible inside a White Card.
         container: 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700',
         text: 'text-slate-900 dark:text-slate-100',
         label: 'text-slate-500 dark:text-slate-400',

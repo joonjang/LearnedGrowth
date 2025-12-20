@@ -25,6 +25,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2025-12-19
 - Migrated icon style to lucide
 - Quick start screen established
+- Fixed navigation double swipe bug
 
 ### 2025-12-18
 - Integrated front end tests
