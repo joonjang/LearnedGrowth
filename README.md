@@ -278,7 +278,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ## Next Steps
 
 - Display disclaimer that this is a tool
-- Display empty entry helper information 
+
+- Button idempotency for modals login and free-user 
+
+- put in an option to become a subscriber for the free-user screen
 
 - Seeing setting screen should update revenue cat credits 
 

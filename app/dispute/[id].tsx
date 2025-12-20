@@ -14,7 +14,11 @@ import type { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { usePreferences } from '@/providers/PreferencesProvider';
-import { router, useLocalSearchParams, useNavigation } from 'expo-router';
+import {
+   router,
+   useLocalSearchParams,
+   useRootNavigationState,
+} from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import React, {
@@ -265,7 +269,7 @@ export default function DisputeScreen() {
          setForm((f) => ({ ...f, [k]: v })),
       []
    );
-   const navigation = useNavigation();
+   const rootNavigationState = useRootNavigationState();
    const submit = useCallback(async () => {
       if (!entry) return;
       const dispute = buildDisputeText(trimmedForm);
@@ -283,8 +287,10 @@ export default function DisputeScreen() {
       }
       if (hapticsEnabled && hapticsAvailable) triggerHaptic();
 
-      const navState = navigation?.getState?.();
-      const hasExistingDetail = routeTreeHasEntryDetail(navState, entry.id);
+      const hasExistingDetail = routeTreeHasEntryDetail(
+         rootNavigationState,
+         entry.id
+      );
 
       const targetRoute = {
          pathname: '/(tabs)/entries/[id]',
@@ -303,7 +309,7 @@ export default function DisputeScreen() {
       entry,
       hapticsAvailable,
       hapticsEnabled,
-      navigation,
+      rootNavigationState,
       triggerHaptic,
       trimmedForm,
       updateEntry,

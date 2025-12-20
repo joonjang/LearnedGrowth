@@ -11,7 +11,7 @@ import { usePrompts } from '@/hooks/usePrompts';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
 import { NewInputEntryType } from '@/models/newInputEntryType';
 // REMOVED: import { useTheme } ...
-import { router, useNavigation } from 'expo-router';
+import { router, useRootNavigationState } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
    Alert,
@@ -63,7 +63,7 @@ const routeTreeHasEntryDetail = (state: any, entryId: string | number) => {
 export default function NewEntryModal() {
    const store = useEntries();
    const insets = useSafeAreaInsets(); // <-- The correct tool for Edge-to-Edge
-   const navigation = useNavigation();
+   const rootNavigationState = useRootNavigationState();
 
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
@@ -108,8 +108,11 @@ export default function NewEntryModal() {
       [trimmedForm]
    );
    const currentEmpty = !trimmedForm[currKey];
+   const [isSubmitting, setIsSubmitting] = useState(false);
+   const submittingRef = useRef(false);
 
    const submit = useCallback(async () => {
+      if (submittingRef.current) return;
       const { adversity, belief, consequence } = trimmedForm;
 
       if (!adversity || !belief || !consequence) {
@@ -117,24 +120,36 @@ export default function NewEntryModal() {
          return;
       }
 
-      const newEntry = await store.createEntry(adversity, belief, consequence);
+      submittingRef.current = true;
+      setIsSubmitting(true);
 
-      const targetRoute = {
-         pathname: '/(tabs)/entries/[id]',
-         params: { id: newEntry.id, animateInstant: '1' },
-      } as const;
+      try {
+         const newEntry = await store.createEntry(adversity, belief, consequence);
 
-      const navState = navigation?.getState?.();
-      const hasExistingDetail = routeTreeHasEntryDetail(navState, newEntry.id);
+         const targetRoute = {
+            pathname: '/(tabs)/entries/[id]',
+            params: { id: newEntry.id, animateInstant: '1' },
+         } as const;
 
-      if (hasExistingDetail) {
-         router.back();
-         return;
+         const hasExistingDetail = routeTreeHasEntryDetail(
+            rootNavigationState,
+            newEntry.id
+         );
+
+         if (hasExistingDetail) {
+            router.back();
+            return;
+         }
+
+         // Replace the modal with the new entry detail to avoid duplicate stacking.
+         router.replace(targetRoute);
+      } catch (e) {
+         console.error('Failed to create entry', e);
+         Alert.alert('Save failed', 'Could not save the entry. Please try again.');
+         submittingRef.current = false;
+         setIsSubmitting(false);
       }
-
-      // Replace the modal with the new entry detail to avoid duplicate stacking.
-      router.replace(targetRoute);
-   }, [navigation, store, trimmedForm]);
+   }, [rootNavigationState, store, trimmedForm]);
 
    const handleStepChange = useCallback(
       (direction: 'next' | 'back') => {
@@ -234,7 +249,7 @@ export default function NewEntryModal() {
                      onSubmit={submit}
                      onExit={() => router.back()}
                      hasUnsavedChanges={hasAnyContent}
-                     disableNext={currentEmpty}
+                     disableNext={currentEmpty || isSubmitting}
                      inputRef={inputRef}
                      onNext={() => handleStepChange('next')}
                      onBack={() => handleStepChange('back')}

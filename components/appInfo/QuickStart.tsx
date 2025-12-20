@@ -3,18 +3,18 @@ import { TimelineItem, TimelineLine, TimelinePivot, TimelineStepDef } from '@/co
 import { FieldTone } from '@/lib/theme';
 import { Link } from 'expo-router';
 import {
-    ArrowRight,
-    RefreshCw,
-    Zap,
+   ArrowRight,
+   RefreshCw,
+   Zap,
 } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    AccessibilityInfo,
-    Animated,
-    Pressable,
-    ScrollView,
-    Text,
-    View,
+   AccessibilityInfo,
+   Animated,
+   Pressable,
+   ScrollView,
+   Text,
+   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -157,9 +157,8 @@ export default function QuickStartScreen() {
                 </Text>
 
                 <View className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <Text className="text-xs leading-5 text-slate-400 dark:text-slate-500">
-                    Source: Seligman, M. E. P. (1991).{' '}
-                    <Text className="italic">Learned optimism</Text>. A.A. Knopf.
+                  <Text className="italic text-xs leading-5 text-slate-400 dark:text-slate-500">
+                    Seligman, M. E. P. (2011). Learned optimism: How to change your mind and your life. Knopf Doubleday Publishing Group.
                   </Text>
                 </View>
               </View>
