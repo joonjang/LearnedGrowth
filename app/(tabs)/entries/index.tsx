@@ -8,12 +8,7 @@ import { Entry } from '@/models/entry';
 import { Link, router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-   Pressable,
-   SectionList,
-   Text,
-   View
-} from 'react-native';
+import { Pressable, SectionList, Text, View } from 'react-native';
 import { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -146,19 +141,15 @@ export default function EntriesScreen() {
             sections={sections}
             keyExtractor={(item) => `${item.kind}-${item.entry.id}`}
             className="flex-1"
-            contentContainerStyle={{
-               paddingBottom: 128,
-            }}
             stickySectionHeadersEnabled
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={<QuickStart />}
             onScrollBeginDrag={() => {
                closeMenu();
-               closeActiveSwipeable(); 
+               closeActiveSwipeable();
             }}
-            
             renderSectionHeader={({ section }) => (
-               <View 
+               <View
                   className="items-center pb-2 "
                   style={{ paddingTop: insets.top }}
                >
@@ -194,11 +185,9 @@ export default function EntriesScreen() {
                      onToggleMenu={() => toggleMenu(item.entry.id)}
                      onCloseMenu={closeMenu}
                      onMenuLayout={setOpenMenuBounds}
-                     
                      // Pass the handlers down
                      onSwipeOpen={onRowSwipeOpen}
                      closeActiveSwipeable={closeActiveSwipeable}
-                     
                      onEdit={() =>
                         router.push({
                            pathname: '/(tabs)/entries/[id]',
@@ -211,24 +200,24 @@ export default function EntriesScreen() {
             }}
          />
 
-         <View
-            className="absolute bottom-0 right-0 left-0 items-end px-6 pointer-events-box-none"
-         >
-            <View className="mb-4">
-               <Link href={'/new'} asChild>
-                  <Pressable
-                     className="h-14 w-14 items-center justify-center rounded-full bg-amber-500 shadow-sm active:opacity-90"
-                     style={iosShadowSm}
-                     accessibilityLabel="Create new entry"
-                     testID='new-entry-button'
-                  >
-                     <Text className="text-center text-[28px] font-bold leading-[30px] text-white">
-                        +
-                     </Text>
-                  </Pressable>
-               </Link>
+         {sections.length !== 0 && (
+            <View className="absolute bottom-0 right-0 left-0 items-end px-6 pointer-events-box-none">
+               <View className="mb-4">
+                  <Link href={'/new'} asChild>
+                     <Pressable
+                        className="h-14 w-14 items-center justify-center rounded-full bg-amber-500 shadow-sm active:opacity-90"
+                        style={iosShadowSm}
+                        accessibilityLabel="Create new entry"
+                        testID="new-entry-button"
+                     >
+                        <Text className="text-center text-[28px] font-bold leading-[30px] text-white">
+                           +
+                        </Text>
+                     </Pressable>
+                  </Link>
+               </View>
             </View>
-         </View>
+         )}
       </View>
    );
 }
