@@ -5,6 +5,7 @@ import { AiInsightCard } from '@/components/entries/dispute/AiIngsightCard';
 import { useEntries } from '@/hooks/useEntries';
 import { formatDateTimeWithWeekday } from '@/lib/date';
 import { getIosShadowStyle } from '@/lib/shadow';
+import { FieldTone, getFieldStyles } from '@/lib/theme';
 import type { Entry } from '@/models/entry';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -37,6 +38,14 @@ function buildFieldRecord(getValue: (key: FieldKey) => string) {
       {} as Record<FieldKey, string>
    );
 }
+
+// Helper to map DB keys to Theme Tones
+const getToneForKey = (key: FieldKey): FieldTone => {
+   if (key === 'belief') return 'belief';
+   if (key === 'dispute') return 'dispute';
+   if (key === 'energy') return 'energy';
+   return 'default';
+};
 
 export default function EntryDetailScreen() {
    const { id } = useLocalSearchParams();
@@ -232,7 +241,7 @@ export default function EntryDetailScreen() {
    }
 
    return (
-      <View className="flex-1 px-4 bg-slate-50 dark:bg-slate-900">
+      <View className="flex-1 px-4 bg-white dark:bg-slate-900">
          {/* Safe Area Spacer */}
          <View style={{ height: insets.top }} />
 
@@ -242,46 +251,24 @@ export default function EntryDetailScreen() {
                onPress={() => router.replace(ROUTE_ENTRIES)}
                hitSlop={8}
                className="absolute left-0 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
-               testID="detail-back-btn" // <--- ADDED TEST ID
+               testID="detail-back-btn"
             >
                <ChevronLeft size={18} color={iconColor} />
             </Pressable>
 
             {/* Title Column - Contains both Time/Editing and Absolute Status Text */}
             <View className="items-center justify-center gap-1 h-full">
-               {!isEditing ? (
-                  <>
-                     <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
-                        {formattedTimestamp || ' '}
-                     </Text>
-
-                     {/* --- ABSOLUTE STATUS TEXT --- */}
-                     {/* Hanging off the bottom of the title, transparent background */}
-                     <Text
-                        className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 w-[200px] text-center ${
-                           !statusMessage ? 'opacity-0' : 'opacity-100'
-                        }`}
-                        numberOfLines={1}
-                     >
-                        {statusDisplay}
-                     </Text>
-                  </>
-               ) : (
-                  <>
-                     <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
-                        Editing
-                     </Text>
-                     {/* --- ABSOLUTE STATUS TEXT (Edit Mode) --- */}
-                     <Text
-                        className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 w-[200px] text-center ${
-                           !statusMessage ? 'opacity-0' : 'opacity-100'
-                        }`}
-                        numberOfLines={1}
-                     >
-                        {statusDisplay}
-                     </Text>
-                  </>
-               )}
+               <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
+                  {isEditing ? 'Editing' : formattedTimestamp || ' '}
+               </Text>
+               <Text
+                  className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 w-[200px] text-center ${
+                     !statusMessage ? 'opacity-0' : 'opacity-100'
+                  }`}
+                  numberOfLines={1}
+               >
+                  {statusDisplay}
+               </Text>
             </View>
 
             <View className="absolute right-0 flex-row items-center gap-2">
@@ -290,7 +277,7 @@ export default function EntryDetailScreen() {
                      onPress={handleCancel}
                      hitSlop={8}
                      className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
-                     testID="detail-cancel-btn" // <--- ADDED TEST ID
+                     testID="detail-cancel-btn"
                   >
                      <Text className="text-sm text-slate-900 dark:text-slate-100">
                         Cancel
@@ -301,7 +288,7 @@ export default function EntryDetailScreen() {
                   onPress={isEditing ? handleSave : startEditing}
                   hitSlop={8}
                   className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
-                  testID="detail-action-btn" // <--- ADDED TEST ID
+                  testID="detail-action-btn"
                >
                   <Text className="text-sm text-slate-900 dark:text-slate-100">
                      {isEditing ? 'Save' : 'Edit'}
@@ -309,7 +296,7 @@ export default function EntryDetailScreen() {
                </Pressable>
             </View>
 
-            {/* Divider: Absolute Bottom (y=44px) */}
+            {/* Divider: Absolute Bottom */}
             {hasScrolled && (
                <View className="absolute bottom-0 left-0 right-0 h-[1px] bg-slate-200 dark:bg-slate-700" />
             )}
@@ -330,32 +317,15 @@ export default function EntryDetailScreen() {
          >
             {/* Form Fields */}
             {visibleFields.map((field) => {
-               // 1. Text Color & Weight
-               let textColorClass = 'text-slate-900 dark:text-slate-100';
-               if (!isEditing) {
-                  if (field.key === 'belief')
-                     textColorClass = 'text-belief-text font-semibold';
-                  if (field.key === 'dispute')
-                     textColorClass = 'text-dispute-text font-semibold';
-               }
-
-               // 2. Container Style
-               let containerClass = '';
-               if (isEditing) {
-                  containerClass =
-                     'bg-zinc-50 dark:bg-slate-700 border-slate-200 dark:border-slate-700 min-h-[80px] py-3';
-               } else {
-                  if (field.key === 'belief') {
-                     containerClass =
-                        'bg-belief-bg border-belief-border py-3 min-h-0 h-auto';
-                  } else if (field.key === 'dispute') {
-                     containerClass =
-                        'bg-dispute-bg border-dispute-border py-3 min-h-0 h-auto';
-                  } else {
-                     containerClass =
-                        'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 py-3 min-h-0 h-auto';
-                  }
-               }
+               // --- USE SHARED THEME UTILITY ---
+               const tone = getToneForKey(field.key);
+               const styles = getFieldStyles(tone, isEditing);
+               
+               // Specific layout for detail screen (heights, padding)
+               // This is strictly structural/layout, not thematic color.
+               const layoutClass = isEditing 
+                  ? 'min-h-[80px] py-3' 
+                  : 'py-3 min-h-0 h-auto';
 
                return (
                   <View
@@ -376,18 +346,19 @@ export default function EntryDetailScreen() {
                            onChangeText={setField(field.key)}
                            placeholder={field.placeholder}
                            placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                           className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${containerClass} ${textColorClass}`}
+                           // Combine shared theme styles with local layout props
+                           className={`mt-1.5 px-3 text-sm leading-5 rounded-xl border shadow-sm ${styles.container} ${styles.text} ${layoutClass}`}
                            style={iosShadowSm}
                            scrollEnabled={true}
                            textAlignVertical="top"
                         />
                      ) : (
                         <View
-                           className={`mt-1.5 px-3 rounded-xl border shadow-sm ${containerClass}`}
+                           className={`mt-1.5 px-3 rounded-xl border shadow-sm ${styles.container} ${layoutClass}`}
                            style={iosShadowSm}
                         >
                            <Text
-                              className={`text-sm leading-5 ${textColorClass}`}
+                              className={`text-sm leading-5 ${styles.text}`}
                            >
                               {form[field.key] || (
                                  <Text className="italic opacity-50 text-slate-400">

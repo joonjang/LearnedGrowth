@@ -1,5 +1,6 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
 import { getIosShadowStyle } from '@/lib/shadow';
+import { FieldTone, getFieldStyles } from '@/lib/theme';
 import { Entry } from '@/models/entry';
 import { router } from 'expo-router';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react-native';
@@ -62,32 +63,23 @@ const SectionBlock = memo(({
 }: { 
    label: string, 
    text: string, 
-   type: 'default' | 'belief' | 'dispute', 
+   type: FieldTone, 
    textKey: TruncationKey,
    expanded: boolean,
    isTruncated: boolean,
    onLayout: (e: TextLayoutEvent) => void
 }) => {
-   const boxClass = type === 'belief' 
-      ? 'bg-belief-bg dark:bg-belief-bgDark border border-belief-border dark:border-belief-borderDark'
-      : type === 'dispute'
-         ? 'bg-dispute-bg dark:bg-dispute-bgDark border border-dispute-border dark:border-dispute-borderDark'
-         : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700';
-   
-   const textClass = type === 'belief'
-      ? 'text-[15px] font-semibold text-belief-text dark:text-belief-textDark'
-      : type === 'dispute'
-         ? 'text-[15px] font-semibold text-dispute-text dark:text-dispute-textDark'
-         : 'text-[15px] text-slate-900 dark:text-slate-100 leading-[22px]';
+   // Use shared theme source
+   const styles = getFieldStyles(type, false);
 
    return (
       <View className="mb-3 mt-2 gap-1.5">
          <Text className="text-[11px] font-semibold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
             {label}
          </Text>
-         <View className={`px-3 py-3 rounded-xl ${boxClass}`}>
+         <View className={`px-3 py-3 rounded-xl border ${styles.container}`}>
             <Text
-               className={textClass}
+               className={`text-[15px] leading-[22px] ${styles.text}`}
                onTextLayout={onLayout}
                numberOfLines={expanded || !isTruncated ? undefined : TRUNCATION_LIMITS[textKey]}
                ellipsizeMode="tail"
@@ -202,19 +194,14 @@ export default function EntryCard({
    }, [isMenuOpen, measureMenu]);
 
    const toggleExpanded = useCallback(() => {
-      // 1. Close Context Menu if open
       if (isMenuOpen) {
          onCloseMenu();
          return;
       }
-      
-      // 2. FIX: Close Swipe Row if open (and stop expansion)
       if (closeActiveSwipeable && closeActiveSwipeable()) {
          return;
       }
-
       if (!isExpandable) return;
-
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setExpanded((prev) => !prev);
    }, [isMenuOpen, onCloseMenu, isExpandable, closeActiveSwipeable]);
@@ -231,7 +218,7 @@ export default function EntryCard({
          <View className="absolute top-3 right-3 z-30">
             <Pressable
                hitSlop={12}
-               testID="entry-menu-btn" // <--- ADDED TEST ID
+               testID="entry-menu-btn"
                className="w-8 h-8 rounded-full items-center justify-center active:bg-slate-100 dark:active:bg-slate-800"
                onPress={onToggleMenu}
             >
@@ -248,7 +235,7 @@ export default function EntryCard({
                <Pressable
                   className="flex-row items-center gap-3 py-3 px-4 active:bg-slate-50 dark:active:bg-slate-700/50"
                   onPress={() => { onCloseMenu(); router.push({ pathname: '/(tabs)/entries/[id]', params: { id: entry.id } }); }}
-                  testID="entry-edit-menu-btn" // <--- ADDED TEST ID
+                  testID="entry-edit-menu-btn"
                >
                   <Pencil size={18} color={isDark ? '#f8fafc' : '#334155'} />
                   <Text className="text-[15px] font-medium text-slate-700 dark:text-slate-200">Edit Entry</Text>
@@ -257,7 +244,7 @@ export default function EntryCard({
                <Pressable
                   className="flex-row items-center gap-3 py-3 px-4 active:bg-rose-50 dark:active:bg-rose-900/20"
                   onPress={() => { onCloseMenu(); onDelete(entry); }}
-                  testID="entry-delete-btn" // <--- ADDED TEST ID
+                  testID="entry-delete-btn"
                >
                   <Trash2 size={18} color={colors.delete} />
                   <Text className="text-[15px] font-medium text-rose-600 dark:text-rose-400">Delete</Text>
@@ -320,7 +307,7 @@ export default function EntryCard({
                <SectionBlock 
                   label="Energy" 
                   text={entry.energy ?? ''} 
-                  type="default" 
+                  type="energy" 
                   textKey="energy" 
                   expanded={expanded} 
                   isTruncated={truncateState.energy}
