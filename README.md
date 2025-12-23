@@ -24,6 +24,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2025-12-22
 - Tapping on entry card goes to entry detail screen
+- Entry detail screen pressable navigations now single fire
 
 ### 2025-12-19
 - Migrated icon style to lucide
@@ -292,7 +293,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - enable in app purchase 
 
 - Button idempotency for modals login and free-user 
-  - edit button multiple press makes it viewed multiple times
 
 - put in an option to become a subscriber for the free-user screen
 

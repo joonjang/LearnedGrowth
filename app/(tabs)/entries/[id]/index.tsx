@@ -4,6 +4,7 @@ import { ABCDE_FIELD, MAX_AI_RETRIES, ROUTE_ENTRIES } from '@/components/constan
 import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
 import { TimelineItem, TimelinePivot, TimelineStepDef } from '@/components/entries/entry/Timeline';
 import { useEntries } from '@/hooks/useEntries';
+import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
 import { FieldTone, getFieldStyles } from '@/lib/theme';
 import type { Entry } from '@/models/entry';
@@ -51,6 +52,7 @@ export default function EntryDetailScreen() {
    const entryId = Array.isArray(id) ? id[0] : id;
    const store = useEntries();
    const entry = entryId ? store.getEntryById(entryId) : undefined;
+   const { lock: lockNavigation } = useNavigationLock();
    const {
       showAiAnalysis: aiVisible,
       hapticsEnabled,
@@ -171,18 +173,23 @@ export default function EntryDetailScreen() {
 
    const handleOpenDisputeAndUpdate = useCallback(() => {
       if (!entry) return;
-      router.push({
-         pathname: '/dispute/[id]',
-         params: { id: entry.id, view: 'analysis', refresh: 'true' },
+      lockNavigation(() => {
+         router.push({
+            pathname: '/dispute/[id]',
+            params: { id: entry.id, view: 'analysis', refresh: 'true' },
+         });
       });
-   }, [entry]);
+   }, [entry, lockNavigation]);
 
-   const handleContinueToDispute = () => {
-      router.push({
-         pathname: '/dispute/[id]',
-         params: { id: entryId },
+   const handleContinueToDispute = useCallback(() => {
+      if (!entryId) return;
+      lockNavigation(() => {
+         router.push({
+            pathname: '/dispute/[id]',
+            params: { id: entryId },
+         });
       });
-   };
+   }, [entryId, lockNavigation]);
 
    const formattedTimestamp = entry ? formatDateTimeWithWeekday(entry.createdAt) : '';
    const statusMessage = justSaved ? 'Saved' : hasChanges ? 'Unsaved changes' : '';

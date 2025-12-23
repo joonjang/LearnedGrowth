@@ -1,4 +1,5 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
+import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getIosShadowStyle } from '@/lib/shadow';
 import { FieldTone, getFieldStyles } from '@/lib/theme';
 import { Entry } from '@/models/entry';
@@ -98,6 +99,7 @@ export default function EntryCard({
    const swipeClosedRecently = useRef(false);
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { lock: lockNavigation, locked: navigationLocked } = useNavigationLock();
    
    const colors = {
       hint: isDark ? '#94a3b8' : '#64748b',
@@ -201,13 +203,23 @@ export default function EntryCard({
       if (isMenuOpen) {
          onCloseMenu();
       }
-      router.push({ pathname: '/(tabs)/entries/[id]', params: { id: entry.id } });
-   }, [closeActiveSwipeable, entry.id, isMenuOpen, onCloseMenu]);
+      lockNavigation(() => {
+         router.push({ pathname: '/(tabs)/entries/[id]', params: { id: entry.id } });
+      });
+   }, [closeActiveSwipeable, entry.id, isMenuOpen, lockNavigation, onCloseMenu]);
+
+   const handleEditFromMenu = useCallback(() => {
+      lockNavigation(() => {
+         onCloseMenu();
+         router.push({ pathname: '/(tabs)/entries/[id]', params: { id: entry.id } });
+      });
+   }, [entry.id, lockNavigation, onCloseMenu]);
 
    return (
       <AnimatedPressable
          className="pt-[22px] px-[18px] pb-[18px] rounded-[18px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-md dark:shadow-none mx-2 my-3"
          style={[cardAnimatedStyle, iosShadowStyle]}
+         disabled={navigationLocked}
          onPress={handleOpenEntry}
          onPressIn={() => (pressProgress.value = withTiming(1, { duration: 120 }))}
          onPressOut={() => (pressProgress.value = withTiming(0, { duration: 140 }))}
@@ -232,7 +244,8 @@ export default function EntryCard({
             >
                <Pressable
                   className="flex-row items-center gap-3 py-3 px-4 active:bg-slate-50 dark:active:bg-slate-700/50"
-                  onPress={() => { onCloseMenu(); router.push({ pathname: '/(tabs)/entries/[id]', params: { id: entry.id } }); }}
+                  onPress={handleEditFromMenu}
+                  disabled={navigationLocked}
                   testID="entry-edit-menu-btn"
                >
                   <Pencil size={18} color={isDark ? '#f8fafc' : '#334155'} />

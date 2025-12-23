@@ -1,9 +1,10 @@
 import { useAuth } from '@/providers/AuthProvider';
 import { useEntriesStore } from '@/providers/EntriesStoreProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
+import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { router } from 'expo-router';
 import { ArrowRight, FileText, Sparkles, type LucideIcon } from 'lucide-react-native';
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import WideButton from './WideButton';
 
 type ButtonConfig = {
@@ -21,6 +22,7 @@ export default function CardNextButton({ id }: Prop) {
    const { status } = useAuth();
    const { isGrowthPlusActive } = useRevenueCat();
    const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
+   const { lock: lockNavigation } = useNavigationLock();
 
    const entriesStore = useEntriesStore();
    const hasCachedAnalysis = entriesStore((state) =>
@@ -52,21 +54,23 @@ export default function CardNextButton({ id }: Prop) {
       };
    }, [hasCachedAnalysis, isSubscribed]);
 
-   const handlePress = () => {
-      if (hasCachedAnalysis) {
-         router.push(`/dispute/${id}?view=analysis`);
-         return;
-      }
-      if (isSubscribed) {
-         router.push(`/dispute/${id}?view=analysis&refresh=true`);
-         return;
-      }
+   const handlePress = useCallback(() => {
+      lockNavigation(() => {
+         if (hasCachedAnalysis) {
+            router.push(`/dispute/${id}?view=analysis`);
+            return;
+         }
+         if (isSubscribed) {
+            router.push(`/dispute/${id}?view=analysis&refresh=true`);
+            return;
+         }
 
-      router.push({
-         pathname: '/(modal)/free-user',
-         params: { id },
-      } as any);
-   };
+         router.push({
+            pathname: '/(modal)/free-user',
+            params: { id },
+         } as any);
+      });
+   }, [hasCachedAnalysis, id, isSubscribed, lockNavigation]);
 
    return (
       <WideButton

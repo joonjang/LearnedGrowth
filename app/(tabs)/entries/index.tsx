@@ -2,6 +2,7 @@ import QuickStart from '@/components/appInfo/QuickStart';
 import { type MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow, { UndoRow } from '@/components/entries/entry/EntryRow';
 import { useEntries } from '@/hooks/useEntries';
+import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getDateParts, getTimeLabel } from '@/lib/date';
 import { getIosShadowStyle } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
@@ -27,6 +28,7 @@ export default function EntriesScreen() {
    const insets = useSafeAreaInsets();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { lock: lockNavigation } = useNavigationLock();
    const iosShadowSm = useMemo(
       () => getIosShadowStyle({ isDark, preset: 'sm' }),
       [isDark]
@@ -204,10 +206,12 @@ export default function EntriesScreen() {
                      onSwipeClose={onRowSwipeClose}
                      closeActiveSwipeable={closeActiveSwipeable}
                      onEdit={() =>
-                        router.push({
-                           pathname: '/(tabs)/entries/[id]',
-                           params: { id: item.entry.id },
-                        })
+                        lockNavigation(() =>
+                           router.push({
+                              pathname: '/(tabs)/entries/[id]',
+                              params: { id: item.entry.id },
+                           })
+                        )
                      }
                      onDelete={() => requestDelete(item.entry)}
                   />
