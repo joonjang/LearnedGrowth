@@ -1,3 +1,4 @@
+import AiDisclaimerModal from '@/components/appInfo/AiDisclaimerModal';
 import {
    AI_ANALYSIS_CREDIT_COST,
    BOTTOM_SHEET_BACKDROP_OPACITY,
@@ -26,21 +27,50 @@ import { useColorScheme } from 'nativewind';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LayoutAnimation, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { supabase } from '@/lib/supabase';
 
 export default function FreeUserChoiceScreen() {
    const router = useRouter();
    const insets = useSafeAreaInsets();
    const modalRef = useRef<BottomSheetModal>(null);
-   const { status, profile, loadingProfile, refreshProfile } = useAuth();
-   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+   const { status, profile, loadingProfile, refreshProfile, user } = useAuth();
+   const { id, autoAi } = useLocalSearchParams<{
+      id?: string | string[];
+      autoAi?: string | string[];
+   }>();
 
    const [showShop, setShowShop] = useState(false);
    const isRedirecting = useRef(false);
+   const [showDisclaimer, setShowDisclaimer] = useState(false);
+   const [pendingTarget, setPendingTarget] = useState<{
+      path: string;
+      requiresAuth: boolean;
+   } | null>(null);
+   const hasAccountConsent =
+      user?.user_metadata?.has_agreed_to_ai === true ||
+      user?.user_metadata?.has_agreed_to_ai === 'true';
+   const [hasConsent, setHasConsent] = useState<boolean>(hasAccountConsent);
 
    // Ensure credits are accurate the moment this screen opens
    useEffect(() => {
       refreshProfile();
    }, [refreshProfile]);
+
+   useEffect(() => {
+      setHasConsent(hasAccountConsent);
+   }, [hasAccountConsent]);
+
+   const autoAiRequested =
+      (Array.isArray(autoAi) ? autoAi[0] : autoAi) === '1';
+   const hasAutoTriggeredRef = useRef(false);
+
+   // If we were redirected here post-login to resume AI flow, auto-trigger once
+   useEffect(() => {
+      if (!autoAiRequested || hasAutoTriggeredRef.current) return;
+      if (status !== 'signedIn') return;
+      hasAutoTriggeredRef.current = true;
+      handleChoice(true);
+   }, [autoAiRequested, handleChoice, status]);
 
    // Logic Helpers
    const entryId = Array.isArray(id) ? id[0] : id;
@@ -100,6 +130,35 @@ export default function FreeUserChoiceScreen() {
       router.back();
    }, [router]);
 
+   const proceedToPath = useCallback(
+      (path: string, requiresAuth: boolean) => {
+         isRedirecting.current = true;
+
+         if (requiresAuth && !isSignedIn) {
+            const redirectPath = `/(modal)/free-user?id=${entryId}&autoAi=1`;
+            router.replace({
+               pathname: ROUTE_LOGIN,
+               params: { redirect: encodeURIComponent(redirectPath) },
+            } as any);
+         } else {
+            router.replace(path as any);
+         }
+      },
+      [entryId, isSignedIn, router]
+   );
+
+   const checkConsentAndNavigate = useCallback(
+      (path: string, requiresAuth: boolean) => {
+         if (hasConsent) {
+            proceedToPath(path, requiresAuth);
+            return;
+         }
+         setPendingTarget({ path, requiresAuth });
+         setShowDisclaimer(true);
+      },
+      [hasConsent, proceedToPath]
+   );
+
    const handleChoice = (requiresAuth: boolean) => {
       if (requiresAuth && availableCredits === 0) {
          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -113,16 +172,17 @@ export default function FreeUserChoiceScreen() {
          ? `/dispute/${entryId}?view=analysis&refresh=true`
          : `/dispute/${entryId}`;
 
-      isRedirecting.current = true;
-
       if (requiresAuth && !isSignedIn) {
-         router.replace({
-            pathname: ROUTE_LOGIN,
-            params: { redirect: path },
-         } as any);
-      } else {
-         router.replace(path as any);
+         proceedToPath(path, requiresAuth);
+         return;
       }
+
+      if (requiresAuth) {
+         checkConsentAndNavigate(path, requiresAuth);
+         return;
+      }
+
+      proceedToPath(path, requiresAuth);
    };
 
    const handlePurchaseSuccess = () => {
@@ -131,132 +191,160 @@ export default function FreeUserChoiceScreen() {
    };
 
    return (
-      <BottomSheetModal
-         ref={modalRef}
-         onDismiss={handleDismiss}
-         index={0}
-         enableDynamicSizing={true}
-         enablePanDownToClose
-         backdropComponent={renderBackdrop}
-         handleIndicatorStyle={{ backgroundColor: theme.indicator }}
-         backgroundStyle={{
-            backgroundColor: theme.bg,
-            borderRadius: BOTTOM_SHEET_RADIUS,
-         }}
-      >
-         <BottomSheetScrollView
-            contentContainerStyle={{
-               paddingHorizontal: BOTTOM_SHEET_CONTENT_PADDING,
-               paddingTop: 16,
-               paddingBottom: insets.bottom + 20,
+      <>
+         <BottomSheetModal
+            ref={modalRef}
+            onDismiss={handleDismiss}
+            index={0}
+            enableDynamicSizing={true}
+            enablePanDownToClose
+            backdropComponent={renderBackdrop}
+            handleIndicatorStyle={{ backgroundColor: theme.indicator }}
+            backgroundStyle={{
+               backgroundColor: theme.bg,
+               borderRadius: BOTTOM_SHEET_RADIUS,
             }}
          >
-            {/* Header */}
-            <View className="mb-6">
-               <Text className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-1">
-                  {availableCredits === 0 ? 'Out of credits' : 'Free plan'}
-               </Text>
-               <Text
-                  className="text-2xl font-bold mb-1"
-                  style={{ color: theme.text }}
-               >
-                  {showShop
-                     ? 'Refill your credits'
-                     : 'How do you want to dispute?'}
-               </Text>
-               <Text className="text-base" style={{ color: theme.subText }}>
-                  {showShop
-                     ? 'Refill your credits to analyze more entries instantly.'
-                     : 'Choose AI analysis or jump into the guided steps.'}
-               </Text>
-            </View>
-
-            {/* If Shop is active, show the shop and a 'Back' button */}
-            {showShop ? (
-               <View>
-                  <CreditShop onSuccess={handlePurchaseSuccess} />
-
-                  <Pressable
-                     onPress={() => {
-                        LayoutAnimation.configureNext(
-                           LayoutAnimation.Presets.easeInEaseOut
-                        );
-                        setShowShop(false);
-                     }}
-                     className="mt-4 py-3 items-center"
+            <BottomSheetScrollView
+               contentContainerStyle={{
+                  paddingHorizontal: BOTTOM_SHEET_CONTENT_PADDING,
+                  paddingTop: 16,
+                  paddingBottom: insets.bottom + 20,
+               }}
+            >
+               {/* Header */}
+               <View className="mb-6">
+                  <Text className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-1">
+                     {availableCredits === 0 ? 'Out of credits' : 'Free plan'}
+                  </Text>
+                  <Text
+                     className="text-2xl font-bold mb-1"
+                     style={{ color: theme.text }}
                   >
-                     <Text style={{ color: theme.subText }}>Cancel</Text>
-                  </Pressable>
+                     {showShop
+                        ? 'Refill your credits'
+                        : 'How do you want to dispute?'}
+                  </Text>
+                  <Text className="text-base" style={{ color: theme.subText }}>
+                     {showShop
+                        ? 'Refill your credits to analyze more entries instantly.'
+                        : 'Choose AI analysis or jump into the guided steps.'}
+                  </Text>
                </View>
-            ) : (
-               /* Normal View */
-               <View className="gap-3">
-                  {/* AI Option */}
-                  <Pressable
-                     onPress={() => handleChoice(true)}
-                     className={`flex-row items-center justify-between rounded-2xl border ${theme.amberBorder} ${theme.amberBg} py-4 px-4 active:opacity-90`}
-                  >
-                     <View className="flex-1 pr-3">
-                        <Text
-                           className="text-lg font-bold"
-                           style={{ color: theme.amberText }}
-                        >
-                           {availableCredits === 0
-                              ? 'Get more AI Credits'
-                              : 'Let AI analyze this'}
-                        </Text>
 
-                        <View className="flex-row items-center mt-2 gap-1">
-                           {availableCredits === 0 ? (
-                              <AlertCircle size={14} color={theme.amberText} />
-                           ) : (
-                              <Ticket size={14} color={theme.amberText} />
-                           )}
+               {/* If Shop is active, show the shop and a 'Back' button */}
+               {showShop ? (
+                  <View>
+                     <CreditShop onSuccess={handlePurchaseSuccess} />
+
+                     <Pressable
+                        onPress={() => {
+                           LayoutAnimation.configureNext(
+                              LayoutAnimation.Presets.easeInEaseOut
+                           );
+                           setShowShop(false);
+                        }}
+                        className="mt-4 py-3 items-center"
+                     >
+                        <Text style={{ color: theme.subText }}>Cancel</Text>
+                     </Pressable>
+                  </View>
+               ) : (
+                  /* Normal View */
+                  <View className="gap-3">
+                     {/* AI Option */}
+                     <Pressable
+                        onPress={() => handleChoice(true)}
+                        className={`flex-row items-center justify-between rounded-2xl border ${theme.amberBorder} ${theme.amberBg} py-4 px-4 active:opacity-90`}
+                     >
+                        <View className="flex-1 pr-3">
                            <Text
-                              className="text-xs font-bold"
+                              className="text-lg font-bold"
                               style={{ color: theme.amberText }}
                            >
                               {availableCredits === 0
-                                 ? 'You have 0 credits left.'
-                                 : `Costs ${AI_ANALYSIS_CREDIT_COST} credit${
-                                      AI_ANALYSIS_CREDIT_COST === 1 ? '' : 's'
-                                   }. ${creditAvailability}`}
+                                 ? 'Get more AI Credits'
+                                 : 'Let AI analyze this'}
+                           </Text>
+
+                           <View className="flex-row items-center mt-2 gap-1">
+                              {availableCredits === 0 ? (
+                                 <AlertCircle size={14} color={theme.amberText} />
+                              ) : (
+                                 <Ticket size={14} color={theme.amberText} />
+                              )}
+                              <Text
+                                 className="text-xs font-bold"
+                                 style={{ color: theme.amberText }}
+                              >
+                                 {availableCredits === 0
+                                    ? 'You have 0 credits left.'
+                                    : `Costs ${AI_ANALYSIS_CREDIT_COST} credit${
+                                         AI_ANALYSIS_CREDIT_COST === 1 ? '' : 's'
+                                      }. ${creditAvailability}`}
+                              </Text>
+                           </View>
+                        </View>
+
+                        {/* Icon changes if 0 credits */}
+                        {availableCredits === 0 ? (
+                           <PlusCircle size={24} color={theme.amberText} />
+                        ) : (
+                           <Sparkles size={24} color={theme.amberText} />
+                        )}
+                     </Pressable>
+
+                     {/* Manual Option (Always available) */}
+                     <Pressable
+                        onPress={() => handleChoice(false)}
+                        className={`flex-row items-center justify-between rounded-2xl border ${theme.slateBorder} ${theme.slateBg} py-4 px-4 active:opacity-90`}
+                     >
+                        <View className="flex-1 pr-3">
+                           <Text
+                              className="text-lg font-semibold"
+                              style={{ color: theme.text }}
+                           >
+                              Go to dispute steps
+                           </Text>
+                           <Text
+                              className="text-sm mt-1"
+                              style={{ color: theme.subText }}
+                           >
+                              Work through the guided prompts without AI.
                            </Text>
                         </View>
-                     </View>
+                        <ArrowRight size={20} color={theme.text} />
+                     </Pressable>
+                  </View>
+               )}
+            </BottomSheetScrollView>
+         </BottomSheetModal>
 
-                     {/* Icon changes if 0 credits */}
-                     {availableCredits === 0 ? (
-                        <PlusCircle size={24} color={theme.amberText} />
-                     ) : (
-                        <Sparkles size={24} color={theme.amberText} />
-                     )}
-                  </Pressable>
-
-                  {/* Manual Option (Always available) */}
-                  <Pressable
-                     onPress={() => handleChoice(false)}
-                     className={`flex-row items-center justify-between rounded-2xl border ${theme.slateBorder} ${theme.slateBg} py-4 px-4 active:opacity-90`}
-                  >
-                     <View className="flex-1 pr-3">
-                        <Text
-                           className="text-lg font-semibold"
-                           style={{ color: theme.text }}
-                        >
-                           Go to dispute steps
-                        </Text>
-                        <Text
-                           className="text-sm mt-1"
-                           style={{ color: theme.subText }}
-                        >
-                           Work through the guided prompts without AI.
-                        </Text>
-                     </View>
-                     <ArrowRight size={20} color={theme.text} />
-                  </Pressable>
-               </View>
-            )}
-         </BottomSheetScrollView>
-      </BottomSheetModal>
+         <AiDisclaimerModal
+            visible={showDisclaimer}
+         onCancel={() => {
+            setShowDisclaimer(false);
+            setPendingTarget(null);
+         }}
+         onConfirm={async () => {
+            try {
+               if (supabase && user) {
+                  await supabase.auth.updateUser({
+                     data: { has_agreed_to_ai: true },
+                  });
+               }
+            } catch (error) {
+               console.error('Error saving AI consent to account:', error);
+            }
+            setHasConsent(true);
+            setShowDisclaimer(false);
+            if (pendingTarget) {
+               const { path, requiresAuth } = pendingTarget;
+               setPendingTarget(null);
+               setTimeout(() => proceedToPath(path, requiresAuth), 250);
+               }
+            }}
+         />
+      </>
    );
 }

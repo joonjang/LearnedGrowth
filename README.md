@@ -22,7 +22,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- Display disclaimer that this is a tool
 
 - Display that refresh takes tokens
   - enable in app purchase 
@@ -88,6 +87,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2025-12-23
 - Entry Detail Screen enter in edit mode and buttons addressed
+- Display disclaimer that this is a tool
 
 ### 2025-12-22
 - Tapping on entry card goes to entry detail screen
