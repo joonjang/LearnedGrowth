@@ -1,28 +1,28 @@
-import { useAuth } from '@/providers/AuthProvider';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_CONTENT_PADDING,
    BOTTOM_SHEET_RADIUS,
    ROUTE_ENTRIES,
 } from '@/components/constants';
+import { useAuth } from '@/providers/AuthProvider';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetScrollView,
-  BottomSheetTextInput,
+   BottomSheetBackdrop,
+   BottomSheetModal,
+   BottomSheetScrollView,
+   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Chrome } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Keyboard,
-  Platform,
-  Pressable,
-  Text,
-  View,
+   ActivityIndicator,
+   Keyboard,
+   Platform,
+   Pressable,
+   Text,
+   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -211,9 +211,9 @@ export default function AuthModal() {
                      <ActivityIndicator color={theme.text} />
                   ) : (
                      <>
-                        <Chrome size={20} color={theme.text} />
+                        <FontAwesome name="google" size={20} color={theme.text} />
                         <Text
-                           className="ml-2 font-semibold"
+                           className="ml-2 font-semibold text-[16px]"
                            style={{ color: theme.text }}
                         >
                            Continue with Google

@@ -20,6 +20,70 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ---
 
+## Next Steps
+
+- Display disclaimer that this is a tool
+
+- Display that refresh takes tokens
+  - enable in app purchase 
+
+- Button idempotency for modals login and free-user 
+
+- put in an option to become a subscriber for the free-user screen
+
+- Seeing setting screen should update revenue cat credits 
+
+- Encrypt entries when in cloud
+
+- Biometric lock disables the app from all screens until unlocked
+
+- Revenuecat failed purchase screens
+
+- Fine tune dark mode
+  - loading ellipse white
+
+- Change setting toggle colors
+
+- Add test to for API
+- Have a distinction for production tables and edge functions and development versions
+
+- Implement a home page summary screen showing weekly optimism/mix/pessimism meter
+
+---
+
+- BACKLOG 
+- add a report problem button to send a snapshot of the issue
+- enable user to get extra analysis if someone signs up using their referal code
+- Change positioning of delete account 
+- Migrate navigation from tab based navigation to single column dashboard
+
+## Steps
+
+- Auth guard
+  - Cloud database sync 
+    - log out should hide entries
+
+- Account screen/Setting
+
+  - if subscribed, manage subscription. links to app store management sheet 
+  - restore purchases to re-sync active subscription of reinstall app
+    - webhook should update with the supabase database to match
+  - enable biometric security -- buggy
+  - tactile haptic feedback when completing an entry x
+
+  - delete account x
+    - test for google and apple
+
+  - if user is offline, grey out manage subscription and delete account and indiciate offline
+
+- App store payment testing + revenuecat
+  - test fails and restore purchase
+
+- UI
+
+
+---
+
 ## Development Journal
 
 ### 2025-12-23
@@ -285,64 +349,3 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Set up Expo + Jest + TypeScript project structure
 - Add initial folders: `db/`, `api/`, `store/`, `services/`
 - Establish goal: write tests first, then implement features
-
----
-
-## Next Steps
-
-- Display disclaimer that this is a tool
-
-- Display that refresh takes tokens
-  - enable in app purchase 
-
-- Button idempotency for modals login and free-user 
-
-- put in an option to become a subscriber for the free-user screen
-
-- Seeing setting screen should update revenue cat credits 
-
-- Encrypt entries when in cloud
-
-- Biometric lock disables the app from all screens until unlocked
-
-- Revenuecat failed purchase screens
-
-- Fine tune dark mode
-  - loading ellipse white
-
-- Change setting toggle colors
-
-- Add test to for API
-- Have a distinction for production tables and edge functions and development versions
-
-- Implement a home page summary screen showing weekly optimism/mix/pessimism meter
-
-- BACKLOG -
-- add a report problem button to send a snapshot of the issue
-- enable user to get extra analysis if someone signs up using their referal code
-- Change positioning of delete account 
-- Migrate navigation from tab based navigation to single column dashboard
-
-## Steps
-
-- Auth guard
-  - Cloud database sync 
-    - log out should hide entries
-
-- Account screen/Setting
-
-  - if subscribed, manage subscription. links to app store management sheet 
-  - restore purchases to re-sync active subscription of reinstall app
-    - webhook should update with the supabase database to match
-  - enable biometric security -- buggy
-  - tactile haptic feedback when completing an entry x
-
-  - delete account x
-    - test for google and apple
-
-  - if user is offline, grey out manage subscription and delete account and indiciate offline
-
-- App store payment testing + revenuecat
-  - test fails and restore purchase
-
-- UI
