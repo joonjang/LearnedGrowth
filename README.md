@@ -22,6 +22,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-23
+- Entry Detail Screen enter in edit mode and buttons addressed
+
 ### 2025-12-22
 - Tapping on entry card goes to entry detail screen
 - Entry detail screen pressable navigations now single fire
@@ -317,7 +320,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - BACKLOG -
 - add a report problem button to send a snapshot of the issue
 - enable user to get extra analysis if someone signs up using their referal code
-- Change positioning of delete account
+- Change positioning of delete account 
+- Migrate navigation from tab based navigation to single column dashboard
 
 ## Steps
 
