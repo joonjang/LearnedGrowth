@@ -39,8 +39,10 @@ export default function EntriesScreen() {
    );
 
    // --- Swipe State (New) ---
-   // We use a ref to track the currently open swipe row so we can close it imperatively
-   const openSwipeableRef = useRef<SwipeableMethods | null>(null);
+   // We track the currently open swipe row with its id so we can close it imperatively
+   const openSwipeableRef = useRef<{ id: string; ref: SwipeableMethods } | null>(
+      null
+   );
 
    // --- Undo State ---
    const [undoSlots, setUndoSlots] = useState<Entry[]>([]);
@@ -58,23 +60,29 @@ export default function EntriesScreen() {
    };
 
    // Helper: Closes the active swipe row (if any)
-   // Returns true if something was closed, false otherwise
+   // Returns the closed entry id, or null if none were open
    const closeActiveSwipeable = () => {
       if (openSwipeableRef.current) {
-         openSwipeableRef.current.close();
+         openSwipeableRef.current.ref.close();
+         const closedId = openSwipeableRef.current.id;
          openSwipeableRef.current = null;
-         return true;
+         return closedId;
       }
-      return false;
+      return null;
    };
 
    // Callback: Passed to EntryRow to track when it opens
-   const onRowSwipeOpen = (ref: SwipeableMethods) => {
+   const onRowSwipeOpen = (id: string, ref: SwipeableMethods) => {
       // If a different row is already open, close it
-      if (openSwipeableRef.current && openSwipeableRef.current !== ref) {
-         openSwipeableRef.current.close();
+      if (openSwipeableRef.current && openSwipeableRef.current.ref !== ref) {
+         openSwipeableRef.current.ref.close();
       }
-      openSwipeableRef.current = ref;
+      openSwipeableRef.current = { id, ref };
+   };
+   const onRowSwipeClose = (id: string) => {
+      if (openSwipeableRef.current?.id === id) {
+         openSwipeableRef.current = null;
+      }
    };
 
    const toggleMenu = (entryId: string) => {
@@ -124,8 +132,14 @@ export default function EntriesScreen() {
    };
 
    // --- Data Prep ---
-   const rowsWithUndo = buildRowsWithUndo(store.rows, undoSlots);
-   const sections = buildSections(rowsWithUndo);
+   const rowsWithUndo = useMemo(
+      () => buildRowsWithUndo(store.rows, undoSlots),
+      [store.rows, undoSlots]
+   );
+   const sections = useMemo(
+      () => buildSections(rowsWithUndo),
+      [rowsWithUndo]
+   );
 
    useEffect(() => {
       const timers = undoTimers.current;
@@ -187,6 +201,7 @@ export default function EntriesScreen() {
                      onMenuLayout={setOpenMenuBounds}
                      // Pass the handlers down
                      onSwipeOpen={onRowSwipeOpen}
+                     onSwipeClose={onRowSwipeClose}
                      closeActiveSwipeable={closeActiveSwipeable}
                      onEdit={() =>
                         router.push({

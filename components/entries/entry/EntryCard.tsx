@@ -6,13 +6,7 @@ import { router } from 'expo-router';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-   LayoutAnimation,
-   Pressable,
-   Text,
-   type TextLayoutEvent,
-   View,
-} from 'react-native';
+import { Pressable, Text, type TextLayoutEvent, View } from 'react-native';
 import Animated, {
    Easing,
    useAnimatedStyle,
@@ -36,7 +30,7 @@ type Prop = {
    onCloseMenu: () => void;
    onDelete: (entry: Entry) => void;
    onMenuLayout?: (bounds: MenuBounds) => void;
-   closeActiveSwipeable?: () => boolean;
+   closeActiveSwipeable?: () => string | null;
 };
 
 // --- Truncation Constants ---
@@ -57,7 +51,6 @@ const SectionBlock = memo(({
    text, 
    type, 
    textKey, 
-   expanded, 
    isTruncated, 
    onLayout 
 }: { 
@@ -65,7 +58,6 @@ const SectionBlock = memo(({
    text: string, 
    type: FieldTone, 
    textKey: TruncationKey,
-   expanded: boolean,
    isTruncated: boolean,
    onLayout: (e: TextLayoutEvent) => void
 }) => {
@@ -81,7 +73,7 @@ const SectionBlock = memo(({
             <Text
                className={`text-[15px] leading-[22px] ${styles.text}`}
                onTextLayout={onLayout}
-               numberOfLines={expanded || !isTruncated ? undefined : TRUNCATION_LIMITS[textKey]}
+               numberOfLines={isTruncated ? TRUNCATION_LIMITS[textKey] : undefined}
                ellipsizeMode="tail"
             >
                {text}
@@ -103,6 +95,7 @@ export default function EntryCard({
    closeActiveSwipeable,
 }: Prop) {
    const menuRef = useRef<View | null>(null);
+   const swipeClosedRecently = useRef(false);
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    
@@ -113,10 +106,11 @@ export default function EntryCard({
    };
 
    // --- State ---
-   const [expanded, setExpanded] = useState(false);
-   
-   const [truncateState, setTruncateState] = useState<TruncationState>(() => 
-      Object.keys(TRUNCATION_LIMITS).reduce((acc, key) => ({...acc, [key]: false}), {} as TruncationState)
+   const [truncateState, setTruncateState] = useState<TruncationState>(() =>
+      Object.keys(TRUNCATION_LIMITS).reduce(
+         (acc, key) => ({ ...acc, [key]: false }),
+         {} as TruncationState
+      )
    );
 
    const handleTextLayout = useCallback((key: TruncationKey) => (e: TextLayoutEvent) => {
@@ -127,11 +121,13 @@ export default function EntryCard({
    }, []);
 
    useEffect(() => {
-      setExpanded(false);
-      setTruncateState(Object.keys(TRUNCATION_LIMITS).reduce((acc, key) => ({...acc, [key]: false}), {} as TruncationState));
+      setTruncateState(
+         Object.keys(TRUNCATION_LIMITS).reduce(
+            (acc, key) => ({ ...acc, [key]: false }),
+            {} as TruncationState
+         )
+      );
    }, [entry.id]);
-
-   const isExpandable = useMemo(() => Object.values(truncateState).some(Boolean), [truncateState]);
 
    // --- Animations ---
    const menuOpacity = useSharedValue(0);
@@ -193,24 +189,26 @@ export default function EntryCard({
       }
    }, [isMenuOpen, measureMenu]);
 
-   const toggleExpanded = useCallback(() => {
+   const handleOpenEntry = useCallback(() => {
+      if (closeActiveSwipeable) {
+         const closedId = closeActiveSwipeable();
+         if (closedId === entry.id && !swipeClosedRecently.current) {
+            swipeClosedRecently.current = true;
+            return;
+         }
+         swipeClosedRecently.current = false;
+      }
       if (isMenuOpen) {
          onCloseMenu();
-         return;
       }
-      if (closeActiveSwipeable && closeActiveSwipeable()) {
-         return;
-      }
-      if (!isExpandable) return;
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setExpanded((prev) => !prev);
-   }, [isMenuOpen, onCloseMenu, isExpandable, closeActiveSwipeable]);
+      router.push({ pathname: '/(tabs)/entries/[id]', params: { id: entry.id } });
+   }, [closeActiveSwipeable, entry.id, isMenuOpen, onCloseMenu]);
 
    return (
       <AnimatedPressable
          className="pt-[22px] px-[18px] pb-[18px] rounded-[18px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-md dark:shadow-none mx-2 my-3"
          style={[cardAnimatedStyle, iosShadowStyle]}
-         onPress={toggleExpanded}
+         onPress={handleOpenEntry}
          onPressIn={() => (pressProgress.value = withTiming(1, { duration: 120 }))}
          onPressOut={() => (pressProgress.value = withTiming(0, { duration: 140 }))}
       >
@@ -258,7 +256,6 @@ export default function EntryCard({
             text={entry.adversity} 
             type="default" 
             textKey="adversity" 
-            expanded={expanded} 
             isTruncated={truncateState.adversity}
             onLayout={handleTextLayout('adversity')}
          />
@@ -267,7 +264,6 @@ export default function EntryCard({
             text={entry.belief} 
             type="belief" 
             textKey="belief" 
-            expanded={expanded} 
             isTruncated={truncateState.belief}
             onLayout={handleTextLayout('belief')}
          />
@@ -276,17 +272,9 @@ export default function EntryCard({
             text={entry.consequence ?? ''} 
             type="default" 
             textKey="consequence" 
-            expanded={expanded} 
             isTruncated={truncateState.consequence}
             onLayout={handleTextLayout('consequence')}
          />
-
-         {/* Expand Hint */}
-         {isExpandable && !expanded && !entry.dispute && (
-            <View className="flex-row items-center justify-center pt-2 pb-1">
-               <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium">Tap card to read more</Text>
-            </View>
-         )}
 
          {!entry.dispute ? (
             <View className="mt-2">
@@ -300,7 +288,6 @@ export default function EntryCard({
                   text={entry.dispute} 
                   type="dispute" 
                   textKey="dispute" 
-                  expanded={expanded} 
                   isTruncated={truncateState.dispute}
                   onLayout={handleTextLayout('dispute')}
                />
@@ -309,15 +296,9 @@ export default function EntryCard({
                   text={entry.energy ?? ''} 
                   type="energy" 
                   textKey="energy" 
-                  expanded={expanded} 
                   isTruncated={truncateState.energy}
                   onLayout={handleTextLayout('energy')}
                />
-               {isExpandable && !expanded && (
-                  <View className="flex-row items-center justify-center pt-2 pb-1">
-                     <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium">Tap card to read more</Text>
-                  </View>
-               )}
             </>
          )}
       </AnimatedPressable>

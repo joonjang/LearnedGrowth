@@ -2,7 +2,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { getIosShadowStyle } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
 import { Pencil, Trash2 } from 'lucide-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
    Pressable,
    Text,
@@ -32,9 +32,9 @@ type EntryRowProps = {
    onEdit: () => void;
    onDelete: () => void;
    style?: StyleProp<ViewStyle>;
-   onSwipeOpen?: (ref: SwipeableMethods) => void;
-   onSwipeClose?: () => void;
-   closeActiveSwipeable?: () => boolean;
+   onSwipeOpen?: (id: string, ref: SwipeableMethods) => void;
+   onSwipeClose?: (id: string) => void;
+   closeActiveSwipeable?: () => string | null;
 };
 
 export function UndoRow({
@@ -98,7 +98,7 @@ export function UndoRow({
    );
 }
 
-export default function EntryRow({
+function EntryRow({
    entry,
    timeLabel,
    isMenuOpen,
@@ -148,12 +148,15 @@ export default function EntryRow({
             onSwipeableWillOpen={() => {
                onCloseMenu();
                if (swipeableRef.current && onSwipeOpen) {
-                  onSwipeOpen(swipeableRef.current);
+                  onSwipeOpen(entry.id, swipeableRef.current);
                }
             }}
             rightThreshold={25}
             onSwipeableClose={() => {
-               if (onSwipeClose) onSwipeClose();
+               if (onSwipeClose) onSwipeClose(entry.id);
+            }}
+            onSwipeableWillClose={() => {
+               if (onSwipeClose) onSwipeClose(entry.id);
             }}
             renderRightActions={() => (
                <View
@@ -209,3 +212,22 @@ export default function EntryRow({
       </Animated.View>
    );
 }
+
+const arePropsEqual = (prev: EntryRowProps, next: EntryRowProps) => {
+   const prevEntry = prev.entry;
+   const nextEntry = next.entry;
+
+   if (prev.isMenuOpen !== next.isMenuOpen) return false;
+   if (prev.timeLabel !== next.timeLabel) return false;
+   if (prevEntry.id !== nextEntry.id) return false;
+   if (prevEntry.updatedAt !== nextEntry.updatedAt) return false;
+   if (prevEntry.isDeleted !== nextEntry.isDeleted) return false;
+   if (prevEntry.adversity !== nextEntry.adversity) return false;
+   if (prevEntry.belief !== nextEntry.belief) return false;
+   if ((prevEntry.consequence ?? '') !== (nextEntry.consequence ?? '')) return false;
+   if ((prevEntry.dispute ?? '') !== (nextEntry.dispute ?? '')) return false;
+   if ((prevEntry.energy ?? '') !== (nextEntry.energy ?? '')) return false;
+   return true;
+};
+
+export default memo(EntryRow, arePropsEqual);

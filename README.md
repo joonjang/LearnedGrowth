@@ -22,6 +22,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-22
+- Tapping on entry card goes to entry detail screen
+
 ### 2025-12-19
 - Migrated icon style to lucide
 - Quick start screen established
