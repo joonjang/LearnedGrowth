@@ -211,7 +211,10 @@ export default function EntryCard({
    const handleEditFromMenu = useCallback(() => {
       lockNavigation(() => {
          onCloseMenu();
-         router.push({ pathname: '/(tabs)/entries/[id]', params: { id: entry.id } });
+         router.push({
+            pathname: '/(tabs)/entries/[id]',
+            params: { id: entry.id, mode: 'edit' },
+         });
       });
    }, [entry.id, lockNavigation, onCloseMenu]);
 

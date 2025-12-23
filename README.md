@@ -27,7 +27,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Entry detail screen pressable navigations now single fire
 
 ### 2025-12-19
-- Migrated icon style to lucide
+- Migrated icon style to lucide (`https://lucide.dev`)
 - Quick start screen established
 - Fixed navigation double swipe bug
 
@@ -326,14 +326,19 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
     - log out should hide entries
 
 - Account screen/Setting
+
   - if subscribed, manage subscription. links to app store management sheet 
   - restore purchases to re-sync active subscription of reinstall app
     - webhook should update with the supabase database to match
   - enable biometric security -- buggy
   - tactile haptic feedback when completing an entry x
+
   - delete account x
     - test for google and apple
+
   - if user is offline, grey out manage subscription and delete account and indiciate offline
+
 - App store payment testing + revenuecat
   - test fails and restore purchase
+
 - UI

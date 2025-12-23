@@ -1,11 +1,11 @@
 import { FieldTone, getFieldStyles } from '@/lib/theme';
 import {
-    Camera,
-    CloudRainWind,
-    MessageSquareText,
-    SearchCheck,
-    Sun,
-    TriangleAlert
+  Camera,
+  MessageSquareText,
+  SearchCheck,
+  Sun,
+  TriangleAlert,
+  Zap
 } from 'lucide-react-native';
 import React from 'react';
 import { Text, View } from 'react-native';
@@ -26,7 +26,7 @@ export interface TimelineStepDef {
 const ICON_MAP: Record<string, React.ElementType> = {
   adversity: TriangleAlert,
   belief: MessageSquareText,
-  consequence: CloudRainWind,
+  consequence: Zap,
   dispute: SearchCheck,
   energy: Sun,
 };

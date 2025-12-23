@@ -12,7 +12,7 @@ import { usePreferences } from '@/providers/PreferencesProvider';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight, ChevronLeft } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    LayoutAnimation,
    Pressable,
@@ -48,8 +48,11 @@ const getToneForKey = (key: FieldKey): FieldTone => {
 };
 
 export default function EntryDetailScreen() {
-   const { id } = useLocalSearchParams();
+   const { id, mode } = useLocalSearchParams();
    const entryId = Array.isArray(id) ? id[0] : id;
+   const modeParam = Array.isArray(mode) ? mode[0] : mode;
+   const startInEdit = modeParam === 'edit';
+   const initialEditApplied = useRef(false);
    const store = useEntries();
    const entry = entryId ? store.getEntryById(entryId) : undefined;
    const { lock: lockNavigation } = useNavigationLock();
@@ -83,6 +86,17 @@ export default function EntryDetailScreen() {
       setIsEditing(false);
       setEditSnapshot(null);
    }, [entry]);
+
+   useEffect(() => {
+      initialEditApplied.current = false;
+   }, [entryId]);
+
+   useEffect(() => {
+      if (!entry) return;
+      if (!startInEdit || initialEditApplied.current) return;
+      initialEditApplied.current = true;
+      startEditing();
+   }, [entry, startEditing, startInEdit]);
 
    const trimmed = useMemo(() => buildFieldRecord((key) => form[key].trim()), [form]);
    const baseline = useMemo(() => buildFieldRecord((key) => (entry?.[key] ?? '').trim()), [entry]);
@@ -239,14 +253,24 @@ export default function EntryDetailScreen() {
             </View>
 
             <View className="absolute right-4 flex-row items-center gap-2">
-               {isEditing && (
-                  <Pressable onPress={handleCancel} className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
-                     <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">Cancel</Text>
+               {isEditing ? (
+                  <>
+                     <Pressable onPress={handleCancel} className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                        <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">Cancel</Text>
+                     </Pressable>
+                     <Pressable
+                        onPress={hasChanges ? handleSave : undefined}
+                        disabled={!hasChanges}
+                        className={`px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 ${hasChanges ? '' : 'opacity-50'}`}
+                     >
+                        <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">Save</Text>
+                     </Pressable>
+                  </>
+               ) : (
+                  <Pressable onPress={startEditing} className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                     <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">Edit</Text>
                   </Pressable>
                )}
-               <Pressable onPress={isEditing ? handleSave : startEditing} className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
-                  <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">{isEditing ? 'Save' : 'Edit'}</Text>
-               </Pressable>
             </View>
 
             {hasScrolled && <View className="absolute bottom-0 left-0 right-0 h-[1px] bg-slate-200 dark:bg-slate-800" />}

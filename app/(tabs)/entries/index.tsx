@@ -209,7 +209,7 @@ export default function EntriesScreen() {
                         lockNavigation(() =>
                            router.push({
                               pathname: '/(tabs)/entries/[id]',
-                              params: { id: item.entry.id },
+                              params: { id: item.entry.id, mode: 'edit' },
                            })
                         )
                      }
