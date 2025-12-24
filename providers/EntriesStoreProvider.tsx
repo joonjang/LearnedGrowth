@@ -1,3 +1,7 @@
+import { systemClock } from '@/lib/clock';
+import { makeEntriesService } from '@/services/makeEntriesService';
+import { createSupabaseEntriesClient } from '@/services/supabaseEntries';
+import { createEntriesStore, EntriesStore, placeholderEntriesStore } from '@/store/useEntriesStore';
 import {
    createContext,
    ReactNode,
@@ -7,22 +11,33 @@ import {
    useRef,
 } from 'react';
 import { useEntriesAdapter } from './AdapterProvider';
-import { makeEntriesService } from '@/services/makeEntriesService';
-import { systemClock } from '@/lib/clock';
-import { createEntriesStore, EntriesStore, placeholderEntriesStore } from '@/store/useEntriesStore';
 import { useAuth } from './AuthProvider';
-import { createSupabaseEntriesClient } from '@/services/supabaseEntries';
+import { useEncryption } from './EncryptionProvider';
 
 const EntriesStoreContext = createContext<EntriesStore | null>(null);
 
 export function EntriesStoreProvider({ children }: { children: ReactNode }) {
    const { adapter, ready, error } = useEntriesAdapter();
    const { user } = useAuth();
+   
+   // 1. Grab encryption state
+   const { isEncrypted, isUnlocked, masterKey } = useEncryption();
    const lastLinkedAccountId = useRef<string | null>(null);
+   
+   // 2. Keep a ref updated so the Supabase Client can read it without needing to be re-instantiated
+   const encryptionStateRef = useRef({
+      isEncrypted,
+      isUnlocked,
+      masterKey,
+   });
+
+   useEffect(() => {
+      encryptionStateRef.current = { isEncrypted, isUnlocked, masterKey };
+   }, [isEncrypted, isUnlocked, masterKey]);
 
    const cloud = useMemo(() => {
       if (!user?.id) return null;
-      return createSupabaseEntriesClient(user.id);
+      return createSupabaseEntriesClient(user.id, () => encryptionStateRef.current);
    }, [user?.id]);
 
    const service = useMemo(() => {
@@ -35,18 +50,30 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
       return createEntriesStore(service, systemClock);
    }, [service]);
 
+   // Hydrate local data immediately (even if locked, we can read local DB)
    useEffect(() => {
       if (!ready || store === placeholderEntriesStore) return;
       store.getState().hydrate();
    }, [ready, store]);
 
+   // --- SYNC LOGIC ---
    useEffect(() => {
       if (!cloud || !adapter || !ready) return;
       if (store === placeholderEntriesStore) return;
 
+      // 3. SECURITY GUARD: Abort sync if vault is locked.
+      // This prevents "Decryption failed" errors in the console 
+      // and ensures we only fetch data we can actually read.
+      if (isEncrypted && !isUnlocked) {
+         console.log('[Sync] Vault locked. Sync paused.');
+         return;
+      }
+
       (async () => {
          try {
-            // Pull remote changes first.
+            console.log('[Sync] Starting...');
+            
+            // Pull remote changes
             const remote = await cloud.fetchAll();
             for (const entry of remote) {
                const local = await adapter.getById(entry.id);
@@ -57,21 +84,24 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
                }
             }
 
-            // Push local entries that are not yet in Supabase.
+            // Push local entries
             const locals = await adapter.getAll();
             for (const entry of locals) {
-               // Only push entries associated to the current user.
                if (entry.accountId !== user?.id) continue;
                await cloud.upsert(entry);
             }
 
             await store.getState().hydrate();
+            console.log('[Sync] Complete.');
          } catch (e) {
             console.warn('Failed to sync entries from Supabase', e);
          }
       })();
-   }, [adapter, cloud, ready, store, user?.id]);
+      
+      // 4. DEPENDENCIES: Re-run this effect when 'isUnlocked' changes.
+   }, [adapter, cloud, ready, store, user?.id, isEncrypted, isUnlocked]);
 
+   // Account Linking Logic (assigning local entries to the logged-in user)
    useEffect(() => {
       if (!adapter || !ready || !user?.id) return;
       if (store === placeholderEntriesStore) return;

@@ -22,7 +22,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- Encrypt entries when in cloud
+- Add animation to Ai Insight and haptic feedback
 
 - Biometric lock disables the app from all screens until unlocked
 
@@ -45,6 +45,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - enable user to get extra analysis if someone signs up using their referal code
 - Change positioning of delete account 
 - Migrate navigation from tab based navigation to single column dashboard
+- Make encrypt only a subscriber feature, once they have it though they have it forever
 
 - Auth guard
   - Cloud database sync 

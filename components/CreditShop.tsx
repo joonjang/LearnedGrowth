@@ -39,7 +39,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
    const monthlyPackage = offerings?.current?.availablePackages.find(
       (pkg) => pkg.identifier === '$rc_monthly' || pkg.packageType === 'MONTHLY'
    );
-   const monthlyPrice = monthlyPackage?.product.priceString ?? '$9.99';
+   const monthlyPrice = monthlyPackage?.product.priceString;
 
    const handleBuy = async (pkg: PurchasesPackage) => {
       if (status !== 'signedIn') {
@@ -128,7 +128,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                   </View>
 
                   <View className="bg-emerald-600 dark:bg-emerald-500 rounded-xl py-3 items-center shadow-sm shadow-emerald-900/20">
-                     <Text className="text-white font-bold text-sm">
+                     <Text className="text-white font-bold text-xl">
                         Subscribe
                      </Text>
                   </View>

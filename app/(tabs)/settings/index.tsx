@@ -1,6 +1,7 @@
 import { BTN_HEIGHT, FREE_MONTHLY_CREDITS, ROUTE_LOGIN } from '@/components/constants';
 import CreditShop from '@/components/CreditShop';
 import SendFeedback from '@/components/SendFeedback';
+import { EncryptionCard } from '@/components/settings/EncryptionCard';
 import { getShadow } from '@/lib/shadow';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
@@ -593,7 +594,14 @@ export default function SettingsScreen() {
                         {billingNote ?? `RevenueCat: ${rcError}`}
                      </Text>
                   )}
-               </View>
+              </View>
+            )}
+
+            {status === 'signedIn' && (
+               <EncryptionCard
+                  isOffline={isOffline}
+                  loaderColor={loaderColor}
+               />
             )}
 
             {/* Preferences Card */}

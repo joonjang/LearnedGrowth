@@ -75,7 +75,8 @@
           "iosUrlScheme": "com.googleusercontent.apps.954502195698-qeb31c3ppql4k75bhn5ktc092hf93d6d"
         }
       ],
-      "react-native-edge-to-edge"
+      "react-native-edge-to-edge",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

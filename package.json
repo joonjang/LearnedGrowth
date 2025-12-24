@@ -23,6 +23,7 @@
     "@react-navigation/native": "^7.1.8",
     "@supabase/supabase-js": "^2.86.2",
     "clsx": "^2.1.1",
+    "crypto-js": "^4.2.0",
     "expo": "~54.0.30",
     "expo-apple-authentication": "~8.0.8",
     "expo-build-properties": "~1.0.10",
@@ -37,6 +38,7 @@
     "expo-linking": "~8.0.11",
     "expo-local-authentication": "~17.0.8",
     "expo-router": "~6.0.21",
+    "expo-secure-store": "~15.0.8",
     "expo-splash-screen": "~31.0.13",
     "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.9",
@@ -66,6 +68,7 @@
   },
   "devDependencies": {
     "@testing-library/react-native": "^13.3.3",
+    "@types/crypto-js": "^4.2.2",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.1.0",
     "cross-env": "^10.0.0",

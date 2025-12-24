@@ -1,4 +1,4 @@
-export const BTN_HEIGHT = 'h-12 justify-center';
+export const BTN_HEIGHT = 'h-14 justify-center';
 
 export const FREE_MONTHLY_CREDITS = 5;
 export const AI_ANALYSIS_CREDIT_COST = 1;
