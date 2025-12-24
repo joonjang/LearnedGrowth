@@ -199,7 +199,7 @@ export function AiInsightCard({
    // --- ANIMATION TIMINGS ---
    // If fresh: Use long cinematic delays.
    // If old: Use short staggering delays (just to look nice).
-   const BASE_STAGGER = 150; // Speed of stagger for old data
+   const BASE_STAGGER = 75; // Speed of stagger for old data
 
    const EMOTION_APPEAR = isFreshAnalysis ? 500 : 0; 
    const HEADER_APPEAR = isFreshAnalysis ? 800 : BASE_STAGGER;

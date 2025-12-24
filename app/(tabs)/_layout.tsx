@@ -8,6 +8,7 @@ export default function TabsLayout() {
          <Tabs.Screen 
             name="summary" 
             options={{ 
+               href: null,
                title: 'Summary',
                tabBarIcon: ({ color, size }) => (
                   <BarChart3 color={color} size={size} />

@@ -291,7 +291,7 @@ export default function QuickStartScreen() {
          </ScrollView>
 
          {/* Footer CTA */}
-         <View className="absolute bottom-0 left-0 right-0 bg-white/95 px-6 pt-4 dark:bg-slate-950/95 border-t border-slate-100 dark:border-slate-800" style={{ paddingBottom: insets.bottom + 16 }}>
+         <View className="absolute bottom-0 left-0 right-0 px-6 pt-4" style={{ paddingBottom: insets.bottom + 16 }}>
             <Pressable
                className="relative flex-row items-center justify-center overflow-hidden rounded-2xl bg-indigo-600 px-6 py-4 active:bg-indigo-700"
                onPress={() => {

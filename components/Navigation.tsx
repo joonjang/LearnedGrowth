@@ -57,6 +57,7 @@ export const ThemedTabs = (props: any) => {
             tabBarActiveTintColor: colors.active,
             tabBarInactiveTintColor: colors.inactive,
          }}
+         initialRouteName="entries"
          {...props}
       />
    );

@@ -31,8 +31,8 @@ export default function RootLayout() {
             <AuthGate>
                <AdapterGuard>
                   <EdgeToEdge>
-                     <Stack screenOptions={{ headerShown: false }}>
-                        <Stack.Screen name="(tabs)" />
+                     <Stack initialRouteName="(tabs)" screenOptions={{ headerShown: false }}>
+                        <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
                         <Stack.Screen
                            name="(modal)"
                            options={{

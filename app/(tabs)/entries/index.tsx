@@ -36,7 +36,7 @@ export default function EntriesScreen() {
 
    // --- Menu State ---
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
-   const [openMenuBounds, setOpenMenuBounds] = useState<MenuBounds | null>(
+   const [, setOpenMenuBounds] = useState<MenuBounds | null>(
       null
    );
 
@@ -159,7 +159,7 @@ export default function EntriesScreen() {
             className="flex-1"
             stickySectionHeadersEnabled
             showsVerticalScrollIndicator={false}
-            ListEmptyComponent={<QuickStart />}
+            ListEmptyComponent={store.isHydrating ? null : <QuickStart />}
             onScrollBeginDrag={() => {
                closeMenu();
                closeActiveSwipeable();

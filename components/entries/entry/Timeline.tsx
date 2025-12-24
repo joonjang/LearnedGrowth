@@ -112,7 +112,7 @@ export function TimelineItem({
   return (
     <View className="flex-row items-start relative z-10">
       <View
-        className={`z-10 h-10 w-10 items-center justify-center rounded-full border-2 border-white dark:border-slate-950 ${nodeClass}`}
+        className={`z-10 h-10 w-10 items-center justify-center rounded-full border-2 border-slate-300 dark:border-slate-950 ${nodeClass}`}
       >
         <Text className={`text-sm font-black ${nodeClass.split(' ').pop()}`}>
           {step.letter}

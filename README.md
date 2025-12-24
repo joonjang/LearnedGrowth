@@ -22,8 +22,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- Add animation to Ai Insight and haptic feedback
-
 - Biometric lock disables the app from all screens until unlocked
 
 - Revenuecat failed purchase screens
@@ -33,10 +31,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - Change setting toggle colors
 
-- Add test to for API
 - Have a distinction for production tables and edge functions and development versions
 
-- Implement a home page summary screen showing weekly optimism/mix/pessimism meter
 
 ---
 
@@ -51,6 +47,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - Cloud database sync 
     - log out should hide entries
 
+- Implement a home page summary screen showing weekly optimism/mix/pessimism meter
 
 ## Steps
 
