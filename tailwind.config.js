@@ -63,26 +63,30 @@ module.exports = {
           textDark: "#ffedd5", // orange-100
         },
         // D - DISPUTE (Indigo - "Logic")
+       // D - DISPUTE (Now Emerald/Green - "Growth/Action")
         dispute: {
-          bg: "#eef2ff", // indigo-50
-          border: "#c7d2fe", // indigo-200
-          text: "#3730a3", // indigo-800
-
-          bgDark: "rgba(99, 102, 241, 0.20)", // indigo-500 base
-          borderDark: "rgba(79, 70, 229, 0.30)",
-          textDark: "#e0e7ff",
-          cta: "#4f46e5",
-          ctaDark: "#818cf8",
-        },
-        // E - ENERGY (Emerald - "Growth")
-        energy: {
           bg: "#ecfdf5", // emerald-50
           border: "#a7f3d0", // emerald-200
           text: "#065f46", // emerald-800
 
-          borderDark: "rgba(5, 150, 105, 0.30)",
           bgDark: "rgba(16, 185, 129, 0.20)", // emerald-500 base
-          textDark: "#d1fae5",
+          borderDark: "rgba(5, 150, 105, 0.30)", // emerald-600 base
+          textDark: "#d1fae5", // emerald-100
+          
+          // Added CTA colors because Dispute is often used for buttons
+          cta: "#059669",     // emerald-600
+          ctaDark: "#34d399", // emerald-400
+        },
+
+        // E - ENERGY (Now Sky Blue - "Clarity/Vitality")
+        energy: {
+          bg: "#f0f9ff", // sky-50
+          border: "#bae6fd", // sky-200
+          text: "#0369a1", // sky-700
+
+          bgDark: "rgba(14, 165, 233, 0.20)", // sky-500 base
+          borderDark: "rgba(2, 132, 199, 0.30)", // sky-600 base
+          textDark: "#e0f2fe", // sky-100
         },
       },
     },

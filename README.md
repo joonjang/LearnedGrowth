@@ -22,14 +22,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-
-- Display that refresh takes tokens
-  - enable in app purchase 
-
-- put in an option to become a subscriber for the free-user screen
-
-- Seeing setting screen should update revenue cat credits 
-
 - Encrypt entries when in cloud
 
 - Biometric lock disables the app from all screens until unlocked

@@ -180,10 +180,11 @@ export function AiInsightCard({
    return (
       <View className="gap-6 pt-1">
          {/* 0. Credit Shop (when out of credits) */}
-         {showShop && (
-            <View className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 gap-3">
+        {showShop && (
+            // CHANGED: Amber colors -> Slate/Neutral colors
+            <View className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4 gap-3">
                <View className="flex-row justify-between items-center">
-                  <Text className="text-base font-bold text-amber-800 dark:text-amber-200">
+                  <Text className="text-base font-bold text-slate-900 dark:text-slate-100">
                      Refill AI credits
                   </Text>
                   <Pressable
@@ -195,7 +196,8 @@ export function AiInsightCard({
                      }}
                      hitSlop={10}
                   >
-                     <Text className="text-xs font-bold text-amber-700 dark:text-amber-200">
+                     {/* Close button is now subtle gray */}
+                     <Text className="text-xs font-bold text-slate-500 dark:text-slate-400">
                         Close
                      </Text>
                   </Pressable>

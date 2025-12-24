@@ -317,8 +317,6 @@ export default function SettingsScreen() {
    const handleManualRefresh = async () => {
       setIsRefreshing(true);
       try {
-         // Ask RevenueCat: "Is their subscription actually still valid?"
-         // Ask Supabase: "Do they have new credits?"
          await Promise.all([refreshCustomerInfo(), refreshProfile()]);
       } catch (e) {
          console.log('Refresh failed', e);
@@ -363,7 +361,6 @@ export default function SettingsScreen() {
       if (date.getDate() !== currentDay) {
          date.setDate(0);
       }
-
       return date.toLocaleDateString(undefined, {
          month: 'short',
          day: 'numeric',
@@ -412,51 +409,51 @@ export default function SettingsScreen() {
                </View>
             </View>
 
-	            {/* Supabase Config Warning */}
-	            {!isConfigured && (
-	               <View
-	                  className={`bg-belief-bg border border-belief-border rounded-xl p-3 gap-1 ${shadowClass}`}
-	                  style={[shadowSm.ios, shadowSm.android]}
-	               >
-	                  <Text className="text-sm font-bold text-belief-text">
-	                     Supabase not configured
-	                  </Text>
-	               </View>
-	            )}
+            {/* Supabase Config Warning */}
+            {!isConfigured && (
+               <View
+                  className={`bg-belief-bg border border-belief-border rounded-xl p-3 gap-1 ${shadowClass}`}
+                  style={[shadowSm.ios, shadowSm.android]}
+               >
+                  <Text className="text-sm font-bold text-belief-text">
+                     Supabase not configured
+                  </Text>
+               </View>
+            )}
 
-	            {/* Not Logged In Banner */}
-	            {!user && (
-	               <View
-	                  className={`bg-slate-100 dark:bg-slate-800 border border-dispute-cta rounded-xl p-3 flex-row items-center gap-2.5 ${shadowClass}`}
-	                  style={[shadowSm.ios, shadowSm.android]}
-	               >
-	                  <View className="flex-1">
-	                     <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
-	                        Log in to back up your data.
-	                     </Text>
-	                  </View>
-	                  <Pressable
-	                     className={`mt-2 bg-dispute-cta py-2 px-3 rounded-lg self-start ${shadowClass}`}
-	                     style={[shadowSm.ios, shadowSm.android]}
-	                     onPress={() => router.push(ROUTE_LOGIN)}
-	                  >
-	                     <Text className="text-white font-bold text-sm">
-	                        Sign in
+            {/* Not Logged In Banner */}
+            {!user && (
+               <View
+                  className={`bg-slate-100 dark:bg-slate-800 border border-dispute-cta rounded-xl p-3 flex-row items-center gap-2.5 ${shadowClass}`}
+                  style={[shadowSm.ios, shadowSm.android]}
+               >
+                  <View className="flex-1">
+                     <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
+                        Log in to back up your data.
+                     </Text>
+                  </View>
+                  <Pressable
+                     className={`mt-2 bg-dispute-cta py-2 px-3 rounded-lg self-start ${shadowClass}`}
+                     style={[shadowSm.ios, shadowSm.android]}
+                     onPress={() => router.push(ROUTE_LOGIN)}
+                  >
+                     <Text className="text-white font-bold text-sm">
+                        Sign in
                      </Text>
                   </Pressable>
                </View>
             )}
 
-	            {/* Subscription Card */}
-	            {user && (
-	               <View
-	                  className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
-	                  style={[shadowSm.ios, shadowSm.android]}
-	               >
-	                  <View className="flex-row justify-between items-center">
-	                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-	                        Subscription
-	                     </Text>
+            {/* Subscription Card */}
+            {user && (
+               <View
+                  className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
+                  style={[shadowSm.ios, shadowSm.android]}
+               >
+                  <View className="flex-row justify-between items-center">
+                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                        Subscription
+                     </Text>
                      {isLoading && (
                         <ActivityIndicator size="small" color={loaderColor} />
                      )}
@@ -487,106 +484,90 @@ export default function SettingsScreen() {
                         <Text className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                            {refillLabel ? `Refills next on ${refillLabel}` : ''}
                         </Text>
-	                        <View className="flex-row flex-wrap gap-2.5">
-	                           {/* Monthly Uses Metric */}
-	                           <View
-	                              className={`flex-1 min-w-[30%] bg-zinc-50 dark:bg-slate-700 rounded-xl p-3 border border-slate-200 dark:border-slate-600 gap-1.5 ${shadowClass}`}
-	                              style={[shadowSm.ios, shadowSm.android]}
-	                           >
-	                              <Text className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-	                                 Monthly uses remaining
-	                              </Text>
-	                              <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                        <View className="flex-row flex-wrap gap-2.5">
+                           {/* Monthly Uses Metric */}
+                           <View
+                              className={`flex-1 min-w-[30%] bg-zinc-50 dark:bg-slate-700 rounded-xl p-3 border border-slate-200 dark:border-slate-600 gap-1.5 ${shadowClass}`}
+                              style={[shadowSm.ios, shadowSm.android]}
+                           >
+                              <Text className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                                 Monthly uses remaining
+                              </Text>
+                              <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
                                  {monthlyRemaining}
                               </Text>
                            </View>
 
-	                           {/* Extra Analysis Metric */}
-	                           <View
-	                              className={`flex-1 min-w-[30%] bg-zinc-50 dark:bg-slate-700 rounded-xl p-3 border border-slate-200 dark:border-slate-600 gap-1.5 ${shadowClass} `}
-	                              style={[shadowSm.ios, shadowSm.android]}
-	                           >
-	                              <Text className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-	                                 Extra Analysis
-	                              </Text>
-	                              <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                           {/* Extra Analysis Metric */}
+                           <View
+                              className={`flex-1 min-w-[30%] bg-zinc-50 dark:bg-slate-700 rounded-xl p-3 border border-slate-200 dark:border-slate-600 gap-1.5 ${shadowClass} `}
+                              style={[shadowSm.ios, shadowSm.android]}
+                           >
+                              <Text className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                                 Extra Analysis
+                              </Text>
+                              <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
                                  {extraCredits}
                               </Text>
                            </View>
                         </View>
                      </>
                   )}
-
-	                  {!entitlementActive ? (
-	                     <View className="gap-3 pt-5">
-	                        {/* The Shop */}
-	                        <View
-	                           className={`bg-white dark:bg-slate-800 rounded-2xl ${shadowClass}`}
-	                           style={[shadowSm.ios, shadowSm.android]}
-	                        >
-	                           {/* 2. INNER VIEW: Responsible for Clipping (Overflow) and Border */}
-	                           <View className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
-	                              <Pressable
-	                                 onPress={toggleShop}
-                                 className={`relative flex-row items-center justify-center active:bg-slate-50 dark:active:bg-slate-700/50 ${BTN_HEIGHT}`}
+{!entitlementActive ? (
+                     <View className="gap-3 pt-5">
+                        {/* UNIFIED STORE CONTAINER */}
+                        <View
+                           className={`bg-white dark:bg-slate-800 rounded-2xl ${shadowClass}`}
+                           style={[shadowSm.ios, shadowSm.android]}
+                        >
+                           <View className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
+                              
+                              {/* HEADER / TOGGLE */}
+                              <Pressable
+                                 onPress={toggleShop}
+                                 className={`relative flex-row items-center justify-center px-4 active:bg-slate-50 dark:active:bg-slate-700/50 ${BTN_HEIGHT}`}
                               >
-                                 <Text className="text-[15px] font-bold text-slate-900 dark:text-white">
-                                    Get More Analysis
+                                 {/* Centered Title */}
+                                 <Text className="text-[15px] font-bold text-slate-900 dark:text-white text-center">
+                                    Unlock More Analysis
                                  </Text>
 
+                                 {/* Absolute Right Chevron */}
                                  <View className="absolute right-4">
                                     {isShopOpen ? (
-                                       <ChevronDown size={20} color="#94a3b8" />
+                                       <ChevronDown size={20} color={iconColor} />
                                     ) : (
-                                       <ChevronRight
-                                          size={20}
-                                          color="#94a3b8"
-                                       />
+                                       <ChevronRight size={20} color={iconColor} />
                                     )}
                                  </View>
                               </Pressable>
 
+                              {/* THE SHOP CONTENT */}
                               {isShopOpen && (
-                                 <View className="p-4 pt-0">
+                                 <View className="px-4 pb-6 pt-2">
                                     <View className="h-[1px] bg-slate-100 dark:bg-slate-700 mb-4" />
-                                    <CreditShop
+                                    
+                                    <CreditShop 
+                                       onUpgrade={handleUpgrade}
                                        onSuccess={() => {
-                                          LayoutAnimation.configureNext(
-                                             LayoutAnimation.Presets
-                                                .easeInEaseOut
-                                          );
+                                          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                                        }}
                                     />
                                  </View>
                               )}
                            </View>
                         </View>
-
-	                        <Pressable
-	                           // ADDED SHADOWS HERE
-	                           className={`bg-dispute-cta rounded-xl items-center ${shadowClass} active:opacity-90 ${BTN_HEIGHT} ${billingAction === 'upgrade' ? 'opacity-50' : ''}`}
-	                           style={[shadowSm.ios, shadowSm.android]}
-	                           onPress={handleUpgrade}
-	                           disabled={billingAction !== null}
-	                        >
-	                           <Text className="text-white font-bold text-[15px]">
-	                              {billingAction === 'upgrade'
-                                 ? 'Opening...'
-                                 : 'Upgrade to Growth Plus'}
-                           </Text>
-                        </Pressable>
                      </View>
                   ) : (
-	                     <View className="gap-3 pt-5">
-	                        <Pressable
-	                           // ADDED SHADOWS HERE
-	                           className={`bg-slate-100 dark:bg-slate-800 rounded-xl items-center ${shadowClass} border border-slate-200 dark:border-slate-700 active:bg-slate-200 dark:active:bg-slate-700 ${BTN_HEIGHT} ${isOffline || billingAction === 'manage' ? 'opacity-50' : ''}`}
-	                           style={[shadowSm.ios, shadowSm.android]}
-	                           onPress={handleManageSubscription}
-	                           disabled={isOffline || billingAction !== null}
-	                        >
-	                           <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
-	                              {billingAction === 'manage'
+                     <View className="gap-3 pt-5">
+                        <Pressable
+                           className={`bg-slate-100 dark:bg-slate-800 rounded-xl items-center ${shadowClass} border border-slate-200 dark:border-slate-700 active:bg-slate-200 dark:active:bg-slate-700 ${BTN_HEIGHT} ${isOffline || billingAction === 'manage' ? 'opacity-50' : ''}`}
+                           style={[shadowSm.ios, shadowSm.android]}
+                           onPress={handleManageSubscription}
+                           disabled={isOffline || billingAction !== null}
+                        >
+                           <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
+                              {billingAction === 'manage'
                                  ? 'Opening...'
                                  : 'Manage Subscription'}
                            </Text>
@@ -594,15 +575,14 @@ export default function SettingsScreen() {
                      </View>
                   )}
 
-	                  <Pressable
-	                     // ADDED SHADOWS HERE
-	                     className={`rounded-xl bg-white dark:bg-slate-800 items-center ${shadowClass} border border-slate-200 dark:border-slate-700 active:bg-slate-100 dark:active:bg-slate-800 ${BTN_HEIGHT} ${isOffline || billingAction === 'restore' ? 'opacity-50' : ''}`}
-	                     style={[shadowSm.ios, shadowSm.android]}
-	                     onPress={handleRestore}
-	                     disabled={isOffline || billingAction !== null}
-	                  >
-	                     <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
-	                        {billingAction === 'restore'
+                  <Pressable
+                     className={`rounded-xl bg-white dark:bg-slate-800 items-center ${shadowClass} border border-slate-200 dark:border-slate-700 active:bg-slate-100 dark:active:bg-slate-800 ${BTN_HEIGHT} ${isOffline || billingAction === 'restore' ? 'opacity-50' : ''}`}
+                     style={[shadowSm.ios, shadowSm.android]}
+                     onPress={handleRestore}
+                     disabled={isOffline || billingAction !== null}
+                  >
+                     <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
+                        {billingAction === 'restore'
                            ? 'Restoring...'
                            : 'Restore Purchases'}
                      </Text>
@@ -614,17 +594,17 @@ export default function SettingsScreen() {
                      </Text>
                   )}
                </View>
-	            )}
+            )}
 
-	            {/* Preferences Card */}
-	            <View
-	               className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
-	               style={[shadowSm.ios, shadowSm.android]}
-	            >
-	               <View className="flex-row justify-between items-center">
-	                  <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-	                     App preferences
-	                  </Text>
+            {/* Preferences Card */}
+            <View
+               className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
+               style={[shadowSm.ios, shadowSm.android]}
+            >
+               <View className="flex-row justify-between items-center">
+                  <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                     App preferences
+                  </Text>
                   {prefsLoading && (
                      <ActivityIndicator size="small" color={loaderColor} />
                   )}
@@ -701,16 +681,16 @@ export default function SettingsScreen() {
                )}
             </View>
 
-	            {/* Account Actions Card */}
-	            {status === 'signedIn' && (
-	               <View
-	                  className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
-	                  style={[shadowSm.ios, shadowSm.android]}
-	               >
-                     <Pressable
-                        className="flex-row justify-between items-center active:opacity-60"
-                        onPress={() => setActionsCollapsed((c) => !c)}
-                     >
+            {/* Account Actions Card */}
+            {status === 'signedIn' && (
+               <View
+                  className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
+                  style={[shadowSm.ios, shadowSm.android]}
+               >
+                  <Pressable
+                     className="flex-row justify-between items-center active:opacity-60"
+                     onPress={() => setActionsCollapsed((c) => !c)}
+                  >
                      <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
                         Account actions
                      </Text>
@@ -721,42 +701,40 @@ export default function SettingsScreen() {
                      )}
                   </Pressable>
 
-	                  {!actionsCollapsed && (
-	                     <View className="gap-3 mt-1">
-	                        <Pressable
-	                           // ADDED SHADOWS HERE
-	                           className={`rounded-xl bg-white dark:bg-slate-800 items-center border border-slate-200 dark:border-slate-700 ${shadowClass} active:bg-slate-100 dark:active:bg-slate-800 ${BTN_HEIGHT}`}
-	                           style={[shadowSm.ios, shadowSm.android]}
-	                           onPress={confirmSignOut}
-	                        >
-	                           <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
-	                              Sign out
+                  {!actionsCollapsed && (
+                     <View className="gap-3 mt-1">
+                        <Pressable
+                           className={`rounded-xl bg-white dark:bg-slate-800 items-center border border-slate-200 dark:border-slate-700 ${shadowClass} active:bg-slate-100 dark:active:bg-slate-800 ${BTN_HEIGHT}`}
+                           style={[shadowSm.ios, shadowSm.android]}
+                           onPress={confirmSignOut}
+                        >
+                           <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
+                              Sign out
                            </Text>
                         </Pressable>
 
-	                        <Pressable
-	                           // ADDED SHADOWS HERE
-	                           className={`rounded-xl items-center bg-belief-bg border border-belief-border ${shadowClass} active:opacity-80 ${BTN_HEIGHT} ${isOffline || deleteLoading ? 'opacity-50' : ''}`}
-	                           style={[shadowSm.ios, shadowSm.android]}
-	                           onPress={confirmDelete}
-	                           disabled={isOffline || deleteLoading}
-	                        >
-	                           <Text className="text-belief-text font-extrabold text-[15px]">
+                        <Pressable
+                           className={`rounded-xl items-center bg-belief-bg border border-belief-border ${shadowClass} active:opacity-80 ${BTN_HEIGHT} ${isOffline || deleteLoading ? 'opacity-50' : ''}`}
+                           style={[shadowSm.ios, shadowSm.android]}
+                           onPress={confirmDelete}
+                           disabled={isOffline || deleteLoading}
+                        >
+                           <Text className="text-belief-text font-extrabold text-[15px]">
                               {deleteLoading ? 'Deleting...' : 'Delete account'}
                            </Text>
                         </Pressable>
                      </View>
                   )}
                </View>
-	            )}
+            )}
 
-	            {/* Feedback Card */}
-	            <View
-	               className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 ${shadowClass}`}
-	               style={[shadowSm.ios, shadowSm.android]}
-	            >
-	               <SendFeedback />
-	            </View>
+            {/* Feedback Card */}
+            <View
+               className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 ${shadowClass}`}
+               style={[shadowSm.ios, shadowSm.android]}
+            >
+               <SendFeedback />
+            </View>
          </ScrollView>
       </View>
    );
