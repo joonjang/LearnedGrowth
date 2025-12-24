@@ -13,6 +13,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { Platform } from "react-native";
@@ -37,6 +38,7 @@ type AuthContextShape = {
   profile: AccountProfile | null;
   loadingProfile: boolean;
   refreshProfile: () => Promise<void>;
+  refreshProfileIfStale: (staleMs?: number) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -82,46 +84,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const refreshProfilePromiseRef = useRef<Promise<void> | null>(null);
+  const lastProfileFetchRef = useRef<number | null>(null);
 
   const handleSession = useCallback((nextSession: Session | null) => {
     setSession(nextSession);
     setStatus(nextSession ? "signedIn" : "signedOut");
     if (!nextSession?.user?.id) {
       setProfile(null);
+      lastProfileFetchRef.current = null;
     }
   }, []);
 
   const refreshProfile = useCallback(async () => {
     if (!supabase || !session?.user?.id) {
       setProfile(null);
+      lastProfileFetchRef.current = null;
       return;
     }
-    setLoadingProfile(true);
-    setAuthError(null);
-    try {
-      const res = await supabase
-        .from("profiles")
-        .select(
-          "plan, ai_calls_used, ai_cycle_start, extra_ai_credits"
-        )
-        .eq("id", session.user.id)
-        .single();
 
-      if (res.error) {
-        // keep the app usable even if the profile table is missing or empty
-        setAuthError(res.error.message);
+    if (refreshProfilePromiseRef.current) {
+      return refreshProfilePromiseRef.current;
+    }
+
+    const run = (async () => {
+      setLoadingProfile(true);
+      setAuthError(null);
+      try {
+        const res = await supabase
+          .from("profiles")
+          .select(
+            "plan, ai_calls_used, ai_cycle_start, extra_ai_credits"
+          )
+          .eq("id", session.user.id)
+          .single();
+
+        if (res.error) {
+          // keep the app usable even if the profile table is missing or empty
+          setAuthError(res.error.message);
+          setProfile(EMPTY_PROFILE);
+          return;
+        }
+
+        setProfile(normalizeProfile(res) ?? EMPTY_PROFILE);
+      } catch (err: any) {
+        setAuthError(err?.message ?? String(err));
         setProfile(EMPTY_PROFILE);
+      } finally {
+        lastProfileFetchRef.current = Date.now();
+        setLoadingProfile(false);
+        refreshProfilePromiseRef.current = null;
+      }
+    })();
+
+    refreshProfilePromiseRef.current = run;
+    return run;
+  }, [session?.user?.id]);
+
+  const refreshProfileIfStale = useCallback(
+    async (staleMs: number = 60_000) => {
+      const last = lastProfileFetchRef.current;
+      if (!last) {
+        return refreshProfile();
+      }
+
+      const now = Date.now();
+      if (now - last < staleMs) {
         return;
       }
 
-      setProfile(normalizeProfile(res) ?? EMPTY_PROFILE);
-    } catch (err: any) {
-      setAuthError(err?.message ?? String(err));
-      setProfile(EMPTY_PROFILE);
-    } finally {
-      setLoadingProfile(false);
-    }
-  }, [session?.user?.id]);
+      return refreshProfile();
+    },
+    [refreshProfile]
+  );
 
   const bootstrapSession = useCallback(async () => {
     if (!supabase) {
@@ -149,7 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     bootstrapSession();
 
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
       handleSession(nextSession);
     });
@@ -322,6 +357,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       loadingProfile,
       refreshProfile,
+      refreshProfileIfStale,
       signIn,
       signUp,
       signOut,
@@ -333,6 +369,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loadingProfile,
       profile,
       refreshProfile,
+      refreshProfileIfStale,
       session,
       signInWithApple,
       signInWithGoogle,

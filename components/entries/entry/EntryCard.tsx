@@ -293,7 +293,7 @@ export default function EntryCard({
          />
 
          {!entry.dispute ? (
-            <View className="mt-2">
+            <View className="mt-2 shadow-sm dark:shadow-none p-1 ">
                <View className="h-[1px] bg-slate-100 dark:bg-slate-800 mb-2" />
                <CardNextButton id={entry.id} />
             </View>

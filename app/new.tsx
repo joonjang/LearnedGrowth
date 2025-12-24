@@ -1,11 +1,10 @@
 import rawAbcde from '@/assets/data/abcde.json';
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
+import StepperButton from '@/components/buttons/StepperButton';
 import InputBox from '@/components/newEntry/InputBox';
 import PromptDisplay, { PromptDisplayHandle } from '@/components/newEntry/PromptDisplay';
-import StepperButton from '@/components/newEntry/StepperButton';
 import StepperHeader from '@/components/newEntry/StepperHeader';
 import { useEntries } from '@/hooks/useEntries';
-import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { usePromptLayout } from '@/hooks/usePromptLayout';
 import { usePrompts } from '@/hooks/usePrompts';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
@@ -69,7 +68,7 @@ export default function NewEntryModal() {
    const inputRef = useRef<TextInput>(null);
    const promptRef = useRef<PromptDisplayHandle | null>(null);
    const { promptTextStyle, inputBoxDims, promptMaxHeight } = usePromptLayout();
-   const isKeyboardVisible = useKeyboardVisible();
+   
    
    // Logic: Start below the notch (insets.top) + some breathing room (12px)
    const topPadding = insets.top + 12;
@@ -232,7 +231,6 @@ export default function NewEntryModal() {
                </ScrollView>
 
                {/* INPUT WRAPPER */}
-               <View className={isKeyboardVisible ? 'pb-0' : 'pb-6'}>
                   <InputBox
 
                      ref={inputRef}
@@ -254,7 +252,6 @@ export default function NewEntryModal() {
                      onNext={() => handleStepChange('next')}
                      onBack={() => handleStepChange('back')}
                   />
-               </View>
                 
             </View>
          </KeyboardAvoidingView>

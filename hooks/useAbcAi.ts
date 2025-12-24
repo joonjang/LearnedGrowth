@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 
 import { createAbcAiService } from "@/services/ai/createAbcAiService";
 import { AbcAiService, LearnedGrowthResult, AbcInput } from "@/models/aiService";
+import { useAuth } from "@/providers/AuthProvider";
 
 export function useAbcAi() {
+  const { status: authStatus, refreshProfile } = useAuth();
   const [service, setService] = useState<AbcAiService | null>(null);
   const [initError, setInitError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,6 +57,11 @@ export function useAbcAi() {
         onChunk: (partial) => setStreamText(partial),
       });
       setLastResult(result);
+      if (authStatus === "signedIn") {
+        refreshProfile().catch((err) =>
+          console.warn("Failed to refresh profile after AI call", err)
+        );
+      }
       return result;
     } catch (e) {
       const message = e instanceof Error ? e.message : "AI request failed";

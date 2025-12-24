@@ -1,11 +1,13 @@
 import { getIosShadowStyle } from '@/lib/shadow';
 import React, { useMemo } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
+import WideButton from '@/components/buttons/WideButton';
 import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
+import { ArrowRight } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 
 type Props = {
@@ -121,15 +123,14 @@ export default function ABCAnalysis({
                updatedAt={entry.updatedAt}
             />
             {onGoToSteps && aiData ? (
-               <Pressable
-                  className="mt-4 py-2.5 px-3 rounded-full bg-dispute-cta items-center justify-center shadow-sm active:opacity-90"
-                  style={iosShadowSm}
-                  onPress={onGoToSteps}
-               >
-                  <Text className="text-base font-semibold text-white">
-                     Dispute your belief
-                  </Text>
-               </Pressable>
+               <View className="shadow-sm dark:shadow-none p-1 mt-6 mb-3">
+                  <WideButton
+                     label={'Continue'}
+                     icon={ArrowRight}
+                     onPress={onGoToSteps}
+                     variant={'primary'}
+                  />
+               </View>
             ) : null}
          </View>
       </ScrollView>

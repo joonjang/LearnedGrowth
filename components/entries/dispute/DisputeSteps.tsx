@@ -10,10 +10,10 @@ import {
 } from 'react-native';
 
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
+import StepperButton from '@/components/buttons/StepperButton';
 import EntryContextView from '@/components/entries/dispute/EntryContextView';
 import InputBox from '@/components/newEntry/InputBox';
 import PromptDisplay, { PromptDisplayHandle } from '@/components/newEntry/PromptDisplay';
-import StepperButton from '@/components/newEntry/StepperButton';
 import StepperHeader from '@/components/newEntry/StepperHeader';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
@@ -52,7 +52,6 @@ type Props = {
    handleScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
    scrollToBottom: (animated?: boolean) => void;
    inputRef: React.RefObject<TextInput | null>;
-   isKeyboardVisible: boolean;
    inputBoxDims: any;
    promptContainerStyle?: any;
    contentTopPadding?: number;
@@ -78,7 +77,6 @@ export default function DisputeSteps({
    handleScroll,
    scrollToBottom,
    inputRef,
-   isKeyboardVisible,
    inputBoxDims,
    promptContainerStyle,
    contentTopPadding,
@@ -169,9 +167,7 @@ export default function DisputeSteps({
          </ScrollView>
 
          {/* --- INPUT WRAPPER --- */}
-         <View 
-             className={isKeyboardVisible ? 'pb-0' : 'pb-6' }
-         >
+
             <InputBox
 
                ref={inputRef}
@@ -196,7 +192,7 @@ export default function DisputeSteps({
                onNext={() => handleStepChange('next')}
                onBack={() => handleStepChange('back')}
             />
-         </View>
+
       </>
    );
 }

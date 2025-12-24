@@ -34,6 +34,16 @@ type IosShadowStyle = Pick<
    'shadowColor' | 'shadowOpacity' | 'shadowRadius' | 'shadowOffset'
 >;
 
+const ANDROID_SHADOW_CLASSES: Record<IosShadowPreset, string> = {
+   sm: 'shadow-sm shadow-slate-300 dark:shadow-none',
+   md: 'shadow-md shadow-slate-300 dark:shadow-none',
+   lg: 'shadow-lg shadow-slate-300 dark:shadow-none',
+   xl: 'shadow-xl shadow-slate-300 dark:shadow-none',
+   '2xl': 'shadow-2xl shadow-slate-300 dark:shadow-none',
+   card: 'shadow-md shadow-slate-300 dark:shadow-none',
+   button: 'shadow-sm shadow-slate-300 dark:shadow-none',
+};
+
 export function getIosShadowStyle({
    isDark,
    preset = 'card',
@@ -58,4 +68,24 @@ export function getIosShadowStyle({
       shadowRadius: selected.radius,
       shadowOffset: selected.offset,
    };
+}
+
+type GetShadowOptions = GetIosShadowStyleOptions & {
+   androidClassName?: string;
+};
+
+/**
+ * Platform-aware shadow helper:
+ * - Returns iOS shadow style
+ * - Returns Android/NativeWind className fallback (elevation via shadow-* classes)
+ */
+export function getShadow({ androidClassName, ...opts }: GetShadowOptions) {
+   const iosStyle = getIosShadowStyle(opts);
+   const baseClass = androidClassName ?? ANDROID_SHADOW_CLASSES[opts.preset ?? 'card'] ?? '';
+
+   // Preserve the "no shadow in dark mode" behavior for Android too.
+   const className =
+      opts.disableInDark && opts.isDark ? 'shadow-none' : baseClass;
+
+   return { ios: iosStyle, className };
 }

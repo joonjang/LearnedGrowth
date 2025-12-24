@@ -4,7 +4,6 @@ import ABCAnalysis from '@/components/entries/dispute/ABCAnalysis';
 import DisputeSteps from '@/components/entries/dispute/DisputeSteps';
 import { useAbcAi } from '@/hooks/useAbcAi';
 import { useEntries } from '@/hooks/useEntries';
-import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { usePromptLayout } from '@/hooks/usePromptLayout';
 import { usePrompts } from '@/hooks/usePrompts';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
@@ -85,7 +84,6 @@ export default function DisputeScreen() {
    const entry = entryId ? getEntryById(entryId) : undefined;
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
    const insets = useSafeAreaInsets();
-   const isKeyboardVisible = useKeyboardVisible();
 
    // Unified Edge-to-Edge Padding Logic
    const topPadding = insets.top + 12;
@@ -460,7 +458,6 @@ const submit = useCallback(async () => {
                      handleScroll={handleScroll}
                      scrollToBottom={scrollToBottom}
                      inputRef={inputRef}
-                     isKeyboardVisible={isKeyboardVisible}
                      inputBoxDims={inputBoxDims}
                      // Pass a simple style object if component expects style, or className if it supports it.
                      // Assuming 'promptContainerStyle' is a legacy style prop in the child:

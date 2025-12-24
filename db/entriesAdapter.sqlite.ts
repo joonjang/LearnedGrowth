@@ -1,3 +1,4 @@
+import { createDb } from "@/db/entries";
 import { Clock } from "@/lib/clock";
 import { LearnedGrowthResponse } from "@/models/aiService";
 import { Entry } from "@/models/entry";
@@ -51,12 +52,47 @@ function normalizeAiRetryCount(raw: any): number {
 export class SQLEntriesAdapter implements EntriesAdapter {
    private entries?: Entry[];
    private db?: SQLite.SQLiteDatabase;
+   private dbName?: string;
    private clock: Clock;
 
-   constructor(_db: any, clock: Clock) {
+   constructor(_db: any, clock: Clock, dbName = "entries.db") {
       this.clock = clock;
-      if (_db) this.db = _db;
+      if (_db) {
+         this.db = _db;
+         this.dbName = dbName;
+      }
       else this.entries = [];
+   }
+
+   private isNativeDbPointerError(err: any) {
+      const msg = err?.message ?? "";
+      return (
+         msg.includes("NativeDatabase.prepareAsync") ||
+         msg.includes("NativeDatabase.executeAsync") ||
+         msg.includes("NativeDatabase.bind")
+      );
+   }
+
+   private async withDb<T>(op: (db: SQLite.SQLiteDatabase) => Promise<T>): Promise<T> {
+      if (!this.db) throw new Error("SQLite database not initialized");
+
+      try {
+         return await op(this.db);
+      } catch (err: any) {
+         if (!this.isNativeDbPointerError(err)) throw err;
+
+         // Try to reopen the database once and retry the op.
+         try {
+            const name = this.dbName ?? "entries.db";
+            this.db = await createDb(name);
+         } catch (reopenErr: any) {
+            throw new Error(
+               `Failed to reopen entries database: ${reopenErr?.message ?? reopenErr}`
+            );
+         }
+
+         return await op(this.db);
+      }
    }
 
    private copyEntry(entry: Entry): Entry {
@@ -95,15 +131,17 @@ export class SQLEntriesAdapter implements EntriesAdapter {
       }
 
       try {
-         const rows = await this.db.getAllAsync<Row>(`
-            SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
-              created_at, updated_at, account_id, dirty_since, is_deleted
-            FROM entries
-            WHERE is_deleted = 0
-            ORDER BY created_at DESC
-          `);
+         return await this.withDb(async (db) => {
+            const rows = await db.getAllAsync<Row>(`
+               SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
+                 created_at, updated_at, account_id, dirty_since, is_deleted
+               FROM entries
+               WHERE is_deleted = 0
+               ORDER BY created_at DESC
+             `);
 
-         return rows.map((row) => this.fromRow(row));
+            return rows.map((row) => this.fromRow(row));
+         });
       } catch (e: any) {
          throw new Error(`entries.getAll failed`, { cause: e });
       }
@@ -115,17 +153,19 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          return found ? this.copyEntry(found) : null;
       }
       try {
-         const row = await this.db.getFirstAsync<Row>(
-            `
-          SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
-              created_at, updated_at, account_id, dirty_since, is_deleted
-            FROM entries
-            WHERE id = $id
-            LIMIT 1
-             `,
-            { $id: id }
-         );
-         return row ? this.fromRow(row) : null;
+         return await this.withDb(async (db) => {
+            const row = await db.getFirstAsync<Row>(
+               `
+             SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
+                 created_at, updated_at, account_id, dirty_since, is_deleted
+               FROM entries
+               WHERE id = $id
+               LIMIT 1
+                `,
+               { $id: id }
+            );
+            return row ? this.fromRow(row) : null;
+         });
       } catch (e: any) {
          throw new Error(
             `entries.getById failed for id: ${id}: ${e?.message ?? e}`
@@ -146,40 +186,46 @@ export class SQLEntriesAdapter implements EntriesAdapter {
 
       // SQLite mode
       try {
-         await this.db.runAsync(
-            `INSERT INTO entries
-       (id, adversity, belief, consequence, dispute, energy, ai_response, ai_retry_count,
-        created_at, updated_at, account_id, dirty_since, is_deleted)
-       VALUES
-       ($id, $adversity, $belief, $consequence, $dispute, $energy, $ai_response, $ai_retry_count,
-        $created_at, $updated_at, $account_id, $dirty_since, $is_deleted)`,
-            {
-               $id: entry.id,
-               $adversity: entry.adversity,
-               $belief: entry.belief,
-               $consequence: entry.consequence ?? null,
-               $dispute: entry.dispute ?? null,
-               $energy: entry.energy ?? null,
-               $ai_response: serializeAiResponse(entry.aiResponse ?? null),
-               $ai_retry_count: entry.aiRetryCount ?? 0,
-               $created_at: entry.createdAt,
-               $updated_at: entry.updatedAt,
-               $account_id: entry.accountId ?? null,
-               $dirty_since: entry.dirtySince ?? null,
-               $is_deleted: entry.isDeleted ? 1 : 0,
-            }
-         );
+         const row = await this.withDb(async (db) => {
+            await db.runAsync(
+               `INSERT INTO entries
+        (id, adversity, belief, consequence, dispute, energy, ai_response, ai_retry_count,
+         created_at, updated_at, account_id, dirty_since, is_deleted)
+        VALUES
+        ($id, $adversity, $belief, $consequence, $dispute, $energy, $ai_response, $ai_retry_count,
+         $created_at, $updated_at, $account_id, $dirty_since, $is_deleted)`,
+               {
+                  $id: entry.id,
+                  $adversity: entry.adversity,
+                  $belief: entry.belief,
+                  $consequence: entry.consequence ?? null,
+                  $dispute: entry.dispute ?? null,
+                  $energy: entry.energy ?? null,
+                  $ai_response: serializeAiResponse(entry.aiResponse ?? null),
+                  $ai_retry_count: entry.aiRetryCount ?? 0,
+                  $created_at: entry.createdAt,
+                  $updated_at: entry.updatedAt,
+                  $account_id: entry.accountId ?? null,
+                  $dirty_since: entry.dirtySince ?? null,
+                  $is_deleted: entry.isDeleted ? 1 : 0,
+               }
+            );
 
-         const row = await this.db.getFirstAsync<Row>(
-            `SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
-              created_at, updated_at, account_id, dirty_since, is_deleted
-         FROM entries
-        WHERE id = $id
-        LIMIT 1`,
-            { $id: entry.id }
-         );
-         if (!row)
-            throw new Error(`entries.add: inserted id not found (${entry.id})`);
+            const inserted = await db.getFirstAsync<Row>(
+               `SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
+                 created_at, updated_at, account_id, dirty_since, is_deleted
+          FROM entries
+         WHERE id = $id
+         LIMIT 1`,
+               { $id: entry.id }
+            );
+            if (!inserted) {
+               throw new Error(
+                  `entries.add: inserted id not found (${entry.id})`
+               );
+            }
+            return inserted;
+         });
 
          return { ...this.fromRow(row) };
       } catch (e: any) {
@@ -236,48 +282,50 @@ export class SQLEntriesAdapter implements EntriesAdapter {
             updatedAt: now,
          };
 
-         await this.db.runAsync(
-            `UPDATE entries
-         SET adversity   = $adversity,
-              belief      = $belief,
-              ai_response = $ai_response,
-              ai_retry_count = $ai_retry_count,
-              consequence = $consequence,
-              dispute     = $dispute,
-              energy      = $energy,
-              updated_at  = $updated_at,
-              account_id  = $account_id,
-              dirty_since = COALESCE(dirty_since, $dirty_since),
-              is_deleted  = $is_deleted
-        WHERE id = $id`,
-            {
-               $id: merged.id,
-               $adversity: merged.adversity,
-               $belief: merged.belief,
-               $ai_response: serializeAiResponse(merged.aiResponse ?? null),
-               $ai_retry_count: merged.aiRetryCount ?? 0,
-               $consequence: merged.consequence ?? null,
-               $dispute: merged.dispute ?? null,
-               $energy: merged.energy ?? null,
-               // NOTE: don't set created_at here
-               $updated_at: merged.updatedAt,
-               $account_id: merged.accountId ?? null,
-               $dirty_since: merged.dirtySince ?? null,
-               $is_deleted: merged.isDeleted ? 1 : 0,
-            }
-         );
+         return await this.withDb(async (db) => {
+            await db.runAsync(
+               `UPDATE entries
+            SET adversity   = $adversity,
+                 belief      = $belief,
+                 ai_response = $ai_response,
+                 ai_retry_count = $ai_retry_count,
+                 consequence = $consequence,
+                 dispute     = $dispute,
+                 energy      = $energy,
+                 updated_at  = $updated_at,
+                 account_id  = $account_id,
+                 dirty_since = COALESCE(dirty_since, $dirty_since),
+                 is_deleted  = $is_deleted
+           WHERE id = $id`,
+               {
+                  $id: merged.id,
+                  $adversity: merged.adversity,
+                  $belief: merged.belief,
+                  $ai_response: serializeAiResponse(merged.aiResponse ?? null),
+                  $ai_retry_count: merged.aiRetryCount ?? 0,
+                  $consequence: merged.consequence ?? null,
+                  $dispute: merged.dispute ?? null,
+                  $energy: merged.energy ?? null,
+                  // NOTE: don't set created_at here
+                  $updated_at: merged.updatedAt,
+                  $account_id: merged.accountId ?? null,
+                  $dirty_since: merged.dirtySince ?? null,
+                  $is_deleted: merged.isDeleted ? 1 : 0,
+               }
+            );
 
-         const row = await this.db.getFirstAsync<Row>(
-            `SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
-              created_at, updated_at, account_id, dirty_since, is_deleted
-         FROM entries
-        WHERE id = $id
-        LIMIT 1`,
-            { $id: id }
-         );
-         if (!row) throw new Error(`entries.update failed to read back ${id}`);
+            const row = await db.getFirstAsync<Row>(
+               `SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
+                 created_at, updated_at, account_id, dirty_since, is_deleted
+          FROM entries
+         WHERE id = $id
+         LIMIT 1`,
+               { $id: id }
+            );
+            if (!row) throw new Error(`entries.update failed to read back ${id}`);
 
-         return this.fromRow(row);
+            return this.fromRow(row);
+         });
       } catch (e: any) {
          throw new Error(`entries.update failed for ${id}: ${e?.message ?? e}`);
       }
@@ -303,13 +351,15 @@ export class SQLEntriesAdapter implements EntriesAdapter {
       }
 
       try {
-         await this.db.runAsync(
-            `UPDATE entries
-              SET is_deleted  = 1,
-                  updated_at  = $now,
-                  dirty_since = COALESCE(dirty_since, $now)
-            WHERE id = $id`,
-            { $id: id, $now: now }
+         await this.withDb((db) =>
+            db.runAsync(
+               `UPDATE entries
+                 SET is_deleted  = 1,
+                     updated_at  = $now,
+                     dirty_since = COALESCE(dirty_since, $now)
+               WHERE id = $id`,
+               { $id: id, $now: now }
+            )
          );
       } catch (e: any) {
          throw new Error(
@@ -323,6 +373,6 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          this.entries = [];
          return;
       }
-      await this.db.runAsync("DELETE FROM entries");
+      await this.withDb((db) => db.runAsync("DELETE FROM entries"));
    }
 }

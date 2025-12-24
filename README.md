@@ -26,8 +26,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Display that refresh takes tokens
   - enable in app purchase 
 
-- Button idempotency for modals login and free-user 
-
 - put in an option to become a subscriber for the free-user screen
 
 - Seeing setting screen should update revenue cat credits 
@@ -56,11 +54,13 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Change positioning of delete account 
 - Migrate navigation from tab based navigation to single column dashboard
 
-## Steps
-
 - Auth guard
   - Cloud database sync 
     - log out should hide entries
+
+
+## Steps
+
 
 - Account screen/Setting
 
@@ -72,8 +72,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
   - delete account x
     - test for google and apple
-
-  - if user is offline, grey out manage subscription and delete account and indiciate offline
 
 - App store payment testing + revenuecat
   - test fails and restore purchase
@@ -88,6 +86,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2025-12-23
 - Entry Detail Screen enter in edit mode and buttons addressed
 - Display disclaimer that this is a tool
+- Sign up confirmation email established/ OTP for login
+- Abstracted Stepper button margin
+- Added credit information for AiInsightAnalysis
+- Abstracted user credit to be sourced and updated during API call
+- Added fix to Nativewind shadow bug, added items to tailwind config as fix
 
 ### 2025-12-22
 - Tapping on entry card goes to entry detail screen

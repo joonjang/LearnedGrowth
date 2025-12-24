@@ -8,6 +8,7 @@ import {
    ROUTE_LOGIN,
 } from '@/components/constants';
 import CreditShop from '@/components/CreditShop';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import {
    BottomSheetBackdrop,
@@ -19,21 +20,27 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
    AlertCircle,
    ArrowRight,
+   Leaf,
    PlusCircle,
    Sparkles,
-   Ticket,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LayoutAnimation, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { supabase } from '@/lib/supabase';
 
 export default function FreeUserChoiceScreen() {
    const router = useRouter();
    const insets = useSafeAreaInsets();
    const modalRef = useRef<BottomSheetModal>(null);
-   const { status, profile, loadingProfile, refreshProfile, user } = useAuth();
+   const {
+      status,
+      profile,
+      loadingProfile,
+      refreshProfile,
+      refreshProfileIfStale,
+      user,
+   } = useAuth();
    const { id, autoAi } = useLocalSearchParams<{
       id?: string | string[];
       autoAi?: string | string[];
@@ -50,31 +57,41 @@ export default function FreeUserChoiceScreen() {
       user?.user_metadata?.has_agreed_to_ai === true ||
       user?.user_metadata?.has_agreed_to_ai === 'true';
    const [hasConsent, setHasConsent] = useState<boolean>(hasAccountConsent);
+   const [hasSession, setHasSession] = useState(false);
 
    // Ensure credits are accurate the moment this screen opens
    useEffect(() => {
-      refreshProfile();
-   }, [refreshProfile]);
+      refreshProfileIfStale();
+   }, [refreshProfileIfStale]);
 
    useEffect(() => {
       setHasConsent(hasAccountConsent);
    }, [hasAccountConsent]);
 
-   const autoAiRequested =
-      (Array.isArray(autoAi) ? autoAi[0] : autoAi) === '1';
-   const hasAutoTriggeredRef = useRef(false);
-
-   // If we were redirected here post-login to resume AI flow, auto-trigger once
+   // Track Supabase session directly to avoid redirect loops while auth status settles
    useEffect(() => {
-      if (!autoAiRequested || hasAutoTriggeredRef.current) return;
-      if (status !== 'signedIn') return;
-      hasAutoTriggeredRef.current = true;
-      handleChoice(true);
-   }, [autoAiRequested, handleChoice, status]);
+      const client = supabase;
+      if (!client) return;
+
+      let mounted = true;
+      const syncSession = async () => {
+         const { data } = await client.auth.getSession();
+         if (mounted) setHasSession(Boolean(data.session));
+      };
+      syncSession();
+      const sub = client.auth.onAuthStateChange((_event, session) => {
+         if (mounted) setHasSession(Boolean(session));
+      });
+      return () => {
+         mounted = false;
+         sub?.data?.subscription?.unsubscribe();
+      };
+   }, []);
 
    // Logic Helpers
    const entryId = Array.isArray(id) ? id[0] : id;
    const isSignedIn = status === 'signedIn';
+    const effectiveSignedIn = isSignedIn || hasSession;
    const availableCredits = profile
       ? Math.max(FREE_MONTHLY_CREDITS - profile.aiCallsUsed, 0) +
         (profile.extraAiCredits ?? 0)
@@ -134,7 +151,7 @@ export default function FreeUserChoiceScreen() {
       (path: string, requiresAuth: boolean) => {
          isRedirecting.current = true;
 
-         if (requiresAuth && !isSignedIn) {
+         if (requiresAuth && !effectiveSignedIn) {
             const redirectPath = `/(modal)/free-user?id=${entryId}&autoAi=1`;
             router.replace({
                pathname: ROUTE_LOGIN,
@@ -144,7 +161,7 @@ export default function FreeUserChoiceScreen() {
             router.replace(path as any);
          }
       },
-      [entryId, isSignedIn, router]
+      [effectiveSignedIn, entryId, router]
    );
 
    const checkConsentAndNavigate = useCallback(
@@ -159,31 +176,52 @@ export default function FreeUserChoiceScreen() {
       [hasConsent, proceedToPath]
    );
 
-   const handleChoice = (requiresAuth: boolean) => {
-      if (requiresAuth && availableCredits === 0) {
-         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-         setShowShop(!showShop); // Toggle the shop visibility
-         return;
-      }
+   const handleChoice = useCallback(
+      (requiresAuth: boolean) => {
+         if (requiresAuth && availableCredits === 0) {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setShowShop((prev) => !prev); // Toggle the shop visibility
+            return;
+         }
 
-      if (!entryId) return modalRef.current?.dismiss();
+         if (!entryId) return modalRef.current?.dismiss();
 
-      const path = requiresAuth
-         ? `/dispute/${entryId}?view=analysis&refresh=true`
-         : `/dispute/${entryId}`;
+         const path = requiresAuth
+            ? `/dispute/${entryId}?view=analysis&refresh=true`
+            : `/dispute/${entryId}`;
 
-      if (requiresAuth && !isSignedIn) {
+         if (requiresAuth && !effectiveSignedIn) {
+            proceedToPath(path, requiresAuth);
+            return;
+         }
+
+         if (requiresAuth) {
+            checkConsentAndNavigate(path, requiresAuth);
+            return;
+         }
+
          proceedToPath(path, requiresAuth);
-         return;
-      }
+      },
+      [
+         availableCredits,
+         checkConsentAndNavigate,
+         entryId,
+         effectiveSignedIn,
+         proceedToPath,
+      ]
+   );
 
-      if (requiresAuth) {
-         checkConsentAndNavigate(path, requiresAuth);
-         return;
-      }
+   const autoAiRequested =
+      (Array.isArray(autoAi) ? autoAi[0] : autoAi) === '1';
+   const hasAutoTriggeredRef = useRef(false);
 
-      proceedToPath(path, requiresAuth);
-   };
+   // If we were redirected here post-login to resume AI flow, auto-trigger once
+   useEffect(() => {
+      if (!autoAiRequested || hasAutoTriggeredRef.current) return;
+      if (!effectiveSignedIn) return;
+      hasAutoTriggeredRef.current = true;
+      handleChoice(true);
+   }, [autoAiRequested, effectiveSignedIn, handleChoice]);
 
    const handlePurchaseSuccess = () => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -271,7 +309,7 @@ export default function FreeUserChoiceScreen() {
                               {availableCredits === 0 ? (
                                  <AlertCircle size={14} color={theme.amberText} />
                               ) : (
-                                 <Ticket size={14} color={theme.amberText} />
+                                 <Leaf size={14} color={theme.amberText} />
                               )}
                               <Text
                                  className="text-xs font-bold"
@@ -292,7 +330,7 @@ export default function FreeUserChoiceScreen() {
                         ) : (
                            <Sparkles size={24} color={theme.amberText} />
                         )}
-                     </Pressable>
+                    </Pressable>
 
                      {/* Manual Option (Always available) */}
                      <Pressable

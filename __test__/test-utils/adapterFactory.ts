@@ -14,7 +14,7 @@ export async function makeSqlite() {
    const clock = new TestClock();
    const dbName = `test-${Math.random().toString(36).slice(2)}.db`;
    const db = await createDb(dbName);
-   const adapter = new SQLEntriesAdapter(db, clock);
+   const adapter = new SQLEntriesAdapter(db, clock, dbName);
    const cleanup = async () => {
       try {
          await db.execAsync('DELETE FROM entries;'); // wipe rows, keep schema

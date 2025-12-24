@@ -9,7 +9,7 @@ import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { ChevronDown, ChevronRight } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import {
@@ -51,6 +51,7 @@ export default function SettingsScreen() {
       profile,
       signOut,
       refreshProfile,
+      refreshProfileIfStale,
       loadingProfile,
       isConfigured,
    } = useAuth();
@@ -121,6 +122,13 @@ export default function SettingsScreen() {
    const darkMode = theme === 'dark';
 
    const [isShopOpen, setIsShopOpen] = useState(false);
+
+   useFocusEffect(
+      useCallback(() => {
+         if (status !== 'signedIn') return;
+         refreshProfileIfStale();
+      }, [refreshProfileIfStale, status])
+   );
 
    useEffect(() => {
       const unsubscribe = NetInfo.addEventListener((state) => {

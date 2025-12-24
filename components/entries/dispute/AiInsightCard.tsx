@@ -1,9 +1,13 @@
+import { AI_ANALYSIS_CREDIT_COST, FREE_MONTHLY_CREDITS } from '@/components/constants';
+import CreditShop from '@/components/CreditShop';
 import { LearnedGrowthResponse } from '@/models/aiService';
+import { useAuth } from '@/providers/AuthProvider';
 import {
    Clock3, // Try Sparkles now. If it crashes, swap to 'Activity' or 'Zap'
    HelpCircle,
    Hourglass,
    Info,
+   Leaf,
    RefreshCw,
    Sparkles, // Try HelpCircle. If it crashes, swap to 'CircleHelp' or 'Info'
    X,
@@ -34,8 +38,27 @@ export function AiInsightCard({
 }: Props) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { profile, status, refreshProfile, refreshProfileIfStale } = useAuth();
+   const isFreePlan = profile?.plan === 'free';
+   const availableCredits = useMemo(() => {
+      if (!profile) return null;
+      return (
+         Math.max(FREE_MONTHLY_CREDITS - (profile.aiCallsUsed ?? 0), 0) +
+         (profile.extraAiCredits ?? 0)
+      );
+   }, [profile]);
+   const refreshCostNote = useMemo(() => {
+      if (!isFreePlan) return null;
+      const costSuffix = AI_ANALYSIS_CREDIT_COST === 1 ? '' : 's';
+      if (availableCredits === null) {
+         return `Costs ${AI_ANALYSIS_CREDIT_COST} credit${costSuffix}.`;
+      }
+      const remainingSuffix = availableCredits === 1 ? '' : 's';
+      return `Costs ${AI_ANALYSIS_CREDIT_COST} credit${costSuffix} • ${availableCredits} credit${remainingSuffix} left`;
+   }, [availableCredits, isFreePlan]);
 
    const [showDefinitions, setShowDefinitions] = useState(false);
+   const [showShop, setShowShop] = useState(false);
 
    const toggleHelp = () => {
       // Optional: smooth animation for the help text
@@ -58,6 +81,11 @@ export function AiInsightCard({
    const isCoolingDown = isAtLimitStep && minsSinceUpdate < COOLDOWN_MINUTES;
 
    const [timeLabel, setTimeLabel] = useState('');
+
+   useEffect(() => {
+      if (status !== 'signedIn') return;
+      refreshProfileIfStale();
+   }, [refreshProfileIfStale, status]);
 
    useEffect(() => {
       if (!isCoolingDown) return;
@@ -133,8 +161,64 @@ export function AiInsightCard({
    const { safety, analysis, suggestions, isStale } = data;
    const { dimensions: dims, emotionalLogic } = analysis;
 
+   const handleRefreshPress = async () => {
+      const noCredits = availableCredits !== null && availableCredits <= 0;
+      if (noCredits) {
+         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+         setShowShop(true);
+         return;
+      }
+      try {
+         await onRefresh?.();
+      } finally {
+         if (status === 'signedIn') {
+            refreshProfile();
+         }
+      }
+   };
+
    return (
       <View className="gap-6 pt-1">
+         {/* 0. Credit Shop (when out of credits) */}
+         {showShop && (
+            <View className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 gap-3">
+               <View className="flex-row justify-between items-center">
+                  <Text className="text-base font-bold text-amber-800 dark:text-amber-200">
+                     Refill AI credits
+                  </Text>
+                  <Pressable
+                     onPress={() => {
+                        LayoutAnimation.configureNext(
+                           LayoutAnimation.Presets.easeInEaseOut
+                        );
+                        setShowShop(false);
+                     }}
+                     hitSlop={10}
+                  >
+                     <Text className="text-xs font-bold text-amber-700 dark:text-amber-200">
+                        Close
+                     </Text>
+                  </Pressable>
+               </View>
+
+               <CreditShop
+                  onSuccess={async () => {
+                     LayoutAnimation.configureNext(
+                        LayoutAnimation.Presets.easeInEaseOut
+                     );
+                     setShowShop(false);
+                     if (status === 'signedIn') {
+                        try {
+                           await refreshProfile();
+                        } catch (err) {
+                           console.warn('Failed to refresh credits after purchase', err);
+                        }
+                     }
+                  }}
+               />
+            </View>
+         )}
+
          {/* 1. Stale / Refresh Banner */}
          {isStale && (
             <View
@@ -147,16 +231,30 @@ export function AiInsightCard({
                }`}
             >
                <View className="flex-1 gap-1 mr-2">
-                  <View className="flex-row items-center gap-2">
-                     {isCoolingDown ? (
-                        <Hourglass size={16} color={isDark ? '#94a3b8' : '#64748b'} />
-                     ) : (
-                        <Clock3 size={16} color={isDark ? '#94a3b8' : '#64748b'} />
+                  {/* HEADER ROW: Title + Cost Note (Side by Side) */}
+                  <View className="flex-row items-center flex-wrap gap-x-3">
+                     <View className="flex-row items-center gap-2">
+                        {isCoolingDown ? (
+                           <Hourglass size={16} color={isDark ? '#94a3b8' : '#64748b'} />
+                        ) : (
+                           <Clock3 size={16} color={isDark ? '#94a3b8' : '#64748b'} />
+                        )}
+                        <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                           {isCoolingDown ? 'Analysis Paused' : 'Previous Analysis'}
+                        </Text>
+                     </View>
+
+                     {/* COST NOTE: Integrated here so it doesn't block text below */}
+                     {!isCoolingDown && refreshCostNote && (
+                        <View className="flex-row items-center opacity-90">
+                           <Leaf size={10} color={isDark ? '#f59e0b' : '#b45309'} style={{ marginRight: 3 }} />
+                           <Text className="text-[10px] font-semibold text-amber-700 dark:text-amber-200">
+                              {refreshCostNote}
+                           </Text>
+                        </View>
                      )}
-                     <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-                        {isCoolingDown ? 'Analysis Paused' : 'Previous Analysis'}
-                     </Text>
                   </View>
+
                   <Text className="text-[11px] text-slate-600 dark:text-slate-400 leading-4">
                      {!onRefresh
                         ? 'This insight is based on an older version of your entry.'
@@ -167,16 +265,17 @@ export function AiInsightCard({
                             : 'Entry has changed. Update analysis?'}
                   </Text>
                </View>
-               {onRefresh && !isCoolingDown && (
+
+               {/* BUTTON ONLY (No text forcing width) */}
+               {onRefresh && !isCoolingDown ? (
                   <Pressable
-                     onPress={onRefresh}
+                     onPress={handleRefreshPress}
                      hitSlop={12}
                      className="p-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
                   >
                      <RefreshCw size={18} color={isDark ? '#f8fafc' : '#0f172a'} />
                   </Pressable>
-               )}
-               {isCoolingDown && timeLabel !== '' && (
+               ) : isCoolingDown && timeLabel !== '' ? (
                   <View className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">
                      <Text
                         className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
@@ -185,7 +284,7 @@ export function AiInsightCard({
                         {timeLabel}
                      </Text>
                   </View>
-               )}
+               ) : null}
             </View>
          )}
 
@@ -317,7 +416,7 @@ export function AiInsightCard({
          )}
 
          {/* 6. DISCLAIMER FOOTER */}
-         <View className="flex-row gap-2 mt-4 px-1 opacity-70">
+         <View className="flex-row gap-2 mt-1 px-1 opacity-70">
             <Info size={14} color={isDark ? '#94a3b8' : '#64748b'} style={{ marginTop: 2 }} />
             <Text className="flex-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
                This analysis is generated by AI and is for self-reflection purposes only. It is not a substitute for professional mental health advice, diagnosis, or treatment.
