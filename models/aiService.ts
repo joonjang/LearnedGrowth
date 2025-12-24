@@ -16,6 +16,7 @@ export type ExplanatoryDimension = {
 
 export type LearnedGrowthResponse = {
   isStale?: boolean;
+  createdAt?: string;
   safety: {
     isCrisis: boolean;
     crisisMessage: string | null;
@@ -91,8 +92,10 @@ export function normalizeLearnedGrowthResponse(raw: any): LearnedGrowthResponse 
   const analysis = raw.analysis ?? {};
   const suggestions = raw.suggestions ?? {};
   const safety = raw.safety ?? {};
+  const createdAt = new Date().toISOString();
 
   return {
+    createdAt,
     safety: {
       isCrisis: ensureBoolean(safety.isCrisis),
       crisisMessage: ensureStringOrNull(safety.crisisMessage),

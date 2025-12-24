@@ -161,9 +161,10 @@ describe.each([
                aiResponse,
             });
             const saved = await db.getById('an1');
-            expect(saved?.aiResponse).toEqual(aiResponse);
-
             if (saved?.aiResponse) {
+               expect(saved.aiResponse.createdAt).toBe(entry.updatedAt);
+               const { createdAt, ...rest } = saved.aiResponse;
+               expect(rest).toEqual(aiResponse);
                saved.aiResponse.analysis.emotionalLogic = 'changed';
                saved.aiResponse.suggestions.counterBelief = 'changed';
             }
@@ -171,6 +172,7 @@ describe.each([
             const again = await db.getById('an1');
             expect(again?.aiResponse?.analysis.emotionalLogic).toBe('sample logic');
             expect(again?.aiResponse?.suggestions.counterBelief).toBe('cb1');
+            expect(again?.aiResponse?.createdAt).toBe(entry.updatedAt);
          });
          it('getAll excludes deleted but getById still returns them', async () => {
             await db.add(entry);
@@ -223,6 +225,22 @@ describe.each([
             expect(updated.updatedAt).toBe(clock.nowIso());
             expect(updated.belief).toBe('Z');
             expect(updated.dirtySince).toBe(clock.nowIso());
+         });
+
+         it('stamps aiResponse.createdAt when set via update', async () => {
+            await db.add(entry);
+            clock.advanceMs(2000);
+            const updated = await db.update('123', { aiResponse: makeAiResponse() });
+            expect(updated.aiResponse?.createdAt).toBe(clock.nowIso());
+         });
+
+         it('preserves provided aiResponse.createdAt when present', async () => {
+            await db.add(entry);
+            const customTimestamp = '2024-01-01T12:00:00.000Z';
+            const updated = await db.update('123', {
+               aiResponse: { ...makeAiResponse(), createdAt: customTimestamp },
+            });
+            expect(updated.aiResponse?.createdAt).toBe(customTimestamp);
          });
 
          it('second update keeps original dirtySince', async () => {

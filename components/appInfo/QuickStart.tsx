@@ -5,9 +5,9 @@ import { FieldTone } from '@/lib/theme';
 import { router } from 'expo-router';
 import {
    ArrowRight,
-   RefreshCw,
-   Zap,
+   RefreshCw
 } from 'lucide-react-native';
+import { useColorScheme } from 'nativewind';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
    AccessibilityInfo,
@@ -18,7 +18,6 @@ import {
    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColorScheme } from 'nativewind';
 
 // Helper to map keys to tones
 const getToneForKey = (key: string): FieldTone => {
@@ -303,7 +302,7 @@ export default function QuickStartScreen() {
                   }
                }}
             >
-               <View className="mr-3 rounded-full bg-white/20 p-1"><Zap size={16} color="white" /></View>
+
                <Text className="text-lg font-bold text-center text-white">Try a 2-minute entry</Text>
                <View className="absolute right-4 opacity-50"><ArrowRight size={20} color="white" /></View>
             </Pressable>

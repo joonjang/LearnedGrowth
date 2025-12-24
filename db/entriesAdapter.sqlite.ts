@@ -35,9 +35,15 @@ function parseAiResponse(raw: string | null): LearnedGrowthResponse | null {
 }
 
 function cloneAiResponse(
-   aiResponse?: LearnedGrowthResponse | null
+   aiResponse?: LearnedGrowthResponse | null,
+   fallbackCreatedAt?: string
 ): LearnedGrowthResponse | null {
-   return aiResponse ? JSON.parse(JSON.stringify(aiResponse)) : null;
+   if (!aiResponse) return null;
+   const withTimestamp =
+      fallbackCreatedAt && !aiResponse.createdAt
+         ? { ...aiResponse, createdAt: fallbackCreatedAt }
+         : aiResponse;
+   return JSON.parse(JSON.stringify(withTimestamp));
 }
 
 function normalizeAiRetryCount(raw: any): number {
@@ -174,12 +180,24 @@ export class SQLEntriesAdapter implements EntriesAdapter {
    }
 
    async add(entry: Entry): Promise<Entry> {
+      const aiCreatedAt = entry.aiResponse
+         ? entry.aiResponse.createdAt ??
+            entry.updatedAt ??
+            entry.createdAt ??
+            this.clock.nowIso()
+         : undefined;
+      const aiResponse = cloneAiResponse(entry.aiResponse ?? null, aiCreatedAt);
+
       // Memory mode
       if (!this.db) {
          if (this.entries!.some((e) => e.id === entry.id)) {
             throw new Error(`duplicate id: ${entry.id}`);
          }
-         const copy = this.copyEntry(entry);
+         const copy: Entry = {
+            ...entry,
+            aiRetryCount: entry.aiRetryCount ?? 0,
+            aiResponse,
+         };
          this.entries!.push(copy);
          return this.copyEntry(copy);
       }
@@ -201,7 +219,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
                   $consequence: entry.consequence ?? null,
                   $dispute: entry.dispute ?? null,
                   $energy: entry.energy ?? null,
-                  $ai_response: serializeAiResponse(entry.aiResponse ?? null),
+                  $ai_response: serializeAiResponse(aiResponse),
                   $ai_retry_count: entry.aiRetryCount ?? 0,
                   $created_at: entry.createdAt,
                   $updated_at: entry.updatedAt,
@@ -248,7 +266,12 @@ export class SQLEntriesAdapter implements EntriesAdapter {
             patch,
             "aiResponse"
          )
-            ? cloneAiResponse(patch.aiResponse ?? null)
+            ? cloneAiResponse(
+               patch.aiResponse ?? null,
+               patch.aiResponse
+                  ? patch.aiResponse.createdAt ?? patch.updatedAt ?? now
+                  : undefined
+            )
             : cloneAiResponse(current.aiResponse ?? null);
          const merged: Entry = {
             ...current,
@@ -271,7 +294,12 @@ export class SQLEntriesAdapter implements EntriesAdapter {
             patch,
             "aiResponse"
          )
-            ? cloneAiResponse(patch.aiResponse ?? null)
+            ? cloneAiResponse(
+               patch.aiResponse ?? null,
+               patch.aiResponse
+                  ? patch.aiResponse.createdAt ?? patch.updatedAt ?? now
+                  : undefined
+            )
             : cloneAiResponse(current.aiResponse ?? null);
 
          const merged: Entry = {
