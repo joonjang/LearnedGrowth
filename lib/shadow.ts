@@ -44,6 +44,16 @@ const ANDROID_SHADOW_CLASSES: Record<IosShadowPreset, string> = {
    button: 'shadow-sm shadow-slate-300 dark:shadow-none',
 };
 
+const ANDROID_ELEVATION: Record<IosShadowPreset, number> = {
+   sm: 2,
+   md: 4,
+   lg: 6,
+   xl: 8,
+   '2xl': 10,
+   card: 4,
+   button: 2,
+};
+
 export function getIosShadowStyle({
    isDark,
    preset = 'card',
@@ -77,15 +87,23 @@ type GetShadowOptions = GetIosShadowStyleOptions & {
 /**
  * Platform-aware shadow helper:
  * - Returns iOS shadow style
- * - Returns Android/NativeWind className fallback (elevation via shadow-* classes)
+ * - Returns Android elevation + className fallback (shadow-* classes for tinting)
  */
 export function getShadow({ androidClassName, ...opts }: GetShadowOptions) {
    const iosStyle = getIosShadowStyle(opts);
    const baseClass = androidClassName ?? ANDROID_SHADOW_CLASSES[opts.preset ?? 'card'] ?? '';
+   const elevation = ANDROID_ELEVATION[opts.preset ?? 'card'] ?? 0;
+
+   const androidStyle =
+      Platform.OS === 'android'
+         ? opts.disableInDark && opts.isDark
+            ? { elevation: 0 }
+            : { elevation, shadowColor: opts.colorLight ?? '#0f172a' }
+         : undefined;
 
    // Preserve the "no shadow in dark mode" behavior for Android too.
    const className =
       opts.disableInDark && opts.isDark ? 'shadow-none' : baseClass;
 
-   return { ios: iosStyle, className };
+   return { ios: iosStyle, android: androidStyle, className };
 }

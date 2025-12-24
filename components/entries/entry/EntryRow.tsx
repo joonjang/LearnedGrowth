@@ -1,5 +1,5 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { getIosShadowStyle } from '@/lib/shadow';
+import { getShadow } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
 import { Pencil, Trash2 } from 'lucide-react-native';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
@@ -115,8 +115,8 @@ function EntryRow({
    const swipeableRef = useRef<SwipeableMethods | null>(null);
    const { isDark } = useThemeColor();
 
-   const iosShadowSm = useMemo(
-      () => getIosShadowStyle({ isDark, preset: 'sm' }),
+   const shadow = useMemo(
+      () => getShadow({ isDark, preset: 'sm' }),
       [isDark]
    );
 
@@ -164,9 +164,9 @@ function EntryRow({
                >
                   {/* Edit Action */}
                   <View className="items-center gap-1.5">
-                     <Pressable
-                        className="w-14 h-14 rounded-full items-center justify-center bg-amber-500 shadow-sm active:opacity-90"
-                        style={iosShadowSm}
+                    <Pressable
+                        className={`w-14 h-14 rounded-full items-center justify-center bg-amber-500 active:opacity-90 ${shadow.className}`}
+                        style={[shadow.ios, shadow.android]}
                         onPress={handleEdit}
                         testID="entry-swipe-edit-btn" // <--- ADDED TEST ID
                      >
@@ -179,9 +179,9 @@ function EntryRow({
 
                   {/* Delete Action */}
                   <View className="items-center ml-3 gap-1.5">
-                     <Pressable
-                        className="w-14 h-14 rounded-full items-center justify-center bg-rose-600 shadow-sm active:opacity-90"
-                        style={iosShadowSm}
+                    <Pressable
+                        className={`w-14 h-14 rounded-full items-center justify-center bg-rose-600 active:opacity-90 ${shadow.className}`}
+                        style={[shadow.ios, shadow.android]}
                         onPress={handleDelete}
                         testID="entry-swipe-delete-btn" // <--- ADDED TEST ID
                      >

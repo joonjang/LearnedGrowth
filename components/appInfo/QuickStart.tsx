@@ -1,7 +1,8 @@
 import { ABCDE_FIELD } from '@/components/constants';
 import { TimelineItem, TimelineLine, TimelinePivot, TimelineStepDef } from '@/components/entries/entry/Timeline';
+import { getShadow } from '@/lib/shadow';
 import { FieldTone } from '@/lib/theme';
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import {
    ArrowRight,
    RefreshCw,
@@ -17,6 +18,7 @@ import {
    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColorScheme } from 'nativewind';
 
 // Helper to map keys to tones
 const getToneForKey = (key: string): FieldTone => {
@@ -68,9 +70,15 @@ const SCENARIOS = [
 
 export default function QuickStartScreen() {
    const insets = useSafeAreaInsets();
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
    const [activeScenarioIndex, setActiveScenarioIndex] = useState(0);
    const [reduceMotion, setReduceMotion] = useState(false);
    const activeScenario = SCENARIOS[activeScenarioIndex];
+   const cardShadow = useMemo(
+      () => getShadow({ isDark, preset: 'sm' }),
+      [isDark]
+   );
 
    // Generate Timeline Steps
    const steps: TimelineStepDef[] = useMemo(() => {
@@ -135,7 +143,10 @@ export default function QuickStartScreen() {
               </Text>
 
               {/* The ABC Card - Updated colors to match Theme */}
-              <View className="mt-6 rounded-2xl bg-white p-5 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <View
+                className={`mt-6 rounded-2xl bg-white p-5 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 ${cardShadow.className}`}
+                style={[cardShadow.ios, cardShadow.android]}
+              >
                 <Text className="text-base leading-7 text-slate-700 dark:text-slate-300">
                   <Text className="font-bold text-slate-900 dark:text-slate-100">
                     The ABCs
@@ -282,13 +293,20 @@ export default function QuickStartScreen() {
 
          {/* Footer CTA */}
          <View className="absolute bottom-0 left-0 right-0 bg-white/95 px-6 pt-4 dark:bg-slate-950/95 border-t border-slate-100 dark:border-slate-800" style={{ paddingBottom: insets.bottom + 16 }}>
-            <Link href="/new" asChild>
-               <Pressable className="relative flex-row items-center justify-center overflow-hidden rounded-2xl bg-indigo-600 px-6 py-4 active:bg-indigo-700">
-                  <View className="mr-3 rounded-full bg-white/20 p-1"><Zap size={16} color="white" /></View>
-                  <Text className="text-lg font-bold text-center text-white">Try a 2-minute entry</Text>
-                  <View className="absolute right-4 opacity-50"><ArrowRight size={20} color="white" /></View>
-               </Pressable>
-            </Link>
+            <Pressable
+               className="relative flex-row items-center justify-center overflow-hidden rounded-2xl bg-indigo-600 px-6 py-4 active:bg-indigo-700"
+               onPress={() => {
+                  try {
+                     router.push('/new');
+                  } catch (e) {
+                     console.warn('Navigation unavailable for /new', e);
+                  }
+               }}
+            >
+               <View className="mr-3 rounded-full bg-white/20 p-1"><Zap size={16} color="white" /></View>
+               <Text className="text-lg font-bold text-center text-white">Try a 2-minute entry</Text>
+               <View className="absolute right-4 opacity-50"><ArrowRight size={20} color="white" /></View>
+            </Pressable>
             <Text className="mt-3 text-center text-xs font-medium text-slate-400">No perfection required. Just start.</Text>
          </View>
       </View>

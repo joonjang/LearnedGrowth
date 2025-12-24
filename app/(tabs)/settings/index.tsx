@@ -1,7 +1,7 @@
 import { BTN_HEIGHT, FREE_MONTHLY_CREDITS, ROUTE_LOGIN } from '@/components/constants';
 import CreditShop from '@/components/CreditShop';
 import SendFeedback from '@/components/SendFeedback';
-import { getIosShadowStyle } from '@/lib/shadow';
+import { getShadow } from '@/lib/shadow';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
@@ -83,14 +83,15 @@ export default function SettingsScreen() {
    const insets = useSafeAreaInsets();
 
    // --- Theme Logic ---
-	   const { colorScheme } = useColorScheme();
-	   const isDark = colorScheme === 'dark';
-	   const iconColor = isDark ? '#94a3b8' : '#64748b';
-	   const loaderColor = isDark ? '#f8fafc' : '#0f172a';
-	   const iosShadowSm = useMemo(
-	      () => getIosShadowStyle({ isDark, preset: 'sm' }),
-	      [isDark]
-	   );
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+   const iconColor = isDark ? '#94a3b8' : '#64748b';
+   const loaderColor = isDark ? '#f8fafc' : '#0f172a';
+   const shadowSm = useMemo(
+      () => getShadow({ isDark, preset: 'sm' }),
+      [isDark]
+   );
+   const shadowClass = shadowSm.className;
 
    const switchTrackColor = {
       false: isDark ? '#475569' : '#cbd5e1',
@@ -414,8 +415,8 @@ export default function SettingsScreen() {
 	            {/* Supabase Config Warning */}
 	            {!isConfigured && (
 	               <View
-	                  className="bg-belief-bg border border-belief-border rounded-xl p-3 gap-1 shadow-sm"
-	                  style={iosShadowSm}
+	                  className={`bg-belief-bg border border-belief-border rounded-xl p-3 gap-1 ${shadowClass}`}
+	                  style={[shadowSm.ios, shadowSm.android]}
 	               >
 	                  <Text className="text-sm font-bold text-belief-text">
 	                     Supabase not configured
@@ -426,8 +427,8 @@ export default function SettingsScreen() {
 	            {/* Not Logged In Banner */}
 	            {!user && (
 	               <View
-	                  className="bg-slate-100 dark:bg-slate-800 border border-dispute-cta rounded-xl p-3 flex-row items-center gap-2.5 shadow-sm"
-	                  style={iosShadowSm}
+	                  className={`bg-slate-100 dark:bg-slate-800 border border-dispute-cta rounded-xl p-3 flex-row items-center gap-2.5 ${shadowClass}`}
+	                  style={[shadowSm.ios, shadowSm.android]}
 	               >
 	                  <View className="flex-1">
 	                     <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
@@ -435,8 +436,8 @@ export default function SettingsScreen() {
 	                     </Text>
 	                  </View>
 	                  <Pressable
-	                     className="mt-2 bg-dispute-cta py-2 px-3 rounded-lg self-start shadow-sm"
-	                     style={iosShadowSm}
+	                     className={`mt-2 bg-dispute-cta py-2 px-3 rounded-lg self-start ${shadowClass}`}
+	                     style={[shadowSm.ios, shadowSm.android]}
 	                     onPress={() => router.push(ROUTE_LOGIN)}
 	                  >
 	                     <Text className="text-white font-bold text-sm">
@@ -449,8 +450,8 @@ export default function SettingsScreen() {
 	            {/* Subscription Card */}
 	            {user && (
 	               <View
-	                  className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 shadow-sm"
-	                  style={iosShadowSm}
+	                  className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
+	                  style={[shadowSm.ios, shadowSm.android]}
 	               >
 	                  <View className="flex-row justify-between items-center">
 	                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
@@ -489,8 +490,8 @@ export default function SettingsScreen() {
 	                        <View className="flex-row flex-wrap gap-2.5">
 	                           {/* Monthly Uses Metric */}
 	                           <View
-	                              className="flex-1 min-w-[30%] bg-zinc-50 dark:bg-slate-700 rounded-xl p-3 border border-slate-200 dark:border-slate-600 gap-1.5 shadow-sm"
-	                              style={iosShadowSm}
+	                              className={`flex-1 min-w-[30%] bg-zinc-50 dark:bg-slate-700 rounded-xl p-3 border border-slate-200 dark:border-slate-600 gap-1.5 ${shadowClass}`}
+	                              style={[shadowSm.ios, shadowSm.android]}
 	                           >
 	                              <Text className="text-xs text-slate-500 dark:text-slate-400 mb-1">
 	                                 Monthly uses remaining
@@ -502,8 +503,8 @@ export default function SettingsScreen() {
 
 	                           {/* Extra Analysis Metric */}
 	                           <View
-	                              className={`flex-1 min-w-[30%] bg-zinc-50 dark:bg-slate-700 rounded-xl p-3 border border-slate-200 dark:border-slate-600 gap-1.5 shadow-sm `}
-	                              style={iosShadowSm}
+	                              className={`flex-1 min-w-[30%] bg-zinc-50 dark:bg-slate-700 rounded-xl p-3 border border-slate-200 dark:border-slate-600 gap-1.5 ${shadowClass} `}
+	                              style={[shadowSm.ios, shadowSm.android]}
 	                           >
 	                              <Text className="text-xs text-slate-500 dark:text-slate-400 mb-1">
 	                                 Extra Analysis
@@ -520,8 +521,8 @@ export default function SettingsScreen() {
 	                     <View className="gap-3 pt-5">
 	                        {/* The Shop */}
 	                        <View
-	                           className="shadow-sm shadow-slate-300 dark:shadow-none bg-white dark:bg-slate-800 rounded-2xl"
-	                           style={iosShadowSm}
+	                           className={`bg-white dark:bg-slate-800 rounded-2xl ${shadowClass}`}
+	                           style={[shadowSm.ios, shadowSm.android]}
 	                        >
 	                           {/* 2. INNER VIEW: Responsible for Clipping (Overflow) and Border */}
 	                           <View className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
@@ -563,8 +564,8 @@ export default function SettingsScreen() {
 
 	                        <Pressable
 	                           // ADDED SHADOWS HERE
-	                           className={`bg-dispute-cta rounded-xl items-center shadow-sm shadow-slate-300 dark:shadow-none active:opacity-90 ${BTN_HEIGHT} ${billingAction === 'upgrade' ? 'opacity-50' : ''}`}
-	                           style={iosShadowSm}
+	                           className={`bg-dispute-cta rounded-xl items-center ${shadowClass} active:opacity-90 ${BTN_HEIGHT} ${billingAction === 'upgrade' ? 'opacity-50' : ''}`}
+	                           style={[shadowSm.ios, shadowSm.android]}
 	                           onPress={handleUpgrade}
 	                           disabled={billingAction !== null}
 	                        >
@@ -579,8 +580,8 @@ export default function SettingsScreen() {
 	                     <View className="gap-3 pt-5">
 	                        <Pressable
 	                           // ADDED SHADOWS HERE
-	                           className={`bg-slate-100 dark:bg-slate-800 rounded-xl items-center shadow-sm shadow-slate-300 dark:shadow-none border border-slate-200 dark:border-slate-700 active:bg-slate-200 dark:active:bg-slate-700 ${BTN_HEIGHT} ${isOffline || billingAction === 'manage' ? 'opacity-50' : ''}`}
-	                           style={iosShadowSm}
+	                           className={`bg-slate-100 dark:bg-slate-800 rounded-xl items-center ${shadowClass} border border-slate-200 dark:border-slate-700 active:bg-slate-200 dark:active:bg-slate-700 ${BTN_HEIGHT} ${isOffline || billingAction === 'manage' ? 'opacity-50' : ''}`}
+	                           style={[shadowSm.ios, shadowSm.android]}
 	                           onPress={handleManageSubscription}
 	                           disabled={isOffline || billingAction !== null}
 	                        >
@@ -595,8 +596,8 @@ export default function SettingsScreen() {
 
 	                  <Pressable
 	                     // ADDED SHADOWS HERE
-	                     className={`rounded-xl bg-white dark:bg-slate-800 items-center shadow-sm shadow-slate-300 dark:shadow-none border border-slate-200 dark:border-slate-700 active:bg-slate-100 dark:active:bg-slate-800 ${BTN_HEIGHT} ${isOffline || billingAction === 'restore' ? 'opacity-50' : ''}`}
-	                     style={iosShadowSm}
+	                     className={`rounded-xl bg-white dark:bg-slate-800 items-center ${shadowClass} border border-slate-200 dark:border-slate-700 active:bg-slate-100 dark:active:bg-slate-800 ${BTN_HEIGHT} ${isOffline || billingAction === 'restore' ? 'opacity-50' : ''}`}
+	                     style={[shadowSm.ios, shadowSm.android]}
 	                     onPress={handleRestore}
 	                     disabled={isOffline || billingAction !== null}
 	                  >
@@ -617,8 +618,8 @@ export default function SettingsScreen() {
 
 	            {/* Preferences Card */}
 	            <View
-	               className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 shadow-sm"
-	               style={iosShadowSm}
+	               className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
+	               style={[shadowSm.ios, shadowSm.android]}
 	            >
 	               <View className="flex-row justify-between items-center">
 	                  <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
@@ -703,8 +704,8 @@ export default function SettingsScreen() {
 	            {/* Account Actions Card */}
 	            {status === 'signedIn' && (
 	               <View
-	                  className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 shadow-sm"
-	                  style={iosShadowSm}
+	                  className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
+	                  style={[shadowSm.ios, shadowSm.android]}
 	               >
                      <Pressable
                         className="flex-row justify-between items-center active:opacity-60"
@@ -724,8 +725,8 @@ export default function SettingsScreen() {
 	                     <View className="gap-3 mt-1">
 	                        <Pressable
 	                           // ADDED SHADOWS HERE
-	                           className={`rounded-xl bg-white dark:bg-slate-800 items-center border border-slate-200 dark:border-slate-700 shadow-sm shadow-slate-300 dark:shadow-none active:bg-slate-100 dark:active:bg-slate-800 ${BTN_HEIGHT}`}
-	                           style={iosShadowSm}
+	                           className={`rounded-xl bg-white dark:bg-slate-800 items-center border border-slate-200 dark:border-slate-700 ${shadowClass} active:bg-slate-100 dark:active:bg-slate-800 ${BTN_HEIGHT}`}
+	                           style={[shadowSm.ios, shadowSm.android]}
 	                           onPress={confirmSignOut}
 	                        >
 	                           <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
@@ -735,8 +736,8 @@ export default function SettingsScreen() {
 
 	                        <Pressable
 	                           // ADDED SHADOWS HERE
-	                           className={`rounded-xl items-center bg-belief-bg border border-belief-border shadow-sm shadow-slate-300 dark:shadow-none active:opacity-80 ${BTN_HEIGHT} ${isOffline || deleteLoading ? 'opacity-50' : ''}`}
-	                           style={iosShadowSm}
+	                           className={`rounded-xl items-center bg-belief-bg border border-belief-border ${shadowClass} active:opacity-80 ${BTN_HEIGHT} ${isOffline || deleteLoading ? 'opacity-50' : ''}`}
+	                           style={[shadowSm.ios, shadowSm.android]}
 	                           onPress={confirmDelete}
 	                           disabled={isOffline || deleteLoading}
 	                        >
@@ -751,8 +752,8 @@ export default function SettingsScreen() {
 
 	            {/* Feedback Card */}
 	            <View
-	               className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 shadow-sm"
-	               style={iosShadowSm}
+	               className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 ${shadowClass}`}
+	               style={[shadowSm.ios, shadowSm.android]}
 	            >
 	               <SendFeedback />
 	            </View>

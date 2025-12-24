@@ -1,3 +1,4 @@
+import { getShadow } from '@/lib/shadow';
 import { AlertTriangle, Bot, FileText, ShieldCheck } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { Modal, Pressable, Text, View } from 'react-native';
@@ -11,11 +12,15 @@ type Props = {
 export default function AiDisclaimerModal({ visible, onCancel, onConfirm }: Props) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const shadow = getShadow({ isDark, preset: '2xl' });
 
   return (
      <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onCancel}>
         <View className="flex-1 items-center justify-center bg-black/60 px-4">
-           <View className="w-full max-w-sm overflow-hidden rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900">
+           <View
+             className={`w-full max-w-sm overflow-hidden rounded-2xl bg-white p-6 dark:bg-slate-900 ${shadow.className}`}
+             style={[shadow.ios, shadow.android]}
+           >
               <View className="items-center gap-4 mb-6">
                  <View className="h-12 w-12 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-900/30">
                     <Bot size={24} color={isDark ? '#818cf8' : '#4f46e5'} />

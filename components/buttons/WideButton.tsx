@@ -1,5 +1,5 @@
 import { BTN_HEIGHT } from '@/components/constants';
-import { getIosShadowStyle } from '@/lib/shadow';
+import { getShadow } from '@/lib/shadow';
 import { LucideIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useMemo } from 'react';
@@ -17,8 +17,8 @@ export default function WideButton({ label, icon, onPress, variant = 'primary' }
    const isDark = colorScheme === 'dark';
    const Icon = icon;
 
-   const iosShadowStyle = useMemo(
-      () => getIosShadowStyle({ isDark, preset: 'md' }),
+   const shadow = useMemo(
+      () => getShadow({ isDark, preset: 'md' }),
       [isDark]
    );
 
@@ -30,12 +30,12 @@ export default function WideButton({ label, icon, onPress, variant = 'primary' }
       <View className="mt-6 mb-3">
          <Pressable
             onPress={onPress}
-            style={iosShadowStyle}
+            style={[shadow.ios, shadow.android]}
             className={`
                flex-row items-center relative ${BTN_HEIGHT}
                ${bgClass}
                px-5 rounded-2xl 
-               shadow-md shadow-slate-300 dark:shadow-none
+               ${shadow.className}
                active:opacity-90 active:scale-[0.99]
             `}
          >

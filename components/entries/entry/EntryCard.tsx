@@ -1,6 +1,6 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
-import { getIosShadowStyle } from '@/lib/shadow';
+import { getShadow } from '@/lib/shadow';
 import { FieldTone, getFieldStyles } from '@/lib/theme';
 import { Entry } from '@/models/entry';
 import { router } from 'expo-router';
@@ -143,13 +143,18 @@ export default function EntryCard({
       borderColor: colors.elevatedBorder,
    }));
 
-   const iosShadowStyle = useMemo(
-      () => getIosShadowStyle({ isDark, preset: 'md' }),
+   const cardShadow = useMemo(
+      () => getShadow({ isDark, preset: 'md' }),
       [isDark]
    );
 
-   const iosMenuShadowStyle = useMemo(
-      () => getIosShadowStyle({ isDark, preset: 'xl' }),
+   const menuShadow = useMemo(
+      () => getShadow({ isDark, preset: 'xl' }),
+      [isDark]
+   );
+
+   const smallShadow = useMemo(
+      () => getShadow({ isDark, preset: 'sm' }),
       [isDark]
    );
 
@@ -220,8 +225,8 @@ export default function EntryCard({
 
    return (
       <AnimatedPressable
-         className="pt-[22px] px-[18px] pb-[18px] rounded-[18px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-md dark:shadow-none mx-2 my-3"
-         style={[cardAnimatedStyle, iosShadowStyle]}
+         className={`pt-[22px] px-[18px] pb-[18px] rounded-[18px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 mx-2 my-3 ${cardShadow.className}`}
+         style={[cardAnimatedStyle, cardShadow.ios, cardShadow.android]}
          disabled={navigationLocked}
          onPress={handleOpenEntry}
          onPressIn={() => (pressProgress.value = withTiming(1, { duration: 120 }))}
@@ -241,8 +246,8 @@ export default function EntryCard({
             <Animated.View
                ref={menuRef}
                pointerEvents={isMenuOpen ? 'auto' : 'none'}
-               className="absolute top-0 right-0 bg-white dark:bg-slate-800 rounded-xl py-2 shadow-xl border border-slate-200 dark:border-slate-700 min-w-[160px]"
-               style={[menuStyle, iosMenuShadowStyle]}
+               className={`absolute top-0 right-0 bg-white dark:bg-slate-800 rounded-xl py-2 border border-slate-200 dark:border-slate-700 min-w-[160px] ${menuShadow.className}`}
+               style={[menuStyle, menuShadow.ios, menuShadow.android]}
                onLayout={measureMenu}
             >
                <Pressable
@@ -293,7 +298,10 @@ export default function EntryCard({
          />
 
          {!entry.dispute ? (
-            <View className="mt-2 shadow-sm dark:shadow-none p-1 ">
+            <View
+               className={`mt-2 p-1 ${smallShadow.className}`}
+               style={[smallShadow.ios, smallShadow.android]}
+            >
                <View className="h-[1px] bg-slate-100 dark:bg-slate-800 mb-2" />
                <CardNextButton id={entry.id} />
             </View>

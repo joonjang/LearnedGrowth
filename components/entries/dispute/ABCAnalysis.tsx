@@ -1,4 +1,4 @@
-import { getIosShadowStyle } from '@/lib/shadow';
+import { getShadow } from '@/lib/shadow';
 import React, { useMemo } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
@@ -39,8 +39,8 @@ export default function ABCAnalysis({
 }: Props) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const iosShadowSm = useMemo(
-      () => getIosShadowStyle({ isDark, preset: 'sm' }),
+   const shadow = useMemo(
+      () => getShadow({ isDark, preset: 'sm' }),
       [isDark]
    );
    return (
@@ -67,8 +67,8 @@ export default function ABCAnalysis({
          </View>
 
          <View
-            className="flex-1 shadow-sm dark:shadow-none"
-            style={iosShadowSm}
+            className={`flex-1 ${shadow.className}`}
+            style={[shadow.ios, shadow.android]}
          >
             {/* Context Box */}
             <View className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 gap-2.5">
@@ -109,8 +109,8 @@ export default function ABCAnalysis({
          </View>
 
          <View
-            className="flex-1 shadow-sm dark:shadow-none"
-            style={iosShadowSm}
+            className={`flex-1 ${shadow.className}`}
+            style={[shadow.ios, shadow.android]}
          >
             <AiInsightCard
                data={aiData}
@@ -123,7 +123,10 @@ export default function ABCAnalysis({
                updatedAt={entry.updatedAt}
             />
             {onGoToSteps && aiData ? (
-               <View className="shadow-sm dark:shadow-none p-1 mt-6 mb-3">
+               <View
+                  className={`p-1 mt-6 mb-3 ${shadow.className}`}
+                  style={[shadow.ios, shadow.android]}
+               >
                   <WideButton
                      label={'Continue'}
                      icon={ArrowRight}

@@ -4,7 +4,7 @@ import EntryRow, { UndoRow } from '@/components/entries/entry/EntryRow';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getDateParts, getTimeLabel } from '@/lib/date';
-import { getIosShadowStyle } from '@/lib/shadow';
+import { getShadow } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
 import { Link, router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
@@ -29,8 +29,8 @@ export default function EntriesScreen() {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const { lock: lockNavigation } = useNavigationLock();
-   const iosShadowSm = useMemo(
-      () => getIosShadowStyle({ isDark, preset: 'sm' }),
+   const shadowSm = useMemo(
+      () => getShadow({ isDark, preset: 'sm' }),
       [isDark]
    );
 
@@ -170,8 +170,8 @@ export default function EntriesScreen() {
                   style={{ paddingTop: insets.top }}
                >
                   <View
-                     className="items-center self-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 shadow-sm"
-                     style={iosShadowSm}
+                     className={`items-center self-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 ${shadowSm.className}`}
+                     style={[shadowSm.ios, shadowSm.android]}
                   >
                      <Text className="text-center text-sm font-bold text-slate-600 dark:text-slate-300">
                         {section.title}
@@ -224,8 +224,8 @@ export default function EntriesScreen() {
                <View className="mb-4">
                   <Link href={'/new'} asChild>
                      <Pressable
-                        className="h-14 w-14 items-center justify-center rounded-full bg-amber-500 shadow-sm active:opacity-90"
-                        style={iosShadowSm}
+                        className={`h-14 w-14 items-center justify-center rounded-full bg-amber-500 active:opacity-90 ${shadowSm.className}`}
+                        style={[shadowSm.ios, shadowSm.android]}
                         accessibilityLabel="Create new entry"
                         testID="new-entry-button"
                      >

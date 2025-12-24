@@ -1,4 +1,4 @@
-import { getIosShadowStyle } from '@/lib/shadow';
+import { getShadow } from '@/lib/shadow';
 import { useColorScheme } from 'nativewind';
 import { forwardRef, useMemo, useState } from 'react';
 import {
@@ -42,8 +42,8 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const placeholderColor = isDark ? '#94a3b8' : '#64748b';
-   const iosShadowStyle = useMemo(
-      () => getIosShadowStyle({ isDark, preset: focused ? 'md' : 'sm' }),
+   const shadow = useMemo(
+      () => getShadow({ isDark, preset: focused ? 'md' : 'sm' }),
       [focused, isDark]
    );
 
@@ -52,12 +52,12 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
          onPress={() =>
             typeof ref === 'object' && ref?.current ? ref.current.focus() : null
          }
-         className={`rounded-[14px] bg-zinc-50 dark:bg-slate-700 border px-4 py-3 mb-1.5 shadow-sm ${
-            focused 
-               ? 'border-slate-300 dark:border-slate-500 shadow-md opacity-100' 
+         className={`rounded-[14px] bg-zinc-50 dark:bg-slate-700 border px-4 py-3 mb-1.5 ${shadow.className} ${
+            focused
+               ? 'border-slate-300 dark:border-slate-500 opacity-100'
                : 'border-slate-200 dark:border-slate-700'
          }`}
-         style={[dims, containerStyle, iosShadowStyle]}
+         style={[dims, containerStyle, shadow.ios, shadow.android]}
       >
          <TextInput
             ref={ref}
