@@ -126,7 +126,7 @@ export default function NewEntryModal() {
          const newEntry = await store.createEntry(adversity, belief, consequence);
 
          const targetRoute = {
-            pathname: '/(tabs)/entries/[id]',
+            pathname: '/entries/[id]',
             params: { id: newEntry.id, animateInstant: '1' },
          } as const;
 

@@ -1,4 +1,9 @@
-import { BTN_HEIGHT, FREE_MONTHLY_CREDITS, ROUTE_LOGIN } from '@/components/constants';
+import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
+import {
+   BTN_HEIGHT,
+   FREE_MONTHLY_CREDITS,
+   ROUTE_LOGIN,
+} from '@/components/constants';
 import CreditShop from '@/components/CreditShop';
 import SendFeedback from '@/components/SendFeedback';
 import { EncryptionCard } from '@/components/settings/EncryptionCard';
@@ -10,7 +15,7 @@ import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { ChevronDown, ChevronRight } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import {
@@ -80,7 +85,6 @@ export default function SettingsScreen() {
       clearError: clearPrefError,
    } = usePreferences();
 
-   const router = useRouter();
    const insets = useSafeAreaInsets();
 
    // --- Theme Logic ---
@@ -379,26 +383,36 @@ export default function SettingsScreen() {
 
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
+         {/* ABSOLUTE CLOSE BUTTON (Static Top Right) */}
+         <View 
+            className="absolute right-4 z-50"
+            style={{ top: Platform.OS === 'ios' ? 8 : insets.top + 16 }}
+         >
+            <RoundedCloseButton onPress={() => router.back()} />
+         </View>
+
          <ScrollView
             contentContainerStyle={{
-               paddingTop: insets.top + 8,
+               paddingTop: Platform.OS === 'ios' ? 8 : insets.top + 16,
                paddingBottom: insets.bottom + 24,
                paddingHorizontal: 16,
                gap: 14,
             }}
             scrollIndicatorInsets={{
-               top: insets.top,
+               top: insets.top + 40,
                bottom: insets.bottom,
             }}
             showsVerticalScrollIndicator={false}
          >
-            {/* Header */}
-            <View className="flex-row justify-between items-center">
-               <View>
+            {/* Header (Text Only, aligned with absolute button) */}
+            <View className="flex-row justify-between items-center min-h-[44px] mb-2">
+               <View className="flex-1 mr-12 justify-center">
                   <Text className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">
                      {user?.email ?? 'Not Logged In'}
                   </Text>
                </View>
+               
+               {/* Offline Badge */}
                <View className="flex-row gap-2 items-center">
                   {isOffline && (
                      <View className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
@@ -514,7 +528,7 @@ export default function SettingsScreen() {
                         </View>
                      </>
                   )}
-{!entitlementActive ? (
+                  {!entitlementActive ? (
                      <View className="gap-3 pt-5">
                         {/* UNIFIED STORE CONTAINER */}
                         <View
@@ -522,7 +536,6 @@ export default function SettingsScreen() {
                            style={[shadowSm.ios, shadowSm.android]}
                         >
                            <View className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
-                              
                               {/* HEADER / TOGGLE */}
                               <Pressable
                                  onPress={toggleShop}
@@ -536,9 +549,15 @@ export default function SettingsScreen() {
                                  {/* Absolute Right Chevron */}
                                  <View className="absolute right-4">
                                     {isShopOpen ? (
-                                       <ChevronDown size={20} color={iconColor} />
+                                       <ChevronDown
+                                          size={20}
+                                          color={iconColor}
+                                       />
                                     ) : (
-                                       <ChevronRight size={20} color={iconColor} />
+                                       <ChevronRight
+                                          size={20}
+                                          color={iconColor}
+                                       />
                                     )}
                                  </View>
                               </Pressable>
@@ -547,11 +566,14 @@ export default function SettingsScreen() {
                               {isShopOpen && (
                                  <View className="px-4 pb-6 pt-2">
                                     <View className="h-[1px] bg-slate-100 dark:bg-slate-700 mb-4" />
-                                    
-                                    <CreditShop 
+
+                                    <CreditShop
                                        onUpgrade={handleUpgrade}
                                        onSuccess={() => {
-                                          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                                          LayoutAnimation.configureNext(
+                                             LayoutAnimation.Presets
+                                                .easeInEaseOut
+                                          );
                                        }}
                                     />
                                  </View>
@@ -594,7 +616,7 @@ export default function SettingsScreen() {
                         {billingNote ?? `RevenueCat: ${rcError}`}
                      </Text>
                   )}
-              </View>
+               </View>
             )}
 
             {status === 'signedIn' && (

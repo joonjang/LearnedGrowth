@@ -76,6 +76,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2025-12-24
 - AiInsight content now animates with haptic response for to display the score color
 - Refactored ai response data to store timestamp information to enable state of animation freshness for AiInsight
+- Changed navigation from tabs to stack
 
 ### 2025-12-23
 - Entry Detail Screen enter in edit mode and buttons addressed

@@ -31,8 +31,20 @@ export default function RootLayout() {
             <AuthGate>
                <AdapterGuard>
                   <EdgeToEdge>
-                     <Stack initialRouteName="(tabs)" screenOptions={{ headerShown: false }}>
-                        <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+                     <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
+                        <Stack.Screen name="index" options={{ headerShown: false }} />
+                        <Stack.Screen
+                           name="settings"
+                           options={{
+                              presentation: 'modal',
+                              headerShown: false,
+                              animation: 'fade_from_bottom',
+                           }}
+                        />
+                        <Stack.Screen
+                           name="entries/[id]/index"
+                           options={{ headerShown: false }}
+                        />
                         <Stack.Screen
                            name="(modal)"
                            options={{
@@ -53,7 +65,7 @@ export default function RootLayout() {
                            options={{
                               presentation: 'modal',
                               animation: 'slide_from_bottom',
-                              headerShown: false, 
+                              headerShown: false,
                            }}
                         />
                      </Stack>

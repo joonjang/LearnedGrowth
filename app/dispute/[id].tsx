@@ -264,7 +264,7 @@ const submit = useCallback(async () => {
   if (hapticsEnabled && hapticsAvailable) triggerHaptic();
 
   const targetRoute = {
-    pathname: '/(tabs)/entries/[id]',
+    pathname: '/entries/[id]',
     params: { id: String(entry.id), animateInstant: '1' },
   } as const;
 

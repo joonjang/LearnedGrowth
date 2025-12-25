@@ -209,7 +209,7 @@ export default function EntryCard({
          onCloseMenu();
       }
       lockNavigation(() => {
-         router.push({ pathname: '/(tabs)/entries/[id]', params: { id: entry.id } });
+         router.push({ pathname: '/entries/[id]', params: { id: entry.id } });
       });
    }, [closeActiveSwipeable, entry.id, isMenuOpen, lockNavigation, onCloseMenu]);
 
@@ -217,7 +217,7 @@ export default function EntryCard({
       lockNavigation(() => {
          onCloseMenu();
          router.push({
-            pathname: '/(tabs)/entries/[id]',
+            pathname: '/entries/[id]',
             params: { id: entry.id, mode: 'edit' },
          });
       });
