@@ -75,6 +75,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2025-12-26
 - Fixed keyboard displaying glitching for new.tsx, dispute/[id].tsx, EntryDetailScreen
+- Fixed navigation bug from entry detail screen
 
 ### 2025-12-24
 - AiInsight content now animates with haptic response for to display the score color

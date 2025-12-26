@@ -9,7 +9,7 @@ export const BOTTOM_SHEET_BACKDROP_OPACITY = 0.5;
 export const BOTTOM_SHEET_CONTENT_PADDING = 24;
 
 export const ROUTE_LOGIN = '/(modal)/login' as const;
-export const ROUTE_ENTRIES = '/entries' as const;
+export const ROUTE_ENTRIES = '/' as const;
 
 export const ABCDE_FIELD = [
    {

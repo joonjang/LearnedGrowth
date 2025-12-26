@@ -81,6 +81,13 @@ export default function EntryDetailScreen() {
    const [isEditing, setIsEditing] = useState(false);
    const [editSnapshot, setEditSnapshot] = useState<Record<FieldKey,string> | null>(null);
 
+   const startEditing = useCallback(() => {
+      setEditSnapshot(form);
+      setIsEditing(true);
+      setJustSaved(false);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+   }, [form]);
+
    useEffect(() => {
       if (!entry) return;
       setForm(buildFieldRecord((key) => entry[key] ?? ''));
@@ -131,12 +138,14 @@ export default function EntryDetailScreen() {
       []
    );
 
-   const startEditing = useCallback(() => {
-      setEditSnapshot(form);
-      setIsEditing(true);
-      setJustSaved(false);
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-   }, [form]);
+   const navigateToEntries = useCallback(() => {
+      // Prefer a back/pop transition (slide from left). Fallback to replace if there's no history.
+      if (router.canGoBack()) {
+         router.back();
+         return;
+      }
+      router.replace(ROUTE_ENTRIES);
+   }, []);
 
    const handleSave = useCallback(async () => {
       if (!entry || !hasChanges) {
@@ -239,7 +248,7 @@ export default function EntryDetailScreen() {
          {/* Header */}
          <View className="h-14 flex-row items-center justify-center relative z-10">
             <Pressable
-               onPress={() => router.replace(ROUTE_ENTRIES)}
+               onPress={navigateToEntries}
                hitSlop={8}
                className="absolute left-4 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
             >

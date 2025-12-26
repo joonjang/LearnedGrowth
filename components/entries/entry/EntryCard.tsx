@@ -302,7 +302,6 @@ export default function EntryCard({
                className={`mt-2 p-1 ${smallShadow.className}`}
                style={[smallShadow.ios, smallShadow.android]}
             >
-               <View className="h-[1px] bg-slate-100 dark:bg-slate-800 mb-2" />
                <CardNextButton id={entry.id} />
             </View>
          ) : (
