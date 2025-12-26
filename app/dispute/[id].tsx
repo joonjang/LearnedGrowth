@@ -236,8 +236,12 @@ export default function DisputeScreen() {
    const scrollRef = useRef<ScrollView | null>(null);
    const stickToBottom = useRef(true);
    const inputRef = useRef<TextInput>(null);
-   const { promptTextStyle, inputBoxDims, promptMaxHeight } =
-      usePromptLayout('compact');
+   const {
+      promptTextStyle,
+      inputBoxDims,
+      inputBoxAnimatedStyle,
+      promptMaxHeight,
+   } = usePromptLayout('compact');
 
    const setField = useCallback(
       (k: NewInputDisputeType) => (v: string) =>
@@ -459,6 +463,7 @@ const submit = useCallback(async () => {
                      scrollToBottom={scrollToBottom}
                      inputRef={inputRef}
                      inputBoxDims={inputBoxDims}
+                     inputBoxAnimatedStyle={inputBoxAnimatedStyle}
                      // Pass a simple style object if component expects style, or className if it supports it.
                      // Assuming 'promptContainerStyle' is a legacy style prop in the child:
                      promptContainerStyle={{

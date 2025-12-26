@@ -67,7 +67,12 @@ export default function NewEntryModal() {
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
    const promptRef = useRef<PromptDisplayHandle | null>(null);
-   const { promptTextStyle, inputBoxDims, promptMaxHeight } = usePromptLayout();
+   const {
+      promptTextStyle,
+      inputBoxDims,
+      inputBoxAnimatedStyle,
+      promptMaxHeight,
+   } = usePromptLayout();
    
    
    // Logic: Start below the notch (insets.top) + some breathing room (12px)
@@ -196,7 +201,7 @@ export default function NewEntryModal() {
                   contentContainerStyle={{
                      flexGrow: 1,
                      gap: 16, // Replaces styles.scrollContent
-                     paddingTop:  Platform.OS === 'android' ? topPadding : 12, // <-- Pushes content down, but lets it scroll up
+                     paddingTop:  Platform.OS === 'android' ? topPadding : 16, // <-- Pushes content down, but lets it scroll up
                   }}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
@@ -238,6 +243,7 @@ export default function NewEntryModal() {
                      onChangeText={setField(currKey)}
                      placeholder={STEP_PLACEHOLDER[currKey]}
                      dims={inputBoxDims}
+                     animatedStyle={inputBoxAnimatedStyle}
                      scrollEnabled
                   />
                   <StepperButton

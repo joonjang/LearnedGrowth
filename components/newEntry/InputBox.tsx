@@ -7,6 +7,7 @@ import {
    TextInputProps,
    ViewStyle,
 } from 'react-native';
+import Animated, { AnimatedStyleProp } from 'react-native-reanimated';
 // REMOVED: import { makeThemedStyles } from '@/theme/theme';
 
 type Dims = { minHeight?: number; maxHeight?: number };
@@ -16,6 +17,7 @@ type Props = {
    onChangeText: (text: string) => void;
    dims?: Dims;
    containerStyle?: ViewStyle;
+   animatedStyle?: AnimatedStyleProp<ViewStyle>;
    scrollEnabled?: boolean;
    onFocus?: TextInputProps['onFocus'];
    onBlur?: TextInputProps['onBlur'];
@@ -23,12 +25,15 @@ type Props = {
    compact?: boolean;
 } & Omit<TextInputProps, 'style' | 'value' | 'onChangeText' | 'multiline'>;
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 const InputBox = forwardRef<TextInput, Props>(function InputBox(
    {
       value,
       onChangeText,
       dims,
       containerStyle,
+      animatedStyle,
       placeholder = 'Enter here',
       scrollEnabled = true,
       compact = false,
@@ -48,7 +53,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
    );
 
    return (
-      <Pressable
+      <AnimatedPressable
          onPress={() =>
             typeof ref === 'object' && ref?.current ? ref.current.focus() : null
          }
@@ -57,7 +62,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
                ? 'border-slate-300 dark:border-slate-500 opacity-100'
                : 'border-slate-200 dark:border-slate-700'
          }`}
-         style={[dims, containerStyle, shadow.ios, shadow.android]}
+         style={[dims, containerStyle, shadow.ios, shadow.android, animatedStyle]}
       >
          <TextInput
             ref={ref}
@@ -82,7 +87,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
             }}
             {...rest}
          />
-      </Pressable>
+      </AnimatedPressable>
    );
 });
 

@@ -73,6 +73,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-26
+- Fixed keyboard displaying glitching for new.tsx, dispute/[id].tsx, EntryDetailScreen
+
 ### 2025-12-24
 - AiInsight content now animates with haptic response for to display the score color
 - Refactored ai response data to store timestamp information to enable state of animation freshness for AiInsight

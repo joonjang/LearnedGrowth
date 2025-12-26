@@ -53,6 +53,7 @@ type Props = {
    scrollToBottom: (animated?: boolean) => void;
    inputRef: React.RefObject<TextInput | null>;
    inputBoxDims: any;
+   inputBoxAnimatedStyle?: any;
    promptContainerStyle?: any;
    contentTopPadding?: number;
 };
@@ -78,6 +79,7 @@ export default function DisputeSteps({
    scrollToBottom,
    inputRef,
    inputBoxDims,
+   inputBoxAnimatedStyle,
    promptContainerStyle,
    contentTopPadding,
 }: Props) {
@@ -175,6 +177,7 @@ export default function DisputeSteps({
                onChangeText={setField(currKey)}
                placeholder={DISPUTE_PLACEHOLDER[currKey]}
                dims={inputBoxDims}
+               animatedStyle={inputBoxAnimatedStyle}
                scrollEnabled
                compact
                onFocus={() => scrollToBottom(true)}

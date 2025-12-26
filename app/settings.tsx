@@ -386,14 +386,14 @@ export default function SettingsScreen() {
          {/* ABSOLUTE CLOSE BUTTON (Static Top Right) */}
          <View 
             className="absolute right-4 z-50"
-            style={{ top: Platform.OS === 'ios' ? 8 : insets.top + 16 }}
+            style={{ top: Platform.OS === 'ios' ? 16 : insets.top + 16 }}
          >
             <RoundedCloseButton onPress={() => router.back()} />
          </View>
 
          <ScrollView
             contentContainerStyle={{
-               paddingTop: Platform.OS === 'ios' ? 8 : insets.top + 16,
+               paddingTop: Platform.OS === 'ios' ? 16 : insets.top + 16,
                paddingBottom: insets.bottom + 24,
                paddingHorizontal: 16,
                gap: 14,

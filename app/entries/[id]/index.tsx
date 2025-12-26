@@ -23,6 +23,7 @@ import {
 import {
    KeyboardAwareScrollView,
    KeyboardController,
+   useResizeMode,
 } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -49,6 +50,8 @@ const getToneForKey = (key: FieldKey): FieldTone => {
 
 export default function EntryDetailScreen() {
    const { id, mode } = useLocalSearchParams();
+   // Ensure Android uses adjustResize so the keyboard doesn't cover inputs.
+   useResizeMode();
    const entryId = Array.isArray(id) ? id[0] : id;
    const modeParam = Array.isArray(mode) ? mode[0] : mode;
    const startInEdit = modeParam === 'edit';
