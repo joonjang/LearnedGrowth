@@ -330,6 +330,7 @@ export default function EntryDetailScreen() {
                                 className={`min-h-[48px] rounded-lg px-3 py-2 text-sm leading-6 ${finalBg} ${fieldStyles.text}`}
                                 scrollEnabled={false}
                                 textAlignVertical="top"
+                                autoCorrect
                             />
                         ) : (
                             <View className={`min-h-[48px] rounded-lg px-3 py-2 ${finalBg}`}>

@@ -37,6 +37,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
       placeholder = 'Enter here',
       scrollEnabled = true,
       compact = false,
+      autoCorrect = true,
       ...rest
    },
    ref
@@ -70,6 +71,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
             placeholder={placeholder}
             value={value}
             onChangeText={onChangeText}
+            autoCorrect={autoCorrect}
             // Compact vs Standard Text Size
             className={`text-slate-900 dark:text-slate-100 leading-6 ${compact ? 'text-lg' : 'text-[22px]'}`}
             style={{ includeFontPadding: false }} // NativeWind handles most, but this is specific

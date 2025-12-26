@@ -4,7 +4,7 @@ import { getShadow } from '@/lib/shadow';
 import { FieldTone, getFieldStyles } from '@/lib/theme';
 import { Entry } from '@/models/entry';
 import { router } from 'expo-router';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react-native';
+import { ArrowDown, ChevronRight, MoreHorizontal, Pencil, Trash2 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, type TextLayoutEvent, View } from 'react-native';
@@ -17,6 +17,7 @@ import Animated, {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+// --- Types ---
 export type MenuBounds = {
    x: number;
    y: number;
@@ -39,38 +40,69 @@ const TRUNCATION_LIMITS = {
    adversity: 4,
    belief: 4,
    consequence: 4,
-   dispute: 5,
-   energy: 2,
+   dispute: 10,
+   energy: 4,
 } as const;
 
 type TruncationKey = keyof typeof TRUNCATION_LIMITS;
 type TruncationState = Record<TruncationKey, boolean>;
 
 // --- Helper Components ---
-const SectionBlock = memo(({ 
-   label, 
+
+/**
+ * Renders the "Adversity -> Belief -> Consequence" header line
+ */
+const FlowBreadcrumb = ({ steps }: { steps: string[] }) => (
+   <View className="flex-row items-center gap-1.5 mb-3 px-1">
+      {steps.map((step, index) => (
+         <View key={step} className="flex-row items-center gap-1.5">
+            <Text className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+               {step}
+            </Text>
+            {index < steps.length - 1 && (
+               <ChevronRight size={12} color="#94a3b8" />
+            )}
+         </View>
+      ))}
+   </View>
+);
+
+/**
+ * A connector arrow between fields
+ */
+const FlowConnector = () => (
+   <View className="items-center -my-1.5 z-10 relative">
+      {/* Small circle background behind arrow to cover borders */}
+      <View className="bg-slate-50 dark:bg-slate-800/40 rounded-full p-1"> 
+         <ArrowDown size={14} className="text-slate-300 dark:text-slate-600" />
+      </View>
+   </View>
+);
+
+/**
+ * The individual text block within the flow (No Label Version)
+ */
+const FlowBlock = memo(({ 
    text, 
    type, 
    textKey, 
    isTruncated, 
-   onLayout 
+   onLayout,
+   isLast = false
 }: { 
-   label: string, 
    text: string, 
    type: FieldTone, 
    textKey: TruncationKey,
    isTruncated: boolean,
-   onLayout: (e: TextLayoutEvent) => void
+   onLayout: (e: TextLayoutEvent) => void,
+   isLast?: boolean
 }) => {
-   // Use shared theme source
    const styles = getFieldStyles(type, false);
 
    return (
-      <View className="mb-3 mt-2 gap-1.5">
-         <Text className="text-[11px] font-semibold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
-            {label}
-         </Text>
-         <View className={`px-3 py-3 rounded-xl border ${styles.container}`}>
+      <View>
+         {/* Text Container */}
+         <View className={`px-3.5 py-3 rounded-xl border ${styles.container} bg-white dark:bg-slate-900/50 shadow-sm`}>
             <Text
                className={`text-[15px] leading-[22px] ${styles.text}`}
                onTextLayout={onLayout}
@@ -80,10 +112,13 @@ const SectionBlock = memo(({
                {text}
             </Text>
          </View>
+
+         {/* Connector Arrow (if not last) */}
+         {!isLast && <FlowConnector />}
       </View>
    );
 });
-SectionBlock.displayName = 'SectionBlock';
+FlowBlock.displayName = 'FlowBlock';
 
 // --- Main Component ---
 export default function EntryCard({
@@ -150,11 +185,6 @@ export default function EntryCard({
 
    const menuShadow = useMemo(
       () => getShadow({ isDark, preset: 'xl' }),
-      [isDark]
-   );
-
-   const smallShadow = useMemo(
-      () => getShadow({ isDark, preset: 'sm' }),
       [isDark]
    );
 
@@ -225,7 +255,7 @@ export default function EntryCard({
 
    return (
       <AnimatedPressable
-         className={`pt-[22px] px-[18px] pb-[18px] rounded-[18px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 mx-2 my-3 ${cardShadow.className}`}
+         className={`p-3 rounded-[24px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 mx-3 my-3 ${cardShadow.className}`}
          style={[cardAnimatedStyle, cardShadow.ios, cardShadow.android]}
          disabled={navigationLocked}
          onPress={handleOpenEntry}
@@ -233,14 +263,14 @@ export default function EntryCard({
          onPressOut={() => (pressProgress.value = withTiming(0, { duration: 140 }))}
       >
          {/* --- Menu Row --- */}
-         <View className="absolute top-3 right-3 z-30">
+         <View className="absolute top-4 right-4 z-30">
             <Pressable
                hitSlop={12}
                testID="entry-menu-btn"
-               className="w-8 h-8 rounded-full items-center justify-center active:bg-slate-100 dark:active:bg-slate-800"
+               className="w-8 h-8 rounded-full items-center justify-center bg-slate-50 dark:bg-slate-800/80 active:bg-slate-100 dark:active:bg-slate-700"
                onPress={onToggleMenu}
             >
-               <MoreHorizontal size={20} color={colors.hint} />
+               <MoreHorizontal size={18} color={colors.hint} />
             </Pressable>
 
             <Animated.View
@@ -271,58 +301,63 @@ export default function EntryCard({
             </Animated.View>
          </View>
 
-         {/* --- Content --- */}
-         <SectionBlock 
-            label="Adversity" 
-            text={entry.adversity} 
-            type="default" 
-            textKey="adversity" 
-            isTruncated={truncateState.adversity}
-            onLayout={handleTextLayout('adversity')}
-         />
-         <SectionBlock 
-            label="Belief" 
-            text={entry.belief} 
-            type="belief" 
-            textKey="belief" 
-            isTruncated={truncateState.belief}
-            onLayout={handleTextLayout('belief')}
-         />
-         <SectionBlock 
-            label="Consequence" 
-            text={entry.consequence ?? ''} 
-            type="default" 
-            textKey="consequence" 
-            isTruncated={truncateState.consequence}
-            onLayout={handleTextLayout('consequence')}
-         />
-
-         {!entry.dispute ? (
-            <View
-               className={`mt-2 p-1 ${smallShadow.className}`}
-               style={[smallShadow.ios, smallShadow.android]}
-            >
-               <CardNextButton id={entry.id} />
+         {/* --- SECTION 1: The Spiral (ABC) --- */}
+         <View className="bg-slate-50/80 dark:bg-slate-800/40 p-3 pb-5 rounded-2xl mb-2">
+            <FlowBreadcrumb steps={['Adversity', 'Belief', 'Consequence']} />
+            
+            <View className="gap-0.5">
+               <FlowBlock 
+                  text={entry.adversity} 
+                  type="default" 
+                  textKey="adversity" 
+                  isTruncated={truncateState.adversity}
+                  onLayout={handleTextLayout('adversity')}
+               />
+               <FlowBlock 
+                  text={entry.belief} 
+                  type="belief" 
+                  textKey="belief" 
+                  isTruncated={truncateState.belief}
+                  onLayout={handleTextLayout('belief')}
+               />
+               <FlowBlock 
+                  text={entry.consequence ?? ''} 
+                  type="default" 
+                  textKey="consequence" 
+                  isTruncated={truncateState.consequence}
+                  onLayout={handleTextLayout('consequence')}
+                  isLast={true}
+               />
             </View>
+         </View>
+
+         {/* --- SECTION 2: The Pivot (DE) --- */}
+         {!entry.dispute ? (
+             <View className="mt-1 px-1">
+                 <CardNextButton id={entry.id} />
+             </View>
          ) : (
-            <>
-               <SectionBlock 
-                  label="Dispute" 
-                  text={entry.dispute} 
-                  type="dispute" 
-                  textKey="dispute" 
-                  isTruncated={truncateState.dispute}
-                  onLayout={handleTextLayout('dispute')}
-               />
-               <SectionBlock 
-                  label="Energy" 
-                  text={entry.energy ?? ''} 
-                  type="energy" 
-                  textKey="energy" 
-                  isTruncated={truncateState.energy}
-                  onLayout={handleTextLayout('energy')}
-               />
-            </>
+            <View className="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100/50 dark:border-emerald-800/30 p-3 pb-5 rounded-2xl mt-1">
+               <FlowBreadcrumb steps={['Dispute', 'Energy']} />
+               
+               <View className="gap-0.5">
+                  <FlowBlock 
+                     text={entry.dispute} 
+                     type="dispute" 
+                     textKey="dispute" 
+                     isTruncated={truncateState.dispute}
+                     onLayout={handleTextLayout('dispute')}
+                  />
+                  <FlowBlock 
+                     text={entry.energy ?? ''} 
+                     type="energy" 
+                     textKey="energy" 
+                     isTruncated={truncateState.energy}
+                     onLayout={handleTextLayout('energy')}
+                     isLast={true}
+                  />
+               </View>
+            </View>
          )}
       </AnimatedPressable>
    );
