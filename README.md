@@ -73,6 +73,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2025-12-30
+- Added meta field for more data from api entry analysis
+
 ### 2025-12-26
 - Fixed keyboard displaying glitching for new.tsx, dispute/[id].tsx, EntryDetailScreen
 - Fixed navigation bug from entry detail screen

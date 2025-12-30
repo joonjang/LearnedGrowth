@@ -6,12 +6,32 @@ export type AbcInput = {
   consequence?: string;
 };
 
+export const LEARNED_GROWTH_CATEGORIES = [
+  "Work",
+  "Education",
+  "Relationships",
+  "Health",
+  "Finance",
+  "Self-Image",
+  "Daily Hassles",
+  "Other",
+] as const;
+
+export type LearnedGrowthCategory = (typeof LEARNED_GROWTH_CATEGORIES)[number];
+
 export type DimensionScore = string | null; // e.g., "optimistic", "pessimistic", etc.
 
 export type ExplanatoryDimension = {
   score: DimensionScore;
   detectedPhrase: string | null;
   insight: string | null;
+};
+
+export type LearnedGrowthMeta = {
+  category: LearnedGrowthCategory | null;
+  tags: string[];
+  sentimentScore: number | null;
+  optimismScore: number | null;
 };
 
 export type LearnedGrowthResponse = {
@@ -21,6 +41,7 @@ export type LearnedGrowthResponse = {
     isCrisis: boolean;
     crisisMessage: string | null;
   };
+  meta: LearnedGrowthMeta;
   analysis: {
     dimensions: {
       permanence: ExplanatoryDimension;
@@ -72,6 +93,33 @@ export function normalizeLearnedGrowthResponse(raw: any): LearnedGrowthResponse 
     throw new AiError("invalid-response", "Expected string or null");
   };
 
+  const ensureNumberOrNull = (val: any): number | null => {
+    if (typeof val === "number" && Number.isFinite(val)) return val;
+    if (typeof val === "string" && val.trim() !== "") {
+      const parsed = Number(val);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return null;
+  };
+
+  const ensureCategoryOrNull = (val: any): LearnedGrowthCategory | null => {
+    if (typeof val !== "string") return null;
+    const normalized = val.trim() as LearnedGrowthCategory;
+    return LEARNED_GROWTH_CATEGORIES.includes(normalized) ? normalized : null;
+  };
+
+  const ensureTags = (val: any): string[] => {
+    if (!val) return [];
+    if (!Array.isArray(val)) return [];
+    return Array.from(
+      new Set(
+        val
+          .map((tag: any) => (typeof tag === "string" ? tag.trim() : ""))
+          .filter(Boolean)
+      )
+    );
+  };
+
   const ensureBoolean = (val: any) => {
     if (typeof val === "boolean") return val;
     if (val === undefined || val === null) return false;
@@ -92,6 +140,7 @@ export function normalizeLearnedGrowthResponse(raw: any): LearnedGrowthResponse 
   const analysis = raw.analysis ?? {};
   const suggestions = raw.suggestions ?? {};
   const safety = raw.safety ?? {};
+  const meta = raw.meta ?? {};
   const createdAt = new Date().toISOString();
 
   return {
@@ -99,6 +148,12 @@ export function normalizeLearnedGrowthResponse(raw: any): LearnedGrowthResponse 
     safety: {
       isCrisis: ensureBoolean(safety.isCrisis),
       crisisMessage: ensureStringOrNull(safety.crisisMessage),
+    },
+    meta: {
+      category: ensureCategoryOrNull(meta.category),
+      tags: ensureTags(meta.tags),
+      sentimentScore: ensureNumberOrNull(meta.sentimentScore),
+      optimismScore: ensureNumberOrNull(meta.optimismScore),
     },
     analysis: {
       dimensions: {

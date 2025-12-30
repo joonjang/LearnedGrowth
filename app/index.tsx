@@ -3,7 +3,7 @@ import { type MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow, { UndoRow } from '@/components/entries/entry/EntryRow';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
-import { getDateParts, getTimeLabel } from '@/lib/date';
+import { formatDate, getTimeLabel } from '@/lib/date';
 import { getShadow } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
 import { Link, router } from 'expo-router';
@@ -18,8 +18,10 @@ type RowItem = { kind: 'entry'; entry: Entry } | { kind: 'undo'; entry: Entry };
 
 type EntrySection = {
    title: string;
-   dateKey: string;
+   weekKey: string;
+   rangeLabel: string;
    data: RowItem[];
+   entryCount: number;
 };
 
 const UNDO_TIMEOUT_MS = 5500;
@@ -31,6 +33,9 @@ export default function EntriesScreen() {
    const isDark = colorScheme === 'dark';
    const iconColor = isDark ? '#cbd5e1' : '#475569';
    const { lock: lockNavigation } = useNavigationLock();
+   const stickyInsetRef = useRef(false);
+   const [stickyInset, setStickyInset] = useState(false);
+   const headerHeightRef = useRef(0);
    
    const shadowSm = useMemo(
       () => getShadow({ isDark, preset: 'sm' }),
@@ -149,31 +154,69 @@ export default function EntriesScreen() {
             className="flex-1"
             stickySectionHeadersEnabled={true}
             showsVerticalScrollIndicator={false}
-            
-            // NOTE: ListHeaderComponent removed. Button is now absolute below.
-            ListEmptyComponent={store.isHydrating ? null : <QuickStart />}
-            
-            onScrollBeginDrag={() => {
-               closeMenu();
-               closeActiveSwipeable();
-            }}
-            
-            renderSectionHeader={({ section }) => (
-               <View 
-                  // box-none ensures touches pass through empty space to the Settings button
-                  pointerEvents="box-none"
-                  className="items-center pb-4 pt-2"
-                  // Align this exactly with the Settings Button padding
-                  style={{ paddingTop: insets.top + 8 }}
-               >
+            ListHeaderComponent={
+               sections.length > 0 ? (
                   <View
-                     // Corrected padding and removed tracking-wider to prevent Android clipping
-                     className={`items-center self-center rounded-full border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 px-6 py-2 ${shadowSm.className}`}
-                     style={[shadowSm.ios, shadowSm.android]}
+                     onLayout={(e) => {
+                        headerHeightRef.current = e.nativeEvent.layout.height;
+                     }}
                   >
-                     <Text className="text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">
-                        {section.title}
-                     </Text>
+                     <InfoHeader
+                        sections={sections}
+                        insetsTop={insets.top}
+                        shadow={shadowSm}
+                        iconColor={iconColor}
+                     />
+                  </View>
+               ) : null
+            }
+            
+            // Show onboarding when there are no entries
+            ListEmptyComponent={store.isHydrating ? null : <QuickStart />}
+         
+         onScrollBeginDrag={() => {
+            closeMenu();
+            closeActiveSwipeable();
+         }}
+         onScroll={(e) => {
+            const y = e.nativeEvent.contentOffset.y;
+            const threshold = Math.max(0, headerHeightRef.current - 1);
+            const next = y >= threshold;
+            if (next !== stickyInsetRef.current) {
+               stickyInsetRef.current = next;
+               setStickyInset(next);
+            }
+         }}
+         scrollEventThrottle={16}
+         
+         renderSectionHeader={({ section }) => (
+            <View 
+               pointerEvents="box-none"
+               className="w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800"
+               style={{
+                  paddingTop: stickyInset ? insets.top + 8 : 0,
+                  paddingHorizontal: 0,
+               }}
+            >
+                  <View
+                     className="flex-row items-baseline justify-between w-full bg-white dark:bg-slate-900 px-4 py-3 "
+                  >
+                     <View className="flex-1 pr-3">
+                        <Text className="text-base font-bold text-slate-900 dark:text-white">
+                           {section.title}
+                        </Text>
+                        <Text className="text-xs text-slate-500 dark:text-slate-400">
+                           {section.rangeLabel}
+                        </Text>
+                     </View>
+                     <View className="flex-row items-center gap-2">
+                        <Text className="text-xs font-semibold uppercase tracking-tight text-slate-500 dark:text-slate-400">
+                           Entries
+                        </Text>
+                        <Text className="text-lg font-bold text-slate-900 dark:text-white">
+                           {section.entryCount}
+                        </Text>
+                     </View>
                   </View>
                </View>
             )}
@@ -219,28 +262,7 @@ export default function EntriesScreen() {
 
          {/* --- PERMANENT OVERLAYS (Buttons) --- */}
          
-         {/* 1. Settings Button: Top Right, Fixed */}
-         {sections.length > 0 && (
-            <View 
-               className="absolute top-0 right-0 z-50 px-6" 
-               // Padding aligns perfectly with the Sticky Section Header
-               style={{ paddingTop: insets.top + 8 }}
-            >
-               <View className="flex-row justify-end">
-                  <Link href="/settings" asChild>
-                     <Pressable
-                        className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-70"
-                        accessibilityLabel="Open settings"
-                        hitSlop={8}
-                     >
-                        <Settings size={20} color={iconColor} strokeWidth={2.5} />
-                     </Pressable>
-                  </Link>
-               </View>
-            </View>
-         )}
-
-         {/* 2. New Entry FAB: Bottom Right, Fixed */}
+         {/* New Entry FAB: Bottom Right, Fixed */}
          {sections.length !== 0 && (
             <View 
                className="absolute bottom-0 right-0 left-0 items-end px-6" 
@@ -266,6 +288,86 @@ export default function EntriesScreen() {
    );
 }
 
+function InfoHeader({
+   sections,
+   insetsTop,
+   shadow,
+   iconColor,
+}: {
+   sections: EntrySection[];
+   insetsTop: number;
+   shadow: ReturnType<typeof getShadow>;
+   iconColor: string;
+}) {
+   const totalEntries = sections.reduce((sum, section) => sum + section.entryCount, 0);
+   const currentWeek = sections[0];
+
+   return (
+      <View className="px-6 pb-6" style={{ paddingTop: insetsTop + 12 }}>
+         <View className="flex-row items-center justify-between">
+            <Text className="text-xs font-semibold uppercase tracking-tight text-slate-500 dark:text-slate-400">
+               Information
+            </Text>
+            <Link href="/settings" asChild>
+               <Pressable
+                  className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80"
+                  accessibilityLabel="Open settings"
+                  hitSlop={8}
+               >
+                  <Settings size={20} color={iconColor} strokeWidth={2.5} />
+               </Pressable>
+            </Link>
+         </View>
+
+         <View
+            className={`mt-3 rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 ${shadow.className}`}
+            style={[shadow.ios, shadow.android]}
+         >
+            <View className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+               <Text className="text-base font-bold text-slate-900 dark:text-white">
+                  Weekly overview
+               </Text>
+               <Text className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  Entries are grouped by week so you can see your recent streaks.
+               </Text>
+            </View>
+
+            <View className="flex-row items-center justify-between px-4 py-3">
+               <View>
+                  <Text className="text-xs font-semibold uppercase tracking-tight text-slate-500 dark:text-slate-400">
+                     Current week
+                  </Text>
+                  <Text className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
+                     {currentWeek?.title ?? 'No entries yet'}
+                  </Text>
+                  <Text className="text-xs text-slate-500 dark:text-slate-400">
+                     {currentWeek?.rangeLabel ?? ''}
+                  </Text>
+               </View>
+
+               <View className="items-end">
+                  <Text className="text-xs font-semibold uppercase tracking-tight text-slate-500 dark:text-slate-400">
+                     Entries
+                  </Text>
+                  <Text className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
+                     {currentWeek?.entryCount ?? 0}
+                  </Text>
+               </View>
+            </View>
+
+               <View className="flex-row items-center justify-between px-4 pb-4 pt-1">
+                  <Text className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                     Total entries
+                  </Text>
+                  <Text className="text-base font-semibold text-slate-900 dark:text-white">
+                     {totalEntries}
+                  </Text>
+               </View>
+            </View>
+         </View>
+      );
+   }
+
 // --- Helper Functions ---
 function buildRowsWithUndo(rows: Entry[], undoSlots: Entry[]): RowItem[] {
    const merged: RowItem[] = rows.map((entry) => ({ kind: 'entry', entry }));
@@ -284,19 +386,70 @@ function buildRowsWithUndo(rows: Entry[], undoSlots: Entry[]): RowItem[] {
 
 function buildSections(rows: RowItem[]): EntrySection[] {
    const sections: EntrySection[] = [];
+   const now = new Date();
    for (const entry of rows) {
-      const { dateKey, dateLabel } = getDateParts(entry.entry);
+      const { key, label, rangeLabel } = getWeekInfo(entry.entry.createdAt, now);
       const lastSection = sections[sections.length - 1];
 
-      if (!lastSection || lastSection.dateKey !== dateKey) {
+      if (!lastSection || lastSection.weekKey !== key) {
          sections.push({
-            title: dateLabel,
-            dateKey,
+            title: label,
+            weekKey: key,
+            rangeLabel,
             data: [entry],
+            entryCount: entry.kind === 'entry' ? 1 : 0,
          });
       } else {
          lastSection.data.push(entry);
+         if (entry.kind === 'entry') {
+            lastSection.entryCount += 1;
+         }
       }
    }
    return sections;
+}
+
+function getWeekInfo(createdAt: string, now: Date) {
+   const date = safeParseDate(createdAt) ?? now;
+   const start = getWeekStart(date);
+   const end = new Date(start);
+   end.setDate(start.getDate() + 6);
+
+   const currentStart = getWeekStart(now);
+   const lastStart = getWeekStart(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7));
+
+   const key = `${formatIsoDate(start)}_${formatIsoDate(end)}`;
+   const weekMs = 7 * 24 * 60 * 60 * 1000;
+   const diffWeeks = Math.round((currentStart.getTime() - start.getTime()) / weekMs);
+
+   const label =
+      start.getTime() === currentStart.getTime()
+         ? 'This Week'
+         : start.getTime() === lastStart.getTime()
+            ? 'Last Week'
+            : `${Math.max(2, diffWeeks)} Weeks Ago`;
+
+   const rangeLabel = `${formatDate(start)} - ${formatDate(end)}`;
+
+   return { key, label, rangeLabel };
+}
+
+function getWeekStart(date: Date) {
+   const start = new Date(date);
+   start.setHours(0, 0, 0, 0);
+   const diffToMonday = (start.getDay() + 6) % 7; // Monday as the first day
+   start.setDate(start.getDate() - diffToMonday);
+   return start;
+}
+
+function safeParseDate(value: string) {
+   const parsed = new Date(value);
+   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatIsoDate(date: Date) {
+   const year = date.getFullYear();
+   const month = `${date.getMonth() + 1}`.padStart(2, '0');
+   const day = `${date.getDate()}`.padStart(2, '0');
+   return `${year}-${month}-${day}`;
 }

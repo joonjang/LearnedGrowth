@@ -47,6 +47,12 @@ function buildAiResponseFromLegacy(
 
    return {
       safety: { isCrisis: false, crisisMessage: null },
+      meta: {
+         category: null,
+         tags: [],
+         sentimentScore: null,
+         optimismScore: null,
+      },
       analysis: {
          dimensions: {
             permanence: normalizeDimension(dimensions.permanence),

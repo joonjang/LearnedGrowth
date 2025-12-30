@@ -9,6 +9,12 @@
          "isCrisis": false,
          "crisisMessage": null
       },
+      "meta": {
+         "category": "Other",
+         "tags": ["learning", "app build"],
+         "sentimentScore": 5,
+         "optimismScore": 8
+      },
       "analysis": {
          "dimensions": {
             "permanence": {

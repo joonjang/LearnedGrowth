@@ -267,7 +267,7 @@ export default function EntryCard({
             <Pressable
                hitSlop={12}
                testID="entry-menu-btn"
-               className="w-8 h-8 rounded-full items-center justify-center bg-slate-50 dark:bg-slate-800/80 active:bg-slate-100 dark:active:bg-slate-700"
+               className="w-8 h-8 rounded-full items-center justify-center "
                onPress={onToggleMenu}
             >
                <MoreHorizontal size={18} color={colors.hint} />

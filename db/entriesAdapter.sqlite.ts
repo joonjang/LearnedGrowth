@@ -21,6 +21,13 @@ interface Row {
    is_deleted: number;
 }
 
+const DEFAULT_AI_META = {
+   category: null,
+   tags: [] as string[],
+   sentimentScore: null,
+   optimismScore: null,
+};
+
 function serializeAiResponse(aiResponse?: LearnedGrowthResponse | null) {
    return aiResponse ? JSON.stringify(aiResponse) : null;
 }
@@ -28,21 +35,52 @@ function serializeAiResponse(aiResponse?: LearnedGrowthResponse | null) {
 function parseAiResponse(raw: string | null): LearnedGrowthResponse | null {
    if (!raw) return null;
    try {
-      return JSON.parse(raw) as LearnedGrowthResponse;
+      return ensureAiMeta(JSON.parse(raw) as LearnedGrowthResponse);
    } catch (e: any) {
       throw new Error(`Failed to parse ai_response JSON`, { cause: e });
    }
+}
+
+function ensureAiMeta(aiResponse?: LearnedGrowthResponse | null) {
+   if (!aiResponse) return null;
+   const meta = aiResponse.meta ?? DEFAULT_AI_META;
+   const tags = Array.isArray(meta.tags)
+      ? Array.from(
+         new Set(
+            meta.tags
+               .map((tag) => (typeof tag === "string" ? tag.trim() : ""))
+               .filter(Boolean)
+         )
+      )
+      : [];
+
+   return {
+      ...aiResponse,
+      meta: {
+         category: typeof meta.category === "string" ? meta.category : null,
+         tags,
+         sentimentScore:
+            typeof meta.sentimentScore === "number" && Number.isFinite(meta.sentimentScore)
+               ? meta.sentimentScore
+               : null,
+         optimismScore:
+            typeof meta.optimismScore === "number" && Number.isFinite(meta.optimismScore)
+               ? meta.optimismScore
+               : null,
+      },
+   };
 }
 
 function cloneAiResponse(
    aiResponse?: LearnedGrowthResponse | null,
    fallbackCreatedAt?: string
 ): LearnedGrowthResponse | null {
-   if (!aiResponse) return null;
+   const normalized = ensureAiMeta(aiResponse);
+   if (!normalized) return null;
    const withTimestamp =
-      fallbackCreatedAt && !aiResponse.createdAt
-         ? { ...aiResponse, createdAt: fallbackCreatedAt }
-         : aiResponse;
+      fallbackCreatedAt && !normalized.createdAt
+         ? { ...normalized, createdAt: fallbackCreatedAt }
+         : normalized;
    return JSON.parse(JSON.stringify(withTimestamp));
 }
 

@@ -19,6 +19,7 @@ const EntriesStoreContext = createContext<EntriesStore | null>(null);
 export function EntriesStoreProvider({ children }: { children: ReactNode }) {
    const { adapter, ready, error } = useEntriesAdapter();
    const { user } = useAuth();
+   const devSeeded = useRef(false);
    
    // 1. Grab encryption state
    const { isEncrypted, isUnlocked, masterKey } = useEncryption();
@@ -55,6 +56,40 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
       if (!ready || store === placeholderEntriesStore) return;
       store.getState().hydrate();
    }, [ready, store]);
+
+   // Seed simulator/dev with fixture data when explicitly enabled.
+   useEffect(() => {
+      if (!__DEV__) return;
+      if (devSeeded.current) return;
+      if (!adapter || !ready) return;
+      if (store === placeholderEntriesStore) return;
+      const shouldSeed =
+         process.env.EXPO_PUBLIC_SEED_ENTRIES === 'true' ||
+         process.env.EXPO_PUBLIC_SEED_ENTRIES === '1';
+      if (!shouldSeed) return;
+
+      devSeeded.current = true;
+      (async () => {
+         try {
+            const { weekEntries } = await import('../__test__/test-utils/weekEntries');
+            let inserted = 0;
+            for (const entry of weekEntries) {
+               const exists = await adapter.getById(entry.id);
+               if (exists) continue;
+               await adapter.add(entry);
+               inserted += 1;
+            }
+            if (inserted > 0) {
+               await store.getState().hydrate();
+               console.log(`[Dev Seed] Inserted ${inserted} weekEntries fixture(s).`);
+            } else {
+               console.log('[Dev Seed] weekEntries already present, no inserts performed.');
+            }
+         } catch (e) {
+            console.warn('[Dev Seed] Failed to insert weekEntries fixture', e);
+         }
+      })();
+   }, [adapter, ready, store]);
 
    // --- SYNC LOGIC ---
    useEffect(() => {

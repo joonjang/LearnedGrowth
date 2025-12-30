@@ -9,6 +9,12 @@
          "isCrisis": false,
          "crisisMessage": null
       },
+      "meta": {
+         "category": "Health",
+         "tags": ["posture", "back pain"],
+         "sentimentScore": 3,
+         "optimismScore": 2
+      },
       "analysis": {
          "dimensions": {
             "permanence": {

@@ -6,6 +6,12 @@ import { TestClock } from '@/__test__/test-utils/testClock';
 
 const baseAiResponse: LearnedGrowthResponse = {
    safety: { isCrisis: false, crisisMessage: null },
+   meta: {
+      category: null,
+      tags: [],
+      sentimentScore: null,
+      optimismScore: null,
+   },
    analysis: {
       dimensions: {
          permanence: {

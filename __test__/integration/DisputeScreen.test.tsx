@@ -115,6 +115,12 @@ describe('DisputeScreen', () => {
 
       const aiResponse: LearnedGrowthResponse = {
          safety: { isCrisis: false, crisisMessage: null },
+         meta: {
+            category: null,
+            tags: [],
+            sentimentScore: null,
+            optimismScore: null,
+         },
          analysis: {
             dimensions: {
                permanence: {
