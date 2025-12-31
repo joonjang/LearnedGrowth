@@ -29,8 +29,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Fine tune dark mode
   - loading ellipse white
 
-- Change setting toggle colors
-
 - Have a distinction for production tables and edge functions and development versions
 
 
@@ -40,13 +38,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - add a report problem button to send a snapshot of the issue
 - enable user to get extra analysis if someone signs up using their referal code
 - Change positioning of delete account 
-- Migrate navigation from tab based navigation to single column dashboard
 
 - Auth guard
   - Cloud database sync 
     - log out should hide entries
-
-- Implement a home page summary screen showing weekly optimism/mix/pessimism meter
 
 ## Steps
 
@@ -75,6 +70,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2025-12-31
 - Pill design to expand for description
 - AiInsight minimized and made to look like timeline item when dispute exists
+- AiInsight animation sequence and timing corrected
 
 ### 2025-12-30
 - Added meta field for more data from api entry analysis

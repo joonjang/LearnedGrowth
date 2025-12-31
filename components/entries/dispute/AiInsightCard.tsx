@@ -21,7 +21,7 @@ import {
    TriangleAlert,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    ActivityIndicator,
    LayoutAnimation,
@@ -31,7 +31,10 @@ import {
 } from 'react-native';
 import Animated, {
    Easing,
+   Extrapolation,
+   FadeIn,
    FadeInDown,
+   interpolate,
    interpolateColor,
    useAnimatedStyle,
    useSharedValue,
@@ -161,7 +164,7 @@ export function AiInsightCard({
    const isFreshAnalysis = useMemo(() => {
       if (!data?.createdAt) return false;
       const diffMs = new Date().getTime() - new Date(data.createdAt).getTime();
-      return diffMs < 20000;
+      return diffMs < 20000; // Only animate if created in last 20s
    }, [data?.createdAt]);
 
    // --- RENDER HELPERS ---
@@ -191,7 +194,10 @@ export function AiInsightCard({
    const EMOTION_APPEAR = isFreshAnalysis ? 500 : 0;
    const HEADER_APPEAR = isFreshAnalysis ? 800 : BASE_STAGGER;
    const TIME_START = isFreshAnalysis ? 1000 : BASE_STAGGER * 2;
-   const ROW_DURATION = isFreshAnalysis ? 3500 : 0;
+   
+   // SNAPPY TIMING: 6000ms ensures the next row starts shortly after insight reveals
+   const ROW_DURATION = isFreshAnalysis ? 6000 : 0; 
+
    const SCOPE_START =
       TIME_START + ROW_DURATION + (isFreshAnalysis ? 0 : BASE_STAGGER);
    const BLAME_START =
@@ -209,18 +215,17 @@ export function AiInsightCard({
    const previewText = suggestions?.counterBelief || emotionalLogic;
    const loading = !data && !error;
 
-   const iconColor = isDark ? '#818cf8' : '#4f46e5'; // Indigo
+   const iconColor = isDark ? '#818cf8' : '#4f46e5'; 
    const textColor = 'text-slate-900 dark:text-slate-100';
    const descColor = 'text-slate-700 dark:text-slate-300';
 
    return (
       <Pressable
          onPress={allowMinimize ? toggleMinimized : undefined}
-         // Ensure active opacity is 1 so children like buttons are clickable
          style={{ opacity: 1 }}
       >
          <View className="w-full">
-            {/* --- HEADER (Matches TimelineItem Layout) --- */}
+            {/* Header / Top Content */}
             <View className="flex-row items-center justify-between mb-1">
                <View className="flex-row items-center gap-2">
                   <Text className={`text-base font-bold ${textColor}`}>
@@ -243,7 +248,6 @@ export function AiInsightCard({
                )}
             </View>
 
-            {/* --- DESCRIPTION (Matches TimelineItem) --- */}
             {allowMinimize && isMinimized && (
                <Text
                   className={`text-sm font-medium mb-3 opacity-80 ${descColor}`}
@@ -324,7 +328,7 @@ export function AiInsightCard({
                               setShowShop(false);
                               if (status === 'signedIn') {
                                  try {
-                                    await refreshProfile();
+                                 await refreshProfile();
                                  } catch (err) {
                                     console.warn(
                                        'Failed to refresh credits after purchase',
@@ -340,7 +344,8 @@ export function AiInsightCard({
                   {/* STALE / REFRESH BANNER */}
                   {isStale && (
                      <View
-                        className={`flex-row items-center justify-between p-3 rounded-lg border mb-2 ${
+                        // CHANGE 1: Changed 'items-center' to 'items-end'
+                        className={`flex-row items-end justify-between p-3 rounded-lg border mb-2 ${
                            isCoolingDown
                               ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
                               : isNudgeStep
@@ -349,7 +354,7 @@ export function AiInsightCard({
                         }`}
                      >
                         <View className="flex-1 gap-1 mr-2">
-                           <View className="flex-row items-center flex-wrap gap-x-3">
+                           <View className="flex-row items-center justify-between">
                               <View className="flex-row items-center gap-2">
                                  {isCoolingDown ? (
                                     <Hourglass
@@ -370,7 +375,7 @@ export function AiInsightCard({
                               </View>
 
                               {!isCoolingDown && refreshCostNote && (
-                                 <View className="flex-row items-center opacity-90">
+                                 <View className="flex-row items-center opacity-90 ml-2">
                                     <Leaf
                                        size={10}
                                        color={isDark ? '#f59e0b' : '#b45309'}
@@ -397,7 +402,8 @@ export function AiInsightCard({
                         {onRefresh && !isCoolingDown ? (
                            <Pressable
                               onPress={handleRefreshPress}
-                              className="p-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
+                              // CHANGE 2: Added 'mb-0.5' just to align perfectly with the text baseline
+                              className="p-2 mb-0.5 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
                            >
                               <RefreshCw
                                  size={18}
@@ -405,7 +411,7 @@ export function AiInsightCard({
                               />
                            </Pressable>
                         ) : isCoolingDown && timeLabel !== '' ? (
-                           <View className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">
+                           <View className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded mb-0.5">
                               <Text
                                  className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
                                  style={{ fontVariant: ['tabular-nums'] }}
@@ -612,7 +618,7 @@ export function AiInsightCard({
    );
 }
 
-// ... (AnimatedSpectrumRow stays unchanged) ...
+// --- CHILD COMPONENT ---
 function AnimatedSpectrumRow({
    label,
    subLabel,
@@ -641,8 +647,6 @@ function AnimatedSpectrumRow({
    const isOptimistic = lowerScore === 'optimistic';
    const isPessimistic = lowerScore === 'pessimistic';
    const isMixed = lowerScore === 'mixed';
-
-   // Target: 0 (Left), 0.5 (Mid), 1 (Right)
    const targetPosition = isOptimistic ? 0 : isPessimistic ? 1 : 0.5;
 
    // Memoize theme to prevent re-renders
@@ -680,63 +684,81 @@ function AnimatedSpectrumRow({
    const revealState = useSharedValue(0);
    const scannerProgress = useSharedValue(skipAnimation ? targetPosition : 0);
    const impactScale = useSharedValue(1);
+   const hapticInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
-   const triggerHaptic = () => {
+   const startHaptics = useCallback(() => {
+      if (hapticInterval.current) clearInterval(hapticInterval.current);
+      hapticInterval.current = setInterval(() => {
+         Haptics.selectionAsync(); 
+      }, 150);
+   }, []);
+
+   const stopHaptics = useCallback(() => {
+      if (hapticInterval.current) {
+         clearInterval(hapticInterval.current);
+         hapticInterval.current = null;
+      }
+   }, []);
+
+   const triggerFinalHaptic = useCallback(() => {
+      stopHaptics();
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-   };
+   }, [stopHaptics]);
 
    useEffect(() => {
       // FAST TRACK: If not fresh analysis, skip logic
       if (skipAnimation) {
-         // Force final state immediately (with soft transition)
          scannerProgress.value = targetPosition;
          revealState.value = withTiming(1, { duration: 600 });
          return;
       }
 
-      // COMPLEX TRACK: Run the scanner
+      // TIMELINE:
+      // T+0ms: Quote Begins Fade
+      // T+800ms: Pills Begin Fade (500ms duration) -> Fully visible at 1300ms
+      // T+1400ms: Scanner Begins (Ensures pills are fully visible)
+      
+      const DELAY_UNTIL_SCAN = startDelay + 1400; 
+
       const timer = setTimeout(() => {
          const SWIPE_SPEED = 800;
          const SWIPE_EASING = Easing.inOut(Easing.sin);
 
          scannerProgress.value = 0;
-
-         const sequence: any[] = [
-            withTiming(1, { duration: SWIPE_SPEED, easing: SWIPE_EASING }),
-            withTiming(0, { duration: SWIPE_SPEED, easing: SWIPE_EASING }),
-            withTiming(1, { duration: SWIPE_SPEED, easing: SWIPE_EASING }),
-         ];
+         startHaptics();
 
          const dist = Math.abs(1 - targetPosition);
          const finalDuration = dist === 0 ? 0 : SWIPE_SPEED * dist;
 
          const onFinish = (finished: boolean | undefined) => {
             if (finished) {
-               scheduleOnRN(triggerHaptic);
-               revealState.value = withTiming(1, { duration: 600 });
+               scheduleOnRN(triggerFinalHaptic);
                impactScale.value = withSequence(
                   withTiming(0.92, { duration: 150 }),
                   withSpring(1.0, { damping: 15, stiffness: 150 })
                );
+               revealState.value = withDelay(
+                  500, 
+                  withTiming(1, { duration: 800 })
+               );
+            } else {
+               scheduleOnRN(stopHaptics);
             }
          };
 
-         if (dist > 0) {
-            sequence.push(
-               withTiming(
-                  targetPosition,
-                  { duration: finalDuration, easing: Easing.out(Easing.sin) },
-                  onFinish
-               )
-            );
-         } else {
-            sequence.push(
-               withDelay(50, withTiming(1, { duration: 0 }, onFinish))
-            );
-         }
-
-         scannerProgress.value = withSequence(...sequence);
-      }, startDelay);
+         scannerProgress.value = withSequence(
+            withTiming(1, { duration: SWIPE_SPEED, easing: SWIPE_EASING }),
+            withTiming(0, { duration: SWIPE_SPEED, easing: SWIPE_EASING }),
+            withTiming(1, { duration: SWIPE_SPEED, easing: SWIPE_EASING }),
+            dist > 0
+               ? withTiming(
+                    targetPosition,
+                    { duration: finalDuration, easing: Easing.out(Easing.sin) },
+                    onFinish
+                 )
+               : withDelay(50, withTiming(1, { duration: 0 }, onFinish))
+         );
+      }, DELAY_UNTIL_SCAN);
 
       return () => clearTimeout(timer);
    }, [
@@ -746,14 +768,16 @@ function AnimatedSpectrumRow({
       scannerProgress,
       revealState,
       impactScale,
+      startHaptics,
+      stopHaptics,
+      triggerFinalHaptic
    ]);
 
-   const makeAnimatedStyles = (
+   const usePillAnimatedStyles = (
       pillPosition: number,
       isWinner: boolean,
       activeType: 'green' | 'red' | 'mixed'
    ) => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
       const containerStyle = useAnimatedStyle(() => {
          const positionDelta = scannerProgress.value - pillPosition;
          const intensity = Math.exp(-Math.pow(positionDelta, 2) / 0.1);
@@ -768,7 +792,6 @@ function AnimatedSpectrumRow({
             [0, 1],
             [theme.bufferBorderLow, theme.bufferBorderHigh]
          );
-
          const finalBg = isWinner ? theme[`${activeType}Bg`] : theme.inactiveBg;
          const finalBorder = isWinner
             ? theme[`${activeType}Border`]
@@ -785,19 +808,13 @@ function AnimatedSpectrumRow({
                [0, 1],
                [currentBufferBorder, finalBorder]
             ),
-            transform: [
-               {
-                  scale: isWinner ? impactScale.value : 1,
-               },
-            ],
+            transform: [{ scale: isWinner ? impactScale.value : 1 }],
          };
       });
 
-      // eslint-disable-next-line react-hooks/rules-of-hooks
       const textStyle = useAnimatedStyle(() => {
          const positionDelta = scannerProgress.value - pillPosition;
          const intensity = Math.exp(-Math.pow(positionDelta, 2) / 0.15);
-
          const currentBufferText = interpolateColor(
             intensity,
             [0, 1],
@@ -815,16 +832,31 @@ function AnimatedSpectrumRow({
             ),
          };
       });
-
       return { containerStyle, textStyle };
    };
 
-   const leftStyles = makeAnimatedStyles(0.0, isOptimistic, 'green');
-   const mixedStyles = makeAnimatedStyles(0.5, isMixed, 'mixed');
-   const rightStyles = makeAnimatedStyles(1.0, isPessimistic, 'red');
+   const insightAnimStyle = useAnimatedStyle(() => ({
+      opacity: revealState.value,
+      transform: [
+         {
+            translateY: interpolate(
+               revealState.value,
+               [0, 1],
+               [10, 0],
+               Extrapolation.CLAMP
+            ),
+         },
+      ],
+   }));
 
+   const leftStyles = usePillAnimatedStyles(0.0, isOptimistic, 'green');
+   const mixedStyles = usePillAnimatedStyles(0.5, isMixed, 'mixed');
+   const rightStyles = usePillAnimatedStyles(1.0, isPessimistic, 'red');
    const basePill = 'flex-1 py-2 rounded-lg items-center justify-center border';
    const baseText = 'font-medium text-xs';
+
+   // PILLS START APPEARING SOON AFTER QUOTE
+   const PILLS_ENTRY_DELAY = startDelay + 800;
 
    return (
       <View className="gap-3">
@@ -838,12 +870,18 @@ function AnimatedSpectrumRow({
          </View>
 
          {detectedPhrase && (
-            <Text className="text-sm italic text-slate-500 dark:text-slate-400">
+            <Animated.Text 
+               entering={FadeInDown.delay(startDelay).duration(600)}
+               className="text-sm italic text-slate-500 dark:text-slate-400"
+            >
                &quot;{detectedPhrase}&quot;
-            </Text>
+            </Animated.Text>
          )}
 
-         <View className="flex-row items-center gap-1.5">
+         <Animated.View 
+            className="flex-row items-center gap-1.5"
+            entering={skipAnimation ? undefined : FadeIn.delay(PILLS_ENTRY_DELAY).duration(500)}
+         >
             <Animated.View
                className={basePill}
                style={leftStyles.containerStyle}
@@ -876,13 +914,13 @@ function AnimatedSpectrumRow({
                   {rightText}
                </Animated.Text>
             </Animated.View>
-         </View>
+         </Animated.View>
 
-         <View className="pl-1 gap-1">
+         <Animated.View className="pl-1 gap-1" style={insightAnimStyle}>
             <Text className="text-sm leading-6 text-slate-700 dark:text-slate-300">
                {insight || 'No clear pattern detected.'}
             </Text>
-         </View>
+         </Animated.View>
       </View>
    );
 }
