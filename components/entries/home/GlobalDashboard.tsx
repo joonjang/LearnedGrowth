@@ -1,6 +1,7 @@
 import GradientSpectrumBar from '@/components/entries/home/GradientSpectrumBar';
 import { DashboardData } from '@/components/entries/home/types';
 import { getMoodConfig } from '@/components/entries/home/utils';
+import { PInsightCard } from '@/components/appInfo/PDefinitions';
 import {
   Activity,
   HelpCircle,
@@ -93,34 +94,7 @@ const GlobalDashboard = React.memo(({ data, shadowSm, isDark }: Props) => {
             </Pressable>
           </View>
 
-          {showHelp && (
-            <View className="mb-6 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700 gap-3">
-              <View>
-                <Text className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-0.5">
-                  Time (Permanence)
-                </Text>
-                <Text className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Do you see problems as temporary setbacks or forever flaws?
-                </Text>
-              </View>
-              <View>
-                <Text className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-0.5">
-                  Scope (Pervasiveness)
-                </Text>
-                <Text className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Do problems ruin everything or just one specific area?
-                </Text>
-              </View>
-              <View>
-                <Text className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-0.5">
-                  Blame (Personalization)
-                </Text>
-                <Text className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Do you blame yourself entirely or consider the situation?
-                </Text>
-              </View>
-            </View>
-          )}
+          {showHelp && <PInsightCard context="week" />}
 
           <View className="gap-6">
             <GradientSpectrumBar

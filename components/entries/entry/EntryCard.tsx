@@ -213,7 +213,7 @@ export default function EntryCard({
          menuTranslateX.value = withTiming(20, { duration: 150 });
          menuTranslateY.value = withTiming(-20, { duration: 150 });
       }
-   }, [isMenuOpen]);
+   }, [isMenuOpen, menuOpacity, menuScale, menuTranslateX, menuTranslateY]);
 
    const measureMenu = useCallback(() => {
       if (!menuRef.current || !onMenuLayout) return;

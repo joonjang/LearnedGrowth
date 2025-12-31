@@ -5,6 +5,7 @@ import {
 import CreditShop from '@/components/CreditShop';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { useAuth } from '@/providers/AuthProvider';
+import { PInsightCard } from '@/components/appInfo/PDefinitions';
 import * as Haptics from 'expo-haptics';
 import {
    Clock3,
@@ -404,43 +405,7 @@ export function AiInsightCard({
                   </Pressable>
                </View>
 
-               {showDefinitions && (
-                  <View className="mb-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 gap-3">
-                     <View className="pb-2 border-b border-slate-200 dark:border-slate-700">
-                        <Text className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-                           Your words are clues
-                        </Text>
-                        <Text className="text-xs text-slate-600 dark:text-slate-400 leading-5">
-                           The specific words you use to explain events reveal
-                           how you see the world. We look for hints in these
-                           three areas:
-                        </Text>
-                     </View>
-                     <View className="gap-2">
-                        <Text className="text-xs text-slate-500 dark:text-slate-400 leading-5">
-                           <Text className="font-bold text-slate-700 dark:text-slate-300">
-                              Time (Permanence):{' '}
-                           </Text>
-                           Did your words imply this situation is permanent, or
-                           simply temporary?
-                        </Text>
-                        <Text className="text-xs text-slate-500 dark:text-slate-400 leading-5">
-                           <Text className="font-bold text-slate-700 dark:text-slate-300">
-                              Scope (Pervasiveness):{' '}
-                           </Text>
-                           Did you describe this as affecting your whole life,
-                           or just this specific area?
-                        </Text>
-                        <Text className="text-xs text-slate-500 dark:text-slate-400 leading-5">
-                           <Text className="font-bold text-slate-700 dark:text-slate-300">
-                              Blame (Personalization):{' '}
-                           </Text>
-                           Did you attribute the cause entirely to yourself, or
-                           did you consider outside factors?
-                        </Text>
-                     </View>
-                  </View>
-               )}
+               {showDefinitions && <PInsightCard />}
             </Animated.View>
 
             {/* ANIMATED ROWS */}

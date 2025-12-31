@@ -78,6 +78,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Made the entries list screen look presentable
 - EntryCard.tsx UI display changes
   - More simplified
+- Abstracted 3Ps definition
 
 ### 2025-12-26
 - Fixed keyboard displaying glitching for new.tsx, dispute/[id].tsx, EntryDetailScreen
