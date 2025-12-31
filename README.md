@@ -74,6 +74,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2025-12-31
 - Pill design to expand for description
+- AiInsight minimized and made to look like timeline item when dispute exists
 
 ### 2025-12-30
 - Added meta field for more data from api entry analysis

@@ -1,4 +1,4 @@
-import { HelpCircle, Scale, Sparkles, Wind } from 'lucide-react-native';
+import { HelpCircle, Scale, Sprout, Wind } from 'lucide-react-native';
 
 export function isOptimistic(score: string | null): boolean {
   if (!score) return false;
@@ -24,7 +24,7 @@ export function getMoodConfig(score: number | null, isDark: boolean) {
   }
   if (score >= 7.0) {
     return {
-      Icon: Sparkles,
+      Icon: Sprout,
       label: 'Seeing Possibilities',
       description:
         'You are focusing on a way forward and seeing the scope of your potential.',

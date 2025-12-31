@@ -4,9 +4,10 @@ import { DashboardData } from '@/components/entries/home/types';
 import { getMoodConfig } from '@/components/entries/home/utils';
 import {
   Activity,
-  HelpCircle,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
   Layers,
-  X,
 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { LayoutAnimation, Pressable, Text, View } from 'react-native';
@@ -20,13 +21,10 @@ type Props = {
 const GlobalDashboard = React.memo(({ data, shadowSm, isDark }: Props) => {
   const [showHelp, setShowHelp] = useState(false);
 
-  if (data.last7DaysScore === null) {
-    return (
-      null
-    );
-  }
+  if (data.last7DaysScore === null) return null;
 
   const mood = getMoodConfig(data.last7DaysScore, isDark);
+
   const toggleHelp = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setShowHelp((prev) => !prev);
@@ -34,6 +32,7 @@ const GlobalDashboard = React.memo(({ data, shadowSm, isDark }: Props) => {
 
   return (
     <View className="gap-4">
+      {/* 1. MOOD SUMMARY CARD (Unchanged) */}
       <View
         className={`p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 ${shadowSm.className}`}
         style={[shadowSm.ios, shadowSm.android]}
@@ -64,6 +63,7 @@ const GlobalDashboard = React.memo(({ data, shadowSm, isDark }: Props) => {
         </View>
       </View>
 
+      {/* 2. THINKING PATTERNS CARD */}
       {data.threePs && (
         <View
           className={`p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 ${shadowSm.className}`}
@@ -73,24 +73,38 @@ const GlobalDashboard = React.memo(({ data, shadowSm, isDark }: Props) => {
             <View className="flex-row items-center gap-2">
               <Layers size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
               <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                Thinking Patterns (The 3 P&apos;s)
+                Thinking Patterns
               </Text>
             </View>
 
-            <Pressable
-              onPress={toggleHelp}
-              hitSlop={10}
-              className="active:opacity-60"
-            >
-              {showHelp ? (
-                <X size={18} color={isDark ? '#94a3b8' : '#64748b'} />
-              ) : (
-                <HelpCircle size={18} color={isDark ? '#94a3b8' : '#64748b'} />
-              )}
+            {/* FIX: Pressable wraps a styled View to avoid NativeWind bug */}
+            <Pressable onPress={toggleHelp}>
+              <View 
+                className={`flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-colors ${
+                   showHelp 
+                     ? 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600' 
+                     : 'border-transparent'
+                }`}
+              >
+                <BookOpen size={12} color={isDark ? '#94a3b8' : '#64748b'} />
+                <Text className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Guide
+                </Text>
+                {showHelp ? (
+                  <ChevronUp size={12} color={isDark ? '#94a3b8' : '#64748b'} />
+                ) : (
+                  <ChevronDown size={12} color={isDark ? '#94a3b8' : '#64748b'} />
+                )}
+              </View>
             </Pressable>
           </View>
 
-          {showHelp && <PInsightCard context="week" />}
+          {/* Expanded Content */}
+          {showHelp && (
+             <View className="mb-4">
+               <PInsightCard context="week" />
+             </View>
+          )}
 
           <View className="gap-6">
             <GradientSpectrumBar

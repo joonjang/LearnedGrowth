@@ -1,3 +1,4 @@
+import { PInsightCard } from '@/components/appInfo/PDefinitions';
 import {
    AI_ANALYSIS_CREDIT_COST,
    FREE_MONTHLY_CREDITS,
@@ -5,18 +6,19 @@ import {
 import CreditShop from '@/components/CreditShop';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { useAuth } from '@/providers/AuthProvider';
-import { PInsightCard } from '@/components/appInfo/PDefinitions';
 import * as Haptics from 'expo-haptics';
 import {
+   BookOpen,
+   ChevronDown,
+   ChevronUp,
    Clock3,
-   HelpCircle,
    Hourglass,
    Info,
    Layers,
    Leaf,
+   Quote,
    RefreshCw,
-   Sparkles,
-   X,
+   TriangleAlert,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useMemo, useState } from 'react';
@@ -49,6 +51,8 @@ type Props = {
    retryCount?: number;
    maxRetries?: number;
    updatedAt?: string;
+   allowMinimize?: boolean;
+   initiallyMinimized?: boolean;
 };
 
 export function AiInsightCard({
@@ -59,12 +63,41 @@ export function AiInsightCard({
    retryCount = 0,
    maxRetries = 3,
    updatedAt,
+   allowMinimize = false,
+   initiallyMinimized = false,
 }: Props) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const { profile, status, refreshProfile, refreshProfileIfStale } = useAuth();
    const isFreePlan = profile?.plan === 'free';
 
+   // --- STATE ---
+   const [showDefinitions, setShowDefinitions] = useState(false);
+   const [showShop, setShowShop] = useState(false);
+   const [isMinimized, setIsMinimized] = useState(
+      allowMinimize && initiallyMinimized
+   );
+
+   const toggleHelp = () => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setShowDefinitions(!showDefinitions);
+   };
+
+   const toggleMinimized = () => {
+      if (!allowMinimize) return;
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setIsMinimized((prev) => !prev);
+   };
+
+   useEffect(() => {
+      if (!allowMinimize) {
+         setIsMinimized(false);
+         return;
+      }
+      setIsMinimized(Boolean(initiallyMinimized));
+   }, [allowMinimize, initiallyMinimized]);
+
+   // --- CREDITS & COOLDOWN LOGIC ---
    const availableCredits = useMemo(() => {
       if (!profile) return null;
       return (
@@ -83,15 +116,6 @@ export function AiInsightCard({
       return `Costs ${AI_ANALYSIS_CREDIT_COST} credit${costSuffix} • ${availableCredits} credit${remainingSuffix} left`;
    }, [availableCredits, isFreePlan]);
 
-   const [showDefinitions, setShowDefinitions] = useState(false);
-   const [showShop, setShowShop] = useState(false);
-
-   const toggleHelp = () => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setShowDefinitions(!showDefinitions);
-   };
-
-   // --- COOLDOWN LOGIC ---
    const COOLDOWN_MINUTES = 2;
    const isAtLimitStep = retryCount > 0 && retryCount % maxRetries === 0;
    const isNudgeStep =
@@ -134,68 +158,22 @@ export function AiInsightCard({
    }, [isCoolingDown, lastUpdate]);
 
    // --- FRESHNESS LOGIC ---
-   // We only show the full scanner animation if the data is "fresh" (generated < 20 seconds ago).
-   // Otherwise, we show a quick fade-in.
    const isFreshAnalysis = useMemo(() => {
       if (!data?.createdAt) return false;
       const diffMs = new Date().getTime() - new Date(data.createdAt).getTime();
-      return diffMs < 20000; // 20 seconds threshold
+      return diffMs < 20000;
    }, [data?.createdAt]);
 
-   // --- ERROR STATE ---
-   if (error) {
-      return (
-         <View className="py-2">
-            <Text className="text-sm font-medium text-red-600 dark:text-red-400">
-               Unable to load analysis. {error}
-            </Text>
-         </View>
-      );
-   }
-
-   // --- LOADING STATE ---
+   // --- RENDER HELPERS ---
    const MAX_VISIBLE_CHARS = 120;
    const renderStreamingText =
       streamingText && streamingText.length > MAX_VISIBLE_CHARS
          ? '…' + streamingText.slice(-MAX_VISIBLE_CHARS)
          : streamingText;
 
-   if (!data) {
-      return (
-         <View className="my-1 rounded-2xl border border-indigo-100 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-            <View className="mb-4 flex-row items-center gap-3">
-               <View className="flex items-center justify-center rounded-full bg-indigo-50 p-2 dark:bg-indigo-500/20">
-                  <Sparkles size={18} color={isDark ? '#818cf8' : '#4f46e5'} />
-               </View>
-               <View className="flex-1">
-                  <Text className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                     Analyzing your story...
-                  </Text>
-                  <Text className="text-xs text-slate-500 dark:text-slate-400">
-                     Looking for patterns in the 3 P&apos;s
-                  </Text>
-               </View>
-            </View>
-
-            <View className="min-h-[80px] rounded-xl bg-slate-50 px-4 py-3 dark:bg-black/20">
-               <View className="mb-2 flex-row opacity-60">
-                  <ActivityIndicator size="small" color="#6366f1" />
-               </View>
-               <Text className="font-mono text-xs leading-5 text-indigo-900/70 dark:text-indigo-200/70">
-                  {renderStreamingText || 'Connecting to insight engine...'}
-               </Text>
-            </View>
-         </View>
-      );
-   }
-
-   const { safety, analysis, suggestions, isStale } = data;
-   const { dimensions: dims, emotionalLogic } = analysis;
-
    const handleRefreshPress = async () => {
       const noCredits = availableCredits !== null && availableCredits <= 0;
       if (noCredits) {
-         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
          setShowShop(true);
          return;
       }
@@ -209,290 +187,432 @@ export function AiInsightCard({
    };
 
    // --- ANIMATION TIMINGS ---
-   // If fresh: Use long cinematic delays.
-   // If old: Use short staggering delays (just to look nice).
-   const BASE_STAGGER = 75; // Speed of stagger for old data
-
+   const BASE_STAGGER = 75;
    const EMOTION_APPEAR = isFreshAnalysis ? 500 : 0;
    const HEADER_APPEAR = isFreshAnalysis ? 800 : BASE_STAGGER;
-
-   // Row 1: Time
    const TIME_START = isFreshAnalysis ? 1000 : BASE_STAGGER * 2;
-   const ROW_DURATION = isFreshAnalysis ? 3500 : 0; // If old, duration is effectively instant
-
-   // Row 2: Scope
+   const ROW_DURATION = isFreshAnalysis ? 3500 : 0;
    const SCOPE_START =
       TIME_START + ROW_DURATION + (isFreshAnalysis ? 0 : BASE_STAGGER);
-
-   // Row 3: Blame
    const BLAME_START =
       SCOPE_START + ROW_DURATION + (isFreshAnalysis ? 0 : BASE_STAGGER);
-
-   // Suggestion
    const SUGGESTION_START =
       BLAME_START + ROW_DURATION + (isFreshAnalysis ? 0 : BASE_STAGGER);
 
+   // --- VARIABLES FOR RENDER ---
+   const safety = data?.safety;
+   const analysis = data?.analysis;
+   const suggestions = data?.suggestions;
+   const isStale = data?.isStale;
+   const dims = analysis?.dimensions;
+   const emotionalLogic = analysis?.emotionalLogic;
+   const previewText = suggestions?.counterBelief || emotionalLogic;
+   const loading = !data && !error;
+
+   const iconColor = isDark ? '#818cf8' : '#4f46e5'; // Indigo
+   const textColor = 'text-slate-900 dark:text-slate-100';
+   const descColor = 'text-slate-700 dark:text-slate-300';
+
    return (
-      <View className="gap-6 pt-1">
-         {/* 0. Credit Shop */}
-         {showShop && (
-            <View className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4 gap-3">
-               <View className="flex-row justify-between items-center">
-                  <Text className="text-base font-bold text-slate-900 dark:text-slate-100">
-                     Refill AI credits
+      <Pressable
+         onPress={allowMinimize ? toggleMinimized : undefined}
+         // Ensure active opacity is 1 so children like buttons are clickable
+         style={{ opacity: 1 }}
+      >
+         <View className="w-full">
+            {/* --- HEADER (Matches TimelineItem Layout) --- */}
+            <View className="flex-row items-center justify-between mb-1">
+               <View className="flex-row items-center gap-2">
+                  <Text className={`text-base font-bold ${textColor}`}>
+                     AI Analysis
                   </Text>
-                  <Pressable
-                     onPress={() => {
-                        LayoutAnimation.configureNext(
-                           LayoutAnimation.Presets.easeInEaseOut
-                        );
-                        setShowShop(false);
-                     }}
-                     hitSlop={10}
-                  >
-                     <Text className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                        Close
-                     </Text>
-                  </Pressable>
+                  {isStale && isMinimized && (
+                     <Clock3
+                        size={14}
+                        color={isDark ? '#94a3b8' : '#64748b'}
+                        style={{ opacity: 0.8 }}
+                     />
+                  )}
                </View>
 
-               <CreditShop
-                  onSuccess={async () => {
-                     LayoutAnimation.configureNext(
-                        LayoutAnimation.Presets.easeInEaseOut
-                     );
-                     setShowShop(false);
-                     if (status === 'signedIn') {
-                        try {
-                           await refreshProfile();
-                        } catch (err) {
-                           console.warn(
-                              'Failed to refresh credits after purchase',
-                              err
-                           );
-                        }
-                     }
-                  }}
-               />
+               {/* Icon Pivot Wrapper */}
+               {allowMinimize && (
+                  <View className="rounded-full px-2 py-1">
+                     <Quote size={14} color={iconColor} />
+                  </View>
+               )}
             </View>
-         )}
 
-         {/* 1. Stale / Refresh Banner */}
-         {isStale && (
-            <View
-               className={`flex-row items-center justify-between p-3 rounded-lg border mb-2 ${
-                  isCoolingDown
-                     ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-                     : isNudgeStep
-                       ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-                       : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-               }`}
-            >
-               <View className="flex-1 gap-1 mr-2">
-                  <View className="flex-row items-center flex-wrap gap-x-3">
-                     <View className="flex-row items-center gap-2">
-                        {isCoolingDown ? (
-                           <Hourglass
-                              size={16}
-                              color={isDark ? '#94a3b8' : '#64748b'}
-                           />
-                        ) : (
-                           <Clock3
-                              size={16}
-                              color={isDark ? '#94a3b8' : '#64748b'}
-                           />
-                        )}
-                        <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-                           {isCoolingDown
-                              ? 'Analysis Paused'
-                              : 'Previous Analysis'}
-                        </Text>
+            {/* --- DESCRIPTION (Matches TimelineItem) --- */}
+            {allowMinimize && isMinimized && (
+               <Text
+                  className={`text-sm font-medium mb-3 opacity-80 ${descColor}`}
+               >
+                  Observed thinking patterns.
+               </Text>
+            )}
+
+            {/* --- ERROR STATE --- */}
+            {error && (
+               <View className="py-2">
+                  <Text className="text-sm font-medium text-red-600 dark:text-red-400">
+                     Unable to load analysis. {error}
+                  </Text>
+               </View>
+            )}
+
+            {/* --- LOADING STATE --- */}
+            {loading && !error && (
+               <View className="py-2 opacity-70">
+                  <View className="flex-row items-center gap-3">
+                     <ActivityIndicator size="small" color="#6366f1" />
+                     <Text className="font-mono text-xs leading-5 text-indigo-900/70 dark:text-indigo-200/70 shrink">
+                        {renderStreamingText ||
+                           'Connecting to insight engine...'}
+                     </Text>
+                  </View>
+               </View>
+            )}
+
+            {/* --- MINIMIZED STATE --- */}
+            {data && isMinimized && (
+               <View>
+                  <Text className="text-[10px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">
+                     Alternative perspective
+                  </Text>
+                  <Text className="text-sm italic leading-6 text-slate-600 dark:text-slate-400 opacity-90">
+                     &quot;{previewText}&quot;
+                  </Text>
+                  <View className="mt-2 items-center opacity-50">
+                     <ChevronDown
+                        size={16}
+                        color={isDark ? '#94a3b8' : '#64748b'}
+                     />
+                  </View>
+               </View>
+            )}
+
+            {/* --- EXPANDED CONTENT --- */}
+            {data && !isMinimized && (
+               <View className="gap-6 pt-1">
+                  {/* Credit Shop Modal */}
+                  {showShop && (
+                     <View className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 gap-3 shadow-sm">
+                        <View className="flex-row justify-between items-center">
+                           <Text className="text-base font-bold text-slate-900 dark:text-slate-100">
+                              Refill AI credits
+                           </Text>
+                           <Pressable
+                              onPress={() => {
+                                 LayoutAnimation.configureNext(
+                                    LayoutAnimation.Presets.easeInEaseOut
+                                 );
+                                 setShowShop(false);
+                              }}
+                              hitSlop={10}
+                           >
+                              <Text className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                                 Close
+                              </Text>
+                           </Pressable>
+                        </View>
+                        <CreditShop
+                           onSuccess={async () => {
+                              LayoutAnimation.configureNext(
+                                 LayoutAnimation.Presets.easeInEaseOut
+                              );
+                              setShowShop(false);
+                              if (status === 'signedIn') {
+                                 try {
+                                    await refreshProfile();
+                                 } catch (err) {
+                                    console.warn(
+                                       'Failed to refresh credits after purchase',
+                                       err
+                                    );
+                                 }
+                              }
+                           }}
+                        />
                      </View>
+                  )}
 
-                     {!isCoolingDown && refreshCostNote && (
-                        <View className="flex-row items-center opacity-90">
-                           <Leaf
-                              size={10}
-                              color={isDark ? '#f59e0b' : '#b45309'}
-                              style={{ marginRight: 3 }}
-                           />
-                           <Text className="text-[10px] font-semibold text-amber-700 dark:text-amber-200">
-                              {refreshCostNote}
+                  {/* STALE / REFRESH BANNER */}
+                  {isStale && (
+                     <View
+                        className={`flex-row items-center justify-between p-3 rounded-lg border mb-2 ${
+                           isCoolingDown
+                              ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                              : isNudgeStep
+                                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                                : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                        }`}
+                     >
+                        <View className="flex-1 gap-1 mr-2">
+                           <View className="flex-row items-center flex-wrap gap-x-3">
+                              <View className="flex-row items-center gap-2">
+                                 {isCoolingDown ? (
+                                    <Hourglass
+                                       size={16}
+                                       color={isDark ? '#94a3b8' : '#64748b'}
+                                    />
+                                 ) : (
+                                    <Clock3
+                                       size={16}
+                                       color={isDark ? '#94a3b8' : '#64748b'}
+                                    />
+                                 )}
+                                 <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                                    {isCoolingDown
+                                       ? 'Analysis Paused'
+                                       : 'Previous Analysis'}
+                                 </Text>
+                              </View>
+
+                              {!isCoolingDown && refreshCostNote && (
+                                 <View className="flex-row items-center opacity-90">
+                                    <Leaf
+                                       size={10}
+                                       color={isDark ? '#f59e0b' : '#b45309'}
+                                       style={{ marginRight: 3 }}
+                                    />
+                                    <Text className="text-[10px] font-semibold text-amber-700 dark:text-amber-200">
+                                       {refreshCostNote}
+                                    </Text>
+                                 </View>
+                              )}
+                           </View>
+
+                           <Text className="text-[11px] text-slate-600 dark:text-slate-400 leading-4 mt-1">
+                              {!onRefresh
+                                 ? 'This insight is based on an older version of your entry.'
+                                 : isCoolingDown
+                                   ? 'Updates paused to encourage you to continue to the next step.'
+                                   : isNudgeStep
+                                     ? "You've refined this quite a bit. Ready to move to the next step?"
+                                     : 'Entry has changed. Update analysis?'}
                            </Text>
                         </View>
-                     )}
-                  </View>
 
-                  <Text className="text-[11px] text-slate-600 dark:text-slate-400 leading-4 mt-1">
-                     {!onRefresh
-                        ? 'This insight is based on an older version of your entry.'
-                        : isCoolingDown
-                          ? 'Updates paused to encourage you to continue to the next step.'
-                          : isNudgeStep
-                            ? "You've refined this quite a bit. Ready to move to the next step?"
-                            : 'Entry has changed. Update analysis?'}
-                  </Text>
-               </View>
+                        {onRefresh && !isCoolingDown ? (
+                           <Pressable
+                              onPress={handleRefreshPress}
+                              className="p-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
+                           >
+                              <RefreshCw
+                                 size={18}
+                                 color={isDark ? '#f8fafc' : '#0f172a'}
+                              />
+                           </Pressable>
+                        ) : isCoolingDown && timeLabel !== '' ? (
+                           <View className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">
+                              <Text
+                                 className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
+                                 style={{ fontVariant: ['tabular-nums'] }}
+                              >
+                                 {timeLabel}
+                              </Text>
+                           </View>
+                        ) : null}
+                     </View>
+                  )}
 
-               {onRefresh && !isCoolingDown ? (
-                  <Pressable
-                     onPress={handleRefreshPress}
-                     className="p-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
-                  >
-                     <RefreshCw
-                        size={18}
-                        color={isDark ? '#f8fafc' : '#0f172a'}
-                     />
-                  </Pressable>
-               ) : isCoolingDown && timeLabel !== '' ? (
-                  <View className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">
-                     <Text
-                        className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
-                        style={{ fontVariant: ['tabular-nums'] }}
+                  {/* Crisis Banner */}
+                  {safety?.isCrisis && (
+                     <View className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 border border-red-100 dark:border-red-800">
+                        <View className="flex-row items-center gap-2 mb-1">
+                           <TriangleAlert
+                              size={16}
+                              color={isDark ? '#fecaca' : '#991b1b'}
+                           />
+                           <Text className="text-sm font-bold text-red-800 dark:text-red-200">
+                              You deserve support
+                           </Text>
+                        </View>
+                        <Text className="text-sm leading-6 text-red-700 dark:text-red-300">
+                           {safety.crisisMessage}
+                        </Text>
+                     </View>
+                  )}
+
+                  {/* Emotional Validation */}
+                  {emotionalLogic && (
+                     <Animated.View entering={FadeInDown.delay(EMOTION_APPEAR)}>
+                        <Text className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
+                           Your reaction makes sense
+                        </Text>
+                        <Text className="text-sm leading-6 text-slate-700 dark:text-slate-300">
+                           {emotionalLogic}
+                        </Text>
+                     </Animated.View>
+                  )}
+
+                  {/* 3 Ps Section */}
+                  {dims && (
+                     <View>
+                        <Animated.View
+                           entering={FadeInDown.delay(HEADER_APPEAR)}
+                        >
+                           <View className="flex-row items-center justify-between mb-4">
+                              <View className="flex-row items-center gap-2">
+                                 <Layers
+                                    size={16}
+                                    color={isDark ? '#cbd5e1' : '#64748b'}
+                                 />
+                                 <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                    Thinking Patterns
+                                 </Text>
+                              </View>
+
+                              {/* GUIDE PILL */}
+                              <Pressable onPress={toggleHelp}>
+                                 <View
+                                    className={`flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-colors ${
+                                       showDefinitions
+                                          ? 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600'
+                                          : 'border-transparent'
+                                    }`}
+                                 >
+                                    <BookOpen
+                                       size={12}
+                                       color={isDark ? '#94a3b8' : '#64748b'}
+                                    />
+                                    <Text className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                       Guide
+                                    </Text>
+                                    {showDefinitions ? (
+                                       <ChevronUp
+                                          size={12}
+                                          color={isDark ? '#94a3b8' : '#64748b'}
+                                       />
+                                    ) : (
+                                       <ChevronDown
+                                          size={12}
+                                          color={isDark ? '#94a3b8' : '#64748b'}
+                                       />
+                                    )}
+                                 </View>
+                              </Pressable>
+                           </View>
+                           {showDefinitions && (
+                              <View className="mb-4">
+                                 <PInsightCard context="entry" />
+                              </View>
+                           )}
+                        </Animated.View>
+
+                        <View className="gap-6">
+                           <Animated.View
+                              entering={FadeInDown.delay(TIME_START)}
+                           >
+                              <AnimatedSpectrumRow
+                                 label="Time"
+                                 subLabel="(Permanence)"
+                                 leftText="Temporary"
+                                 rightText="Permanent"
+                                 score={dims.permanence.score}
+                                 insight={dims.permanence.insight}
+                                 detectedPhrase={dims.permanence.detectedPhrase}
+                                 startDelay={TIME_START}
+                                 skipAnimation={!isFreshAnalysis}
+                              />
+                           </Animated.View>
+                           <Animated.View
+                              entering={FadeInDown.delay(SCOPE_START)}
+                           >
+                              <AnimatedSpectrumRow
+                                 label="Scope"
+                                 subLabel="(Pervasiveness)"
+                                 leftText="Specific"
+                                 rightText="Pervasive"
+                                 score={dims.pervasiveness.score}
+                                 insight={dims.pervasiveness.insight}
+                                 detectedPhrase={
+                                    dims.pervasiveness.detectedPhrase
+                                 }
+                                 startDelay={SCOPE_START}
+                                 skipAnimation={!isFreshAnalysis}
+                              />
+                           </Animated.View>
+                           <Animated.View
+                              entering={FadeInDown.delay(BLAME_START)}
+                           >
+                              <AnimatedSpectrumRow
+                                 label="Blame"
+                                 subLabel="(Personalization)"
+                                 leftText="External"
+                                 rightText="Internal"
+                                 score={dims.personalization.score}
+                                 insight={dims.personalization.insight}
+                                 detectedPhrase={
+                                    dims.personalization.detectedPhrase
+                                 }
+                                 startDelay={BLAME_START}
+                                 skipAnimation={!isFreshAnalysis}
+                              />
+                           </Animated.View>
+                        </View>
+                     </View>
+                  )}
+
+                  {/* Suggestion / Reframe */}
+                  {suggestions?.counterBelief && (
+                     <Animated.View
+                        entering={FadeInDown.delay(
+                           SUGGESTION_START
+                        ).springify()}
+                        className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 p-4 border border-indigo-100 dark:border-indigo-800/50 mt-2"
                      >
-                        {timeLabel}
-                     </Text>
-                  </View>
-               ) : null}
-            </View>
-         )}
+                        <View className="flex-row items-center gap-2 mb-2">
+                           <Quote size={16} color="#4f46e5" />
+                           <Text className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase">
+                              Try this perspective
+                           </Text>
+                        </View>
+                        <Text className="text-[15px] font-medium leading-6 text-indigo-900 dark:text-indigo-100 italic">
+                           &quot;{suggestions.counterBelief}&quot;
+                        </Text>
+                     </Animated.View>
+                  )}
 
-         {/* 2. Crisis Banner */}
-         {safety.isCrisis && (
-            <View className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 border border-red-100 dark:border-red-800">
-               <Text className="text-sm font-bold text-red-800 dark:text-red-200 mb-1">
-                  You deserve support
-               </Text>
-               <Text className="text-sm leading-6 text-red-700 dark:text-red-300">
-                  {safety.crisisMessage}
-               </Text>
-            </View>
-         )}
-
-         {/* 3. Emotional Validation */}
-         <Animated.View entering={FadeInDown.delay(EMOTION_APPEAR)}>
-            <Text className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
-               Your reaction makes sense
-            </Text>
-            <Text className="text-sm leading-6 text-slate-700 dark:text-slate-300">
-               {emotionalLogic}
-            </Text>
-         </Animated.View>
-
-         {/* 4. The 3 Ps */}
-         <View>
-            <Animated.View entering={FadeInDown.delay(HEADER_APPEAR)}>
-               <View className="flex-row items-center justify-between mb-3">
-                  <View className="flex-row items-center gap-2">
-                     <Layers size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
-                     <Text className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                        Thinking Patterns (The 3 P&apos;s)
-                     </Text>
-                  </View>
-                  <Pressable
-                     onPress={toggleHelp}
-                     hitSlop={10}
-                     className="opacity-60 active:opacity-100"
+                  {/* DISCLAIMER / FOOTER */}
+                  <Animated.View
+                     entering={FadeInDown.delay(SUGGESTION_START + 200)}
+                     className="flex-row gap-2 mt-1 px-1 opacity-70"
                   >
-                     {showDefinitions ? (
-                        <X size={16} color={isDark ? '#94a3b8' : '#64748b'} />
-                     ) : (
-                        <HelpCircle
-                           size={16}
-                           color={isDark ? '#94a3b8' : '#64748b'}
-                        />
+                     <Info
+                        size={14}
+                        color={isDark ? '#94a3b8' : '#64748b'}
+                        style={{ marginTop: 2 }}
+                     />
+                     <Text className="flex-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+                        This analysis is generated by AI and is for
+                        self-reflection purposes only. It is not a substitute
+                        for professional mental health advice.
+                     </Text>
+                     {allowMinimize && (
+                        <Pressable
+                           onPress={toggleMinimized}
+                           className="flex-row items-center gap-1"
+                        >
+                           <Text className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                              Less
+                           </Text>
+                           <ChevronUp
+                              size={12}
+                              color={isDark ? '#94a3b8' : '#64748b'}
+                           />
+                        </Pressable>
                      )}
-                  </Pressable>
+                  </Animated.View>
                </View>
-
-               {showDefinitions && <PInsightCard />}
-            </Animated.View>
-
-            {/* ANIMATED ROWS */}
-            <View className="gap-6">
-               <Animated.View entering={FadeInDown.delay(TIME_START)}>
-                  <AnimatedSpectrumRow
-                     label="Time"
-                     subLabel="(Permanence)"
-                     leftText="Temporary"
-                     rightText="Permanent"
-                     score={dims.permanence.score}
-                     insight={dims.permanence.insight}
-                     detectedPhrase={dims.permanence.detectedPhrase}
-                     startDelay={TIME_START}
-                     skipAnimation={!isFreshAnalysis}
-                  />
-               </Animated.View>
-
-               <Animated.View entering={FadeInDown.delay(SCOPE_START)}>
-                  <AnimatedSpectrumRow
-                     label="Scope"
-                     subLabel="(Pervasiveness)"
-                     leftText="Specific"
-                     rightText="Pervasive"
-                     score={dims.pervasiveness.score}
-                     insight={dims.pervasiveness.insight}
-                     detectedPhrase={dims.pervasiveness.detectedPhrase}
-                     startDelay={SCOPE_START}
-                     skipAnimation={!isFreshAnalysis}
-                  />
-               </Animated.View>
-
-               <Animated.View entering={FadeInDown.delay(BLAME_START)}>
-                  <AnimatedSpectrumRow
-                     label="Blame"
-                     subLabel="(Personalization)"
-                     leftText="External"
-                     rightText="Internal"
-                     score={dims.personalization.score}
-                     insight={dims.personalization.insight}
-                     detectedPhrase={dims.personalization.detectedPhrase}
-                     startDelay={BLAME_START}
-                     skipAnimation={!isFreshAnalysis}
-                  />
-               </Animated.View>
-            </View>
+            )}
          </View>
-
-         {/* 5. Suggestion / Reframe */}
-         {suggestions.counterBelief && (
-            <Animated.View
-               entering={FadeInDown.delay(SUGGESTION_START).springify()}
-               className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 p-4 border border-indigo-100 dark:border-indigo-800/50 mt-2"
-            >
-               <View className="flex-row items-center gap-2 mb-2">
-                  <Sparkles size={16} color="#4f46e5" />
-                  <Text className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase">
-                     Try this perspective
-                  </Text>
-               </View>
-               <Text className="text-[15px] font-medium leading-6 text-indigo-900 dark:text-indigo-100 italic">
-                  &quot;{suggestions.counterBelief}&quot;
-               </Text>
-            </Animated.View>
-         )}
-
-         {/* 6. Disclaimer */}
-         <Animated.View
-            entering={FadeInDown.delay(SUGGESTION_START + 200)}
-            className="flex-row gap-2 mt-1 px-1 opacity-70"
-         >
-            <Info
-               size={14}
-               color={isDark ? '#94a3b8' : '#64748b'}
-               style={{ marginTop: 2 }}
-            />
-            <Text className="flex-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
-               This analysis is generated by AI and is for self-reflection
-               purposes only. It is not a substitute for professional mental
-               health advice, diagnosis, or treatment.
-            </Text>
-         </Animated.View>
-      </View>
+      </Pressable>
    );
 }
 
-// --- SUB-COMPONENT: ANIMATED ROW (FINAL VERSION) ---
+// ... (AnimatedSpectrumRow stays unchanged) ...
 function AnimatedSpectrumRow({
    label,
    subLabel,
@@ -557,9 +677,7 @@ function AnimatedSpectrumRow({
    );
 
    // Shared Values
-   // If skipping, start at 1 (Fully revealed). If animating, start at 0.
    const revealState = useSharedValue(0);
-   // If skipping, scanner lights up target immediately.
    const scannerProgress = useSharedValue(skipAnimation ? targetPosition : 0);
    const impactScale = useSharedValue(1);
 

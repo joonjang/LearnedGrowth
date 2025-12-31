@@ -237,7 +237,7 @@ export default function QuickStartScreen() {
                            {isPivotPoint && (
                               <TimelinePivot variant="default">
                                   {/* RESTORED CONTENT - Quick Path / Guided Path */}
-                                  <Text className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                                  <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                                     The Pivot
                                   </Text>
 

@@ -157,7 +157,7 @@ export function TimelinePivot({
   if (isFull) {
       return (
           <View className="mb-6 mt-2">
-             <View className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+             <View className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
                 {children}
              </View>
           </View>

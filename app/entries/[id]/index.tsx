@@ -1,8 +1,16 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
 import WideButton from '@/components/buttons/WideButton';
-import { ABCDE_FIELD, MAX_AI_RETRIES, ROUTE_ENTRIES } from '@/components/constants';
+import {
+   ABCDE_FIELD,
+   MAX_AI_RETRIES,
+   ROUTE_ENTRIES,
+} from '@/components/constants';
 import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
-import { TimelineItem, TimelinePivot, TimelineStepDef } from '@/components/entries/entry/Timeline';
+import {
+   TimelineItem,
+   TimelinePivot,
+   TimelineStepDef,
+} from '@/components/entries/entry/Timeline';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
@@ -18,7 +26,7 @@ import {
    Pressable,
    Text,
    TextInput,
-   View
+   View,
 } from 'react-native';
 import {
    KeyboardAwareScrollView,
@@ -79,7 +87,10 @@ export default function EntryDetailScreen() {
    const [justSaved, setJustSaved] = useState(false);
    const [hasScrolled, setHasScrolled] = useState(false);
    const [isEditing, setIsEditing] = useState(false);
-   const [editSnapshot, setEditSnapshot] = useState<Record<FieldKey,string> | null>(null);
+   const [editSnapshot, setEditSnapshot] = useState<Record<
+      FieldKey,
+      string
+   > | null>(null);
 
    const startEditing = useCallback(() => {
       setEditSnapshot(form);
@@ -108,24 +119,37 @@ export default function EntryDetailScreen() {
       startEditing();
    }, [entry, startEditing, startInEdit]);
 
-   const trimmed = useMemo(() => buildFieldRecord((key) => form[key].trim()), [form]);
-   const baseline = useMemo(() => buildFieldRecord((key) => (entry?.[key] ?? '').trim()), [entry]);
+   const trimmed = useMemo(
+      () => buildFieldRecord((key) => form[key].trim()),
+      [form]
+   );
+   const baseline = useMemo(
+      () => buildFieldRecord((key) => (entry?.[key] ?? '').trim()),
+      [entry]
+   );
    const aiDisplayData = entry?.aiResponse ?? null;
-   const hasChanges = useMemo(() => FIELD_KEYS.some((key) => trimmed[key] !== baseline[key]), [baseline, trimmed]);
+   const hasChanges = useMemo(
+      () => FIELD_KEYS.some((key) => trimmed[key] !== baseline[key]),
+      [baseline, trimmed]
+   );
 
    // Create timeline data structure
    const timelineSteps = useMemo(() => {
       // Determine visibility based on content existence
-      const showDispute = Boolean(baseline.dispute || trimmed.dispute); 
-      
-      return ABCDE_FIELD.map((f, idx) => ({
-         key: f.key,
-         letter: LETTERS[idx],
-         label: f.label,
-         desc: f.hint,
-         tone: getToneForKey(f.key),
-      } as TimelineStepDef)).filter(step => {
-         if (step.key === 'dispute' || step.key === 'energy') return showDispute;
+      const showDispute = Boolean(baseline.dispute || trimmed.dispute);
+
+      return ABCDE_FIELD.map(
+         (f, idx) =>
+            ({
+               key: f.key,
+               letter: LETTERS[idx],
+               label: f.label,
+               desc: f.hint,
+               tone: getToneForKey(f.key),
+            }) as TimelineStepDef
+      ).filter((step) => {
+         if (step.key === 'dispute' || step.key === 'energy')
+            return showDispute;
          return true;
       });
    }, [baseline, trimmed]);
@@ -162,11 +186,11 @@ export default function EntryDetailScreen() {
          // If we had a dispute before, and the user clears it, force it to "Empty"
          // This ensures the field never becomes falsy for Layout logic
          if (key === 'dispute' && newValue === '' && !!previousValue) {
-             newValue = 'Empty';
+            newValue = 'Empty';
          }
 
          if (newValue !== previousValue) {
-             acc[key] = newValue;
+            acc[key] = newValue;
          }
          return acc;
       }, {} as Partial<Entry>);
@@ -185,7 +209,16 @@ export default function EntryDetailScreen() {
       setEditSnapshot(null);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       KeyboardController.dismiss();
-   }, [baseline, entry, hapticsAvailable, hapticsEnabled, hasChanges, store, triggerHaptic, trimmed]);
+   }, [
+      baseline,
+      entry,
+      hapticsAvailable,
+      hapticsEnabled,
+      hasChanges,
+      store,
+      triggerHaptic,
+      trimmed,
+   ]);
 
    const handleCancel = useCallback(() => {
       if (!isEditing) return;
@@ -217,8 +250,14 @@ export default function EntryDetailScreen() {
       });
    }, [entryId, lockNavigation]);
 
-   const formattedTimestamp = entry ? formatDateTimeWithWeekday(entry.createdAt) : '';
-   const statusMessage = justSaved ? 'Saved' : hasChanges ? 'Unsaved changes' : '';
+   const formattedTimestamp = entry
+      ? formatDateTimeWithWeekday(entry.createdAt)
+      : '';
+   const statusMessage = justSaved
+      ? 'Saved'
+      : hasChanges
+        ? 'Unsaved changes'
+        : '';
    const statusDisplay = statusMessage || 'Saved';
 
    useEffect(() => {
@@ -227,16 +266,21 @@ export default function EntryDetailScreen() {
       return () => clearTimeout(timer);
    }, [justSaved]);
 
-   const handleScroll = useCallback((e: any) => {
-      const y = e?.nativeEvent?.contentOffset?.y ?? 0;
-      if (y <= 0 && hasScrolled) setHasScrolled(false);
-      else if (y > 0 && !hasScrolled) setHasScrolled(true);
-   }, [hasScrolled]);
+   const handleScroll = useCallback(
+      (e: any) => {
+         const y = e?.nativeEvent?.contentOffset?.y ?? 0;
+         if (y <= 0 && hasScrolled) setHasScrolled(false);
+         else if (y > 0 && !hasScrolled) setHasScrolled(true);
+      },
+      [hasScrolled]
+   );
 
    if (!entry) {
       return (
          <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-slate-900">
-            <Text className="text-slate-900 dark:text-slate-100">Entry not found.</Text>
+            <Text className="text-slate-900 dark:text-slate-100">
+               Entry not found.
+            </Text>
          </View>
       );
    }
@@ -259,7 +303,10 @@ export default function EntryDetailScreen() {
                <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
                   {isEditing ? 'Editing' : formattedTimestamp || ' '}
                </Text>
-               <Text className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 w-[200px] text-center ${!statusMessage ? 'opacity-0' : 'opacity-100'}`} numberOfLines={1}>
+               <Text
+                  className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 w-[200px] text-center ${!statusMessage ? 'opacity-0' : 'opacity-100'}`}
+                  numberOfLines={1}
+               >
                   {statusDisplay}
                </Text>
             </View>
@@ -267,25 +314,39 @@ export default function EntryDetailScreen() {
             <View className="absolute right-4 flex-row items-center gap-2">
                {isEditing ? (
                   <>
-                     <Pressable onPress={handleCancel} className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
-                        <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">Cancel</Text>
+                     <Pressable
+                        onPress={handleCancel}
+                        className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800"
+                     >
+                        <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                           Cancel
+                        </Text>
                      </Pressable>
                      <Pressable
                         onPress={hasChanges ? handleSave : undefined}
                         disabled={!hasChanges}
                         className={`px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 ${hasChanges ? '' : 'opacity-50'}`}
                      >
-                        <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">Save</Text>
+                        <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                           Save
+                        </Text>
                      </Pressable>
                   </>
                ) : (
-                  <Pressable onPress={startEditing} className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
-                     <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">Edit</Text>
+                  <Pressable
+                     onPress={startEditing}
+                     className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800"
+                  >
+                     <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        Edit
+                     </Text>
                   </Pressable>
                )}
             </View>
 
-            {hasScrolled && <View className="absolute bottom-0 left-0 right-0 h-[1px] bg-slate-200 dark:bg-slate-800" />}
+            {hasScrolled && (
+               <View className="absolute bottom-0 left-0 right-0 h-[1px] bg-slate-200 dark:bg-slate-800" />
+            )}
          </View>
 
          {/* Content */}
@@ -300,14 +361,15 @@ export default function EntryDetailScreen() {
          >
             {timelineSteps.map((step) => {
                const fieldStyles = getFieldStyles(step.tone, isEditing);
-               
+
                // Background logic
-               const isNeutral = step.tone === 'default' || step.tone === 'neutral';
-               const readOnlyBg = isNeutral 
-                  ? 'bg-slate-50 dark:bg-slate-800' 
+               const isNeutral =
+                  step.tone === 'default' || step.tone === 'neutral';
+               const readOnlyBg = isNeutral
+                  ? 'bg-slate-50 dark:bg-slate-800'
                   : 'bg-white/60 dark:bg-black/10';
 
-               const finalBg = isEditing 
+               const finalBg = isEditing
                   ? 'bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800'
                   : readOnlyBg;
 
@@ -321,26 +383,37 @@ export default function EntryDetailScreen() {
                   <View key={step.key}>
                      <TimelineItem step={step} variant="full">
                         {isEditing ? (
-                            <TextInput
-                                multiline
-                                value={effectiveValue} // Masked value for Input
-                                onChangeText={setField(step.key as FieldKey)}
-                                placeholder={`Write your ${step.label.toLowerCase()} here...`}
-                                placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                                className={`min-h-[48px] rounded-lg px-3 py-2 text-sm leading-6 ${finalBg} ${fieldStyles.text}`}
-                                scrollEnabled={false}
-                                textAlignVertical="top"
-                                autoCorrect
-                            />
+                           <TextInput
+                              multiline
+                              value={effectiveValue} // Masked value for Input
+                              onChangeText={setField(step.key as FieldKey)}
+                              placeholder={`Write your ${step.label.toLowerCase()} here...`}
+                              placeholderTextColor={
+                                 isDark ? '#94a3b8' : '#64748b'
+                              }
+                              className={`min-h-[48px] rounded-lg px-3 py-2 text-sm leading-6 ${finalBg} ${fieldStyles.text}`}
+                              scrollEnabled={false}
+                              textAlignVertical="top"
+                              autoCorrect
+                           />
                         ) : (
-                            <View className={`min-h-[48px] rounded-lg px-3 py-2 ${finalBg}`}>
-                                <Text className={`text-sm leading-6 ${fieldStyles.text}`}>
-                                    {/* Masked value for Display */}
-                                    {effectiveValue || <Text className="italic opacity-50">Empty</Text>}
-                                </Text>
-                            </View>
+                           <View
+                              className={`min-h-[48px] rounded-lg px-3 py-2 ${finalBg}`}
+                           >
+                              <Text
+                                 className={`text-sm leading-6 ${fieldStyles.text}`}
+                              >
+                                 {/* Masked value for Display */}
+                                 {effectiveValue || (
+                                    <Text className="italic opacity-50">
+                                       Empty
+                                    </Text>
+                                 )}
+                              </Text>
+                           </View>
                         )}
                      </TimelineItem>
+
 
                      {/* PIVOT POINT */}
                      {step.key === 'consequence' && (
@@ -348,40 +421,40 @@ export default function EntryDetailScreen() {
                            {/* AI Pivot */}
                            {aiVisible && aiDisplayData && (
                               <TimelinePivot variant="full">
-                                    <View className="mb-2 flex-row items-center gap-2">
-                                       <Text className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                                          AI Analysis
-                                       </Text>
-                                    </View>
-                                    <AiInsightCard
-                                       data={aiDisplayData}
-                                       onRefresh={entry.dispute || isEditing ? undefined : handleOpenDisputeAndUpdate}
-                                       retryCount={entry.aiRetryCount ?? 0}
-                                       maxRetries={MAX_AI_RETRIES}
-                                       updatedAt={entry.updatedAt}
-                                    />
+                                 {/* HEADER REMOVED: AiInsightCard now handles it internally */}
+                                 <AiInsightCard
+                                    data={aiDisplayData}
+                                    onRefresh={
+                                       entry.dispute || isEditing
+                                          ? undefined
+                                          : handleOpenDisputeAndUpdate
+                                    }
+                                    retryCount={entry.aiRetryCount ?? 0}
+                                    maxRetries={MAX_AI_RETRIES}
+                                    updatedAt={entry.updatedAt}
+                                    allowMinimize={!!entry.dispute}
+                                    initiallyMinimized={!!entry.dispute}
+                                 />
                               </TimelinePivot>
                            )}
 
-                           {/* Continue Button Logic:
-                             Show if dispute is ACTUALLY empty (falsy or "Empty") 
-                             AND not currently editing.
-                           */}
+                           {/* Continue Button Logic */}
                            {!entry.dispute && !isEditing && (
-                                 <View className="mt-4 mb-2">
-                                    {aiDisplayData ? (
-                                       <WideButton
-                                          label="Continue"
-                                          icon={ArrowRight}
-                                          onPress={handleContinueToDispute}
-                                       />
-                                    ) : (
-                                       <CardNextButton id={entry.id} />
-                                    )}
-                                 </View>
+                              <View className="mt-4 mb-2">
+                                 {aiDisplayData ? (
+                                    <WideButton
+                                       label="Continue"
+                                       icon={ArrowRight}
+                                       onPress={handleContinueToDispute}
+                                    />
+                                 ) : (
+                                    <CardNextButton id={entry.id} />
+                                 )}
+                              </View>
                            )}
                         </View>
                      )}
+
                   </View>
                );
             })}

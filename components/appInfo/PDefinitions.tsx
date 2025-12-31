@@ -1,4 +1,3 @@
-import { HelpCircle } from 'lucide-react-native';
 import { Text, View } from 'react-native';
 
 export function PInsightCard({ context = 'entry' as 'entry' | 'week' }) {
@@ -27,7 +26,6 @@ export function PInsightCard({ context = 'entry' as 'entry' | 'week' }) {
          {/* Header Section */}
          <View className="pb-3 border-b border-slate-200 dark:border-slate-700">
             <View className="flex-row items-center gap-2 mb-1">
-               <HelpCircle size={14} className="text-slate-400 dark:text-slate-500" />
                <Text className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                   {text.title}
                </Text>
