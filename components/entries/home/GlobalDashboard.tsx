@@ -1,7 +1,7 @@
+import { PInsightCard } from '@/components/appInfo/PDefinitions';
 import GradientSpectrumBar from '@/components/entries/home/GradientSpectrumBar';
 import { DashboardData } from '@/components/entries/home/types';
 import { getMoodConfig } from '@/components/entries/home/utils';
-import { PInsightCard } from '@/components/appInfo/PDefinitions';
 import {
   Activity,
   HelpCircle,
@@ -22,11 +22,7 @@ const GlobalDashboard = React.memo(({ data, shadowSm, isDark }: Props) => {
 
   if (data.last7DaysScore === null) {
     return (
-      <View className="py-8 items-center justify-center">
-        <Text className="text-slate-400 text-sm text-center">
-          Add entries to unlock 7-day insights.
-        </Text>
-      </View>
+      null
     );
   }
 

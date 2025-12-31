@@ -97,10 +97,6 @@ export default function SettingsScreen() {
    );
    const shadowClass = shadowSm.className;
 
-   const switchTrackColor = {
-      false: isDark ? '#475569' : '#cbd5e1',
-      true: isDark ? '#f8fafc' : '#0f172a',
-   };
    const switchThumbColor = isDark ? '#1e293b' : '#ffffff';
 
    // --- State ---
@@ -641,7 +637,6 @@ export default function SettingsScreen() {
                      value={biometricEnabled}
                      onValueChange={handleToggleBiometric}
                      disabled={prefsLoading || biometricUnavailable}
-                     trackColor={switchTrackColor}
                      thumbColor={switchThumbColor}
                   />
                </SettingRow>
@@ -665,7 +660,6 @@ export default function SettingsScreen() {
                      value={showAiAnalysis}
                      onValueChange={handleToggleAnalysis}
                      disabled={prefsLoading}
-                     trackColor={switchTrackColor}
                      thumbColor={switchThumbColor}
                   />
                </SettingRow>
@@ -678,7 +672,6 @@ export default function SettingsScreen() {
                      value={darkMode}
                      onValueChange={handleToggleTheme}
                      disabled={prefsLoading}
-                     trackColor={switchTrackColor}
                      thumbColor={switchThumbColor}
                   />
                </SettingRow>
@@ -691,7 +684,6 @@ export default function SettingsScreen() {
                      value={hapticsEnabled}
                      onValueChange={handleToggleHaptics}
                      disabled={prefsLoading || !hapticsAvailable}
-                     trackColor={switchTrackColor}
                      thumbColor={switchThumbColor}
                   />
                </SettingRow>

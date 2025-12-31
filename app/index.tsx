@@ -2,8 +2,8 @@ import QuickStart from '@/components/appInfo/QuickStart';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow, { UndoRow } from '@/components/entries/entry/EntryRow';
 import GlobalDashboard from '@/components/entries/home/GlobalDashboard';
-import StreakCard from '@/components/entries/home/StreakCard';
 import SectionHeader from '@/components/entries/home/SectionHeader';
+import StreakCard from '@/components/entries/home/StreakCard';
 import { CategorySegment, WeekSummary } from '@/components/entries/home/types';
 import { isOptimistic } from '@/components/entries/home/utils';
 import { useEntries } from '@/hooks/useEntries';
@@ -409,6 +409,8 @@ export default function EntriesScreen() {
       };
    }, [store.rows]);
 
+   const hasEntries = store.rows.length > 0;
+
    const streakData = useMemo(() => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -490,66 +492,70 @@ export default function EntriesScreen() {
             contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
             scrollIndicatorInsets={{ top: insets.top, bottom: insets.bottom }}
             ListHeaderComponent={
-               <View
-                  style={{ paddingTop: insets.top + 12 }}
-                  className="px-6 pb-6 bg-slate-50 dark:bg-slate-900"
-               >
-                  {/* Header Top Bar */}
-                  <View className="flex-row items-center justify-between mb-4">
-                     <View>
-                        <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
-                           Weekly Progress
-                        </Text>
-                        <Text className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                           {dashboardData.weeklyCount} {thoughtLabel}{' '}
-                           <Text className="text-indigo-600 font-extrabold">Untangled</Text>
-                        </Text>
-                     </View>
-                     <Link href="/settings" asChild>
-                        <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
-                           <Settings
-                              size={20}
-                              color={iconColor}
-                              strokeWidth={2.5}
-                           />
-                        </Pressable>
-                     </Link>
-                  </View>
-
-                  <View className="mt-2 mb-6">
-                     <StreakCard
-                        streakCount={streakData.streakCount}
-                        days={streakData.days}
-                        icon={streakIcon}
-                        shadowSm={shadowSm}
-                        rangeLabel="Mon - Sun"
-                     />
-                  </View>
-
-                  {/* GLOBAL DASHBOARD */}
-                  <GlobalDashboard
-                     data={dashboardData}
-                     shadowSm={shadowSm}
-                     isDark={isDark}
-                  />
-
-                  {/* MAIN NEW ENTRY BUTTON */}
+               hasEntries ? (
                   <View
-                     className={`mt-12 ${shadowSm.className}`}
-                     style={[shadowSm.ios, shadowSm.android]}
+                     style={{ paddingTop: insets.top + 12 }}
+                     className="px-6 pb-6 bg-slate-50 dark:bg-slate-900"
                   >
-                     <Link href={'/new'} asChild>
-                        <Pressable
-                           className={`relative flex-row items-center justify-center overflow-hidden rounded-2xl bg-indigo-600 px-6 py-4 active:bg-indigo-700 ${shadowSm.className}`}
-                           style={[shadowSm.ios, shadowSm.android]}
-                        >
-                           <Text className="text-lg font-bold text-center text-white">
-                              What's on your mind?
+                     {/* Header Top Bar */}
+                     <View className="flex-row items-center justify-between mb-4">
+                        <View>
+                           <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
+                              Weekly Progress
                            </Text>
-                        </Pressable>
-                     </Link>
+                           <Text className="text-2xl font-extrabold text-slate-900 dark:text-white">
+                              {dashboardData.weeklyCount} {thoughtLabel}{' '}
+                              <Text className="text-indigo-600 font-extrabold">Untangled</Text>
+                           </Text>
+                        </View>
+                        <Link href="/settings" asChild>
+                           <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
+                              <Settings
+                                 size={20}
+                                 color={iconColor}
+                                 strokeWidth={2.5}
+                              />
+                           </Pressable>
+                        </Link>
+                     </View>
+
+                     {/* GLOBAL DASHBOARD */}
+                     {hasEntries && (
+                        <GlobalDashboard
+                           data={dashboardData}
+                           shadowSm={shadowSm}
+                           isDark={isDark}
+                        />
+                     )}
+
+                     <View className="mt-4 mb-6">
+                        <StreakCard
+                           streakCount={streakData.streakCount}
+                           days={streakData.days}
+                           icon={streakIcon}
+                           shadowSm={shadowSm}
+                           rangeLabel="Mon - Sun"
+                        />
+                     </View>
+
+                     {/* MAIN NEW ENTRY BUTTON */}
+                     <View
+                        className={`mt-12 ${shadowSm.className}`}
+                        style={[shadowSm.ios, shadowSm.android]}
+                     >
+                        <Link href={'/new'} asChild>
+                           <Pressable
+                              className={`relative flex-row items-center justify-center overflow-hidden rounded-2xl bg-indigo-600 px-6 py-4 active:bg-indigo-700 ${shadowSm.className}`}
+                              style={[shadowSm.ios, shadowSm.android]}
+                           >
+                              <Text className="text-lg font-bold text-center text-white">
+                                 What&apos;s on your mind?
+                              </Text>
+                           </Pressable>
+                        </Link>
+                     </View>
                   </View>
-               </View>
+               ) : null
             }
             ListEmptyComponent={store.isHydrating ? null : <QuickStart />}
             onScrollBeginDrag={() => {
