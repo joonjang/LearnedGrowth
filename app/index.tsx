@@ -3,7 +3,6 @@ import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow, { UndoRow } from '@/components/entries/entry/EntryRow';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
-import { getTimeLabel } from '@/lib/date';
 import { getShadow } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
 import GlobalDashboard from '@/components/entries/home/GlobalDashboard';
@@ -392,7 +391,15 @@ export default function EntriesScreen() {
    }, [store.rows]);
 
    return (
-      <View className="flex-1 bg-slate-50 dark:bg-slate-900">
+      <View
+         className="flex-1 bg-slate-50 dark:bg-slate-900"
+         onStartShouldSetResponderCapture={() => {
+            if (openMenuEntryId) {
+               closeMenu();
+            }
+            return false;
+         }}
+      >
          {/* FIXED: Using createAnimatedComponent version with Explicit Generics */}
          <AnimatedSectionList
             sections={sections}
@@ -475,7 +482,6 @@ export default function EntriesScreen() {
                   return (
                      <UndoRow
                         entry={item.entry}
-                        timeLabel={getTimeLabel(item.entry)}
                         onUndo={() => handleUndo(item.entry)}
                         durationMs={UNDO_TIMEOUT_MS}
                      />
@@ -483,7 +489,6 @@ export default function EntriesScreen() {
                return (
                   <EntryRow
                      entry={item.entry}
-                     timeLabel={getTimeLabel(item.entry)}
                      isMenuOpen={openMenuEntryId === item.entry.id}
                      onToggleMenu={() => toggleMenu(item.entry.id)}
                      onCloseMenu={closeMenu}

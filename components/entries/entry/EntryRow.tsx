@@ -24,7 +24,6 @@ import EntryCard, { type MenuBounds } from './EntryCard';
 
 type EntryRowProps = {
    entry: Entry;
-   timeLabel: string;
    isMenuOpen: boolean;
    onToggleMenu: () => void;
    onCloseMenu: () => void;
@@ -39,12 +38,10 @@ type EntryRowProps = {
 
 export function UndoRow({
    entry,
-   timeLabel,
    durationMs,
    onUndo,
 }: {
    entry: Entry;
-   timeLabel: string;
    durationMs: number;
    onUndo: () => void;
 }) {
@@ -67,9 +64,6 @@ export function UndoRow({
          exiting={FadeOut.duration(220)}
          className="pt-4 pb-10"
       >
-         <Text className="text-[13px] font-bold text-slate-500 dark:text-slate-400 pb-2 pl-2">
-            {timeLabel}
-         </Text>
          <View className="min-h-[80px] justify-center items-center py-1 px-2 gap-0.5">
             <Pressable
                accessibilityRole="button"
@@ -100,7 +94,6 @@ export function UndoRow({
 
 function EntryRow({
    entry,
-   timeLabel,
    isMenuOpen,
    onToggleMenu,
    onCloseMenu,
@@ -135,10 +128,7 @@ function EntryRow({
          entering={FadeIn.duration(240)}
          exiting={FadeOut.duration(240)}
          className="pt-4 pb-10"
-         style={[
-            style,
-            { zIndex: isMenuOpen ? 100 : 1, elevation: isMenuOpen ? 100 : 0 },
-         ]}
+         style={[style]}
       >
          <Swipeable
             ref={swipeableRef}
@@ -195,9 +185,6 @@ function EntryRow({
             )}
          >
             <View className="p-4">
-               <Text className="text-[13px] font-bold text-slate-500 dark:text-slate-400 pb-2 pl-2">
-                  {timeLabel}
-               </Text>
                <EntryCard
                   entry={entry}
                   isMenuOpen={isMenuOpen}
@@ -218,7 +205,6 @@ const arePropsEqual = (prev: EntryRowProps, next: EntryRowProps) => {
    const nextEntry = next.entry;
 
    if (prev.isMenuOpen !== next.isMenuOpen) return false;
-   if (prev.timeLabel !== next.timeLabel) return false;
    if (prevEntry.id !== nextEntry.id) return false;
    if (prevEntry.updatedAt !== nextEntry.updatedAt) return false;
    if (prevEntry.isDeleted !== nextEntry.isDeleted) return false;
