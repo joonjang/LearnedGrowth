@@ -6,46 +6,34 @@ import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getTimeLabel } from '@/lib/date';
 import { getShadow } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
-import { LinearGradient } from 'expo-linear-gradient';
+import GlobalDashboard from '@/components/entries/home/GlobalDashboard';
+import SectionHeader from '@/components/entries/home/SectionHeader';
+import { CategorySegment, WeekSummary } from '@/components/entries/home/types';
+import { isOptimistic } from '@/components/entries/home/utils';
 import { Link, router } from 'expo-router';
 import {
-   Activity,
-   HelpCircle,
-   Layers,
-   Scale,
+   Plus,
    Settings,
-   Sparkles,
-   Wind,
-   X,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, { useMemo, useRef, useState } from 'react';
-import {
-   LayoutAnimation,
-   Pressable,
-   SectionList,
-   Text,
-   View,
-} from 'react-native';
+import { Pressable, SectionList, Text, View } from 'react-native';
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
+import Animated, {
+   useAnimatedScrollHandler,
+   useAnimatedStyle,
+   useSharedValue,
+   withSpring,
+   withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// --- FIXED: Create Animated Component ---
+const AnimatedSectionList = Animated.createAnimatedComponent(SectionList) as typeof SectionList;
 
 // --- Types ---
 
 type RowItem = { kind: 'entry'; entry: Entry } | { kind: 'undo'; entry: Entry };
-
-type CategorySegment = {
-   category: string;
-   count: number;
-   percentage: number;
-   colorHex: string;
-};
-
-type WeekSummary = {
-   avgOptimism: number | null;
-   entryCount: number;
-   categorySegments: CategorySegment[];
-};
 
 type EntrySection = {
    title: string;
@@ -55,31 +43,20 @@ type EntrySection = {
    summary: WeekSummary;
 };
 
-type ThreePScore = { score: number };
-
-type DashboardData = {
-   monthlyCount: number;
-   last30DaysScore: number | null;
-   threePs: {
-      permanence: ThreePScore;
-      pervasiveness: ThreePScore;
-      personalization: ThreePScore;
-   } | null;
-};
-
 // --- Config ---
 
 const UNDO_TIMEOUT_MS = 5500;
+const SCROLL_THRESHOLD_FOR_FAB = 320;
 
 const CATEGORY_COLOR_MAP: Record<string, string> = {
-   Work: '#3b82f6', // Blue 500
-   Education: '#8b5cf6', // Violet 500
-   Relationships: '#e11d48', // Rose 600
-   Health: '#10b981', // Emerald 500
-   Finance: '#eab308', // Yellow 500
-   'Self-Image': '#06b6d4', // Cyan 500
-   'Daily Hassles': '#64748b', // Slate 500
-   Other: '#9ca3af', // Gray 400
+   Work: '#3b82f6',
+   Education: '#8b5cf6',
+   Relationships: '#e11d48',
+   Health: '#10b981',
+   Finance: '#eab308',
+   'Self-Image': '#06b6d4',
+   'Daily Hassles': '#64748b',
+   Other: '#9ca3af',
 };
 const DEFAULT_CATEGORY_COLOR = '#cbd5e1';
 
@@ -92,60 +69,6 @@ function getNumericScore(val: any): number | null {
       if (!isNaN(n)) return n;
    }
    return null;
-}
-
-function isOptimistic(score: string | null): boolean {
-   if (!score) return false;
-   const s = score.toLowerCase();
-   return (
-      s.includes('optimis') ||
-      s.includes('temporary') ||
-      s.includes('specific') ||
-      s.includes('external')
-   );
-}
-
-// UPDATED SCORING LOGIC
-function getMoodConfig(score: number | null, isDark: boolean) {
-   if (score === null) {
-      return {
-         Icon: HelpCircle,
-         label: 'No Data',
-         description: 'Add entries to see your outlook.',
-         color: isDark ? '#94a3b8' : '#64748b',
-         bg: isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(100, 116, 139, 0.1)',
-      };
-   }
-   // 7-10: Seeing Possibilities
-   if (score >= 7.0) {
-      return {
-         Icon: Sparkles,
-         label: 'Seeing Possibilities',
-         description:
-            'You are focusing on a way forward and seeing the scope of your potential.',
-         color: isDark ? '#34d399' : '#059669', // Emerald
-         bg: isDark ? 'rgba(52, 211, 153, 0.15)' : 'rgba(5, 150, 105, 0.1)',
-      };
-   }
-   // 4-6: Grounded Reality
-   if (score >= 4.0) {
-      return {
-         Icon: Scale,
-         label: 'Grounded Reality',
-         description:
-            'You are seeing things as they are—a solid mix of good and bad.',
-         color: isDark ? '#fbbf24' : '#d97706', // Amber
-         bg: isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(217, 119, 6, 0.1)',
-      };
-   }
-   // 0-3: Turning Inward
-   return {
-      Icon: Wind,
-      label: 'Turning Inward',
-      description: 'You are in a protective, introspective state right now.',
-      color: isDark ? '#a5b4fc' : '#6366f1', // Indigo/Slate
-      bg: isDark ? 'rgba(165, 180, 252, 0.15)' : 'rgba(99, 102, 241, 0.1)',
-   };
 }
 
 function getCategorySegments(entries: Entry[]): CategorySegment[] {
@@ -282,362 +205,6 @@ function formatDate(date: Date) {
    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-// --- Sub-Components ---
-
-const SegmentedCategoryLine = React.memo(
-   ({ segments }: { segments: CategorySegment[] }) => {
-      if (!segments || segments.length === 0) return null;
-
-      return (
-         <View style={{ marginTop: 8 }}>
-            <View
-               style={{
-                  flexDirection: 'row',
-                  height: 10,
-                  width: '100%',
-                  borderRadius: 999,
-                  overflow: 'hidden',
-                  backgroundColor: '#f1f5f9',
-               }}
-            >
-               {segments.map((seg) => (
-                  <View
-                     key={seg.category}
-                     style={{
-                        height: '100%',
-                        width: `${seg.percentage}%`,
-                        marginRight: 1,
-                        backgroundColor: seg.colorHex,
-                     }}
-                  />
-               ))}
-            </View>
-            <View
-               style={{
-                  flexDirection: 'row',
-                  flexWrap: 'wrap',
-                  marginTop: 8,
-                  gap: 12,
-               }}
-            >
-               {segments.slice(0, 3).map((seg) => (
-                  <View
-                     key={seg.category}
-                     style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 6,
-                     }}
-                  >
-                     <View
-                        style={{
-                           width: 8,
-                           height: 8,
-                           borderRadius: 999,
-                           backgroundColor: seg.colorHex,
-                        }}
-                     />
-                     <Text
-                        style={{
-                           fontSize: 10,
-                           fontWeight: '500',
-                           color: '#64748b',
-                        }}
-                     >
-                        {seg.category}{' '}
-                        <Text style={{ opacity: 0.6 }}>
-                           ({Math.round(seg.percentage)}%)
-                        </Text>
-                     </Text>
-                  </View>
-               ))}
-            </View>
-         </View>
-      );
-   }
-);
-SegmentedCategoryLine.displayName = 'SegmentedCategoryLine';
-
-const GradientSpectrumBar = React.memo(
-   ({
-      label,
-      subLabel,
-      leftLabel,
-      rightLabel,
-      optimisticPercentage,
-      isDark,
-   }: {
-      label?: string;
-      subLabel?: string;
-      leftLabel: string;
-      rightLabel: string;
-      optimisticPercentage: number;
-      isDark: boolean;
-   }) => {
-      const position = Math.max(0, Math.min(100, 100 - optimisticPercentage));
-
-      const green = isDark ? '#059669' : '#34d399';
-      const mid = isDark ? '#475569' : '#cbd5e1';
-      const red = isDark ? '#be123c' : '#f43f5e';
-
-      const textColor = isDark ? '#e2e8f0' : '#334155';
-      const trackBg = isDark ? '#1e293b' : '#f1f5f9';
-      const markerColor = isDark ? '#ffffff' : '#0f172a';
-
-      return (
-         <View>
-            {label && (
-               <View className="flex-row items-baseline gap-2 mb-1">
-                  <Text
-                     style={{
-                        fontSize: 13,
-                        fontWeight: '600',
-                        color: textColor,
-                     }}
-                  >
-                     {label}
-                  </Text>
-                  <Text className="text-xs text-slate-400 dark:text-slate-500">
-                     {subLabel}
-                  </Text>
-               </View>
-            )}
-
-            <View
-               style={{
-                  height: 10,
-                  width: '100%',
-                  borderRadius: 999,
-                  overflow: 'hidden',
-                  backgroundColor: trackBg,
-                  position: 'relative',
-               }}
-            >
-               <LinearGradient
-                  colors={[green, mid, red]}
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={{ flex: 1, opacity: 0.3 }}
-               />
-
-               <View
-                  style={{
-                     position: 'absolute',
-                     top: 0,
-                     bottom: 0,
-                     width: 4,
-                     backgroundColor: markerColor,
-                     left: `${position}%`,
-                     transform: [{ translateX: -2 }],
-                     shadowColor: '#000',
-                     shadowOpacity: 0.2,
-                     shadowRadius: 2,
-                     elevation: 2,
-                  }}
-               />
-            </View>
-
-            <View
-               style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  marginTop: 4,
-               }}
-            >
-               <Text
-                  style={{
-                     fontSize: 9,
-                     fontWeight: '600',
-                     color: isDark ? '#34d399' : '#059669',
-                  }}
-               >
-                  {leftLabel}
-               </Text>
-               <Text
-                  style={{
-                     fontSize: 9,
-                     fontWeight: '600',
-                     color: isDark ? '#f43f5e' : '#e11d48',
-                  }}
-               >
-                  {rightLabel}
-               </Text>
-            </View>
-         </View>
-      );
-   }
-);
-GradientSpectrumBar.displayName = 'GradientSpectrumBar';
-
-const GlobalDashboard = React.memo(
-   ({
-      data,
-      shadowSm,
-      isDark,
-   }: {
-      data: DashboardData;
-      shadowSm: any;
-      isDark: boolean;
-   }) => {
-      const [showHelp, setShowHelp] = useState(false);
-
-      if (data.last30DaysScore === null) {
-         return (
-            <View className="py-8 items-center justify-center">
-               <Text className="text-slate-400 text-sm text-center">
-                  Add your first entry to unlock insights.
-               </Text>
-            </View>
-         );
-      }
-
-      const mood = getMoodConfig(data.last30DaysScore, isDark);
-
-      const toggleHelp = () => {
-         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-         setShowHelp(!showHelp);
-      };
-
-      return (
-         <View className="gap-4">
-            {/* 1. MONTHLY OUTLOOK (No Legend) */}
-            <View
-               className={`p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 ${shadowSm.className}`}
-               style={[shadowSm.ios, shadowSm.android]}
-            >
-               <View className="flex-row items-center gap-2 mb-4">
-                  <Activity size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
-                  <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                     30-Day Outlook
-                  </Text>
-               </View>
-
-               <View className="flex-row items-start gap-4">
-                  <View
-                     className="h-14 w-14 rounded-full items-center justify-center"
-                     style={{ backgroundColor: mood.bg }}
-                  >
-                     <mood.Icon size={32} color={mood.color} />
-                  </View>
-
-                  <View className="flex-1 pt-1">
-                     <Text
-                        className="text-xl font-bold mb-1"
-                        style={{ color: mood.color }}
-                     >
-                        {mood.label}
-                     </Text>
-                     <Text className="text-sm text-slate-600 dark:text-slate-300 leading-5">
-                        {mood.description}
-                     </Text>
-                  </View>
-               </View>
-            </View>
-
-            {/* 2. THE 3 P's TREND (Restored to User Request) */}
-            {data.threePs && (
-               <View
-                  className={`p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 ${shadowSm.className}`}
-                  style={[shadowSm.ios, shadowSm.android]}
-               >
-                  <View className="flex-row items-center justify-between mb-4">
-                     <View className="flex-row items-center gap-2">
-                        <Layers
-                           size={16}
-                           color={isDark ? '#cbd5e1' : '#64748b'}
-                        />
-                        <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                           Thinking Patterns (The 3 P&apos;s)
-                        </Text>
-                     </View>
-
-                     <Pressable
-                        onPress={toggleHelp}
-                        hitSlop={10}
-                        className="active:opacity-60"
-                     >
-                        {showHelp ? (
-                           <X
-                              size={18}
-                              color={isDark ? '#94a3b8' : '#64748b'}
-                           />
-                        ) : (
-                           <HelpCircle
-                              size={18}
-                              color={isDark ? '#94a3b8' : '#64748b'}
-                           />
-                        )}
-                     </Pressable>
-                  </View>
-
-                  {showHelp && (
-                     <View className="mb-6 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700 gap-3">
-                        <View>
-                           <Text className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-0.5">
-                              Time (Permanence)
-                           </Text>
-                           <Text className="text-[11px] text-slate-500 dark:text-slate-400">
-                              Do you see problems as temporary setbacks or
-                              forever flaws?
-                           </Text>
-                        </View>
-                        <View>
-                           <Text className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-0.5">
-                              Scope (Pervasiveness)
-                           </Text>
-                           <Text className="text-[11px] text-slate-500 dark:text-slate-400">
-                              Do problems ruin everything or just one specific
-                              area?
-                           </Text>
-                        </View>
-                        <View>
-                           <Text className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-0.5">
-                              Blame (Personalization)
-                           </Text>
-                           <Text className="text-[11px] text-slate-500 dark:text-slate-400">
-                              Do you blame yourself entirely or consider the
-                              situation?
-                           </Text>
-                        </View>
-                     </View>
-                  )}
-
-                  <View className="gap-6">
-                     <GradientSpectrumBar
-                        label="Time"
-                        subLabel="(Permanence)"
-                        leftLabel="Temporary"
-                        rightLabel="Permanent"
-                        optimisticPercentage={data.threePs.permanence.score}
-                        isDark={isDark}
-                     />
-                     <GradientSpectrumBar
-                        label="Scope"
-                        subLabel="(Pervasiveness)"
-                        leftLabel="Specific"
-                        rightLabel="Pervasive"
-                        optimisticPercentage={data.threePs.pervasiveness.score}
-                        isDark={isDark}
-                     />
-                     <GradientSpectrumBar
-                        label="Blame"
-                        subLabel="(Personalization)"
-                        leftLabel="External"
-                        rightLabel="Internal"
-                        optimisticPercentage={
-                           data.threePs.personalization.score
-                        }
-                        isDark={isDark}
-                     />
-                  </View>
-               </View>
-            )}
-         </View>
-      );
-   }
-);
-GlobalDashboard.displayName = 'GlobalDashboard';
-
 // --- Main Component ---
 
 export default function EntriesScreen() {
@@ -652,6 +219,24 @@ export default function EntriesScreen() {
       () => getShadow({ isDark, preset: 'sm' }),
       [isDark]
    );
+
+   // --- Animation State (FAB) ---
+   const scrollY = useSharedValue(0);
+   const scrollHandler = useAnimatedScrollHandler((event) => {
+      scrollY.value = event.contentOffset.y;
+   });
+
+   const fabStyle = useAnimatedStyle(() => {
+      const showFab = scrollY.value > SCROLL_THRESHOLD_FOR_FAB;
+      return {
+         opacity: withTiming(showFab ? 1 : 0, { duration: 200 }),
+         transform: [
+            { scale: withSpring(showFab ? 1 : 0.8) },
+            { translateY: withTiming(showFab ? 0 : 20) },
+         ],
+         pointerEvents: showFab ? 'auto' : 'none',
+      };
+   });
 
    // --- Menu & Swipe State ---
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
@@ -733,28 +318,23 @@ export default function EntriesScreen() {
    );
    const sections = useMemo(() => buildSections(rowsWithUndo), [rowsWithUndo]);
 
-   // --- Global Dashboard Data (Last 30 Days) ---
+   // --- Global Dashboard Data (Last 7 Days) ---
    const dashboardData = useMemo(() => {
       const allEntries = store.rows;
 
-      // 1. Calculate Monthly Count
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const monthlyCount = allEntries.filter(
-         (e) => new Date(e.createdAt) >= startOfMonth
-      ).length;
-
-      // 2. Last 30 Days Logic
+      // FIXED: Removed unused 'now' variable
       const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 30);
+      cutoff.setDate(cutoff.getDate() - 7);
       cutoff.setHours(0, 0, 0, 0);
 
       const recentEntries = allEntries.filter(
          (e) => new Date(e.createdAt) >= cutoff
       );
 
+      const weeklyCount = recentEntries.length;
+
       if (recentEntries.length === 0)
-         return { monthlyCount, last30DaysScore: null, threePs: null };
+         return { weeklyCount, last7DaysScore: null, threePs: null };
 
       let optSum = 0;
       let optCount = 0;
@@ -801,8 +381,8 @@ export default function EntriesScreen() {
          stat.total > 0 ? (stat.good / stat.total) * 100 : 50;
 
       return {
-         monthlyCount,
-         last30DaysScore: avgScore,
+         weeklyCount,
+         last7DaysScore: avgScore,
          threePs: {
             permanence: { score: getScore(threePsStats.perm) },
             pervasiveness: { score: getScore(threePsStats.perv) },
@@ -813,29 +393,31 @@ export default function EntriesScreen() {
 
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
-         <SectionList
+         {/* FIXED: Using createAnimatedComponent version with Explicit Generics */}
+         <AnimatedSectionList
             sections={sections}
             keyExtractor={(item) => `${item.kind}-${item.entry.id}`}
             className="flex-1"
             stickySectionHeadersEnabled={true}
-            contentContainerStyle={{
-               paddingBottom: insets.bottom + 20 
-            }}
             showsVerticalScrollIndicator={false}
+            onScroll={scrollHandler}
+            scrollEventThrottle={16}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+            scrollIndicatorInsets={{ top: insets.top, bottom: insets.bottom }}
             ListHeaderComponent={
                <View
                   style={{ paddingTop: insets.top + 12 }}
                   className="px-6 pb-6 bg-slate-50 dark:bg-slate-900"
                >
-                  {/* Header Top Bar - DYNAMIC TEXT */}
+                  {/* Header Top Bar */}
                   <View className="flex-row items-center justify-between mb-4">
                      <View>
                         <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
                            Weekly Progress
                         </Text>
-                        <Text className="text-2xl font-bold text-slate-900 dark:text-white">
-                           {dashboardData.monthlyCount} Thoughts{' '}
-                           <Text className="text-amber-500">Untangled</Text>
+                        <Text className="text-2xl font-extrabold text-slate-900 dark:text-white">
+                           {dashboardData.weeklyCount} Thoughts{' '}
+                           <Text className="text-indigo-600 font-extrabold">Untangled</Text>
                         </Text>
                      </View>
                      <Link href="/settings" asChild>
@@ -856,7 +438,7 @@ export default function EntriesScreen() {
                      isDark={isDark}
                   />
 
-                  {/* New Entry Button */}
+                  {/* MAIN NEW ENTRY BUTTON */}
                   <View
                      className={`mt-12 ${shadowSm.className}`}
                      style={[shadowSm.ios, shadowSm.android]}
@@ -879,50 +461,15 @@ export default function EntriesScreen() {
                closeMenu();
                closeActiveSwipeable();
             }}
-            renderSectionHeader={({ section }) => {
-               const mood = getMoodConfig(section.summary.avgOptimism, isDark);
-
-               return (
-                  <View
-                     pointerEvents="box-none"
-                     className="w-full bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 pb-3"
-                     style={{ paddingTop: insets.top }}
-                  >
-                     <View className="flex-row items-baseline justify-between w-full px-4 pt-3 pb-2">
-                        <View className="flex-1 pr-2">
-                           <Text className="text-base font-bold text-slate-900 dark:text-white">
-                              {section.title}
-                           </Text>
-                           <Text className="text-xs text-slate-500 dark:text-slate-400">
-                              {section.rangeLabel}
-                           </Text>
-                        </View>
-
-                        {/* WEEKLY OUTLOOK LABEL (CLEAN, NO COLORS) */}
-                        {section.summary.avgOptimism !== null && (
-                           <View className="items-end">
-                              <View className="flex-row items-center gap-1.5">
-                                 <mood.Icon
-                                    size={14}
-                                    color={isDark ? '#94a3b8' : '#64748b'}
-                                 />
-                                 <Text className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                    {mood.label}
-                                 </Text>
-                              </View>
-                           </View>
-                        )}
-                     </View>
-
-                     {/* WEEKLY CATEGORY LINE */}
-                     <View className="px-4">
-                        <SegmentedCategoryLine
-                           segments={section.summary.categorySegments}
-                        />
-                     </View>
-                  </View>
-               );
-            }}
+            renderSectionHeader={({ section }) => (
+               <SectionHeader
+                  title={section.title}
+                  rangeLabel={section.rangeLabel}
+                  summary={section.summary}
+                  isDark={isDark}
+                  paddingTop={insets.top}
+               />
+            )}
             renderItem={({ item }) => {
                if (item.kind === 'undo')
                   return (
@@ -957,6 +504,34 @@ export default function EntriesScreen() {
                );
             }}
          />
+
+         {/* FLOATING ACTION BUTTON (FAB) */}
+         <Animated.View
+            style={[
+               {
+                  position: 'absolute',
+                  bottom: insets.bottom + 24,
+                  right: 24,
+                  zIndex: 50,
+               },
+               fabStyle,
+            ]}
+         >
+            <Link href="/new" asChild>
+               <Pressable
+                  className="h-14 w-14 bg-indigo-600 rounded-full items-center justify-center shadow-xl active:bg-indigo-700"
+                  style={{
+                     shadowColor: '#4f46e5',
+                     shadowOpacity: 0.4,
+                     shadowRadius: 4,
+                     shadowOffset: { width: 0, height: 4 },
+                     elevation: 8,
+                  }}
+               >
+                  <Plus size={28} color="white" strokeWidth={2.5} />
+               </Pressable>
+            </Link>
+         </Animated.View>
       </View>
    );
 }
