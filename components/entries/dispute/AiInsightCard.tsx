@@ -11,6 +11,7 @@ import {
    HelpCircle,
    Hourglass,
    Info,
+   Layers,
    Leaf,
    RefreshCw,
    Sparkles,
@@ -170,7 +171,7 @@ export function AiInsightCard({
                      Analyzing your story...
                   </Text>
                   <Text className="text-xs text-slate-500 dark:text-slate-400">
-                     Looking for patterns in the 3 Ps
+                     Looking for patterns in the 3 P&apos;s
                   </Text>
                </View>
             </View>
@@ -381,9 +382,12 @@ export function AiInsightCard({
          <View>
             <Animated.View entering={FadeInDown.delay(HEADER_APPEAR)}>
                <View className="flex-row items-center justify-between mb-3">
-                  <Text className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                     Thinking Patterns (The 3 P&apos;s)
-                  </Text>
+                  <View className="flex-row items-center gap-2">
+                     <Layers size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
+                     <Text className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        Thinking Patterns (The 3 P&apos;s)
+                     </Text>
+                  </View>
                   <Pressable
                      onPress={toggleHelp}
                      hitSlop={10}

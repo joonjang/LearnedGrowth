@@ -63,25 +63,40 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
       if (devSeeded.current) return;
       if (!adapter || !ready) return;
       if (store === placeholderEntriesStore) return;
-      const shouldSeed =
+      const envFlag =
          process.env.EXPO_PUBLIC_SEED_ENTRIES === 'true' ||
          process.env.EXPO_PUBLIC_SEED_ENTRIES === '1';
-      if (!shouldSeed) return;
 
       devSeeded.current = true;
       (async () => {
          try {
+            // Seed only when explicitly requested via env flag.
+            if (!envFlag) return;
+
             const { weekEntries } = await import('../__test__/test-utils/weekEntries');
             let inserted = 0;
+            let updated = 0;
             for (const entry of weekEntries) {
                const exists = await adapter.getById(entry.id);
-               if (exists) continue;
-               await adapter.add(entry);
-               inserted += 1;
+               if (exists) {
+                  const { createdAt: _omitCreated, ...rest } = entry;
+                  await adapter.update(entry.id, {
+                     ...rest,
+                     aiResponse: entry.aiResponse ?? null,
+                     aiRetryCount: entry.aiRetryCount ?? 0,
+                     isDeleted: false,
+                  });
+                  updated += 1;
+               } else {
+                  await adapter.add(entry);
+                  inserted += 1;
+               }
             }
-            if (inserted > 0) {
+            if (inserted > 0 || updated > 0) {
                await store.getState().hydrate();
-               console.log(`[Dev Seed] Inserted ${inserted} weekEntries fixture(s).`);
+               console.log(
+                  `[Dev Seed] Applied weekEntries fixture: ${inserted} inserted, ${updated} updated.`
+               );
             } else {
                console.log('[Dev Seed] weekEntries already present, no inserts performed.');
             }
