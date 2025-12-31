@@ -1,4 +1,3 @@
-import { decryptData, encryptData } from "@/lib/crypto";
 import { supabase } from "@/lib/supabase";
 import { Entry } from "@/models/entry";
 
@@ -24,16 +23,7 @@ export interface SupabaseEntriesClient {
   fetchAll(): Promise<Entry[]>;
 }
 
-type EncryptionState = {
-  isEncrypted: boolean;
-  isUnlocked: boolean;
-  masterKey: string | null;
-};
-
-export function createSupabaseEntriesClient(
-  userId: string,
-  getEncryption?: () => EncryptionState | null
-): SupabaseEntriesClient | null {
+export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClient | null {
   if (!supabase || !userId) return null;
 
   const toDb = (entry: Entry): DbEntry => ({
@@ -51,18 +41,6 @@ export function createSupabaseEntriesClient(
     dirty_since: entry.dirtySince ?? null,
     is_deleted: entry.isDeleted ?? false,
   });
-
-  const toDbEncrypted = (entry: Entry, masterKey: string): DbEntry => {
-    const base = toDb(entry);
-    return {
-      ...base,
-      adversity: encryptData(entry.adversity ?? "", masterKey),
-      belief: encryptData(entry.belief ?? "", masterKey),
-      consequence: entry.consequence ? encryptData(entry.consequence, masterKey) : null,
-      dispute: entry.dispute ? encryptData(entry.dispute, masterKey) : null,
-      energy: entry.energy ? encryptData(entry.energy, masterKey) : null,
-    };
-  };
 
   const fromDb = (row: DbEntry): Entry => ({
     id: row.id,
@@ -83,34 +61,8 @@ export function createSupabaseEntriesClient(
     isDeleted: !!row.is_deleted,
   });
 
-  const fromDbEncrypted = (row: DbEntry, masterKey: string): Entry =>
-    fromDb({
-      ...row,
-      adversity: decryptData(row.adversity ?? "", masterKey),
-      belief: decryptData(row.belief ?? "", masterKey),
-      consequence: row.consequence ? decryptData(row.consequence, masterKey) : null,
-      dispute: row.dispute ? decryptData(row.dispute, masterKey) : null,
-      energy: row.energy ? decryptData(row.energy, masterKey) : null,
-    });
-
-  const getEncryptionState = (): EncryptionState | null => {
-    const state = getEncryption?.();
-    if (!state) return null;
-    return state;
-  };
-
   async function upsert(entry: Entry) {
-    const encryption = getEncryptionState();
-    const shouldEncrypt =
-      !!encryption?.isEncrypted && !!encryption?.isUnlocked && !!encryption.masterKey;
-
-    if (encryption?.isEncrypted && !shouldEncrypt) {
-      throw new Error("Vault is locked; cannot sync encrypted entries");
-    }
-
-    const dbRow = shouldEncrypt
-      ? toDbEncrypted(entry, encryption!.masterKey as string)
-      : toDb(entry);
+    const dbRow = toDb(entry);
 
     const { error } = await supabase.from("entries").upsert(dbRow, { onConflict: "id" });
     if (!error) return;
@@ -144,14 +96,6 @@ export function createSupabaseEntriesClient(
   }
 
   async function fetchAll(): Promise<Entry[]> {
-    const encryption = getEncryptionState();
-    const shouldDecrypt =
-      !!encryption?.isEncrypted && !!encryption?.isUnlocked && !!encryption.masterKey;
-
-    if (encryption?.isEncrypted && !shouldDecrypt) {
-      throw new Error("Vault is locked; cannot read encrypted entries");
-    }
-
     const columns =
       "id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy, created_at, updated_at, account_id, dirty_since, is_deleted";
 
@@ -162,10 +106,7 @@ export function createSupabaseEntriesClient(
 
     if (!initial.error) {
       const rows = (initial.data ?? []) as DbEntry[];
-      if (!shouldDecrypt) {
-        return rows.map(fromDb);
-      }
-      return rows.map((row) => fromDbEncrypted(row, encryption!.masterKey as string));
+      return rows.map(fromDb);
     }
 
     const message = String((initial.error as any)?.message ?? "");
@@ -188,10 +129,7 @@ export function createSupabaseEntriesClient(
     }
 
     const rows = (fallback.data ?? []) as DbEntry[];
-    if (!shouldDecrypt) {
-      return rows.map(fromDb);
-    }
-    return rows.map((row) => fromDbEncrypted(row, encryption!.masterKey as string));
+    return rows.map(fromDb);
   }
 
   return { upsert, remove, fetchAll };

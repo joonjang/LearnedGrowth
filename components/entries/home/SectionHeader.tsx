@@ -18,7 +18,7 @@ export default function SectionHeader({ title, rangeLabel, summary, isDark, padd
   return (
     <View
       pointerEvents="box-none"
-      className="w-full bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 pb-3"
+      className="w-full bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800"
       style={{ paddingTop }}
     >
       <View className="flex-row items-baseline justify-between w-full px-4 pt-3 pb-2">

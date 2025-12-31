@@ -1,6 +1,5 @@
 import { AdapterProvider } from '@/providers/AdapterProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
-import { EncryptionProvider } from '@/providers/EncryptionProvider';
 import { EntriesStoreProvider } from '@/providers/EntriesStoreProvider';
 import { PreferencesProvider } from '@/providers/PreferencesProvider';
 import { RevenueCatProvider } from '@/providers/RevenueCatProvider';
@@ -13,7 +12,6 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <KeyboardProvider>
       <PreferencesProvider>
         <AuthProvider>
-          <EncryptionProvider>
             <RevenueCatProvider>
                <AdapterProvider>
                   <EntriesStoreProvider>
@@ -25,7 +23,6 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
                   </EntriesStoreProvider>
                </AdapterProvider>
             </RevenueCatProvider>
-          </EncryptionProvider>
         </AuthProvider>
       </PreferencesProvider>
     </KeyboardProvider>

@@ -6,7 +6,6 @@ import {
 } from '@/components/constants';
 import CreditShop from '@/components/CreditShop';
 import SendFeedback from '@/components/SendFeedback';
-import { EncryptionCard } from '@/components/settings/EncryptionCard';
 import { getShadow } from '@/lib/shadow';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
@@ -611,22 +610,15 @@ export default function SettingsScreen() {
                      </Text>
                   </Pressable>
 
-                  {(billingNote || rcError) && (
-                     <Text className="text-xs text-slate-600 dark:text-slate-300">
-                        {billingNote ?? `RevenueCat: ${rcError}`}
-                     </Text>
-                  )}
-               </View>
+            {(billingNote || rcError) && (
+               <Text className="text-xs text-slate-600 dark:text-slate-300">
+                  {billingNote ?? `RevenueCat: ${rcError}`}
+               </Text>
             )}
+           </View>
+         )}
 
-            {status === 'signedIn' && (
-               <EncryptionCard
-                  isOffline={isOffline}
-                  loaderColor={loaderColor}
-               />
-            )}
-
-            {/* Preferences Card */}
+         {/* Preferences Card */}
             <View
                className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
                style={[shadowSm.ios, shadowSm.android]}

@@ -10,22 +10,9 @@ const SegmentedCategoryLine = React.memo(({ segments }: Props) => {
   if (!segments || segments.length === 0) return null;
 
   return (
-    <View className="mt-2.5 mb-1">
-      <View className="flex-row h-2 w-full rounded-full overflow-hidden bg-slate-100">
-        {segments.map((seg) => (
-          <View
-            key={seg.category}
-            style={{
-              height: '100%',
-              width: `${seg.percentage}%`,
-              marginRight: 1,
-              backgroundColor: seg.colorHex,
-            }}
-          />
-        ))}
-      </View>
+    <View>
 
-      <View className="flex-row flex-wrap gap-3 mt-2 justify-center">
+      <View className="flex-row flex-wrap gap-3 mb-2 justify-center">
         {segments.slice(0, 4).map((seg) => (
           <View key={seg.category} className="flex-row items-center gap-1.5">
             <View
@@ -46,6 +33,22 @@ const SegmentedCategoryLine = React.memo(({ segments }: Props) => {
           </Text>
         )}
       </View>
+
+      <View className="flex-row h-2 w-full rounded-full overflow-hidden bg-slate-100">
+        {segments.map((seg) => (
+          <View
+            key={seg.category}
+            style={{
+              height: '100%',
+              width: `${seg.percentage}%`,
+              marginRight: 1,
+              backgroundColor: seg.colorHex,
+            }}
+          />
+        ))}
+      </View>
+
+      
     </View>
   );
 });

@@ -1,18 +1,23 @@
 import QuickStart from '@/components/appInfo/QuickStart';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow, { UndoRow } from '@/components/entries/entry/EntryRow';
+import GlobalDashboard from '@/components/entries/home/GlobalDashboard';
+import StreakCard from '@/components/entries/home/StreakCard';
+import SectionHeader from '@/components/entries/home/SectionHeader';
+import { CategorySegment, WeekSummary } from '@/components/entries/home/types';
+import { isOptimistic } from '@/components/entries/home/utils';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getShadow } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
-import GlobalDashboard from '@/components/entries/home/GlobalDashboard';
-import SectionHeader from '@/components/entries/home/SectionHeader';
-import { CategorySegment, WeekSummary } from '@/components/entries/home/types';
-import { isOptimistic } from '@/components/entries/home/utils';
 import { Link, router } from 'expo-router';
 import {
+   CircleDashed,
+   Flame,
    Plus,
    Settings,
+   Sun,
+   Zap,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, { useMemo, useRef, useState } from 'react';
@@ -46,6 +51,8 @@ type EntrySection = {
 
 const UNDO_TIMEOUT_MS = 5500;
 const SCROLL_THRESHOLD_FOR_FAB = 320;
+
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const CATEGORY_COLOR_MAP: Record<string, string> = {
    Work: '#3b82f6',
@@ -200,6 +207,14 @@ function formatIsoDate(date: Date) {
    const day = `${date.getDate()}`.padStart(2, '0');
    return `${year}-${month}-${day}`;
 }
+
+function getStreakIcon(streak: number, isDark: boolean) {
+   const muted = isDark ? '#94a3b8' : '#64748b';
+   if (streak >= 5) return { Icon: Flame, color: '#f97316' };
+   if (streak >= 3) return { Icon: Zap, color: '#4f46e5' };
+   if (streak >= 1) return { Icon: Sun, color: '#eab308' };
+   return { Icon: CircleDashed, color: muted };
+}
 function formatDate(date: Date) {
    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -330,7 +345,11 @@ export default function EntriesScreen() {
          (e) => new Date(e.createdAt) >= cutoff
       );
 
-      const weeklyCount = recentEntries.length;
+      const recentWithDispute = recentEntries.filter(
+         (e) => (e.dispute ?? '').trim().length > 0
+      );
+
+      const weeklyCount = recentWithDispute.length;
 
       if (recentEntries.length === 0)
          return { weeklyCount, last7DaysScore: null, threePs: null };
@@ -390,6 +409,65 @@ export default function EntriesScreen() {
       };
    }, [store.rows]);
 
+   const streakData = useMemo(() => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const weekStart = getWeekStart(today);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
+
+      const filledDays = new Set<string>();
+      store.rows.forEach((entry) => {
+         const dispute = (entry.dispute ?? '').trim();
+         if (!dispute) return;
+         const created = safeParseDate(entry.createdAt);
+         if (!created) return;
+         if (created < weekStart || created > weekEnd) return;
+         filledDays.add(formatIsoDate(created));
+      });
+
+      const days = Array.from({ length: 7 }, (_, i) => {
+         const date = new Date(weekStart);
+         date.setDate(weekStart.getDate() + i);
+         const key = formatIsoDate(date);
+         return {
+            date,
+            label: DAY_LABELS[i],
+            filled: filledDays.has(key),
+         };
+      });
+
+      const todayKey = formatIsoDate(today);
+      const todayIndex =
+         days.findIndex((d) => formatIsoDate(d.date) === todayKey) ?? -1;
+      const startIndex =
+         todayIndex >= 0
+            ? todayIndex
+            : Math.max(
+                 0,
+                 Math.min(
+                    6,
+                    Math.floor(
+                       (today.getTime() - weekStart.getTime()) /
+                          (24 * 60 * 60 * 1000)
+                    )
+                 )
+              );
+
+      let streakCount = 0;
+      for (let i = startIndex; i >= 0; i--) {
+         if (days[i].filled) streakCount++;
+         else break;
+      }
+
+      return { days, streakCount };
+   }, [store.rows]);
+
+   const thoughtLabel =
+      dashboardData.weeklyCount === 1 ? 'Thought' : 'Thoughts';
+   const streakIcon = getStreakIcon(streakData.streakCount, isDark);
+
    return (
       <View
          className="flex-1 bg-slate-50 dark:bg-slate-900"
@@ -423,7 +501,7 @@ export default function EntriesScreen() {
                            Weekly Progress
                         </Text>
                         <Text className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                           {dashboardData.weeklyCount} Thoughts{' '}
+                           {dashboardData.weeklyCount} {thoughtLabel}{' '}
                            <Text className="text-indigo-600 font-extrabold">Untangled</Text>
                         </Text>
                      </View>
@@ -436,6 +514,16 @@ export default function EntriesScreen() {
                            />
                         </Pressable>
                      </Link>
+                  </View>
+
+                  <View className="mt-2 mb-6">
+                     <StreakCard
+                        streakCount={streakData.streakCount}
+                        days={streakData.days}
+                        icon={streakIcon}
+                        shadowSm={shadowSm}
+                        rangeLabel="Mon - Sun"
+                     />
                   </View>
 
                   {/* GLOBAL DASHBOARD */}
@@ -456,7 +544,7 @@ export default function EntriesScreen() {
                            style={[shadowSm.ios, shadowSm.android]}
                         >
                            <Text className="text-lg font-bold text-center text-white">
-                              Untangle a thought
+                              What's on your mind?
                            </Text>
                         </Pressable>
                      </Link>
