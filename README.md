@@ -39,6 +39,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - enable user to get extra analysis if someone signs up using their referal code
 - Change positioning of delete account 
 
+- Entry categorization upon subscription
+- Animate minimize and show for EntryDetail Screen
+
 - Auth guard
   - Cloud database sync 
     - log out should hide entries
@@ -69,6 +72,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2026-01-02
 - Removed user preference of Ai Analysis toggle
+- Entry history of having dispute enables minimizing of Belief and Consequence for card and entry detail
+- Removed segment categorization visibility
 
 ### 2025-12-31
 - Pill design to expand for description

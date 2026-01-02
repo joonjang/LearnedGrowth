@@ -1,7 +1,6 @@
 import { ChevronDown, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import SegmentedCategoryLine from './SegmentedCategoryLine';
 import { WeekSummary } from './types';
 import { getMoodConfig } from './utils';
 
@@ -57,9 +56,9 @@ export default function SectionHeader({
       </View>
 
       {/* 2. CATEGORY LINE */}
-      <View className="px-4">
+      {/* <View className="px-4">
         <SegmentedCategoryLine segments={summary.categorySegments} />
-      </View>
+      </View> */}
 
       {/* 3. FLOATING INTERACTIVE LAYER */}
       {hasData && (

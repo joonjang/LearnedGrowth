@@ -18,7 +18,12 @@ import { FieldTone, getFieldStyles } from '@/lib/theme';
 import type { Entry } from '@/models/entry';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowRight, ChevronLeft } from 'lucide-react-native';
+import {
+   ArrowRight,
+   ChevronDown,
+   ChevronLeft,
+   ChevronUp,
+} from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -82,6 +87,9 @@ export default function EntryDetailScreen() {
    const [justSaved, setJustSaved] = useState(false);
    const [hasScrolled, setHasScrolled] = useState(false);
    const [isEditing, setIsEditing] = useState(false);
+   const [isHistoryExpanded, setIsHistoryExpanded] = useState<boolean>(
+      () => !entry?.dispute
+   );
    const [editSnapshot, setEditSnapshot] = useState<Record<
       FieldKey,
       string
@@ -90,6 +98,7 @@ export default function EntryDetailScreen() {
    const startEditing = useCallback(() => {
       setEditSnapshot(form);
       setIsEditing(true);
+      setIsHistoryExpanded(true);
       setJustSaved(false);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
    }, [form]);
@@ -101,6 +110,7 @@ export default function EntryDetailScreen() {
       setHasScrolled(false);
       setIsEditing(false);
       setEditSnapshot(null);
+      setIsHistoryExpanded(!entry.dispute);
    }, [entry]);
 
    useEffect(() => {
@@ -123,6 +133,9 @@ export default function EntryDetailScreen() {
       [entry]
    );
    const aiDisplayData = entry?.aiResponse ?? null;
+   const hasDispute = Boolean(entry?.dispute);
+   const showDispute = Boolean(baseline.dispute || trimmed.dispute);
+   const shouldHideHistory = !isHistoryExpanded && !isEditing && hasDispute;
    const hasChanges = useMemo(
       () => FIELD_KEYS.some((key) => trimmed[key] !== baseline[key]),
       [baseline, trimmed]
@@ -130,9 +143,6 @@ export default function EntryDetailScreen() {
 
    // Create timeline data structure
    const timelineSteps = useMemo(() => {
-      // Determine visibility based on content existence
-      const showDispute = Boolean(baseline.dispute || trimmed.dispute);
-
       return ABCDE_FIELD.map(
          (f, idx) =>
             ({
@@ -145,9 +155,15 @@ export default function EntryDetailScreen() {
       ).filter((step) => {
          if (step.key === 'dispute' || step.key === 'energy')
             return showDispute;
+         if (
+            shouldHideHistory &&
+            (step.key === 'belief' || step.key === 'consequence')
+         ) {
+            return false;
+         }
          return true;
       });
-   }, [baseline, trimmed]);
+   }, [shouldHideHistory, showDispute]);
 
    const setField = useCallback(
       (key: FieldKey) => (value: string) => {
@@ -167,10 +183,15 @@ export default function EntryDetailScreen() {
    }, []);
 
    const handleSave = useCallback(async () => {
-      if (!entry || !hasChanges) {
+      if (!entry) return;
+
+      const nextExpandedState = !Boolean(trimmed.dispute || entry.dispute);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+      if (!hasChanges) {
          setIsEditing(false);
          setEditSnapshot(null);
-         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+         setIsHistoryExpanded(nextExpandedState);
          return;
       }
 
@@ -202,7 +223,7 @@ export default function EntryDetailScreen() {
       setJustSaved(true);
       setIsEditing(false);
       setEditSnapshot(null);
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setIsHistoryExpanded(nextExpandedState);
       KeyboardController.dismiss();
    }, [
       baseline,
@@ -217,13 +238,14 @@ export default function EntryDetailScreen() {
 
    const handleCancel = useCallback(() => {
       if (!isEditing) return;
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       if (editSnapshot) setForm(editSnapshot);
       setIsEditing(false);
       setJustSaved(false);
       setEditSnapshot(null);
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setIsHistoryExpanded(!hasDispute);
       KeyboardController.dismiss();
-   }, [editSnapshot, isEditing]);
+   }, [editSnapshot, hasDispute, isEditing]);
 
    const handleOpenDisputeAndUpdate = useCallback(() => {
       if (!entry) return;
@@ -408,6 +430,29 @@ export default function EntryDetailScreen() {
                            </View>
                         )}
                      </TimelineItem>
+
+                     {step.key === 'adversity' && hasDispute && !isEditing && (
+                        <Pressable
+                           onPress={() => {
+                              LayoutAnimation.configureNext(
+                                 LayoutAnimation.Presets.easeInEaseOut
+                              );
+                              setIsHistoryExpanded((prev) => !prev);
+                           }}
+                           className="mb-4 self-start flex-row items-center gap-2 rounded-full bg-slate-100 px-3 py-2 dark:bg-slate-800"
+                        >
+                           {isHistoryExpanded ? (
+                              <ChevronUp size={16} color={iconColor} />
+                           ) : (
+                              <ChevronDown size={16} color={iconColor} />
+                           )}
+                           <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                              {isHistoryExpanded
+                                 ? 'Hide Belief & Consequence'
+                                 : 'Show Belief & Consequence'}
+                           </Text>
+                        </Pressable>
+                     )}
 
 
                      {/* PIVOT POINT */}

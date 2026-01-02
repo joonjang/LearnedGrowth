@@ -53,6 +53,7 @@ const UNDO_TIMEOUT_MS = 5500;
 const SCROLL_THRESHOLD_FOR_FAB = 320;
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const UNCATEGORIZED_LABEL = 'Not categorized';
 
 const CATEGORY_COLOR_MAP: Record<string, string> = {
    Work: '#3b82f6',
@@ -63,6 +64,7 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
    'Self-Image': '#06b6d4',
    'Daily Hassles': '#64748b',
    Other: '#9ca3af',
+   [UNCATEGORIZED_LABEL]: '#e2e8f0',
 };
 const DEFAULT_CATEGORY_COLOR = '#cbd5e1';
 
@@ -78,16 +80,14 @@ function getNumericScore(val: any): number | null {
 }
 
 function getCategorySegments(entries: Entry[]): CategorySegment[] {
+   if (entries.length === 0) return [];
+
    const counts: Record<string, number> = {};
-   let total = 0;
    entries.forEach((e) => {
-      const cat = e.aiResponse?.meta?.category;
-      if (cat) {
-         counts[cat] = (counts[cat] || 0) + 1;
-         total++;
-      }
+      const cat = e.aiResponse?.meta?.category ?? UNCATEGORIZED_LABEL;
+      counts[cat] = (counts[cat] || 0) + 1;
    });
-   if (total === 0) return [];
+   const total = entries.length;
 
    return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])

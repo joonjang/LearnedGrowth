@@ -8,15 +8,20 @@ import {
    ArrowDown,
    CheckCircle2,
    ChevronRight,
+   History,
    MoreHorizontal,
    Pencil,
-   Trash2,
+   Sprout, // Used for the Reframed Badge icon
+   Trash2
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, type TextLayoutEvent, View } from 'react-native';
+import { Pressable, StyleSheet, Text, type TextLayoutEvent, TouchableOpacity, View } from 'react-native';
 import Animated, {
    Easing,
+   FadeIn,
+   FadeOut,
+   LinearTransition,
    useAnimatedStyle,
    useSharedValue,
    withTiming,
@@ -44,10 +49,10 @@ type Prop = {
 
 // --- Truncation Constants ---
 const TRUNCATION_LIMITS = {
-   adversity: 3, // Reduced for context only
+   adversity: 3, 
    belief: 4,
    consequence: 4,
-   dispute: 8, // Increased focus
+   dispute: 8, 
    energy: 3,
 } as const;
 
@@ -56,16 +61,28 @@ type TruncationState = Record<TruncationKey, boolean>;
 
 // --- Helper Components ---
 
-const FlowBreadcrumb = ({ steps, isResolved }: { steps: string[], isResolved?: boolean }) => (
+const FlowBreadcrumb = ({ 
+   steps, 
+   isResolved, 
+   activeMode 
+}: { 
+   steps: string[], 
+   isResolved?: boolean, 
+   activeMode?: 'reframed' | 'original' 
+}) => (
    <View className="flex-row items-center justify-between mb-3 px-1">
       <View className="flex-row items-center gap-1.5">
          {steps.map((step, index) => (
             <View key={step} className="flex-row items-center gap-1.5">
-               <Text className={`text-[11px] font-bold uppercase tracking-wider ${isResolved && step !== 'Adversity' ? 'text-emerald-600/70 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>
+               <Text className={`text-[11px] font-bold uppercase tracking-wider ${
+                  isResolved && activeMode === 'reframed' && step !== 'Adversity' 
+                     ? 'text-emerald-600/70 dark:text-emerald-400' 
+                     : 'text-slate-400 dark:text-slate-500'
+               }`}>
                   {step}
                </Text>
                {index < steps.length - 1 && (
-                  <ChevronRight size={12} color={isResolved ? "#0ea5e9" : "#475569"} />
+                  <ChevronRight size={12} color={isResolved && activeMode === 'reframed' ? "#0ea5e9" : "#475569"} />
                )}
             </View>
          ))}
@@ -134,7 +151,9 @@ export default function EntryCard({
    const isDark = colorScheme === 'dark';
    const { lock: lockNavigation, locked: navigationLocked } = useNavigationLock();
 
-   const isReframed = !!entry.dispute; // Check if the entry is "complete"
+   const isReframed = !!entry.dispute; 
+   const [viewMode, setViewMode] = useState<'reframed' | 'original'>('reframed');
+
    const createdLabel = useMemo(() => {
       try {
          const d = new Date(entry.createdAt);
@@ -174,6 +193,7 @@ export default function EntryCard({
             {} as TruncationState
          )
       );
+      setViewMode('reframed');
    }, [entry.id]);
 
    // --- Animations ---
@@ -256,6 +276,11 @@ export default function EntryCard({
       });
    }, [entry.id, lockNavigation, onCloseMenu]);
 
+   const toggleViewMode = (e: any) => {
+      e.stopPropagation();
+      setViewMode(prev => prev === 'reframed' ? 'original' : 'reframed');
+   };
+
    return (
       <AnimatedPressable
          className={`p-3 rounded-[24px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 mx-3 my-3 overflow-visible ${cardShadow.className}`}
@@ -285,66 +310,90 @@ export default function EntryCard({
             />
          )}
 
-         {/* --- Header with Date + Menu --- */}
+         {/* --- Header with Date + Badge + Menu --- */}
          <View className="flex-row items-center justify-between px-3 pt-1 pb-2 relative">
             <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                {createdLabel}
             </Text>
 
-            <View className="relative">
-               <Pressable
-                  hitSlop={12}
-                  testID="entry-menu-btn"
-                  className="w-8 h-8 rounded-full items-center justify-center "
-                  onPress={(e) => {
-                     e.stopPropagation();
-                     onToggleMenu();
-                  }}
-                  onLayout={measureMenu}
-               >
-                  <MoreHorizontal size={18} color={colors.hint} />
-               </Pressable>
+            {/* Right Side: Badge + Menu */}
+            <View className="flex-row items-center">
+               
+               {/* 1. REFRAMED BADGE (Visible in White Area) */}
+               {isReframed && (
+                  <View className="mr-3 bg-emerald-100/60 dark:bg-emerald-900/40 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/50 flex-row items-center gap-1">
+                     <CheckCircle2 size={12} color={isDark ? '#34d399' : '#059669'} />
+                     <Text className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
+                        Reframed
+                     </Text>
+                  </View>
+               )}
 
-               {/* Menu Popover */}
-               <Animated.View
-                  ref={menuRef}
-                  pointerEvents={isMenuOpen ? 'auto' : 'none'}
-                  className={`absolute z-50 bg-white dark:bg-slate-800 rounded-xl py-2 border border-slate-200 dark:border-slate-700 min-w-[160px] ${menuShadow.className}`}
-                  style={[
-                     menuStyle,
-                     menuShadow.ios,
-                     menuShadow.android,
-                     { zIndex: 1000, elevation: 50, top: -6, right: 0 },
-                  ]}
-               >
+               <View className="relative">
                   <Pressable
-                     className="flex-row items-center gap-3 py-3 px-4 active:bg-slate-50 dark:active:bg-slate-700/50"
-                     onPress={handleEditFromMenu}
-                     disabled={navigationLocked}
+                     hitSlop={12}
+                     testID="entry-menu-btn"
+                     className="w-8 h-8 rounded-full items-center justify-center "
+                     onPress={(e) => {
+                        e.stopPropagation();
+                        onToggleMenu();
+                     }}
+                     onLayout={measureMenu}
                   >
-                     <Pencil size={18} color={isDark ? '#f8fafc' : '#334155'} />
-                     <Text className="text-[15px] font-medium text-slate-700 dark:text-slate-200">Edit Entry</Text>
+                     <MoreHorizontal size={18} color={colors.hint} />
                   </Pressable>
-                  <View className="h-[1px] bg-slate-100 dark:bg-slate-700 mx-2" />
-                  <Pressable
-                     className="flex-row items-center gap-3 py-3 px-4 active:bg-rose-50 dark:active:bg-rose-900/20"
-                     onPress={() => { onCloseMenu(); onDelete(entry); }}
+
+                  {/* Menu Popover */}
+                  <Animated.View
+                     ref={menuRef}
+                     pointerEvents={isMenuOpen ? 'auto' : 'none'}
+                     className={`absolute z-50 bg-white dark:bg-slate-800 rounded-xl py-2 border border-slate-200 dark:border-slate-700 min-w-[160px] ${menuShadow.className}`}
+                     style={[
+                        menuStyle,
+                        menuShadow.ios,
+                        menuShadow.android,
+                        { zIndex: 1000, elevation: 50, top: -6, right: 0 },
+                     ]}
                   >
-                     <Trash2 size={18} color={colors.delete} />
-                     <Text className="text-[15px] font-medium text-rose-600 dark:text-rose-400">Delete</Text>
-                  </Pressable>
-               </Animated.View>
+                     <Pressable
+                        className="flex-row items-center gap-3 py-3 px-4 active:bg-slate-50 dark:active:bg-slate-700/50"
+                        onPress={handleEditFromMenu}
+                        disabled={navigationLocked}
+                     >
+                        <Pencil size={18} color={isDark ? '#f8fafc' : '#334155'} />
+                        <Text className="text-[15px] font-medium text-slate-700 dark:text-slate-200">Edit Entry</Text>
+                     </Pressable>
+                     <View className="h-[1px] bg-slate-100 dark:bg-slate-700 mx-2" />
+                     <Pressable
+                        className="flex-row items-center gap-3 py-3 px-4 active:bg-rose-50 dark:active:bg-rose-900/20"
+                        onPress={() => { onCloseMenu(); onDelete(entry); }}
+                     >
+                        <Trash2 size={18} color={colors.delete} />
+                        <Text className="text-[15px] font-medium text-rose-600 dark:text-rose-400">Delete</Text>
+                     </Pressable>
+                  </Animated.View>
+               </View>
             </View>
          </View>
 
          {isReframed ? (
-            // === VIEW 1: REFRAMED (COMPRESSED) ===
-            // Shows Adversity -> Dispute -> Energy
-            <View className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100/60 dark:border-emerald-900/40 p-3 pb-5 rounded-2xl relative">
-               <View className="absolute top-3 right-3">
-                  <CheckCircle2 size={16} color="#059669" />
-               </View>
-               <FlowBreadcrumb steps={['Adversity', 'Dispute', 'Energy']} isResolved={true} />
+            // === VIEW 1: COMPLETE (TOGGLEABLE) ===
+            <Animated.View 
+               layout={LinearTransition.springify()} 
+               className={`p-3 pb-4 rounded-2xl relative border ${
+                  viewMode === 'reframed' 
+                     ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100/60 dark:border-emerald-900/40' 
+                     : 'bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-700'
+               }`}
+            >
+               <FlowBreadcrumb 
+                  steps={viewMode === 'reframed' 
+                     ? ['Adversity', 'Dispute', 'Energy'] 
+                     : ['Adversity', 'Belief', 'Consequence']
+                  } 
+                  isResolved={true}
+                  activeMode={viewMode}
+               />
                
                <View className="gap-0.5">
                   <FlowBlock
@@ -353,30 +402,82 @@ export default function EntryCard({
                      textKey="adversity"
                      isTruncated={truncateState.adversity}
                      onLayout={handleTextLayout('adversity')}
-                     isResolved={true}
+                     isResolved={viewMode === 'reframed'}
                   />
-                  <FlowBlock
-                     text={entry.dispute || ''}
-                     type="dispute"
-                     textKey="dispute"
-                     isTruncated={truncateState.dispute}
-                     onLayout={handleTextLayout('dispute')}
-                     isResolved={true}
-                  />
-                  <FlowBlock
-                     text={entry.energy || ''}
-                     type="energy"
-                     textKey="energy"
-                     isTruncated={truncateState.energy}
-                     onLayout={handleTextLayout('energy')}
-                     isLast={true}
-                     isResolved={true}
-                  />
+
+                  {viewMode === 'reframed' ? (
+                     <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
+                        <FlowBlock
+                           text={entry.dispute || ''}
+                           type="dispute"
+                           textKey="dispute"
+                           isTruncated={truncateState.dispute}
+                           onLayout={handleTextLayout('dispute')}
+                           isResolved={true}
+                        />
+                        <FlowBlock
+                           text={entry.energy || ''}
+                           type="energy"
+                           textKey="energy"
+                           isTruncated={truncateState.energy}
+                           onLayout={handleTextLayout('energy')}
+                           isLast={true}
+                           isResolved={true}
+                        />
+                     </Animated.View>
+                  ) : (
+                     <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
+                        <FlowBlock
+                           text={entry.belief}
+                           type="belief"
+                           textKey="belief"
+                           isTruncated={truncateState.belief}
+                           onLayout={handleTextLayout('belief')}
+                        />
+                        <FlowBlock
+                           text={entry.consequence ?? ''}
+                           type="default"
+                           textKey="consequence"
+                           isTruncated={truncateState.consequence}
+                           onLayout={handleTextLayout('consequence')}
+                           isLast={true}
+                        />
+                     </Animated.View>
+                  )}
                </View>
-            </View>
+
+               {/* --- Footer Toggle --- */}
+               <View className="flex-row justify-end mt-5">
+                  <TouchableOpacity 
+                     activeOpacity={0.7}
+                     onPress={toggleViewMode}
+                  >
+                     <View className={`flex-row items-center gap-1.5 px-3.5 py-2 rounded-full border shadow-sm ${
+                        viewMode === 'reframed' 
+                           ? 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700' 
+                           : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/40 dark:border-emerald-700'
+                     }`}>
+                        {viewMode === 'reframed' ? (
+                           <>
+                              <History size={13} color={isDark ? '#94a3b8' : '#64748b'} />
+                              <Text className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                 View Original
+                              </Text>
+                           </>
+                        ) : (
+                           <>
+                              <Sprout size={13} color="#059669" />
+                              <Text className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
+                                 View Reframed
+                              </Text>
+                           </>
+                        )}
+                     </View>
+                  </TouchableOpacity>
+               </View>
+            </Animated.View>
          ) : (
-            // === VIEW 2: TANGLED (STANDARD) ===
-            // Shows Adversity -> Belief -> Consequence -> Next Button
+            // === VIEW 2: INCOMPLETE (STANDARD) ===
             <>
                <View className="bg-slate-50/80 dark:bg-slate-800/40 p-3 pb-5 rounded-2xl mb-1">
                   <FlowBreadcrumb steps={['Adversity', 'Belief', 'Consequence']} />
