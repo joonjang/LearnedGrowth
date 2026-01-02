@@ -176,7 +176,6 @@ describe('DisputeScreen', () => {
 
       const { usePreferences } = jest.requireMock('@/providers/PreferencesProvider');
       usePreferences.mockReturnValue({
-         showAiAnalysis: true,
          hapticsEnabled: false,
          hapticsAvailable: false,
          triggerHaptic: jest.fn(),

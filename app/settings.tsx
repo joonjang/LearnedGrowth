@@ -73,12 +73,10 @@ export default function SettingsScreen() {
    const {
       loading: prefsLoading,
       error: prefsError,
-      showAiAnalysis,
       hapticsEnabled,
       hapticsAvailable,
       triggerHaptic,
       theme,
-      setShowAiAnalysis,
       setHapticsEnabled,
       setTheme,
       clearError: clearPrefError,
@@ -268,15 +266,6 @@ export default function SettingsScreen() {
          }
       } catch (err: any) {
          console.warn('Could not update biometric setting.', err);
-      }
-   };
-
-   const handleToggleAnalysis = async (next: boolean) => {
-      try {
-         clearPrefError();
-         await setShowAiAnalysis(next);
-      } catch (err: any) {
-         console.warn('Could not update AI setting.', err);
       }
    };
 
@@ -651,18 +640,6 @@ export default function SettingsScreen() {
                      turn this on.
                   </Text>
                )}
-
-               <SettingRow
-                  title="Show AI Analysis"
-                  description="Hide or show AI insights in the UI."
-               >
-                  <Switch
-                     value={showAiAnalysis}
-                     onValueChange={handleToggleAnalysis}
-                     disabled={prefsLoading}
-                     thumbColor={switchThumbColor}
-                  />
-               </SettingRow>
 
                <SettingRow
                   title="Dark Mode"

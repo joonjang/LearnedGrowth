@@ -67,6 +67,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2026-01-02
+- Removed user preference of Ai Analysis toggle
+
 ### 2025-12-31
 - Pill design to expand for description
 - AiInsight minimized and made to look like timeline item when dispute exists

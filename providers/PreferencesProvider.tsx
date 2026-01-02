@@ -16,11 +16,9 @@ type ThemePreference = "light" | "dark";
 type PreferencesContextShape = {
   loading: boolean;
   error: string | null;
-  showAiAnalysis: boolean;
   hapticsEnabled: boolean;
   hapticsAvailable: boolean;
   theme: ThemePreference;
-  setShowAiAnalysis: (next: boolean) => Promise<void>;
   setHapticsEnabled: (next: boolean) => Promise<void>;
   setTheme: (next: ThemePreference) => Promise<void>;
   triggerHaptic: () => Promise<void>;
@@ -28,7 +26,6 @@ type PreferencesContextShape = {
 };
 
 const STORAGE_KEYS = {
-  showAnalysis: "prefs:showAiAnalysis",
   haptics: "prefs:haptics",
   theme: "prefs:theme",
 } as const;
@@ -40,7 +37,6 @@ const defaultTheme = (Appearance.getColorScheme?.() as ThemePreference | null) ?
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAiAnalysis, setShowAiAnalysisState] = useState(true);
   const [hapticsEnabled, setHapticsEnabledState] = useState(true);
   const [hapticsAvailable, setHapticsAvailable] = useState(true);
   const [theme, setThemeState] = useState<ThemePreference>(defaultTheme);
@@ -57,7 +53,6 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
         if (!mounted) return;
 
-        setShowAiAnalysisState(byKey[STORAGE_KEYS.showAnalysis] !== "false");
         setHapticsEnabledState(
           available && byKey[STORAGE_KEYS.haptics] !== "false"
         );
@@ -79,15 +74,6 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, []);
-
-  const persistShowAnalysis = useCallback(async (next: boolean) => {
-    setShowAiAnalysisState(next);
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.showAnalysis, String(next));
-    } catch (err: any) {
-      setError(err?.message ?? "Could not update AI setting");
-    }
   }, []);
 
   const persistHaptics = useCallback(async (next: boolean) => {
@@ -124,11 +110,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     () => ({
       loading,
       error,
-      showAiAnalysis,
       hapticsEnabled,
       hapticsAvailable,
       theme,
-      setShowAiAnalysis: persistShowAnalysis,
       setHapticsEnabled: persistHaptics,
       setTheme: persistTheme,
       triggerHaptic,
@@ -141,9 +125,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       hapticsEnabled,
       loading,
       persistHaptics,
-      persistShowAnalysis,
       persistTheme,
-      showAiAnalysis,
       triggerHaptic,
       theme,
     ]

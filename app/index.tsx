@@ -505,7 +505,7 @@ export default function EntriesScreen() {
                            </Text>
                            <Text className="text-2xl font-extrabold text-slate-900 dark:text-white">
                               {dashboardData.weeklyCount} {thoughtLabel}{' '}
-                              <Text className="text-indigo-600 font-extrabold">Untangled</Text>
+                              <Text className="text-indigo-600 font-extrabold">Reframed</Text>
                            </Text>
                         </View>
                         <Link href="/settings" asChild>

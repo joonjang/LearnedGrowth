@@ -71,14 +71,7 @@ export default function DisputeScreen() {
       ? params.refresh[0]
       : params.refresh;
    const shouldRegenerate = refreshQuery === 'true';
-   const {
-      showAiAnalysis: aiVisible,
-      hapticsEnabled,
-      hapticsAvailable,
-      triggerHaptic,
-   } = usePreferences();
-
-   const allowAnalysis = aiVisible;
+   const { hapticsEnabled, hapticsAvailable, triggerHaptic } = usePreferences();
 
    const { getEntryById, updateEntry } = useEntries();
    const entry = entryId ? getEntryById(entryId) : undefined;
@@ -100,7 +93,7 @@ export default function DisputeScreen() {
    const [isRegenerating, setIsRegenerating] = useState(shouldRegenerate);
 
    const initialViewMode: 'steps' | 'analysis' =
-      allowAnalysis && viewQuery === 'analysis' ? 'analysis' : 'steps';
+      viewQuery === 'analysis' ? 'analysis' : 'steps';
    const [viewMode, setViewMode] = useState<'steps' | 'analysis'>(
       initialViewMode
    );
@@ -125,7 +118,7 @@ export default function DisputeScreen() {
 
    useEffect(() => {
       // 1. Basic Guards
-      if (!entry || !ready || !allowAnalysis) return;
+      if (!entry || !ready) return;
 
       // 2. Prevent Double-Trigger
       if (!shouldRegenerate || analysisTriggered || lastResult) return;
@@ -164,7 +157,6 @@ export default function DisputeScreen() {
          }
       })();
    }, [
-      allowAnalysis,
       ready,
       shouldRegenerate,
       analysisTriggered,
@@ -176,12 +168,6 @@ export default function DisputeScreen() {
       hapticsAvailable,
       triggerHaptic,
    ]);
-
-   useEffect(() => {
-      if (!allowAnalysis && viewMode === 'analysis') {
-         setViewMode('steps');
-      }
-   }, [allowAnalysis, viewMode]);
 
    const data = rawAbcde as AbcdeJson;
    const promptListGetter = useCallback(
@@ -362,12 +348,11 @@ const submit = useCallback(async () => {
    }, [scrollToBottom]);
 
    useEffect(() => {
-      if (!allowAnalysis) return;
       if (!hasAutoOpenedAnalysis && (analysisTriggered || lastResult)) {
          setViewMode('analysis');
          setHasAutoOpenedAnalysis(true);
       }
-   }, [allowAnalysis, analysisTriggered, hasAutoOpenedAnalysis, lastResult]);
+   }, [analysisTriggered, hasAutoOpenedAnalysis, lastResult]);
 
    const stepsAnimatedStyle = useAnimatedStyle(() => ({
       opacity: stepsProgress.value,
@@ -380,17 +365,12 @@ const submit = useCallback(async () => {
    }));
 
    useEffect(() => {
-      if (!allowAnalysis) {
-         stepsProgress.value = 1;
-         analysisProgress.value = 0;
-         return;
-      }
       const toSteps = viewMode === 'steps';
       stepsProgress.value = withTiming(toSteps ? 1 : 0, { duration: 220 });
       analysisProgress.value = withTiming(toSteps ? 0 : 1, { duration: 220 });
-   }, [allowAnalysis, analysisProgress, stepsProgress, viewMode]);
+   }, [analysisProgress, stepsProgress, viewMode]);
 
-   const showAnalysis = allowAnalysis && viewMode === 'analysis';
+   const showAnalysis = viewMode === 'analysis';
    const handleClose = useCallback(() => {
       if (!hasUnsavedChanges) {
          router.back();
@@ -476,27 +456,25 @@ const submit = useCallback(async () => {
                </Animated.View>
 
                {/* 2. Analysis Layer (AI) */}
-               {allowAnalysis ? (
-                  <Animated.View
-                     pointerEvents={showAnalysis ? 'auto' : 'none'}
-                     className="absolute inset-0 px-5"
-                     style={analysisAnimatedStyle}
-                  >
-                     <ABCAnalysis
-                        entry={entry}
-                        aiData={aiData}
-                        loading={loading}
-                        error={error}
-                        streamingText={streamText}
-                        contentTopPadding={topPadding}
-                        onExit={handleClose}
-                        onGoToSteps={() => setViewMode('steps')}
-                        onRefresh={handleRefreshAnalysis}
-                        retryCount={entry?.aiRetryCount ?? 0}
-                        maxRetries={MAX_AI_RETRIES}
-                     />
-                  </Animated.View>
-               ) : null}
+               <Animated.View
+                  pointerEvents={showAnalysis ? 'auto' : 'none'}
+                  className="absolute inset-0 px-5"
+                  style={analysisAnimatedStyle}
+               >
+                  <ABCAnalysis
+                     entry={entry}
+                     aiData={aiData}
+                     loading={loading}
+                     error={error}
+                     streamingText={streamText}
+                     contentTopPadding={topPadding}
+                     onExit={handleClose}
+                     onGoToSteps={() => setViewMode('steps')}
+                     onRefresh={handleRefreshAnalysis}
+                     retryCount={entry?.aiRetryCount ?? 0}
+                     maxRetries={MAX_AI_RETRIES}
+                  />
+               </Animated.View>
             </View>
          </KeyboardAvoidingView>
       </>

@@ -67,12 +67,7 @@ export default function EntryDetailScreen() {
    const store = useEntries();
    const entry = entryId ? store.getEntryById(entryId) : undefined;
    const { lock: lockNavigation } = useNavigationLock();
-   const {
-      showAiAnalysis: aiVisible,
-      hapticsEnabled,
-      hapticsAvailable,
-      triggerHaptic,
-   } = usePreferences();
+   const { hapticsEnabled, hapticsAvailable, triggerHaptic } = usePreferences();
 
    const insets = useSafeAreaInsets();
    const keyboardOffset = insets.bottom + 32;
@@ -419,7 +414,7 @@ export default function EntryDetailScreen() {
                      {step.key === 'consequence' && (
                         <View>
                            {/* AI Pivot */}
-                           {aiVisible && aiDisplayData && (
+                           {aiDisplayData && (
                               <TimelinePivot variant="full">
                                  {/* HEADER REMOVED: AiInsightCard now handles it internally */}
                                  <AiInsightCard
