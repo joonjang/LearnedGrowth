@@ -22,6 +22,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- Bug login should not stack a new home page, it should replace
+
 - Biometric lock disables the app from all screens until unlocked
 
 - Revenuecat failed purchase screens

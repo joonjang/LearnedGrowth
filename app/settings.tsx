@@ -627,6 +627,31 @@ export default function SettingsScreen() {
                </View>
 
                <SettingRow
+                  title="Dark Mode"
+                  description="Switch between light and dark surfaces."
+               >
+                  <Switch
+                     value={darkMode}
+                     onValueChange={handleToggleTheme}
+                     disabled={prefsLoading}
+                     thumbColor={switchThumbColor}
+                  />
+               </SettingRow>
+
+
+               <SettingRow
+                  title="Tactile Feedback"
+                  description="Use haptics when finishing an entry."
+               >
+                  <Switch
+                     value={hapticsEnabled}
+                     onValueChange={handleToggleHaptics}
+                     disabled={prefsLoading || !hapticsAvailable}
+                     thumbColor={switchThumbColor}
+                  />
+               </SettingRow>
+
+               <SettingRow
                   title="Enable Biometric Lock"
                   description="Require Face ID / Touch ID on launch."
                   disabled={prefsLoading || biometricUnavailable}
@@ -649,31 +674,6 @@ export default function SettingsScreen() {
                      turn this on.
                   </Text>
                )}
-
-               <SettingRow
-                  title="Dark Mode"
-                  description="Switch between light and dark surfaces."
-               >
-                  <Switch
-                     value={darkMode}
-                     onValueChange={handleToggleTheme}
-                     disabled={prefsLoading}
-                     thumbColor={switchThumbColor}
-                  />
-               </SettingRow>
-
-               <SettingRow
-                  title="Tactile Feedback"
-                  description="Use haptics when finishing an entry."
-               >
-                  <Switch
-                     value={hapticsEnabled}
-                     onValueChange={handleToggleHaptics}
-                     disabled={prefsLoading || !hapticsAvailable}
-                     thumbColor={switchThumbColor}
-                  />
-               </SettingRow>
-
                {prefsError && (
                   <Text className="text-xs text-slate-600 dark:text-slate-300">
                      {prefsError}

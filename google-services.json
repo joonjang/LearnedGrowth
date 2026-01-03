@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "954502195698",
+    "project_id": "learned-growth",
+    "storage_bucket": "learned-growth.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:954502195698:android:19667ebc559304249b236b",
+        "android_client_info": {
+          "package_name": "com.joonjang.LearnedGrowth"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "954502195698-4jbfjbb2spe1ii8ib2lopbs0ovm945ep.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDW3XqxU6XS4KmUqErhJ5FkeSnqWYQtrqw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "954502195698-4jbfjbb2spe1ii8ib2lopbs0ovm945ep.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "954502195698-qeb31c3ppql4k75bhn5ktc092hf93d6d.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.joonjang.LearnedGrowth"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
