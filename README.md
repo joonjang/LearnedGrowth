@@ -76,6 +76,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Removed user preference of Ai Analysis toggle
 - Entry history of having dispute enables minimizing of Belief and Consequence for card and entry detail
 - Removed segment categorization visibility
+- Setting screen style touched up
 
 ### 2025-12-31
 - Pill design to expand for description

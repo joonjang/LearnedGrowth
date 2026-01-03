@@ -1,8 +1,7 @@
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import {
-   BTN_HEIGHT,
    FREE_MONTHLY_CREDITS,
-   ROUTE_LOGIN,
+   ROUTE_LOGIN
 } from '@/components/constants';
 import CreditShop from '@/components/CreditShop';
 import SendFeedback from '@/components/SendFeedback';
@@ -15,7 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { router, useFocusEffect } from 'expo-router';
-import { ChevronDown, ChevronRight } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, TriangleAlert, Zap } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import {
    useCallback,
@@ -27,14 +26,19 @@ import {
 import {
    ActivityIndicator,
    Alert,
+   KeyboardAvoidingView,
    LayoutAnimation,
    Linking,
+   Modal,
    Platform,
    Pressable,
    ScrollView,
+   StyleProp,
    Switch,
    Text,
+   TextInput,
    View,
+   ViewStyle,
 } from 'react-native';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -72,7 +76,6 @@ export default function SettingsScreen() {
 
    const {
       loading: prefsLoading,
-      error: prefsError,
       hapticsEnabled,
       hapticsAvailable,
       triggerHaptic,
@@ -89,12 +92,12 @@ export default function SettingsScreen() {
    const isDark = colorScheme === 'dark';
    const iconColor = isDark ? '#94a3b8' : '#64748b';
    const loaderColor = isDark ? '#f8fafc' : '#0f172a';
-   const shadowSm = useMemo(
-      () => getShadow({ isDark, preset: 'sm' }),
-      [isDark]
-   );
+   
+   // Shadows
+   const shadowSm = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
    const shadowClass = shadowSm.className;
-
+   
+   // Colors
    const switchThumbColor = isDark ? '#1e293b' : '#ffffff';
 
    // --- State ---
@@ -110,9 +113,12 @@ export default function SettingsScreen() {
       hasHardware: false,
       isEnrolled: false,
    });
+   
    const [actionsCollapsed, setActionsCollapsed] = useState(true);
-   const [deleteLoading, setDeleteLoading] = useState(false);
+   const [showDeleteModal, setShowDeleteModal] = useState(false);
+   const [isShopOpen, setIsShopOpen] = useState(false);
 
+   // --- Computed ---
    const isSignedIn = status === 'signedIn';
    const entitlementActive = isGrowthPlusActive;
    const hasGrowth = entitlementActive;
@@ -121,7 +127,8 @@ export default function SettingsScreen() {
    const monthlyRemaining = Math.max(FREE_MONTHLY_CREDITS - aiUsed, 0);
    const darkMode = theme === 'dark';
 
-   const [isShopOpen, setIsShopOpen] = useState(false);
+   const biometricUnavailable = !biometricInfo.hasHardware;
+   const biometricNeedsEnroll = biometricInfo.hasHardware && !biometricInfo.isEnrolled;
 
    useFocusEffect(
       useCallback(() => {
@@ -132,13 +139,7 @@ export default function SettingsScreen() {
 
    useEffect(() => {
       const unsubscribe = NetInfo.addEventListener((state) => {
-         const online = Boolean(
-            state.isConnected &&
-               (state.isInternetReachable === null ||
-                  state.isInternetReachable === undefined ||
-                  state.isInternetReachable)
-         );
-         setIsOffline(!online);
+         setIsOffline(!(state.isConnected && state.isInternetReachable));
       });
       return () => unsubscribe();
    }, []);
@@ -146,17 +147,13 @@ export default function SettingsScreen() {
    useEffect(() => {
       AsyncStorage.getItem(STORAGE_KEYS.biometric)
          .then((val) => setBiometricEnabled(val === 'true'))
-         .catch((err) =>
-            console.warn('Failed to load biometric preference', err)
-         );
+         .catch((err) => console.warn(err));
    }, []);
 
    const refreshBiometricInfo = useCallback(async () => {
       try {
          const hasHardware = await LocalAuthentication.hasHardwareAsync();
-         const isEnrolled = hasHardware
-            ? await LocalAuthentication.isEnrolledAsync()
-            : false;
+         const isEnrolled = hasHardware ? await LocalAuthentication.isEnrolledAsync() : false;
          setBiometricInfo({ hasHardware, isEnrolled });
          return { hasHardware, isEnrolled };
       } catch {
@@ -166,15 +163,11 @@ export default function SettingsScreen() {
       }
    }, []);
 
-   useEffect(() => {
-      refreshBiometricInfo();
-   }, [refreshBiometricInfo]);
+   useEffect(() => { refreshBiometricInfo(); }, [refreshBiometricInfo]);
 
+   // --- Handlers ---
    const handleUpgrade = async () => {
-      if (!isSignedIn) {
-         router.push(ROUTE_LOGIN as any);
-         return;
-      }
+      if (!isSignedIn) { router.push(ROUTE_LOGIN as any); return; }
       setBillingAction('upgrade');
       setBillingNote(null);
       try {
@@ -182,8 +175,6 @@ export default function SettingsScreen() {
          if (result === PAYWALL_RESULT.PURCHASED) {
             setBillingNote('Growth Plus unlocked.');
             await refreshProfile();
-         } else {
-            setBillingNote('Closed the upgrade sheet.');
          }
       } catch (err: any) {
          setBillingNote(err?.message ?? 'Unable to open paywall.');
@@ -193,10 +184,7 @@ export default function SettingsScreen() {
    };
 
    const handleRestore = async () => {
-      if (isOffline) {
-         setBillingNote('Go online to restore purchases.');
-         return;
-      }
+      if (isOffline) { setBillingNote('Go online to restore purchases.'); return; }
       setBillingAction('restore');
       setBillingNote(null);
       try {
@@ -215,23 +203,10 @@ export default function SettingsScreen() {
       setBillingAction('manage');
       setBillingNote(null);
       try {
-         if (!MANAGE_SUBSCRIPTION_URL) {
-            throw new Error('Subscription management is not supported here.');
-         }
-         const supported = await Linking.canOpenURL(MANAGE_SUBSCRIPTION_URL);
-         if (!supported) {
-            throw new Error(
-               'Unable to open subscription settings on this device.'
-            );
-         }
+         if (!MANAGE_SUBSCRIPTION_URL) throw new Error('Not supported.');
          await Linking.openURL(MANAGE_SUBSCRIPTION_URL);
-         setBillingNote('Opening subscription settings...');
       } catch (err: any) {
-         setBillingNote(err?.message ?? 'Manage subscription failed.');
-         Alert.alert(
-            'Manage subscription',
-            err?.message ?? 'Unable to open settings.'
-         );
+         Alert.alert('Manage subscription', err?.message);
       } finally {
          setBillingAction(null);
       }
@@ -239,488 +214,227 @@ export default function SettingsScreen() {
 
    const handleToggleBiometric = async (next: boolean) => {
       clearPrefError();
-      try {
-         const info = await refreshBiometricInfo();
-         if (!info.hasHardware) {
-            Alert.alert(
-               'Biometric unavailable',
-               'This device does not support Face ID or fingerprint unlock.'
-            );
-            return;
-         }
-         if (!info.isEnrolled) {
-            Alert.alert(
-               'Set up biometrics',
-               'Add a fingerprint or face unlock in your system settings first.'
-            );
-            return;
-         }
-         if (next) {
-            const result = await LocalAuthentication.authenticateAsync({
-               promptMessage: 'Enable biometric lock',
-               cancelLabel: 'Cancel',
-            });
-            if (!result.success) {
-               return;
-            }
-         }
-         setBiometricEnabled(next);
-         await AsyncStorage.setItem(STORAGE_KEYS.biometric, String(next));
-         if (next && hapticsEnabled) {
-            triggerHaptic();
-         }
-      } catch (err: any) {
-         console.warn('Could not update biometric setting.', err);
+      const info = await refreshBiometricInfo();
+      if (!info.hasHardware) return;
+      if (!info.isEnrolled) {
+         Alert.alert('Biometrics not set up', 'Please enable in device settings.');
+         return;
       }
-   };
-
-   const handleToggleHaptics = async (next: boolean) => {
-      try {
-         clearPrefError();
-         await setHapticsEnabled(next);
-      } catch (err: any) {
-         console.warn('Could not update haptics.', err);
+      if (next) {
+         const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Enable lock' });
+         if (!result.success) return;
       }
-   };
-
-   const handleToggleTheme = async (nextDark: boolean) => {
-      try {
-         clearPrefError();
-         await setTheme(nextDark ? 'dark' : 'light');
-      } catch (err: any) {
-         console.warn('Could not update theme.', err);
-      }
-   };
-
-   const handleDeleteAccount = async () => {
-      if (isOffline) return;
-      setDeleteLoading(true);
-      try {
-         const supabase = getSupabaseClient();
-         const { error } = await supabase.functions.invoke('delete-account');
-         if (error) throw new Error(error.message);
-         await signOut();
-         router.push(ROUTE_LOGIN);
-      } catch (err: any) {
-         Alert.alert('Delete account', err?.message ?? 'Delete failed.');
-      } finally {
-         setDeleteLoading(false);
-      }
+      setBiometricEnabled(next);
+      AsyncStorage.setItem(STORAGE_KEYS.biometric, String(next));
+      if (next && hapticsEnabled) triggerHaptic();
    };
 
    const handleManualRefresh = async () => {
       setIsRefreshing(true);
-      try {
-         await Promise.all([refreshCustomerInfo(), refreshProfile()]);
-      } catch (e) {
-         console.log('Refresh failed', e);
-      } finally {
-         setIsRefreshing(false);
-      }
+      await Promise.all([refreshCustomerInfo(), refreshProfile()]).finally(() => setIsRefreshing(false));
    };
-
-   const isLoading = loadingProfile || rcLoading || isRefreshing;
-
-   const confirmDelete = () => {
-      const warning = entitlementActive
-         ? 'This will delete your account and synced data. Active subscriptions will NOT be canceled automatically.'
-         : 'This will remove your account and synced data. This cannot be undone.';
-
-      Alert.alert('Delete account', warning, [
-         { text: 'Cancel', style: 'cancel' },
-         {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: handleDeleteAccount,
-         },
-      ]);
-   };
-
-   const confirmSignOut = () =>
-      Alert.alert('Sign out', 'You will be signed out.', [
-         { text: 'Cancel', style: 'cancel' },
-         { text: 'Sign out', style: 'destructive', onPress: signOut },
-      ]);
-
-   const planLabel = useMemo(() => {
-      if (entitlementActive) return 'Growth Plus (RevenueCat)';
-      return 'Free';
-   }, [entitlementActive]);
-
-   const refillLabel = useMemo(() => {
-      if (!profile?.aiCycleStart) return null;
-      const date = new Date(profile.aiCycleStart);
-      const currentDay = date.getDate();
-      date.setMonth(date.getMonth() + 1);
-      if (date.getDate() !== currentDay) {
-         date.setDate(0);
-      }
-      return date.toLocaleDateString(undefined, {
-         month: 'short',
-         day: 'numeric',
-      });
-   }, [profile?.aiCycleStart]);
 
    const toggleShop = () => {
-      if (!isSignedIn) {
-         router.push(ROUTE_LOGIN as any);
-         return;
-      }
+      if (!isSignedIn) { router.push(ROUTE_LOGIN as any); return; }
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setIsShopOpen(!isShopOpen);
    };
 
-   const biometricUnavailable = !biometricInfo.hasHardware;
-   const biometricNeedsEnroll =
-      biometricInfo.hasHardware && !biometricInfo.isEnrolled;
+   const performDeleteAccount = async (): Promise<boolean> => {
+      if (isOffline) return false;
+      try {
+         const supabase = getSupabaseClient();
+         const { error } = await supabase.functions.invoke('delete-account');
+         if (error) throw new Error(error.message);
+         
+         await signOut();
+         router.push(ROUTE_LOGIN);
+         return true; 
+      } catch (err: any) {
+         Alert.alert('Delete account', err?.message ?? 'Delete failed.');
+         return false; 
+      }
+   };
+
+   const planLabel = useMemo(() => entitlementActive ? 'Growth Plus' : 'Free Plan', [entitlementActive]);
+   const refillLabel = useMemo(() => {
+      if (!profile?.aiCycleStart) return null;
+      const date = new Date(profile.aiCycleStart);
+      date.setMonth(date.getMonth() + 1);
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+   }, [profile?.aiCycleStart]);
+
+   const isLoading = loadingProfile || rcLoading || isRefreshing;
 
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
-         {/* ABSOLUTE CLOSE BUTTON (Static Top Right) */}
-         <View 
-            className="absolute right-4 z-50"
-            style={{ top: insets.top + 16 }}
-         >
-            <RoundedCloseButton onPress={() => router.back()} />
-         </View>
+         
+         <DeleteConfirmationModal 
+            visible={showDeleteModal} 
+            onClose={() => setShowDeleteModal(false)}
+            onConfirm={performDeleteAccount}
+            isDark={isDark}
+         />
 
          <ScrollView
             contentContainerStyle={{
                paddingTop: insets.top + 16,
-               paddingBottom: insets.bottom + 24,
+               paddingBottom: insets.bottom + 40,
                paddingHorizontal: 16,
-               gap: 14,
-            }}
-            scrollIndicatorInsets={{
-               top: insets.top + 40,
-               bottom: insets.bottom,
+               gap: 16,
             }}
             showsVerticalScrollIndicator={false}
          >
-            {/* Header (Text Only, aligned with absolute button) */}
-            <View className="flex-row justify-between items-center min-h-[44px] mb-2">
-               <View className="flex-1 mr-12 justify-center">
-                  <Text className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">
-                     {user?.email ?? 'Not Logged In'}
-                  </Text>
-               </View>
-               
-               {/* Offline Badge */}
-               <View className="flex-row gap-2 items-center">
-                  {isOffline && (
-                     <View className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-                        <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                           Offline
-                        </Text>
-                     </View>
-                  )}
-               </View>
+             {/* HEADER */}
+            <View className="flex-row justify-between items-start mb-2">
+                <View className="flex-1 mr-4">
+                    <Text className="text-3xl font-extrabold text-slate-900 dark:text-slate-50">Settings</Text>
+                    <Text numberOfLines={1} className="text-[15px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                        {user?.email ?? 'Not signed in'}
+                    </Text>
+                </View>
+                <View className="mt-1">
+                    <RoundedCloseButton onPress={() => router.back()} />
+                </View>
             </View>
 
-            {/* Supabase Config Warning */}
-            {!isConfigured && (
-               <View
-                  className={`bg-belief-bg border border-belief-border rounded-xl p-3 gap-1 ${shadowClass}`}
-                  style={[shadowSm.ios, shadowSm.android]}
-               >
-                  <Text className="text-sm font-bold text-belief-text">
-                     Supabase not configured
-                  </Text>
+            {/* OFFLINE INDICATOR */}
+            {isOffline && (
+               <View className="bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 p-3 rounded-xl flex-row items-center gap-3">
+                  <View className="w-2 h-2 rounded-full bg-amber-500" />
+                  <Text className="text-sm font-bold text-amber-800 dark:text-amber-200">You are offline.</Text>
                </View>
             )}
 
-            {/* Not Logged In Banner */}
             {!user && (
-               <View
-                  className={`bg-slate-100 dark:bg-slate-800 border border-dispute-cta rounded-xl p-3 flex-row items-center gap-2.5 ${shadowClass}`}
-                  style={[shadowSm.ios, shadowSm.android]}
-               >
-                  <View className="flex-1">
-                     <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
-                        Log in to back up your data.
-                     </Text>
-                  </View>
-                  <Pressable
-                     className={`mt-2 bg-dispute-cta py-2 px-3 rounded-lg self-start ${shadowClass}`}
-                     style={[shadowSm.ios, shadowSm.android]}
-                     onPress={() => router.push(ROUTE_LOGIN)}
-                  >
-                     <Text className="text-white font-bold text-sm">
-                        Sign in
-                     </Text>
+               <View className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 items-center gap-3 ${shadowClass}`} style={[shadowSm.ios, shadowSm.android]}>
+                  <Text className="text-center text-slate-600 dark:text-slate-300">Sign in to sync data.</Text>
+                  <Pressable className="w-full bg-slate-900 dark:bg-slate-100 py-3 rounded-xl items-center" onPress={() => router.push(ROUTE_LOGIN)}>
+                     <Text className="text-white dark:text-slate-900 font-bold">Sign In</Text>
                   </Pressable>
                </View>
             )}
 
-            {/* Subscription Card */}
-            {isSignedIn && user && (
-               <View
-                  className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
-                  style={[shadowSm.ios, shadowSm.android]}
-               >
-                  <View className="flex-row justify-between items-center">
-                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                        Subscription
-                     </Text>
-                     {isLoading && (
-                        <ActivityIndicator size="small" color={loaderColor} />
-                     )}
-                  </View>
+            {/* STATS */}
+            {isSignedIn && !hasGrowth && (
+               <View className="flex-row gap-3">
+                  <StatCard
+                     label="Monthly Credits"
+                     value={String(monthlyRemaining)}
+                     subtext={refillLabel ? `Resets ${refillLabel}` : 'Resets monthly'}
+                     isLoading={isLoading}
+                     icon={<Zap size={16} color="#fbbf24" fill="#fbbf24" />}
+                     shadowClass={shadowClass}
+                     shadowStyle={[shadowSm.ios, shadowSm.android]}
+                  />
+                  <StatCard
+                     label="Extra Analysis"
+                     value={String(extraCredits)}
+                     subtext="Non-expiring"
+                     isLoading={isLoading}
+                     isHighlight
+                     shadowClass={shadowClass}
+                     shadowStyle={[shadowSm.ios, shadowSm.android]}
+                  />
+               </View>
+            )}
 
-                  <View className="flex-row items-start gap-3">
-                     <View className="flex-1">
-                        <Text className="text-xs text-slate-500 dark:text-slate-400 tracking-wider">
-                           Current plan
-                        </Text>
-                        <Text className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
-                           {planLabel}
-                        </Text>
+            {/* SUBSCRIPTION CARD */}
+            {isSignedIn && user && (
+               <View className={`bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 ${shadowClass}`} style={[shadowSm.ios, shadowSm.android]}>
+                  {/* Plan Status Header */}
+                  <View className="p-4 border-b border-slate-100 dark:border-slate-800 flex-row justify-between items-center">
+                     <View>
+                        <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Current Plan</Text>
+                        <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{planLabel}</Text>
                      </View>
-                     <Pressable
-                        className={`w-10 h-10 rounded-full items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 ${loadingProfile ? 'opacity-50' : ''}`}
-                        onPress={handleManualRefresh}
-                        disabled={isLoading}
-                     >
-                        <Text className="font-bold text-slate-900 dark:text-slate-100">
-                           {loadingProfile ? '…' : '↻'}
-                        </Text>
+                     <Pressable onPress={handleManualRefresh} disabled={isLoading} className={`p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700 ${isLoading ? 'opacity-50' : ''}`}>
+                        {isLoading ? <ActivityIndicator size="small" color={loaderColor} /> : <Text className="text-xs text-slate-900 dark:text-slate-100">↻</Text>}
                      </Pressable>
                   </View>
 
-                  {!hasGrowth && (
-                     <>
-                        <Text className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                           {refillLabel ? `Refills next on ${refillLabel}` : ''}
-                        </Text>
-                        <View className="flex-row flex-wrap gap-2.5">
-                           {/* Monthly Uses Metric */}
-                           <View
-                              className={`flex-1 min-w-[30%] bg-zinc-50 dark:bg-slate-700 rounded-xl p-3 border border-slate-200 dark:border-slate-600 gap-1.5 ${shadowClass}`}
-                              style={[shadowSm.ios, shadowSm.android]}
-                           >
-                              <Text className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                                 Monthly uses remaining
-                              </Text>
-                              <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                                 {monthlyRemaining}
-                              </Text>
-                           </View>
-
-                           {/* Extra Analysis Metric */}
-                           <View
-                              className={`flex-1 min-w-[30%] bg-zinc-50 dark:bg-slate-700 rounded-xl p-3 border border-slate-200 dark:border-slate-600 gap-1.5 ${shadowClass} `}
-                              style={[shadowSm.ios, shadowSm.android]}
-                           >
-                              <Text className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                                 Extra Analysis
-                              </Text>
-                              <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                                 {extraCredits}
-                              </Text>
-                           </View>
-                        </View>
-                     </>
-                  )}
-                  {!entitlementActive ? (
-                     <View className="gap-3 pt-5">
-                        {/* UNIFIED STORE CONTAINER */}
-                        <View
-                           className={`bg-white dark:bg-slate-800 rounded-2xl ${shadowClass}`}
-                           style={[shadowSm.ios, shadowSm.android]}
-                        >
-                           <View className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
-                              {/* HEADER / TOGGLE */}
-                              <Pressable
-                                 onPress={toggleShop}
-                                 className={`relative flex-row items-center justify-center px-4 active:bg-slate-50 dark:active:bg-slate-700/50 ${BTN_HEIGHT}`}
-                              >
-                                 {/* Centered Title */}
-                                 <Text className="text-[15px] font-bold text-slate-900 dark:text-white text-center">
-                                    Unlock More Analysis
-                                 </Text>
-
-                                 {/* Absolute Right Chevron */}
-                                 <View className="absolute right-4">
-                                    {isShopOpen ? (
-                                       <ChevronDown
-                                          size={20}
-                                          color={iconColor}
-                                       />
-                                    ) : (
-                                       <ChevronRight
-                                          size={20}
-                                          color={iconColor}
-                                       />
-                                    )}
-                                 </View>
-                              </Pressable>
-
-                              {/* THE SHOP CONTENT */}
-                              {isShopOpen && (
-                                 <View className="px-4 pb-6 pt-2">
-                                    <View className="h-[1px] bg-slate-100 dark:bg-slate-700 mb-4" />
-
-                                    <CreditShop
-                                       onUpgrade={handleUpgrade}
-                                       onSuccess={() => {
-                                          LayoutAnimation.configureNext(
-                                             LayoutAnimation.Presets
-                                                .easeInEaseOut
-                                          );
-                                       }}
-                                    />
-                                 </View>
-                              )}
-                           </View>
-                        </View>
-                     </View>
-                  ) : (
-                     <View className="gap-3 pt-5">
-                        <Pressable
-                           className={`bg-slate-100 dark:bg-slate-800 rounded-xl items-center ${shadowClass} border border-slate-200 dark:border-slate-700 active:bg-slate-200 dark:active:bg-slate-700 ${BTN_HEIGHT} ${isOffline || billingAction === 'manage' ? 'opacity-50' : ''}`}
-                           style={[shadowSm.ios, shadowSm.android]}
-                           onPress={handleManageSubscription}
-                           disabled={isOffline || billingAction !== null}
-                        >
-                           <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
-                              {billingAction === 'manage'
-                                 ? 'Opening...'
-                                 : 'Manage Subscription'}
-                           </Text>
+                  <View className="p-4 gap-4 bg-slate-50/50 dark:bg-slate-800/20">
+                     {!hasGrowth ? (
+                        <>
+                           <Pressable onPress={toggleShop} className="bg-green-600 active:bg-green-700 rounded-xl p-4 flex-row items-center justify-between shadow-sm shadow-green-200 dark:shadow-none">
+                              <View className="flex-1 mr-2">
+                                 <Text className="text-white font-bold text-[16px]">Unlock Growth Plus</Text>
+                                 <Text className="text-green-100 text-xs mt-0.5">Unlimited analysis & more</Text>
+                              </View>
+                              {isShopOpen ? <ChevronUp size={20} color="white" /> : <ChevronDown size={20} color="white" />}
+                           </Pressable>
+                           {isShopOpen && (
+                              <View className="pt-2">
+                                 <CreditShop onUpgrade={handleUpgrade} onSuccess={() => LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)} />
+                              </View>
+                           )}
+                        </>
+                     ) : (
+                        <Pressable onPress={handleManageSubscription} disabled={billingAction === 'manage'} className="flex-row items-center justify-between bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                           <Text className="font-semibold text-slate-700 dark:text-slate-200">Manage Subscription</Text>
+                           <ChevronRight size={18} color={iconColor} />
                         </Pressable>
-                     </View>
-                  )}
+                     )}
 
-                  <Pressable
-                     className={`rounded-xl bg-white dark:bg-slate-800 items-center ${shadowClass} border border-slate-200 dark:border-slate-700 active:bg-slate-100 dark:active:bg-slate-800 ${BTN_HEIGHT} ${isOffline || billingAction === 'restore' ? 'opacity-50' : ''}`}
-                     style={[shadowSm.ios, shadowSm.android]}
-                     onPress={handleRestore}
-                     disabled={isOffline || billingAction !== null}
-                  >
-                     <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
-                        {billingAction === 'restore'
-                           ? 'Restoring...'
-                           : 'Restore Purchases'}
-                     </Text>
-                  </Pressable>
-
-            {(billingNote || rcError) && (
-               <Text className="text-xs text-slate-600 dark:text-slate-300">
-                  {billingNote ?? `RevenueCat: ${rcError}`}
-               </Text>
-            )}
-           </View>
-         )}
-
-         {/* Preferences Card */}
-            <View
-               className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
-               style={[shadowSm.ios, shadowSm.android]}
-            >
-               <View className="flex-row justify-between items-center">
-                  <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                     App preferences
-                  </Text>
-                  {prefsLoading && (
-                     <ActivityIndicator size="small" color={loaderColor} />
-                  )}
+                     <Pressable onPress={handleRestore} disabled={billingAction === 'restore' || isOffline} className="self-center py-1">
+                        <Text className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+                           {billingAction === 'restore' ? 'Restoring purchases...' : 'Restore Purchases'}
+                        </Text>
+                     </Pressable>
+                     
+                     {(billingNote || rcError) && <Text className="text-xs text-center text-slate-600 dark:text-slate-400">{billingNote ?? rcError}</Text>}
+                  </View>
                </View>
+            )}
 
-               <SettingRow
-                  title="Dark Mode"
-                  description="Switch between light and dark surfaces."
-               >
-                  <Switch
-                     value={darkMode}
-                     onValueChange={handleToggleTheme}
-                     disabled={prefsLoading}
-                     thumbColor={switchThumbColor}
-                  />
+            {/* PREFERENCES */}
+            <View className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 gap-5 ${shadowClass}`} style={[shadowSm.ios, shadowSm.android]}>
+               <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">Preferences</Text>
+
+               <SettingRow title="Dark Mode" description="Switch between light and dark theme.">
+                  <Switch value={darkMode} onValueChange={(val) => setTheme(val ? 'dark' : 'light')} disabled={prefsLoading} thumbColor={switchThumbColor} trackColor={{ false: '#e2e8f0', true: '#16a34a' }} />
                </SettingRow>
 
-
-               <SettingRow
-                  title="Tactile Feedback"
-                  description="Use haptics when finishing an entry."
-               >
-                  <Switch
-                     value={hapticsEnabled}
-                     onValueChange={handleToggleHaptics}
-                     disabled={prefsLoading || !hapticsAvailable}
-                     thumbColor={switchThumbColor}
-                  />
+               <SettingRow title="Haptic Feedback" description="Tactile vibrations on interaction.">
+                  <Switch value={hapticsEnabled} onValueChange={setHapticsEnabled} disabled={prefsLoading || !hapticsAvailable} thumbColor={switchThumbColor} trackColor={{ false: '#e2e8f0', true: '#16a34a' }} />
                </SettingRow>
 
-               <SettingRow
-                  title="Enable Biometric Lock"
-                  description="Require Face ID / Touch ID on launch."
-                  disabled={prefsLoading || biometricUnavailable}
-               >
-                  <Switch
-                     value={biometricEnabled}
-                     onValueChange={handleToggleBiometric}
-                     disabled={prefsLoading || biometricUnavailable}
-                     thumbColor={switchThumbColor}
-                  />
-               </SettingRow>
-               {biometricUnavailable && (
-                  <Text className="text-xs text-slate-600 dark:text-slate-300">
-                     Biometric lock is not available on this device.
-                  </Text>
-               )}
-               {biometricNeedsEnroll && (
-                  <Text className="text-xs text-slate-600 dark:text-slate-300">
-                     Add a fingerprint or face profile in system settings to
-                     turn this on.
-                  </Text>
-               )}
-               {prefsError && (
-                  <Text className="text-xs text-slate-600 dark:text-slate-300">
-                     {prefsError}
-                  </Text>
-               )}
+               <View>
+                   <SettingRow title="Biometric Lock" description="Require FaceID/TouchID on launch." disabled={prefsLoading || biometricUnavailable}>
+                      <Switch value={biometricEnabled} onValueChange={handleToggleBiometric} disabled={prefsLoading || biometricUnavailable || biometricNeedsEnroll} thumbColor={switchThumbColor} trackColor={{ false: '#e2e8f0', true: '#16a34a' }} />
+                   </SettingRow>
+                   {biometricUnavailable && (
+                       <Text className="text-xs text-slate-400 mt-2 ml-1">* Biometric hardware not detected on this device.</Text>
+                   )}
+                   {biometricNeedsEnroll && (
+                       <Pressable onPress={() => Linking.openSettings()}>
+                           <Text className="text-xs text-amber-600 dark:text-amber-500 mt-2 ml-1 font-medium">* Biometrics not set up. Tap to open Settings.</Text>
+                       </Pressable>
+                   )}
+               </View>
             </View>
 
-            {/* Account Actions Card */}
-            {status === 'signedIn' && (
-               <View
-                  className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
-                  style={[shadowSm.ios, shadowSm.android]}
-               >
-                  <Pressable
-                     className="flex-row justify-between items-center active:opacity-60"
-                     onPress={() => setActionsCollapsed((c) => !c)}
-                  >
-                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                        Account actions
-                     </Text>
-                     {actionsCollapsed ? (
-                        <ChevronRight size={18} color={iconColor} />
-                     ) : (
-                        <ChevronDown size={18} color={iconColor} />
-                     )}
+            {/* ACCOUNT ACTIONS */}
+            {isSignedIn && (
+               <View className={`bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 ${shadowClass}`} style={[shadowSm.ios, shadowSm.android]}>
+                  <Pressable className="flex-row justify-between items-center p-4 active:bg-slate-50 dark:active:bg-slate-800" onPress={() => setActionsCollapsed(!actionsCollapsed)}>
+                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">Account Actions</Text>
+                     {actionsCollapsed ? <ChevronDown size={20} color={iconColor} /> : <ChevronUp size={20} color={iconColor} />}
                   </Pressable>
 
                   {!actionsCollapsed && (
-                     <View className="gap-3 mt-1">
-                        <Pressable
-                           className={`rounded-xl bg-white dark:bg-slate-800 items-center border border-slate-200 dark:border-slate-700 ${shadowClass} active:bg-slate-100 dark:active:bg-slate-800 ${BTN_HEIGHT}`}
-                           style={[shadowSm.ios, shadowSm.android]}
-                           onPress={confirmSignOut}
-                        >
-                           <Text className="text-slate-900 dark:text-slate-100 font-bold text-[15px]">
-                              Sign out
-                           </Text>
+                     <View className="p-4 pt-0 gap-3">
+                        <Pressable onPress={() => Alert.alert('Sign out', 'Confirm?', [{ text: 'Cancel' }, { text: 'Sign Out', onPress: signOut }])} className="py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 items-center">
+                           <Text className="font-bold text-slate-700 dark:text-slate-200 text-[15px]">Sign Out</Text>
                         </Pressable>
-
-                        <Pressable
-                           className={`rounded-xl items-center bg-belief-bg border border-belief-border ${shadowClass} active:opacity-80 ${BTN_HEIGHT} ${isOffline || deleteLoading ? 'opacity-50' : ''}`}
-                           style={[shadowSm.ios, shadowSm.android]}
-                           onPress={confirmDelete}
-                           disabled={isOffline || deleteLoading}
+                        
+                        {/* DELETE BUTTON: Ghost Style, Standard Text Size, More Spacing */}
+                        <Pressable 
+                           onPress={() => setShowDeleteModal(true)} 
+                           className="mt-3 py-2 items-center active:opacity-60"
                         >
-                           <Text className="text-belief-text font-extrabold text-[15px]">
-                              {deleteLoading ? 'Deleting...' : 'Delete account'}
+                           <Text className="font-semibold text-red-500 dark:text-red-400 text-[15px]">
+                              Delete Account
                            </Text>
                         </Pressable>
                      </View>
@@ -728,40 +442,116 @@ export default function SettingsScreen() {
                </View>
             )}
 
-            {/* Feedback Card */}
-            <View
-               className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 ${shadowClass}`}
-               style={[shadowSm.ios, shadowSm.android]}
-            >
-               <SendFeedback />
+            {/* FEEDBACK */}
+            <View className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden ${shadowClass}`} style={[shadowSm.ios, shadowSm.android]}>
+                <View className="p-4">
+                   <SendFeedback />
+                </View>
             </View>
+
+            <Text className="text-center text-xs text-slate-400 dark:text-slate-600 pb-4">Version 1.0.0</Text>
          </ScrollView>
       </View>
    );
 }
 
-function SettingRow({
-   title,
-   description,
-   children,
-   disabled,
-}: {
-   title: string;
-   description: string;
-   children: ReactNode;
-   disabled?: boolean;
+// --- SUB COMPONENTS ---
+
+function DeleteConfirmationModal({ visible, onClose, onConfirm, isDark }: { visible: boolean; onClose: () => void; onConfirm: () => Promise<boolean>; isDark: boolean }) {
+    const [confirmText, setConfirmText] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    
+    useEffect(() => {
+        if (visible) {
+            setConfirmText('');
+            setIsLoading(false);
+        }
+    }, [visible]);
+
+    const handleConfirm = async () => {
+        setIsLoading(true);
+        const success = await onConfirm();
+        if (!success) {
+            setIsLoading(false);
+        }
+    };
+
+    const isMatch = confirmText.toLowerCase() === 'delete';
+
+    return (
+        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 justify-center items-center bg-black/60 px-6">
+                <View className="w-full bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 gap-4">
+                    <View className="items-center gap-2">
+                        <View className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 items-center justify-center">
+                            <TriangleAlert size={24} color="#ef4444" />
+                        </View>
+                        <Text className="text-xl font-black text-slate-900 dark:text-white text-center">Delete Account?</Text>
+                        <Text className="text-sm text-slate-500 dark:text-slate-400 text-center px-2">
+                            This action is permanent. All your data will be wiped immediately.
+                        </Text>
+                    </View>
+
+                    <View className="gap-2">
+                        <Text className="text-xs font-bold uppercase text-slate-400 ml-1">Type "delete" to confirm</Text>
+                        <TextInput 
+                            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center font-bold text-slate-900 dark:text-white"
+                            placeholder="delete"
+                            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+                            autoCapitalize="none"
+                            value={confirmText}
+                            onChangeText={setConfirmText}
+                        />
+                    </View>
+
+                    <View className="flex-row gap-3 mt-2">
+                        <Pressable onPress={onClose} disabled={isLoading} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl items-center">
+                            <Text className="font-bold text-slate-700 dark:text-slate-300">Cancel</Text>
+                        </Pressable>
+                        <Pressable 
+                            onPress={handleConfirm} 
+                            disabled={!isMatch || isLoading}
+                            className={`flex-1 py-3 rounded-xl items-center ${isMatch ? 'bg-red-600' : 'bg-slate-200 dark:bg-slate-800 opacity-50'}`}
+                        >
+                            {isLoading ? <ActivityIndicator color="white" size="small" /> : <Text className={`font-bold ${isMatch ? 'text-white' : 'text-slate-400'}`}>Delete</Text>}
+                        </Pressable>
+                    </View>
+                </View>
+            </KeyboardAvoidingView>
+        </Modal>
+    );
+}
+
+function StatCard({ label, value, subtext, isLoading, isHighlight, icon, shadowClass, shadowStyle }: { 
+   label: string; 
+   value: string; 
+   subtext: string; 
+   isLoading?: boolean; 
+   isHighlight?: boolean;
+   icon?: ReactNode;
+   shadowClass?: string;
+   shadowStyle?: StyleProp<ViewStyle>; 
 }) {
    return (
-      <View
-         className={`flex-row items-center gap-2 ${disabled ? 'opacity-60' : ''}`}
-      >
-         <View className="flex-1">
-            <Text className="text-[15px] font-bold text-slate-900 dark:text-slate-100">
-               {title}
-            </Text>
-            <Text className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
-               {description}
-            </Text>
+      <View className={`flex-1 p-4 rounded-2xl border justify-between ${shadowClass ?? ''} ${isHighlight ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`} style={shadowStyle}>
+         <View className="flex-row justify-between items-start">
+             <Text className={`text-xs font-bold uppercase tracking-wider mb-2 ${isHighlight ? 'text-green-600 dark:text-green-400' : 'text-slate-400'}`}>{label}</Text>
+             {icon}
+         </View>
+         <View>
+            {isLoading ? <View className="h-8 w-16 bg-slate-100 dark:bg-slate-700 rounded animate-pulse" /> : <Text className={`text-2xl font-black ${isHighlight ? 'text-green-700 dark:text-green-300' : 'text-slate-900 dark:text-slate-100'}`}>{value}</Text>}
+            <Text className={`text-[10px] mt-1 ${isHighlight ? 'text-green-600/70 dark:text-green-300/60' : 'text-slate-400'}`}>{subtext}</Text>
+         </View>
+      </View>
+   );
+}
+
+function SettingRow({ title, description, children, disabled }: { title: string; description: string; children: ReactNode; disabled?: boolean }) {
+   return (
+      <View className={`flex-row items-center justify-between ${disabled ? 'opacity-50' : ''}`}>
+         <View className="flex-1 mr-4">
+            <Text className="text-[16px] font-bold text-slate-900 dark:text-slate-100">{title}</Text>
+            <Text className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5 leading-5">{description}</Text>
          </View>
          {children}
       </View>

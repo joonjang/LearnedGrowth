@@ -26,13 +26,6 @@ import { Platform } from "react-native";
 
 type AccountPlan = "free" | "invested";
 
-const logAuth = (...args: any[]) => console.log("[auth]", ...args);
-const tokenPreview = (token?: string | null) => {
-  if (!token) return "null";
-  if (token.length <= 12) return token;
-  return `${token.slice(0, 6)}...${token.slice(-6)}`;
-};
-
 export type AccountProfile = {
   plan: AccountPlan;
   aiCallsUsed: number;
@@ -95,10 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const lastProfileFetchRef = useRef<number | null>(null);
 
   const handleSession = useCallback((nextSession: Session | null) => {
-    logAuth("handleSession", {
-      userId: nextSession?.user?.id ?? "none",
-      hasSession: Boolean(nextSession),
-    });
     setSession(nextSession);
     setStatus(nextSession ? "signedIn" : "signedOut");
     if (!nextSession?.user?.id) {
@@ -119,7 +108,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const run = (async () => {
-      logAuth("refreshProfile:start", { userId: session.user.id });
       setLoadingProfile(true);
       setAuthError(null);
 
@@ -132,16 +120,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (res.error) {
           // keep the app usable even if the profile table is missing or empty
-          logAuth("refreshProfile:error", res.error.message);
           setAuthError(res.error.message);
           setProfile(EMPTY_PROFILE);
           return;
         }
 
-        logAuth("refreshProfile:success");
         setProfile(normalizeProfile(res) ?? EMPTY_PROFILE);
       } catch (err: any) {
-        logAuth("refreshProfile:exception", err?.message ?? err);
         setAuthError(err?.message ?? String(err));
         setProfile(EMPTY_PROFILE);
       } finally {
@@ -170,29 +155,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const bootstrapSession = useCallback(async () => {
     if (!supabase) {
-      logAuth("bootstrapSession:noSupabase");
       setStatus("signedOut");
       setSession(null);
       return;
     }
 
-    logAuth("bootstrapSession:start");
     setStatus("checking");
     setAuthError(null);
 
     const { data, error } = await supabase.auth.getSession();
     if (error) {
-      logAuth("bootstrapSession:error", error.message);
       setAuthError(error.message);
       setStatus("signedOut");
       setSession(null);
       return;
     }
 
-    logAuth("bootstrapSession:session", {
-      userId: data.session?.user?.id ?? "none",
-      hasSession: Boolean(data.session),
-    });
     handleSession(data.session ?? null);
   }, [handleSession]);
 
@@ -202,12 +180,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     bootstrapSession();
 
-    const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!mounted) return;
-      logAuth("onAuthStateChange", {
-        event,
-        userId: nextSession?.user?.id ?? "none",
-      });
       handleSession(nextSession);
     });
 
@@ -228,15 +202,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 
     if (!webClientId) {
-      logAuth("google:configure:missingWebClientId");
       return;
     }
-
-    logAuth("google:configure", {
-      hasWebClientId: Boolean(webClientId),
-      hasIosClientId: Boolean(iosClientId),
-      platform: Platform.OS,
-    });
 
     GoogleSignin.configure({
       webClientId,
@@ -250,7 +217,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string) => {
       if (!supabase) throw new Error("Supabase is not configured");
 
-      logAuth("signIn:start", { email });
       setAuthError(null);
 
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -259,12 +225,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        logAuth("signIn:error", error.message);
         setAuthError(error.message);
         throw error;
       }
 
-      logAuth("signIn:success", { userId: data.session?.user?.id ?? "none" });
       handleSession(data.session ?? null);
     },
     [handleSession]
@@ -274,7 +238,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string) => {
       if (!supabase) throw new Error("Supabase is not configured");
 
-      logAuth("signUp:start", { email });
       setAuthError(null);
 
       const { data, error } = await supabase.auth.signUp({
@@ -283,12 +246,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        logAuth("signUp:error", error.message);
         setAuthError(error.message);
         throw error;
       }
 
-      logAuth("signUp:success", { userId: data.session?.user?.id ?? "none" });
       handleSession(data.session ?? null);
     },
     [handleSession]
@@ -297,16 +258,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     if (!supabase) return;
 
-    logAuth("signOut:start");
     try {
       await GoogleSignin.signOut();
-      logAuth("signOut:google");
     } catch (err) {
       console.warn("Failed to sign out of Google", err);
     }
 
     await supabase.auth.signOut();
-    logAuth("signOut:supabase");
 
     handleSession(null);
     setProfile(null);
@@ -326,7 +284,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!credential.identityToken) {
-        logAuth("apple:missingIdentityToken");
         throw new Error("Apple Sign-In did not return an identity token");
       }
 
@@ -336,12 +293,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        logAuth("apple:supabaseError", error.message);
         setAuthError(error.message);
         throw error;
       }
 
-      logAuth("apple:success", { userId: data.session?.user?.id ?? "none" });
       handleSession(data.session ?? null);
 
       const { givenName, familyName } = credential.fullName ?? {};
@@ -366,7 +321,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (err?.code === "ERR_CANCELED" || err?.code === "ERR_REQUEST_CANCELED") {
         return false;
       }
-      logAuth("apple:error", err?.message ?? err);
       setAuthError(err?.message ?? "Apple sign-in failed");
       throw err;
     }
@@ -379,55 +333,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 
     if (!webClientId) {
-      logAuth("google:missingWebClientId");
       throw new Error("Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID");
     }
-
-    logAuth("google:start", {
-      platform: Platform.OS,
-      hasIosClientId: Boolean(iosClientId),
-    });
 
     setAuthError(null);
 
     try {
       if (Platform.OS === "android") {
-        const playServices = await GoogleSignin.hasPlayServices({
+        await GoogleSignin.hasPlayServices({
           showPlayServicesUpdateDialog: true,
         });
-        logAuth("google:playServices", { available: playServices });
       }
 
       const response = await GoogleSignin.signIn();
 
       // IMPORTANT: signIn() returns a union. Tokens live at response.data for success.
       if (isCancelledResponse(response)) {
-        logAuth("google:cancelled");
         return false;
       }
 
       if (!isSuccessResponse(response)) {
-        logAuth("google:nonSuccessResponse", response);
         return false;
       }
 
-      const { idToken, scopes, serverAuthCode } = response.data;
-
-      logAuth("google:signInResponse", {
-        hasIdToken: Boolean(idToken),
-        scopes,
-        serverAuthCode: tokenPreview(serverAuthCode),
-      });
+      const { idToken } = response.data;
 
       if (!idToken) {
         // Optional fallback if you ever run into a case where idToken is missing:
         // const tokens = await GoogleSignin.getTokens();
         // if (tokens?.idToken) { idToken = tokens.idToken; }
-        logAuth("google:noIdToken");
         throw new Error("Google sign-in did not return an ID token");
       }
-
-      logAuth("google:gotIdToken", tokenPreview(idToken));
 
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: "google",
@@ -435,25 +371,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        logAuth("google:supabaseError", error.message);
         setAuthError(error.message);
         throw error;
       }
 
-      logAuth("google:success", { userId: data.session?.user?.id ?? "none" });
       handleSession(data.session ?? null);
       return true;
     } catch (err: any) {
       if (isErrorWithCode(err) && err.code === statusCodes.SIGN_IN_CANCELLED) {
-        logAuth("google:cancelled");
         return false;
       }
       if (isErrorWithCode(err) && err.code === statusCodes.IN_PROGRESS) {
         // You can ignore or surface this, depending on UX
-        logAuth("google:in_progress");
       }
 
-      logAuth("google:error", err?.message ?? err);
       setAuthError(err?.message ?? "Google sign-in failed");
       throw err;
     }
