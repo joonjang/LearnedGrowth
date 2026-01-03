@@ -113,6 +113,7 @@ export default function SettingsScreen() {
    const [actionsCollapsed, setActionsCollapsed] = useState(true);
    const [deleteLoading, setDeleteLoading] = useState(false);
 
+   const isSignedIn = status === 'signedIn';
    const entitlementActive = isGrowthPlusActive;
    const hasGrowth = entitlementActive;
    const aiUsed = profile?.aiCallsUsed ?? 0;
@@ -170,6 +171,10 @@ export default function SettingsScreen() {
    }, [refreshBiometricInfo]);
 
    const handleUpgrade = async () => {
+      if (!isSignedIn) {
+         router.push(ROUTE_LOGIN as any);
+         return;
+      }
       setBillingAction('upgrade');
       setBillingNote(null);
       try {
@@ -357,6 +362,10 @@ export default function SettingsScreen() {
    }, [profile?.aiCycleStart]);
 
    const toggleShop = () => {
+      if (!isSignedIn) {
+         router.push(ROUTE_LOGIN as any);
+         return;
+      }
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setIsShopOpen(!isShopOpen);
    };
@@ -444,7 +453,7 @@ export default function SettingsScreen() {
             )}
 
             {/* Subscription Card */}
-            {user && (
+            {isSignedIn && user && (
                <View
                   className={`bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700 gap-3 ${shadowClass}`}
                   style={[shadowSm.ios, shadowSm.android]}

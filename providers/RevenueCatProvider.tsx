@@ -113,17 +113,22 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
   const refreshOfferings = useCallback(async () => {
     const loadedOfferings = await fetchOfferings();
     setOfferings(loadedOfferings);
-    return loadedOfferings;
   }, []);
 
   const showPaywall = useCallback(async () => {
-    const offering =
-      offerings?.current ?? (await refreshOfferings())?.current ?? null;
+    if (!user?.id) {
+      throw new Error("Sign in to manage your subscription.");
+    }
+    let offering = offerings?.current ?? null;
+    if (!offering) {
+      await refreshOfferings();
+      offering = offerings?.current ?? null;
+    }
     const result = await presentGrowthPlusPaywall(offering);
     const info = await fetchCustomerInfo();
     setCustomerInfo(info);
     return result;
-  }, [offerings?.current, refreshOfferings]);
+  }, [offerings, refreshOfferings, user?.id]);
 
   const showCustomerCenter = useCallback(async () => {
     await presentCustomerCenter();

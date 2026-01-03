@@ -24,8 +24,25 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
    const { refreshProfile, status } = useAuth();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const isSignedIn = status === 'signedIn';
 
    const [buyingPackage, setBuyingPackage] = useState<string | null>(null);
+
+   if (!isSignedIn) {
+      return (
+         <View className="p-6 items-center gap-3">
+            <Text className="text-base font-semibold text-slate-900 dark:text-slate-100 text-center">
+               Sign in to purchase credits or subscribe.
+            </Text>
+            <Pressable
+               onPress={() => router.push(ROUTE_LOGIN)}
+               className="px-4 py-2 rounded-full bg-emerald-600 active:bg-emerald-700"
+            >
+               <Text className="text-white font-bold">Log In / Sign Up</Text>
+            </Pressable>
+         </View>
+      );
+   }
 
    // 1. Get Consumables ('credits' offering)
    const creditOffering = offerings?.all['credits'];
