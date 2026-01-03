@@ -20,7 +20,7 @@ import {
    Zap,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, SectionList, Text, View } from 'react-native';
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
 import Animated, {
@@ -265,14 +265,14 @@ export default function EntriesScreen() {
    );
 
    // --- Actions ---
-   const closeMenu = () => {
+   const closeMenu = useCallback(() => {
       if (openMenuEntryId !== null) {
          setOpenMenuEntryId(null);
          setOpenMenuBounds(null);
       }
-   };
+   }, [openMenuEntryId]);
 
-   const closeActiveSwipeable = () => {
+   const closeActiveSwipeable = useCallback(() => {
       if (openSwipeableRef.current) {
          openSwipeableRef.current.ref.close();
          const id = openSwipeableRef.current.id;
@@ -280,28 +280,28 @@ export default function EntriesScreen() {
          return id;
       }
       return null;
-   };
+   }, []);
 
-   const onRowSwipeOpen = (id: string, ref: SwipeableMethods) => {
+   const onRowSwipeOpen = useCallback((id: string, ref: SwipeableMethods) => {
       if (openSwipeableRef.current && openSwipeableRef.current.ref !== ref) {
          openSwipeableRef.current.ref.close();
       }
       openSwipeableRef.current = { id, ref };
-   };
-   const onRowSwipeClose = (id: string) => {
+   }, []);
+   const onRowSwipeClose = useCallback((id: string) => {
       if (openSwipeableRef.current?.id === id) {
          openSwipeableRef.current = null;
       }
-   };
-   const toggleMenu = (entryId: string) => {
+   }, []);
+   const toggleMenu = useCallback((entryId: string) => {
       setOpenMenuEntryId((c) => {
          const n = c === entryId ? null : entryId;
          if (n !== c) setOpenMenuBounds(null);
          return n;
       });
-   };
+   }, []);
 
-   const requestDelete = (entry: Entry) => {
+   const requestDelete = useCallback((entry: Entry) => {
       closeMenu();
       closeActiveSwipeable();
       setUndoSlots((prev) => [...prev.filter((e) => e.id !== entry.id), entry]);
@@ -311,9 +311,9 @@ export default function EntriesScreen() {
       }, UNDO_TIMEOUT_MS);
       undoTimers.current.set(entry.id, timer);
       store.deleteEntry(entry.id).catch((e) => console.error(e));
-   };
+   }, [closeActiveSwipeable, closeMenu, store]);
 
-   const handleUndo = async (entry: Entry) => {
+   const handleUndo = useCallback(async (entry: Entry) => {
       setUndoSlots((prev) => prev.filter((e) => e.id !== entry.id));
       const timer = undoTimers.current.get(entry.id);
       if (timer) clearTimeout(timer);
@@ -323,7 +323,7 @@ export default function EntriesScreen() {
       } catch (e) {
          console.error(e);
       }
-   };
+   }, [store]);
 
    // --- Data Prep ---
    const rowsWithUndo = useMemo(
@@ -470,6 +470,64 @@ export default function EntriesScreen() {
       dashboardData.weeklyCount === 1 ? 'Thought' : 'Thoughts';
    const streakIcon = getStreakIcon(streakData.streakCount, isDark);
 
+   const renderSectionHeader = useCallback(
+      ({ section }: { section: EntrySection }) => (
+         <SectionHeader
+            title={section.title}
+            rangeLabel={section.rangeLabel}
+            summary={section.summary}
+            isDark={isDark}
+            paddingTop={insets.top}
+         />
+      ),
+      [insets.top, isDark]
+   );
+
+   const renderItem = useCallback(
+      ({ item }: { item: RowItem }) => {
+         if (item.kind === 'undo')
+            return (
+               <UndoRow
+                  entry={item.entry}
+                  onUndo={() => handleUndo(item.entry)}
+                  durationMs={UNDO_TIMEOUT_MS}
+               />
+            );
+         return (
+            <EntryRow
+               entry={item.entry}
+               isMenuOpen={openMenuEntryId === item.entry.id}
+               onToggleMenu={() => toggleMenu(item.entry.id)}
+               onCloseMenu={closeMenu}
+               onMenuLayout={setOpenMenuBounds}
+               onSwipeOpen={onRowSwipeOpen}
+               onSwipeClose={onRowSwipeClose}
+               closeActiveSwipeable={closeActiveSwipeable}
+               onEdit={() =>
+                  lockNavigation(() =>
+                     router.push({
+                        pathname: '/entries/[id]',
+                        params: { id: item.entry.id, mode: 'edit' },
+                     })
+                  )
+               }
+               onDelete={() => requestDelete(item.entry)}
+            />
+         );
+      },
+      [
+         closeActiveSwipeable,
+         closeMenu,
+         handleUndo,
+         lockNavigation,
+         onRowSwipeClose,
+         onRowSwipeOpen,
+         openMenuEntryId,
+         requestDelete,
+         toggleMenu,
+      ]
+   );
+
    return (
       <View
          className="flex-1 bg-slate-50 dark:bg-slate-900"
@@ -491,6 +549,11 @@ export default function EntriesScreen() {
             scrollEventThrottle={16}
             contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
             scrollIndicatorInsets={{ top: insets.top, bottom: insets.bottom }}
+            removeClippedSubviews
+            initialNumToRender={8}
+            maxToRenderPerBatch={8}
+            windowSize={10}
+            updateCellsBatchingPeriod={16}
             ListHeaderComponent={
                hasEntries ? (
                   <View
@@ -562,46 +625,8 @@ export default function EntriesScreen() {
                closeMenu();
                closeActiveSwipeable();
             }}
-            renderSectionHeader={({ section }) => (
-               <SectionHeader
-                  title={section.title}
-                  rangeLabel={section.rangeLabel}
-                  summary={section.summary}
-                  isDark={isDark}
-                  paddingTop={insets.top}
-               />
-            )}
-            renderItem={({ item }) => {
-               if (item.kind === 'undo')
-                  return (
-                     <UndoRow
-                        entry={item.entry}
-                        onUndo={() => handleUndo(item.entry)}
-                        durationMs={UNDO_TIMEOUT_MS}
-                     />
-                  );
-               return (
-                  <EntryRow
-                     entry={item.entry}
-                     isMenuOpen={openMenuEntryId === item.entry.id}
-                     onToggleMenu={() => toggleMenu(item.entry.id)}
-                     onCloseMenu={closeMenu}
-                     onMenuLayout={setOpenMenuBounds}
-                     onSwipeOpen={onRowSwipeOpen}
-                     onSwipeClose={onRowSwipeClose}
-                     closeActiveSwipeable={closeActiveSwipeable}
-                     onEdit={() =>
-                        lockNavigation(() =>
-                           router.push({
-                              pathname: '/entries/[id]',
-                              params: { id: item.entry.id, mode: 'edit' },
-                           })
-                        )
-                     }
-                     onDelete={() => requestDelete(item.entry)}
-                  />
-               );
-            }}
+            renderSectionHeader={renderSectionHeader}
+            renderItem={renderItem}
          />
 
          {/* FLOATING ACTION BUTTON (FAB) */}

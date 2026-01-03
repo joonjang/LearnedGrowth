@@ -72,6 +72,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2026-01-03
+- Made entries list view more efficient with memoization
+
 ### 2026-01-02
 - Removed user preference of Ai Analysis toggle
 - Entry history of having dispute enables minimizing of Belief and Consequence for card and entry detail
