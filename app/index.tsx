@@ -301,29 +301,35 @@ export default function EntriesScreen() {
       });
    }, []);
 
-   const requestDelete = useCallback((entry: Entry) => {
-      closeMenu();
-      closeActiveSwipeable();
-      setUndoSlots((prev) => [...prev.filter((e) => e.id !== entry.id), entry]);
-      const timer = setTimeout(() => {
-         setUndoSlots((prev) => prev.filter((e) => e.id !== entry.id));
-         undoTimers.current.delete(entry.id);
-      }, UNDO_TIMEOUT_MS);
-      undoTimers.current.set(entry.id, timer);
-      store.deleteEntry(entry.id).catch((e) => console.error(e));
-   }, [closeActiveSwipeable, closeMenu, store]);
+   const requestDelete = useCallback(
+      (entry: Entry) => {
+         closeMenu();
+         closeActiveSwipeable();
+         setUndoSlots((prev) => [...prev.filter((e) => e.id !== entry.id), entry]);
+         const timer = setTimeout(() => {
+            setUndoSlots((prev) => prev.filter((e) => e.id !== entry.id));
+            undoTimers.current.delete(entry.id);
+         }, UNDO_TIMEOUT_MS);
+         undoTimers.current.set(entry.id, timer);
+         store.deleteEntry(entry.id).catch((e) => console.error(e));
+      },
+      [closeActiveSwipeable, closeMenu, store]
+   );
 
-   const handleUndo = useCallback(async (entry: Entry) => {
-      setUndoSlots((prev) => prev.filter((e) => e.id !== entry.id));
-      const timer = undoTimers.current.get(entry.id);
-      if (timer) clearTimeout(timer);
-      undoTimers.current.delete(entry.id);
-      try {
-         await store.restoreEntry(entry);
-      } catch (e) {
-         console.error(e);
-      }
-   }, [store]);
+   const handleUndo = useCallback(
+      async (entry: Entry) => {
+         setUndoSlots((prev) => prev.filter((e) => e.id !== entry.id));
+         const timer = undoTimers.current.get(entry.id);
+         if (timer) clearTimeout(timer);
+         undoTimers.current.delete(entry.id);
+         try {
+            await store.restoreEntry(entry);
+         } catch (e) {
+            console.error(e);
+         }
+      },
+      [store]
+   );
 
    // --- Data Prep ---
    const rowsWithUndo = useMemo(
@@ -470,6 +476,7 @@ export default function EntriesScreen() {
       dashboardData.weeklyCount === 1 ? 'Thought' : 'Thoughts';
    const streakIcon = getStreakIcon(streakData.streakCount, isDark);
 
+   // Stable render functions to avoid extra renders as list scrolls
    const renderSectionHeader = useCallback(
       ({ section }: { section: EntrySection }) => (
          <SectionHeader
@@ -485,46 +492,46 @@ export default function EntriesScreen() {
 
    const renderItem = useCallback(
       ({ item }: { item: RowItem }) => {
-         if (item.kind === 'undo')
-            return (
-               <UndoRow
-                  entry={item.entry}
-                  onUndo={() => handleUndo(item.entry)}
-                  durationMs={UNDO_TIMEOUT_MS}
-               />
-            );
-         return (
-            <EntryRow
-               entry={item.entry}
-               isMenuOpen={openMenuEntryId === item.entry.id}
-               onToggleMenu={() => toggleMenu(item.entry.id)}
-               onCloseMenu={closeMenu}
-               onMenuLayout={setOpenMenuBounds}
-               onSwipeOpen={onRowSwipeOpen}
-               onSwipeClose={onRowSwipeClose}
-               closeActiveSwipeable={closeActiveSwipeable}
-               onEdit={() =>
-                  lockNavigation(() =>
-                     router.push({
-                        pathname: '/entries/[id]',
-                        params: { id: item.entry.id, mode: 'edit' },
-                     })
-                  )
-               }
-               onDelete={() => requestDelete(item.entry)}
+        if (item.kind === 'undo')
+          return (
+            <UndoRow
+              entry={item.entry}
+              onUndo={() => handleUndo(item.entry)}
+              durationMs={UNDO_TIMEOUT_MS}
             />
-         );
+          );
+        return (
+          <EntryRow
+            entry={item.entry}
+            isMenuOpen={openMenuEntryId === item.entry.id}
+            onToggleMenu={() => toggleMenu(item.entry.id)}
+            onCloseMenu={closeMenu}
+            onMenuLayout={setOpenMenuBounds}
+            onSwipeOpen={onRowSwipeOpen}
+            onSwipeClose={onRowSwipeClose}
+            closeActiveSwipeable={closeActiveSwipeable}
+            onEdit={() =>
+              lockNavigation(() =>
+                router.push({
+                  pathname: '/entries/[id]',
+                  params: { id: item.entry.id, mode: 'edit' },
+                })
+              )
+            }
+            onDelete={() => requestDelete(item.entry)}
+          />
+        );
       },
       [
-         closeActiveSwipeable,
-         closeMenu,
-         handleUndo,
-         lockNavigation,
-         onRowSwipeClose,
-         onRowSwipeOpen,
-         openMenuEntryId,
-         requestDelete,
-         toggleMenu,
+        closeActiveSwipeable,
+        closeMenu,
+        handleUndo,
+        lockNavigation,
+        onRowSwipeClose,
+        onRowSwipeOpen,
+        openMenuEntryId,
+        requestDelete,
+        toggleMenu,
       ]
    );
 
@@ -549,11 +556,6 @@ export default function EntriesScreen() {
             scrollEventThrottle={16}
             contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
             scrollIndicatorInsets={{ top: insets.top, bottom: insets.bottom }}
-            removeClippedSubviews
-            initialNumToRender={8}
-            maxToRenderPerBatch={8}
-            windowSize={10}
-            updateCellsBatchingPeriod={16}
             ListHeaderComponent={
                hasEntries ? (
                   <View
