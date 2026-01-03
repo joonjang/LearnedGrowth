@@ -39,6 +39,7 @@ import {
 import {
    KeyboardAvoidingView,
    KeyboardEvents,
+   useResizeMode,
 } from 'react-native-keyboard-controller';
 import Animated, {
    useAnimatedStyle,
@@ -56,6 +57,7 @@ const STEP_ORDER = [
 
 
 export default function DisputeScreen() {
+   useResizeMode();
    const params = useLocalSearchParams<{
       id?: string | string[];
       view?: string | string[];
@@ -331,18 +333,9 @@ const submit = useCallback(async () => {
    }, [scrollToBottom]);
 
    useEffect(() => {
-      const handleShow = () =>
-         requestAnimationFrame(() => scrollToBottom(true));
-      const willShowSub = KeyboardEvents.addListener(
-         'keyboardWillShow',
-         handleShow
-      );
-      const didShowSub = KeyboardEvents.addListener(
-         'keyboardDidShow',
-         handleShow
-      );
+      const handleShow = () => requestAnimationFrame(() => scrollToBottom(true));
+      const didShowSub = KeyboardEvents.addListener('keyboardDidShow', handleShow);
       return () => {
-         willShowSub.remove();
          didShowSub.remove();
       };
    }, [scrollToBottom]);

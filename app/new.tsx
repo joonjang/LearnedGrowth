@@ -20,7 +20,7 @@ import {
    TextInput,
    View
 } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView, useResizeMode } from 'react-native-keyboard-controller';
 // KEPT: Use insets for true edge-to-edge control
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -60,6 +60,7 @@ const routeTreeHasEntryDetail = (state: any, entryId: string | number) => {
 };
 
 export default function NewEntryModal() {
+   useResizeMode();
    const store = useEntries();
    const insets = useSafeAreaInsets(); // <-- The correct tool for Edge-to-Edge
    const rootNavigationState = useRootNavigationState();
@@ -191,7 +192,7 @@ export default function NewEntryModal() {
          <KeyboardAvoidingView
             className="flex-1 bg-slate-50 dark:bg-slate-900"
             behavior={'padding'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top: 0}
          >
             {/* NO SafeAreaView Wrapper here. We want the ScrollView to touch the top edge. */}
             
