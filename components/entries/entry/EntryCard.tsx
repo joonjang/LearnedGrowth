@@ -76,7 +76,7 @@ const FlowBreadcrumb = ({
             <View key={step} className="flex-row items-center gap-1.5">
                <Text className={`text-[11px] font-bold uppercase tracking-wider ${
                   isResolved && activeMode === 'reframed' && step !== 'Adversity' 
-                     ? 'text-emerald-600/70 dark:text-emerald-400' 
+                     ? 'text-dispute-text dark:text-dispute-textDark opacity-80' 
                      : 'text-slate-400 dark:text-slate-500'
                }`}>
                   {step}
@@ -95,15 +95,15 @@ const FlowConnector = ({ isResolved }: { isResolved?: boolean }) => {
    const isDark = colorScheme === 'dark';
    const iconColor = isResolved
       ? isDark
-         ? '#047857'
-         : '#6ee7b7'
+         ? '#d1fae5'
+         : '#065f46'
       : isDark
          ? '#475569'
          : '#cbd5e1';
 
    return (
       <View className="items-center -my-1.5 z-10 relative">
-         <View className={`${isResolved ? 'bg-emerald-50 dark:bg-[#062c21]' : 'bg-slate-50 dark:bg-slate-800/80'} rounded-full p-1`}>
+         <View className={`${isResolved ? 'bg-dispute-bg dark:bg-dispute-bgDark' : 'bg-slate-50 dark:bg-slate-800/80'} rounded-full p-1`}>
             <ArrowDown size={14} color={iconColor} />
          </View>
       </View>
@@ -333,9 +333,9 @@ export default function EntryCard({
                
                {/* 1. REFRAMED BADGE (Visible in White Area) */}
                {isReframed && (
-                  <View className="mr-3 bg-emerald-100/60 dark:bg-emerald-900/40 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/50 flex-row items-center gap-1">
-                     <CheckCircle2 size={12} color={isDark ? '#34d399' : '#059669'} />
-                     <Text className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
+                  <View className="mr-3 bg-dispute-bg dark:bg-dispute-bgDark px-2 py-0.5 rounded-md border border-dispute-border dark:border-dispute-borderDark flex-row items-center gap-1">
+                     <CheckCircle2 size={12} color={isDark ? '#d1fae5' : '#065f46'} />
+                     <Text className="text-[9px] font-bold text-dispute-text dark:text-dispute-textDark uppercase tracking-wide">
                         Reframed
                      </Text>
                   </View>
@@ -394,7 +394,7 @@ export default function EntryCard({
                layout={LinearTransition.springify()} 
                className={`p-3 pb-4 rounded-2xl relative border ${
                   viewMode === 'reframed' 
-                     ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100/60 dark:border-emerald-900/40' 
+                     ? 'bg-dispute-bg dark:bg-dispute-bgDark border-dispute-border dark:border-dispute-borderDark' 
                      : 'bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-700'
                }`}
             >
@@ -467,7 +467,7 @@ export default function EntryCard({
                      <View className={`flex-row items-center gap-1.5 px-3.5 py-2 rounded-full border shadow-sm ${
                         viewMode === 'reframed' 
                            ? 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700' 
-                           : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/40 dark:border-emerald-700'
+                           : 'bg-dispute-bg border-dispute-border dark:bg-dispute-bgDark dark:border-dispute-borderDark'
                      }`}>
                         {viewMode === 'reframed' ? (
                            <>
@@ -478,8 +478,8 @@ export default function EntryCard({
                            </>
                         ) : (
                            <>
-                              <Sprout size={13} color="#059669" />
-                              <Text className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
+                              <Sprout size={13} color={isDark ? '#d1fae5' : '#065f46'} />
+                              <Text className="text-[11px] font-bold text-dispute-text dark:text-dispute-textDark uppercase tracking-wide">
                                  View Reframed
                               </Text>
                            </>
