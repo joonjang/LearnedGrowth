@@ -467,7 +467,6 @@ export default function SettingsScreen() {
                            >
                               <View className="w-full items-center">
                                  <Text className="text-white font-bold text-[16px] text-center">Get More Analysis</Text>
-                                 <Text className="text-green-100 text-xs mt-0.5 text-center">Add more AI-powered insights</Text>
                               </View>
                               <View pointerEvents="none" className="absolute right-4 top-0 bottom-0 justify-center">
                                  {isShopOpen ? <ChevronUp size={20} color="white" /> : <ChevronDown size={20} color="white" />}
