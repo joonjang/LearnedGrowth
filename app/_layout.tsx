@@ -13,7 +13,8 @@ function EdgeToEdge({ children }: { children: React.ReactNode }) {
    const insets = useSafeAreaInsets();
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
-         <TopFade height={insets.top + 48} />
+         {/* Adjust height/intensity here to control the blur depth and strength. */}
+         <TopFade height={insets.top + 12}  />
          <StatusBar
             translucent
             // Logic: If Dark Mode -> Light Text. If Light Mode -> Dark Text.

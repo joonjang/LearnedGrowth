@@ -473,7 +473,7 @@ export function AiInsightCard({
                               {/* GUIDE PILL */}
                               <Pressable onPress={toggleHelp}>
                                  <View
-                                    className={`flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-colors ${
+                                    className={`flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-full border ${
                                        showDefinitions
                                           ? 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600'
                                           : 'border-transparent'

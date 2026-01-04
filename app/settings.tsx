@@ -14,7 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { router, useFocusEffect } from 'expo-router';
-import { ChevronDown, ChevronUp, TriangleAlert, Zap } from 'lucide-react-native';
+import { ChevronDown, ChevronRight, ChevronUp, TicketPlus, TriangleAlert, Zap } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import {
    useCallback,
@@ -26,6 +26,7 @@ import {
 import {
    ActivityIndicator,
    Alert,
+   Keyboard,
    KeyboardAvoidingView,
    LayoutAnimation,
    Linking,
@@ -41,6 +42,12 @@ import {
    ViewStyle,
 } from 'react-native';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import Animated, {
+   useAnimatedStyle,
+   useSharedValue,
+   withRepeat,
+   withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STORAGE_KEYS = {
@@ -62,7 +69,6 @@ export default function SettingsScreen() {
       refreshProfile,
       refreshProfileIfStale,
       loadingProfile,
-      isConfigured,
    } = useAuth();
 
    const {
@@ -71,7 +77,6 @@ export default function SettingsScreen() {
       showPaywall,
       restorePurchases,
       isGrowthPlusActive,
-      refreshCustomerInfo,
    } = useRevenueCat();
 
    const {
@@ -91,17 +96,25 @@ export default function SettingsScreen() {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const iconColor = isDark ? '#94a3b8' : '#64748b';
-   const loaderColor = isDark ? '#f8fafc' : '#0f172a';
    
    // Shadows
    const shadowSm = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
    const shadowClass = shadowSm.className;
+   const shadowGreen = useMemo(
+      () =>
+         getShadow({
+            isDark,
+            preset: 'sm',
+            colorLight: '#bbf7d0',
+            androidClassName: 'shadow-sm shadow-green-200',
+         }),
+      [isDark]
+   );
    
    // Colors
    const switchThumbColor = isDark ? '#1e293b' : '#ffffff';
 
    // --- State ---
-   const [isRefreshing, setIsRefreshing] = useState(false);
    const [isOffline, setIsOffline] = useState(false);
    const [billingNote, setBillingNote] = useState<string | null>(null);
    const [billingAction, setBillingAction] = useState<
@@ -117,6 +130,17 @@ export default function SettingsScreen() {
    const [actionsCollapsed, setActionsCollapsed] = useState(true);
    const [showDeleteModal, setShowDeleteModal] = useState(false);
    const [isShopOpen, setIsShopOpen] = useState(false);
+   const [couponExpanded, setCouponExpanded] = useState(false);
+   const [couponCode, setCouponCode] = useState('');
+   const [redeemingCoupon, setRedeemingCoupon] = useState(false);
+    const [couponMessage, setCouponMessage] = useState<string | null>(null);
+
+
+   useEffect(() => {
+      if (!billingNote) return;
+      const t = setTimeout(() => setBillingNote(null), 3000);
+      return () => clearTimeout(t);
+   }, [billingNote]);
 
    // --- Computed ---
    const isSignedIn = status === 'signedIn';
@@ -229,9 +253,47 @@ export default function SettingsScreen() {
       if (next && hapticsEnabled) triggerHaptic();
    };
 
-   const handleManualRefresh = async () => {
-      setIsRefreshing(true);
-      await Promise.all([refreshCustomerInfo(), refreshProfile()]).finally(() => setIsRefreshing(false));
+   const formatCouponMessage = (msg: string) => {
+      const cleaned = msg.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!cleaned) return 'Error.';
+      const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+      return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
+   };
+
+   useEffect(() => {
+      if (!billingNote) return;
+      const t = setTimeout(() => setBillingNote(null), 3000);
+      return () => clearTimeout(t);
+   }, [billingNote]);
+
+   const handleRedeemCoupon = async () => {
+      if (!isSignedIn || !user) {
+         router.push(ROUTE_LOGIN as any);
+         return;
+      }
+      if (!couponCode.trim()) return;
+      if (isOffline) {
+         setCouponMessage(formatCouponMessage('Go online to redeem a coupon'));
+         return;
+      }
+      setRedeemingCoupon(true);
+      setCouponMessage(null);
+      try {
+         const supabase = getSupabaseClient();
+         const rpcName =
+            process.env.EXPO_PUBLIC_SUPABASE_COUPON_RPC ?? 'redeem_coupon';
+         const { error } = await supabase.rpc(rpcName, {
+            code: couponCode.trim(),
+         });
+         if (error) throw new Error(error.message);
+         setCouponMessage(formatCouponMessage('Coupon applied'));
+         setCouponCode('');
+         await refreshProfile();
+      } catch (err: any) {
+         setCouponMessage(formatCouponMessage(err?.message ?? 'Coupon failed'));
+      } finally {
+         setRedeemingCoupon(false);
+      }
    };
 
    const toggleShop = () => {
@@ -264,7 +326,7 @@ export default function SettingsScreen() {
       return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
    }, [profile?.aiCycleStart]);
 
-   const isLoading = loadingProfile || rcLoading || isRefreshing;
+   const isLoading = loadingProfile || rcLoading;
 
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
@@ -284,6 +346,7 @@ export default function SettingsScreen() {
                gap: 16,
             }}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
          >
              {/* HEADER */}
             <View className="flex-row justify-between items-start mb-2">
@@ -307,12 +370,13 @@ export default function SettingsScreen() {
             )}
 
             {!user && (
-               <View className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 items-center gap-3 ${shadowClass}`} style={[shadowSm.ios, shadowSm.android]}>
-                  <Text className="text-center text-slate-600 dark:text-slate-300">Sign in to sync data.</Text>
-                  <Pressable className="w-full bg-slate-900 dark:bg-slate-100 py-3 rounded-xl items-center" onPress={() => router.push(ROUTE_LOGIN)}>
-                     <Text className="text-white dark:text-slate-900 font-bold">Sign In</Text>
-                  </Pressable>
-               </View>
+               <Pressable
+                  className={`w-full items-center justify-center py-3 rounded-xl bg-indigo-600 dark:bg-indigo-500 ${shadowClass}`}
+                  style={[shadowSm.ios, shadowSm.android]}
+                  onPress={() => router.push(ROUTE_LOGIN)}
+               >
+                  <Text className="text-white font-bold">Sign In To Enable Features</Text>
+               </Pressable>
             )}
 
             {/* STATS */}
@@ -343,23 +407,65 @@ export default function SettingsScreen() {
             {isSignedIn && user && (
                <View className={`bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 ${shadowClass}`} style={[shadowSm.ios, shadowSm.android]}>
                   {/* Plan Status Header */}
-                  <View className="p-4 border-b border-slate-100 dark:border-slate-800 flex-row justify-between items-center">
-                     <View>
-                        <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Current Plan</Text>
-                        <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{planLabel}</Text>
+                  <View className="p-4 border-b border-slate-100 dark:border-slate-800">
+                     <View className="flex-row justify-between items-center">
+                        <View>
+                           <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Current Plan</Text>
+                           <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{planLabel}</Text>
+                        </View>
+                        {!hasGrowth && (
+                           <Pressable
+                              onPress={() => setCouponExpanded((v) => !v)}
+                              className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700 active:opacity-80"
+                           >
+                              <TicketPlus size={18} color={iconColor} />
+                           </Pressable>
+                        )}
                      </View>
-                     <Pressable onPress={handleManualRefresh} disabled={isLoading} className={`p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700 ${isLoading ? 'opacity-50' : ''}`}>
-                        {isLoading ? <ActivityIndicator size="small" color={loaderColor} /> : <Text className="text-xs text-slate-900 dark:text-slate-100">↻</Text>}
-                     </Pressable>
+                     {!hasGrowth && couponExpanded && (
+                        <View className="mt-3 flex-row items-center gap-2">
+                           <TextInput
+                              value={couponCode}
+                              onChangeText={setCouponCode}
+                              placeholder="Enter coupon"
+                              placeholderTextColor={isDark ? '#94a3b8' : '#94a3b8'}
+                              className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                              autoCapitalize="none"
+                              autoCorrect={false}
+                           />
+                           <Pressable
+                              onPress={() => {
+                                 Keyboard.dismiss();
+                                 handleRedeemCoupon();
+                              }}
+                              className={`px-3 py-2 rounded-lg bg-slate-700`}
+                           >
+                              {redeemingCoupon ? (
+                                 <ActivityIndicator size="small" color="white" />
+                              ) : (
+                                 <Text className="text-white font-semibold">Apply</Text>
+                              )}
+                           </Pressable>
+                        </View>
+                     )}
+                     {!hasGrowth && couponExpanded && couponMessage ? (
+                        <Text className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+                           {couponMessage}
+                        </Text>
+                     ) : null}
                   </View>
 
                   <View className="p-4 gap-4 bg-slate-50/50 dark:bg-slate-800/20">
                      {!hasGrowth ? (
                         <>
-                           <Pressable onPress={toggleShop} className="bg-green-600 active:bg-green-700 rounded-xl p-4 flex-row items-center justify-between shadow-sm shadow-green-200 dark:shadow-none">
+                           <Pressable
+                              onPress={toggleShop}
+                              className={`bg-green-600 active:bg-green-700 rounded-xl p-4 flex-row items-center justify-between ${shadowGreen.className}`}
+                              style={[shadowGreen.ios, shadowGreen.android]}
+                           >
                               <View className="flex-1 mr-2">
-                                 <Text className="text-white font-bold text-[16px]">Unlock Growth Plus</Text>
-                                 <Text className="text-green-100 text-xs mt-0.5">Unlimited analysis & more</Text>
+                                 <Text className="text-white font-bold text-[16px]">Get More Analysis</Text>
+                                 <Text className="text-green-100 text-xs mt-0.5">Add more AI-powered insights</Text>
                               </View>
                               {isShopOpen ? <ChevronUp size={20} color="white" /> : <ChevronDown size={20} color="white" />}
                            </Pressable>
@@ -376,13 +482,17 @@ export default function SettingsScreen() {
                         </Pressable>
                      )}
 
+
                      <Pressable onPress={handleRestore} disabled={billingAction === 'restore' || isOffline} className="self-center py-1">
                         <Text className="text-xs font-semibold text-slate-400 dark:text-slate-500">
                            {billingAction === 'restore' ? 'Restoring purchases...' : 'Restore Purchases'}
                         </Text>
                      </Pressable>
-                     
-                     {(billingNote || rcError) && <Text className="text-xs text-center text-slate-600 dark:text-slate-400">{billingNote ?? rcError}</Text>}
+                     {(billingNote || rcError) && (
+                        <Text className="text-xs text-center text-slate-600 dark:text-slate-400 mt-1">
+                           {billingNote ?? rcError}
+                        </Text>
+                     )}
                   </View>
                </View>
             )}
@@ -493,7 +603,7 @@ function DeleteConfirmationModal({ visible, onClose, onConfirm, isDark }: { visi
                     </View>
 
                     <View className="gap-2">
-                        <Text className="text-xs font-bold uppercase text-slate-400 ml-1">Type "delete" to confirm</Text>
+                        <Text className="text-xs font-bold uppercase text-slate-400 ml-1">Type &quot;delete&quot; to confirm</Text>
                         <TextInput 
                             className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center font-bold text-slate-900 dark:text-white"
                             placeholder="delete"
@@ -532,6 +642,24 @@ function StatCard({ label, value, subtext, isLoading, isHighlight, icon, shadowC
    shadowClass?: string;
    shadowStyle?: StyleProp<ViewStyle>; 
 }) {
+   const pulseOpacity = useSharedValue(0.6);
+   const pulseStyle = useAnimatedStyle(() => ({
+      opacity: pulseOpacity.value,
+   }));
+
+   useEffect(() => {
+      if (!isLoading) {
+         pulseOpacity.value = withTiming(1, { duration: 150 });
+         return;
+      }
+      pulseOpacity.value = 0.6;
+      pulseOpacity.value = withRepeat(
+         withTiming(1, { duration: 700 }),
+         -1,
+         true
+      );
+   }, [isLoading, pulseOpacity]);
+
    return (
       <View className={`flex-1 p-4 rounded-2xl border justify-between ${shadowClass ?? ''} ${isHighlight ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`} style={shadowStyle}>
          <View className="flex-row justify-between items-start">
@@ -539,7 +667,14 @@ function StatCard({ label, value, subtext, isLoading, isHighlight, icon, shadowC
              {icon}
          </View>
          <View>
-            {isLoading ? <View className="h-8 w-16 bg-slate-100 dark:bg-slate-700 rounded animate-pulse" /> : <Text className={`text-2xl font-black ${isHighlight ? 'text-green-700 dark:text-green-300' : 'text-slate-900 dark:text-slate-100'}`}>{value}</Text>}
+            {isLoading ? (
+               <Animated.View
+                  className="h-8 w-16 bg-slate-100 dark:bg-slate-700 rounded"
+                  style={pulseStyle}
+               />
+            ) : (
+               <Text className={`text-2xl font-black ${isHighlight ? 'text-green-700 dark:text-green-300' : 'text-slate-900 dark:text-slate-100'}`}>{value}</Text>
+            )}
             <Text className={`text-[10px] mt-1 ${isHighlight ? 'text-green-600/70 dark:text-green-300/60' : 'text-slate-400'}`}>{subtext}</Text>
          </View>
       </View>

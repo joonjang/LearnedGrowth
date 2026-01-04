@@ -4,7 +4,7 @@ import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
 import { Check, Crown, Leaf, Sprout } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
    ActivityIndicator,
    Alert,
@@ -21,12 +21,17 @@ type Props = {
 
 export default function CreditShop({ onUpgrade, onSuccess }: Props) {
    const { offerings, buyConsumable, refreshCustomerInfo } = useRevenueCat();
-   const { refreshProfile, status } = useAuth();
+   const { refreshProfile, status, profile } = useAuth();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const isSignedIn = status === 'signedIn';
 
    const [buyingPackage, setBuyingPackage] = useState<string | null>(null);
+   const profileRef = useRef(profile);
+
+   useEffect(() => {
+      profileRef.current = profile;
+   }, [profile]);
 
    if (!isSignedIn) {
       return (
@@ -81,10 +86,13 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
          await buyConsumable(pkg.product.identifier);
          await refreshCustomerInfo();
 
-         const pollDelays = [1000, 2000, 3000];
+         const startExtra = profileRef.current?.extraAiCredits ?? 0;
+         const pollDelays = [600, 1200, 2000, 3200];
          for (const delay of pollDelays) {
-            await new Promise((resolve) => setTimeout(resolve, delay));
             await refreshProfile();
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            const latestExtra = profileRef.current?.extraAiCredits ?? 0;
+            if (latestExtra > startExtra) break;
          }
 
          if (onSuccess) onSuccess();

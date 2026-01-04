@@ -74,6 +74,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2026-01-03
 - Made entries list view more efficient with memoization
+- Setting screen features coupon
+- Removed use of transition-colors from native wind which caused shared value warnings
+- Added blur to status bar
 
 ### 2026-01-02
 - Removed user preference of Ai Analysis toggle
