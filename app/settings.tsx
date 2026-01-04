@@ -163,7 +163,9 @@ export default function SettingsScreen() {
 
    useEffect(() => {
       const unsubscribe = NetInfo.addEventListener((state) => {
-         setIsOffline(!(state.isConnected && state.isInternetReachable));
+         const connected = state.isConnected;
+         const reachable = state.isInternetReachable;
+         setIsOffline(connected === false || reachable === false);
       });
       return () => unsubscribe();
    }, []);
@@ -460,14 +462,16 @@ export default function SettingsScreen() {
                         <>
                            <Pressable
                               onPress={toggleShop}
-                              className={`bg-green-600 active:bg-green-700 rounded-xl p-4 flex-row items-center justify-between ${shadowGreen.className}`}
+                              className={`bg-green-600 active:bg-green-700 rounded-xl p-4 items-center ${shadowGreen.className}`}
                               style={[shadowGreen.ios, shadowGreen.android]}
                            >
-                              <View className="flex-1 mr-2">
-                                 <Text className="text-white font-bold text-[16px]">Get More Analysis</Text>
-                                 <Text className="text-green-100 text-xs mt-0.5">Add more AI-powered insights</Text>
+                              <View className="w-full items-center">
+                                 <Text className="text-white font-bold text-[16px] text-center">Get More Analysis</Text>
+                                 <Text className="text-green-100 text-xs mt-0.5 text-center">Add more AI-powered insights</Text>
                               </View>
-                              {isShopOpen ? <ChevronUp size={20} color="white" /> : <ChevronDown size={20} color="white" />}
+                              <View pointerEvents="none" className="absolute right-4 top-0 bottom-0 justify-center">
+                                 {isShopOpen ? <ChevronUp size={20} color="white" /> : <ChevronDown size={20} color="white" />}
+                              </View>
                            </Pressable>
                            {isShopOpen && (
                               <View className="pt-2">
@@ -513,14 +517,15 @@ export default function SettingsScreen() {
                    <SettingRow title="Biometric Lock" description="Require FaceID/TouchID on launch." disabled={prefsLoading || biometricUnavailable}>
                       <Switch value={biometricEnabled} onValueChange={handleToggleBiometric} disabled={prefsLoading || biometricUnavailable || biometricNeedsEnroll} thumbColor={switchThumbColor} trackColor={{ false: '#e2e8f0', true: '#16a34a' }} />
                    </SettingRow>
-                   {biometricUnavailable && (
-                       <Text className="text-xs text-slate-400 mt-2 ml-1">* Biometric hardware not detected on this device.</Text>
-                   )}
-                   {biometricNeedsEnroll && (
-                       <Pressable onPress={() => Linking.openSettings()}>
-                           <Text className="text-xs text-amber-600 dark:text-amber-500 mt-2 ml-1 font-medium">* Biometrics not set up. Tap to open Settings.</Text>
-                       </Pressable>
-                   )}
+                   <View className="ml-1 min-h-[16px]">
+                       {biometricUnavailable ? (
+                           <Text className="text-xs leading-4 text-slate-400">* Biometric hardware not detected on this device.</Text>
+                       ) : biometricNeedsEnroll ? (
+                           <Pressable onPress={() => Linking.openSettings()}>
+                               <Text className="text-xs leading-4 text-amber-600 dark:text-amber-500 font-medium">* Biometrics not set up. Tap to open Settings.</Text>
+                           </Pressable>
+                       ) : null}
+                   </View>
                </View>
             </View>
 
