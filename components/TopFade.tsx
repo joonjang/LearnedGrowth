@@ -2,7 +2,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
-import { Platform, UIManager, View, type StyleProp, type ViewStyle } from 'react-native';
+import { NativeModules, Platform, UIManager, View, type StyleProp, type ViewStyle } from 'react-native';
 
 type Props = {
    height: number;
@@ -40,7 +40,19 @@ const MASK_LOCATIONS = [0.5, 0.8, 1] as const;
 export default function TopFade({ height, intensity = DEFAULT_INTENSITY, style }: Props) {
    const { colorScheme } = useColorScheme();
    const tint = colorScheme === 'dark' ? 'dark' : 'light';
-   const blurViewAvailable = !!UIManager.getViewManagerConfig?.('ExpoBlurView');
+   const appIdentifier = (globalThis as any)?.expo?.__expo_app_identifier__ ?? '';
+   const viewManagerName = appIdentifier
+      ? `ViewManagerAdapter_ExpoBlurView_${appIdentifier}`
+      : 'ViewManagerAdapter_ExpoBlurView';
+   const expoViewConfig =
+      typeof (globalThis as any)?.expo?.getViewConfig === 'function'
+         ? (globalThis as any).expo.getViewConfig('ExpoBlurView')
+         : null;
+   const blurViewAvailable =
+      !!expoViewConfig ||
+      !!NativeModules?.NativeUnimoduleProxy?.viewManagersMetadata?.ExpoBlurView ||
+      !!UIManager.getViewManagerConfig?.(viewManagerName) ||
+      !!UIManager.getViewManagerConfig?.('ExpoBlurView');
    const maskedViewAvailable = !!UIManager.getViewManagerConfig?.('RNCMaskedView');
    const fallbackBg = tint === 'dark' ? FALLBACK_BG_DARK : FALLBACK_BG_LIGHT;
    const fallbackGradientColors =
