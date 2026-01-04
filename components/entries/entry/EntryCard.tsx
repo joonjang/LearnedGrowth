@@ -90,13 +90,25 @@ const FlowBreadcrumb = ({
    </View>
 );
 
-const FlowConnector = ({ isResolved }: { isResolved?: boolean }) => (
-   <View className="items-center -my-1.5 z-10 relative">
-      <View className={`${isResolved ? 'bg-emerald-50 dark:bg-[#062c21]' : 'bg-slate-50 dark:bg-slate-800/80'} rounded-full p-1`}>
-         <ArrowDown size={14} className={isResolved ? "text-emerald-300 dark:text-emerald-700" : "text-slate-300 dark:text-slate-600"} />
+const FlowConnector = ({ isResolved }: { isResolved?: boolean }) => {
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
+   const iconColor = isResolved
+      ? isDark
+         ? '#047857'
+         : '#6ee7b7'
+      : isDark
+         ? '#475569'
+         : '#cbd5e1';
+
+   return (
+      <View className="items-center -my-1.5 z-10 relative">
+         <View className={`${isResolved ? 'bg-emerald-50 dark:bg-[#062c21]' : 'bg-slate-50 dark:bg-slate-800/80'} rounded-full p-1`}>
+            <ArrowDown size={14} color={iconColor} />
+         </View>
       </View>
-   </View>
-);
+   );
+};
 
 const FlowBlock = memo(({
    text,
