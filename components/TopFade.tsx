@@ -17,6 +17,17 @@ const DEFAULT_ANDROID_REDUCTION = 2;
 const MAX_ANDROID_RADIUS = 25;
 const FALLBACK_BG_LIGHT = '#f8fafc';
 const FALLBACK_BG_DARK = '#0f172a';
+const FALLBACK_GRADIENT_LIGHT = [
+   'rgba(248, 250, 252, 0.9)',
+   'rgba(248, 250, 252, 0.4)',
+   'rgba(248, 250, 252, 0)',
+] as const;
+const FALLBACK_GRADIENT_DARK = [
+   'rgba(15, 23, 42, 0.9)',
+   'rgba(15, 23, 42, 0.45)',
+   'rgba(15, 23, 42, 0)',
+] as const;
+const FALLBACK_GRADIENT_LOCATIONS = [0, 0.6, 1] as const;
 // Mask ramp (top = full blur, bottom = no blur).
 // Adjust colors/locations to control how quickly the blur fades.
 const MASK_COLORS = [
@@ -29,8 +40,11 @@ const MASK_LOCATIONS = [0.5, 0.8, 1] as const;
 export default function TopFade({ height, intensity = DEFAULT_INTENSITY, style }: Props) {
    const { colorScheme } = useColorScheme();
    const tint = colorScheme === 'dark' ? 'dark' : 'light';
+   const blurViewAvailable = !!UIManager.getViewManagerConfig?.('ExpoBlurView');
    const maskedViewAvailable = !!UIManager.getViewManagerConfig?.('RNCMaskedView');
    const fallbackBg = tint === 'dark' ? FALLBACK_BG_DARK : FALLBACK_BG_LIGHT;
+   const fallbackGradientColors =
+      tint === 'dark' ? FALLBACK_GRADIENT_DARK : FALLBACK_GRADIENT_LIGHT;
    const androidBlurReduction =
       Platform.OS === 'android'
          ? Math.max(DEFAULT_ANDROID_REDUCTION, intensity / MAX_ANDROID_RADIUS)
@@ -55,7 +69,15 @@ export default function TopFade({ height, intensity = DEFAULT_INTENSITY, style }
          style={[{ height }, style]}
          pointerEvents="none"
       >
-         {maskedViewAvailable ? (
+         {!blurViewAvailable ? (
+            <LinearGradient
+               colors={fallbackGradientColors}
+               locations={FALLBACK_GRADIENT_LOCATIONS}
+               start={{ x: 0, y: 0 }}
+               end={{ x: 0, y: 1 }}
+               style={{ flex: 1 }}
+            />
+         ) : maskedViewAvailable ? (
             <MaskedView
                style={{ flex: 1 }}
                maskElement={
