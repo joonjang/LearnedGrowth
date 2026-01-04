@@ -26,8 +26,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - Biometric lock disables the app from all screens until unlocked
 
-- Revenuecat failed purchase screens
-
 - Fine tune dark mode
   - loading ellipse white
 
@@ -57,15 +55,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - restore purchases to re-sync active subscription of reinstall app
     - webhook should update with the supabase database to match
   - enable biometric security -- buggy
-  - tactile haptic feedback when completing an entry x
-
-  - delete account x
-    - test for google and apple
 
 - App store payment testing + revenuecat
   - test fails and restore purchase
-
-- UI
 
 
 ---
@@ -77,6 +69,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Setting screen features coupon
 - Removed use of transition-colors from native wind which caused shared value warnings
 - Added blur to status bar
+- EntryCard dark mode down arrow and dark mode card view improved
 
 ### 2026-01-02
 - Removed user preference of Ai Analysis toggle
