@@ -22,11 +22,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- Add a sprout icon for growth plus members
 
+- Make shadow uniform for ios in setting screen
 
 - Bug login should not stack a new home page, it should replace
-
-- Biometric lock disables the app from all screens until unlocked
 
 - make the dispute ai analysis screen not turn off when getting ai content
 
@@ -35,13 +35,15 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - Have a distinction for production tables and edge functions and development versions
 
+- Change ai credit from daily to monthly
 
 ---
 
 - BACKLOG 
 - add a report problem button to send a snapshot of the issue
 - enable user to get extra analysis if someone signs up using their referal code
-- Change positioning of delete account 
+
+- Biometric lock disables the app from all screens until unlocked
 
 - Entry categorization upon subscription
 - Animate minimize and show for EntryDetail Screen
@@ -50,7 +52,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - Cloud database sync 
     - log out should hide entries
 
-- Change ai credit from daily to monthly
 
 ## Steps
 
@@ -60,7 +61,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - if subscribed, manage subscription. links to app store management sheet 
   - restore purchases to re-sync active subscription of reinstall app
     - webhook should update with the supabase database to match
-  - enable biometric security -- buggy
 
 - App store payment testing + revenuecat
   - test fails and restore purchase
