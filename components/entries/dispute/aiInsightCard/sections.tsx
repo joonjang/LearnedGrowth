@@ -1,5 +1,4 @@
 import { PInsightCard } from '@/components/appInfo/PDefinitions';
-import CreditShop from '@/components/CreditShop';
 import {
    BookOpen,
    ChevronDown,
@@ -119,36 +118,6 @@ export function AiInsightMinimizedState({
          <View className="mt-2 items-center opacity-50">
             <ChevronDown size={16} color={isDark ? '#94a3b8' : '#64748b'} />
          </View>
-      </View>
-   );
-}
-
-export type AiInsightCreditShopPanelProps = {
-   show: boolean;
-   onClose: () => void;
-   onSuccess: () => Promise<void>;
-};
-
-export function AiInsightCreditShopPanel({
-   show,
-   onClose,
-   onSuccess,
-}: AiInsightCreditShopPanelProps) {
-   if (!show) return null;
-
-   return (
-      <View className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 gap-3 shadow-sm">
-         <View className="flex-row justify-between items-center">
-            <Text className="text-base font-bold text-slate-900 dark:text-slate-100">
-               Refill AI credits
-            </Text>
-            <Pressable onPress={onClose} hitSlop={10}>
-               <Text className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                  Close
-               </Text>
-            </Pressable>
-         </View>
-         <CreditShop onSuccess={onSuccess} />
       </View>
    );
 }

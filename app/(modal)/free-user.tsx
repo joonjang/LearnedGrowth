@@ -3,10 +3,15 @@ import {
    AI_ANALYSIS_CREDIT_COST,
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_CONTENT_PADDING,
-   BOTTOM_SHEET_RADIUS,
    FREE_MONTHLY_CREDITS,
    ROUTE_LOGIN,
 } from '@/components/constants';
+import {
+   BOTTOM_SHEET_BG_DARK,
+   BOTTOM_SHEET_BG_LIGHT,
+   bottomSheetBackgroundStyle,
+   bottomSheetHandleIndicatorStyle,
+} from '@/components/bottomSheetStyles';
 import CreditShop from '@/components/CreditShop';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
@@ -108,10 +113,9 @@ export default function FreeUserChoiceScreen() {
    const isDark = colorScheme === 'dark';
 
    const theme = {
-      bg: isDark ? '#0f172a' : '#ffffff',
+      bg: isDark ? BOTTOM_SHEET_BG_DARK : BOTTOM_SHEET_BG_LIGHT,
       text: isDark ? '#f8fafc' : '#0f172a',
       subText: isDark ? '#cbd5e1' : '#64748b',
-      indicator: isDark ? '#475569' : '#cbd5e1',
       // Amber Card
       amberText: isDark ? '#fde68a' : '#b45309',
       amberSub: isDark ? 'rgba(254, 243, 199, 0.8)' : 'rgba(146, 64, 14, 0.8)',
@@ -237,11 +241,8 @@ export default function FreeUserChoiceScreen() {
             enableDynamicSizing={true}
             enablePanDownToClose
             backdropComponent={renderBackdrop}
-            handleIndicatorStyle={{ backgroundColor: theme.indicator }}
-            backgroundStyle={{
-               backgroundColor: theme.bg,
-               borderRadius: BOTTOM_SHEET_RADIUS,
-            }}
+            handleIndicatorStyle={bottomSheetHandleIndicatorStyle(isDark)}
+            backgroundStyle={bottomSheetBackgroundStyle(isDark, theme.bg)}
          >
             <BottomSheetScrollView
                contentContainerStyle={{

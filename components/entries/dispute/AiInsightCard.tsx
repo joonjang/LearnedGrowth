@@ -4,14 +4,15 @@ import {
 } from '@/components/constants';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { useAuth } from '@/providers/AuthProvider';
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useColorScheme } from 'nativewind';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutAnimation, Pressable, View } from 'react-native';
 
+import { AiInsightCreditShopSheet } from '../../CreditShopSheet';
 import { getAiInsightAnimationTimeline } from './aiInsightCard/animation';
 import {
    AiInsightCrisisBanner,
-   AiInsightCreditShopPanel,
    AiInsightDisclaimer,
    AiInsightEmotionalValidation,
    AiInsightErrorState,
@@ -62,10 +63,10 @@ export function AiInsightCard({
    const isDark = colorScheme === 'dark';
    const { profile, status, refreshProfile, refreshProfileIfStale } = useAuth();
    const isFreePlan = profile?.plan === 'free';
+   const shopSheetRef = useRef<BottomSheetModal>(null);
 
    // --- STATE ---
    const [showDefinitions, setShowDefinitions] = useState(false);
-   const [showShop, setShowShop] = useState(false);
    const [isMinimized, setIsMinimized] = useState(
       allowMinimize && initiallyMinimized
    );
@@ -205,14 +206,12 @@ export function AiInsightCard({
          : streamingText;
    const isLoading = !data && !error;
 
-   const handleShopClose = () => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setShowShop(false);
+   const openShopSheet = () => {
+      shopSheetRef.current?.present();
    };
 
    const handleShopSuccess = async () => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setShowShop(false);
+      shopSheetRef.current?.dismiss();
       if (status === 'signedIn') {
          try {
             await refreshProfile();
@@ -225,7 +224,7 @@ export function AiInsightCard({
    const handleRefreshPress = async () => {
       const noCredits = availableCredits !== null && availableCredits <= 0;
       if (noCredits) {
-         setShowShop(true);
+         openShopSheet();
          return;
       }
       try {
@@ -293,12 +292,6 @@ export function AiInsightCard({
             {/* --- EXPANDED CONTENT --- */}
             {data && !isMinimized && (
                <View className="gap-6 pt-1">
-                  <AiInsightCreditShopPanel
-                     show={showShop}
-                     onClose={handleShopClose}
-                     onSuccess={handleShopSuccess}
-                  />
-
                   <AiInsightStaleBanner
                      isStale={Boolean(isStale)}
                      isCoolingDown={isCoolingDown}
@@ -340,6 +333,12 @@ export function AiInsightCard({
                </View>
             )}
          </View>
+         <AiInsightCreditShopSheet
+            sheetRef={shopSheetRef}
+            onDismiss={() => {}}
+            onSuccess={handleShopSuccess}
+            isDark={isDark}
+         />
       </Pressable>
    );
 }

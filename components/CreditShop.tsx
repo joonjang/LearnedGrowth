@@ -4,7 +4,7 @@ import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
 import { Check, Crown, Leaf, Sprout } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
    ActivityIndicator,
    Alert,
@@ -13,6 +13,7 @@ import {
    View,
 } from 'react-native';
 import { PurchasesPackage } from 'react-native-purchases';
+import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
 type Props = {
    onUpgrade?: () => void;
@@ -20,7 +21,8 @@ type Props = {
 };
 
 export default function CreditShop({ onUpgrade, onSuccess }: Props) {
-   const { offerings, buyConsumable, refreshCustomerInfo } = useRevenueCat();
+   const { offerings, buyConsumable, refreshCustomerInfo, showPaywall } =
+      useRevenueCat();
    const { refreshProfile, status, profile } = useAuth();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
@@ -32,6 +34,26 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
    useEffect(() => {
       profileRef.current = profile;
    }, [profile]);
+
+   const handleUpgradePress = useCallback(async () => {
+      if (onUpgrade) {
+         onUpgrade();
+         return;
+      }
+
+      try {
+         const result = await showPaywall();
+         if (result === PAYWALL_RESULT.PURCHASED) {
+            await refreshProfile();
+            if (onSuccess) onSuccess();
+         }
+      } catch (err: any) {
+         Alert.alert(
+            'Unable to open paywall',
+            err?.message ?? 'Please try again.'
+         );
+      }
+   }, [onSuccess, onUpgrade, refreshProfile, showPaywall]);
 
    if (!isSignedIn) {
       return (
@@ -126,7 +148,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
             </View>
 
             <Pressable
-               onPress={onUpgrade}
+               onPress={handleUpgradePress}
                className="relative overflow-hidden rounded-2xl border-2 active:opacity-95 border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 dark:border-emerald-400"
             >
                <View className="p-4">

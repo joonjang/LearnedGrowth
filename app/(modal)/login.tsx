@@ -1,9 +1,14 @@
+import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_CONTENT_PADDING,
-   BOTTOM_SHEET_RADIUS,
    ROUTE_ENTRIES,
 } from '@/components/constants';
+import {
+   BOTTOM_SHEET_BG_DARK,
+   BOTTOM_SHEET_BG_LIGHT,
+   bottomSheetBackgroundStyle,
+} from '@/components/bottomSheetStyles';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -57,10 +62,9 @@ export default function AuthModal() {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const theme = {
-      bg: isDark ? '#0f172a' : '#ffffff',
+      bg: isDark ? BOTTOM_SHEET_BG_DARK : BOTTOM_SHEET_BG_LIGHT,
       text: isDark ? '#f8fafc' : '#0f172a',
       subText: isDark ? '#cbd5e1' : '#475569',
-      indicator: isDark ? '#475569' : '#cbd5e1',
       inputBg: isDark ? '#334155' : '#f8fafc',
       inputBorder: isDark ? 'border-slate-600' : 'border-slate-200',
       placeholder: isDark ? '#94a3b8' : '#64748b',
@@ -249,12 +253,10 @@ const onVerifyCode = async () => {
          onDismiss={handleDismiss}
          index={0}
          enableDynamicSizing={true}
-         enablePanDownToClose={!isRedirecting.current}
-         handleIndicatorStyle={{ backgroundColor: theme.indicator }}
-         backgroundStyle={{
-            backgroundColor: theme.bg,
-            borderRadius: BOTTOM_SHEET_RADIUS,
-         }}
+         enablePanDownToClose={false}
+         handleComponent={() => null}
+         handleIndicatorStyle={{ height: 0, opacity: 0 }}
+         backgroundStyle={bottomSheetBackgroundStyle(isDark, theme.bg)}
          keyboardBehavior="interactive"
          keyboardBlurBehavior="restore"
          topInset={insets.top}
@@ -264,6 +266,7 @@ const onVerifyCode = async () => {
                disappearsOnIndex={-1}
                appearsOnIndex={0}
                opacity={BOTTOM_SHEET_BACKDROP_OPACITY}
+               pressBehavior="none"
             />
          )}
       >
@@ -274,7 +277,10 @@ const onVerifyCode = async () => {
             }}
             keyboardShouldPersistTaps="handled"
          >
-            <View className="mb-6">
+            <View className="mb-6 pt-4 pr-8">
+               <View className="absolute right-0">
+                  <RoundedCloseButton onPress={() => modalRef.current?.dismiss()} />
+               </View>
                <Text className="text-3xl font-bold mb-2" style={{ color: theme.text }}>
                   {step === 'email' ? 'Welcome' : 'Check your Email'}
                </Text>

@@ -22,8 +22,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- Make credit shop for refresh come from a bottom modal
-- Share referal code feature
 
 
 - Bug login should not stack a new home page, it should replace
@@ -71,6 +69,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Development Journal
+
+### 2026-01-06
+- Made credit shop for refresh come from a bottom modal
+- Abstracted bottom sheet styling
+- Removed biometric display for settings, its for a later time to implement
 
 ### 2026-01-05
 - Updated AiInsight display timing + cool down credit refresh placement

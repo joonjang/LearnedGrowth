@@ -3,18 +3,17 @@ import {
    FREE_MONTHLY_CREDITS,
    ROUTE_LOGIN
 } from '@/components/constants';
-import CreditShop from '@/components/CreditShop';
+import { AiInsightCreditShopSheet } from '@/components/CreditShopSheet';
 import SendFeedback from '@/components/SendFeedback';
 import { getShadow } from '@/lib/shadow';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import NetInfo from '@react-native-community/netinfo';
-import * as LocalAuthentication from 'expo-local-authentication';
 import { router, useFocusEffect } from 'expo-router';
-import { ChevronDown, ChevronRight, ChevronUp, TicketPlus, TriangleAlert, Zap } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, TicketPlus, TriangleAlert, Zap } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import {
    useCallback,
@@ -26,11 +25,10 @@ import {
 } from 'react';
 import {
    ActivityIndicator,
-   AppState,
    Alert,
+   AppState,
    Keyboard,
    KeyboardAvoidingView,
-   LayoutAnimation,
    Linking,
    Modal,
    Platform,
@@ -43,7 +41,6 @@ import {
    View,
    ViewStyle,
 } from 'react-native';
-import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import Animated, {
    useAnimatedStyle,
    useSharedValue,
@@ -76,7 +73,6 @@ export default function SettingsScreen() {
    const {
       loading: rcLoading,
       error: rcError,
-      showPaywall,
       restorePurchases,
       isGrowthPlusActive,
    } = useRevenueCat();
@@ -123,20 +119,20 @@ export default function SettingsScreen() {
       null | 'upgrade' | 'consumable' | 'restore' | 'manage'
    >(null);
 
-   const [biometricEnabled, setBiometricEnabled] = useState(false);
-   const [biometricInfo, setBiometricInfo] = useState({
-      hasHardware: false,
-      isEnrolled: false,
-   });
+   // const [biometricEnabled, setBiometricEnabled] = useState(false);
+   // const [biometricInfo, setBiometricInfo] = useState({
+   //    hasHardware: false,
+   //    isEnrolled: false,
+   // });
    
    const [actionsCollapsed, setActionsCollapsed] = useState(true);
    const [showDeleteModal, setShowDeleteModal] = useState(false);
-   const [isShopOpen, setIsShopOpen] = useState(false);
    const [couponExpanded, setCouponExpanded] = useState(false);
    const [couponCode, setCouponCode] = useState('');
    const [redeemingCoupon, setRedeemingCoupon] = useState(false);
     const [couponMessage, setCouponMessage] = useState<string | null>(null);
    const profileRef = useRef(profile);
+   const creditShopSheetRef = useRef<BottomSheetModal | null>(null);
    const [nowTs, setNowTs] = useState(() => Date.now());
 
 
@@ -165,8 +161,8 @@ export default function SettingsScreen() {
    const monthlyRemaining = Math.max(FREE_MONTHLY_CREDITS - aiUsed, 0);
    const darkMode = theme === 'dark';
 
-   const biometricUnavailable = !biometricInfo.hasHardware;
-   const biometricNeedsEnroll = biometricInfo.hasHardware && !biometricInfo.isEnrolled;
+   // const biometricUnavailable = !biometricInfo.hasHardware;
+   // const biometricNeedsEnroll = biometricInfo.hasHardware && !biometricInfo.isEnrolled;
 
    const checkCreditsCycle = useCallback(() => {
       if (status !== 'signedIn') return;
@@ -201,45 +197,28 @@ export default function SettingsScreen() {
       return () => unsubscribe();
    }, []);
 
-   useEffect(() => {
-      AsyncStorage.getItem(STORAGE_KEYS.biometric)
-         .then((val) => setBiometricEnabled(val === 'true'))
-         .catch((err) => console.warn(err));
-   }, []);
+   // useEffect(() => {
+   //    AsyncStorage.getItem(STORAGE_KEYS.biometric)
+   //       .then((val) => setBiometricEnabled(val === 'true'))
+   //       .catch((err) => console.warn(err));
+   // }, []);
 
-   const refreshBiometricInfo = useCallback(async () => {
-      try {
-         const hasHardware = await LocalAuthentication.hasHardwareAsync();
-         const isEnrolled = hasHardware ? await LocalAuthentication.isEnrolledAsync() : false;
-         setBiometricInfo({ hasHardware, isEnrolled });
-         return { hasHardware, isEnrolled };
-      } catch {
-         const fallback = { hasHardware: false, isEnrolled: false };
-         setBiometricInfo(fallback);
-         return fallback;
-      }
-   }, []);
+   // const refreshBiometricInfo = useCallback(async () => {
+   //    try {
+   //       const hasHardware = await LocalAuthentication.hasHardwareAsync();
+   //       const isEnrolled = hasHardware ? await LocalAuthentication.isEnrolledAsync() : false;
+   //       setBiometricInfo({ hasHardware, isEnrolled });
+   //       return { hasHardware, isEnrolled };
+   //    } catch {
+   //       const fallback = { hasHardware: false, isEnrolled: false };
+   //       setBiometricInfo(fallback);
+   //       return fallback;
+   //    }
+   // }, []);
 
-   useEffect(() => { refreshBiometricInfo(); }, [refreshBiometricInfo]);
+   // useEffect(() => { refreshBiometricInfo(); }, [refreshBiometricInfo]);
 
    // --- Handlers ---
-   const handleUpgrade = async () => {
-      if (!isSignedIn) { router.push(ROUTE_LOGIN as any); return; }
-      setBillingAction('upgrade');
-      setBillingNote(null);
-      try {
-         const result = await showPaywall();
-         if (result === PAYWALL_RESULT.PURCHASED) {
-            setBillingNote('Growth Plus unlocked.');
-            await refreshProfile();
-         }
-      } catch (err: any) {
-         setBillingNote(err?.message ?? 'Unable to open paywall.');
-      } finally {
-         setBillingAction(null);
-      }
-   };
-
    const handleRestore = async () => {
       if (isOffline) { setBillingNote('Go online to restore purchases.'); return; }
       setBillingAction('restore');
@@ -269,22 +248,22 @@ export default function SettingsScreen() {
       }
    };
 
-   const handleToggleBiometric = async (next: boolean) => {
-      clearPrefError();
-      const info = await refreshBiometricInfo();
-      if (!info.hasHardware) return;
-      if (!info.isEnrolled) {
-         Alert.alert('Biometrics not set up', 'Please enable in device settings.');
-         return;
-      }
-      if (next) {
-         const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Enable lock' });
-         if (!result.success) return;
-      }
-      setBiometricEnabled(next);
-      AsyncStorage.setItem(STORAGE_KEYS.biometric, String(next));
-      if (next && hapticsEnabled) triggerHaptic();
-   };
+   // const handleToggleBiometric = async (next: boolean) => {
+   //    clearPrefError();
+   //    const info = await refreshBiometricInfo();
+   //    if (!info.hasHardware) return;
+   //    if (!info.isEnrolled) {
+   //       Alert.alert('Biometrics not set up', 'Please enable in device settings.');
+   //       return;
+   //    }
+   //    if (next) {
+   //       const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Enable lock' });
+   //       if (!result.success) return;
+   //    }
+   //    setBiometricEnabled(next);
+   //    AsyncStorage.setItem(STORAGE_KEYS.biometric, String(next));
+   //    if (next && hapticsEnabled) triggerHaptic();
+   // };
 
    const formatCouponMessage = (msg: string) => {
       const cleaned = msg.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
@@ -329,11 +308,19 @@ export default function SettingsScreen() {
       }
    };
 
-   const toggleShop = () => {
+   const openCreditShop = () => {
       if (!isSignedIn) { router.push(ROUTE_LOGIN as any); return; }
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setIsShopOpen(!isShopOpen);
+      creditShopSheetRef.current?.present();
    };
+
+   const handleCreditShopSuccess = useCallback(async () => {
+      creditShopSheetRef.current?.dismiss();
+      try {
+         await refreshProfile();
+      } catch (err) {
+         console.warn('Failed to refresh credits after purchase', err);
+      }
+   }, [refreshProfile]);
 
    const performDeleteAccount = async (): Promise<boolean> => {
       if (isOffline) return false;
@@ -463,7 +450,7 @@ export default function SettingsScreen() {
             {isSignedIn && user && (
                <View className={`bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 ${shadowClass}`} style={[shadowSm.ios, shadowSm.android]}>
                   {/* Plan Status Header */}
-                  <View className="p-4 border-b border-slate-100 dark:border-slate-800">
+                  <View className="p-4">
                      <View className="flex-row justify-between items-center">
                         <View>
                            <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Current Plan</Text>
@@ -515,27 +502,22 @@ export default function SettingsScreen() {
                      {!hasGrowth ? (
                         <>
                            <Pressable
-                              onPress={toggleShop}
+                              onPress={openCreditShop}
                               className={`bg-green-600 active:bg-green-700 rounded-xl p-4 items-center ${shadowGreen.className}`}
                               style={[shadowGreen.ios, shadowGreen.android]}
                            >
                               <View className="w-full items-center">
                                  <Text className="text-white font-bold text-[16px] text-center">Get More Analysis</Text>
                               </View>
-                              <View pointerEvents="none" className="absolute right-4 top-0 bottom-0 justify-center">
-                                 {isShopOpen ? <ChevronUp size={20} color="white" /> : <ChevronDown size={20} color="white" />}
-                              </View>
                            </Pressable>
-                           {isShopOpen && (
-                              <View className="pt-2">
-                                 <CreditShop onUpgrade={handleUpgrade} onSuccess={() => LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)} />
-                              </View>
-                           )}
                         </>
                      ) : (
-                        <Pressable onPress={handleManageSubscription} disabled={billingAction === 'manage'} className="flex-row items-center justify-between bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <Pressable
+                           onPress={handleManageSubscription}
+                           disabled={billingAction === 'manage'}
+                           className="items-center justify-center bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700"
+                        >
                            <Text className="font-semibold text-slate-700 dark:text-slate-200">Manage Subscription</Text>
-                           <ChevronRight size={18} color={iconColor} />
                         </Pressable>
                      )}
 
@@ -566,7 +548,8 @@ export default function SettingsScreen() {
                   <Switch value={hapticsEnabled} onValueChange={setHapticsEnabled} disabled={prefsLoading || !hapticsAvailable} thumbColor={switchThumbColor} trackColor={{ false: '#e2e8f0', true: '#16a34a' }} />
                </SettingRow>
 
-               <View>
+               {/* TODO: integrate biometric preference and privacy */}
+               {/* <View>
                    <SettingRow title="Biometric Lock" description="Require FaceID/TouchID on launch." disabled={prefsLoading || biometricUnavailable}>
                       <Switch value={biometricEnabled} onValueChange={handleToggleBiometric} disabled={prefsLoading || biometricUnavailable || biometricNeedsEnroll} thumbColor={switchThumbColor} trackColor={{ false: '#e2e8f0', true: '#16a34a' }} />
                    </SettingRow>
@@ -579,7 +562,7 @@ export default function SettingsScreen() {
                            </Pressable>
                        ) : null}
                    </View>
-               </View>
+               </View> */}
             </View>
 
             {/* ACCOUNT ACTIONS */}
@@ -619,6 +602,13 @@ export default function SettingsScreen() {
 
             <Text className="text-center text-xs text-slate-400 dark:text-slate-600 pb-4">Version 1.0.0</Text>
          </ScrollView>
+
+         <AiInsightCreditShopSheet
+            sheetRef={creditShopSheetRef}
+            onDismiss={() => {}}
+            onSuccess={handleCreditShopSuccess}
+            isDark={isDark}
+         />
       </View>
    );
 }

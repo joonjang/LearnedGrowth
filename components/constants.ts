@@ -5,7 +5,7 @@ export const AI_ANALYSIS_CREDIT_COST = 1;
 export const MAX_AI_RETRIES = 4;
 
 export const BOTTOM_SHEET_RADIUS = 24;
-export const BOTTOM_SHEET_BACKDROP_OPACITY = 0.5;
+export const BOTTOM_SHEET_BACKDROP_OPACITY = 0.75;
 export const BOTTOM_SHEET_CONTENT_PADDING = 24;
 
 export const ROUTE_LOGIN = '/(modal)/login' as const;
