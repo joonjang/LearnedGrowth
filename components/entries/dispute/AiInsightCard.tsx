@@ -195,15 +195,18 @@ export function AiInsightCard({
    const HEADER_APPEAR = isFreshAnalysis ? 800 : BASE_STAGGER;
    const TIME_START = isFreshAnalysis ? 1000 : BASE_STAGGER * 2;
    
-   // SNAPPY TIMING: 6000ms ensures the next row starts shortly after insight reveals
-   const ROW_DURATION = isFreshAnalysis ? 6000 : 0; 
+   // CHANGE 1: Reduced to 4000ms. This prevents the "hanging" feeling between rows.
+   const ROW_DURATION = isFreshAnalysis ? 3900 : 0; 
 
    const SCOPE_START =
       TIME_START + ROW_DURATION + (isFreshAnalysis ? 0 : BASE_STAGGER);
    const BLAME_START =
-      SCOPE_START + ROW_DURATION + (isFreshAnalysis ? 0 : BASE_STAGGER);
+      SCOPE_START + ROW_DURATION + (isFreshAnalysis ? 500 : BASE_STAGGER);
+   
+   // CHANGE 2: Fixed timing (3600ms) matches the animation length exactly.
+   // It no longer waits for the full 'ROW_DURATION', so it appears snappy.
    const SUGGESTION_START =
-      BLAME_START + ROW_DURATION + (isFreshAnalysis ? 0 : BASE_STAGGER);
+      BLAME_START + (isFreshAnalysis ? 3600 : BASE_STAGGER);
 
    // --- VARIABLES FOR RENDER ---
    const safety = data?.safety;
@@ -344,16 +347,17 @@ export function AiInsightCard({
                   {/* STALE / REFRESH BANNER */}
                   {isStale && (
                      <View
-                        // CHANGE 1: Changed 'items-center' to 'items-end'
-                        className={`flex-row items-end justify-between p-3 rounded-lg border mb-2 ${
+                        className={`flex-row justify-between p-3 rounded-lg border mb-2 ${
                            isCoolingDown
                               ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
                               : isNudgeStep
-                                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-                                : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                              ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                              : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
                         }`}
                      >
-                        <View className="flex-1 gap-1 mr-2">
+                        {/* LEFT COLUMN: Header + Text */}
+                        <View className="flex-1 mr-2">
+                           {/* Header Row */}
                            <View className="flex-row items-center justify-between">
                               <View className="flex-row items-center gap-2">
                                  {isCoolingDown ? (
@@ -368,12 +372,11 @@ export function AiInsightCard({
                                     />
                                  )}
                                  <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-                                    {isCoolingDown
-                                       ? 'Analysis Paused'
-                                       : 'Previous Analysis'}
+                                    {isCoolingDown ? 'Analysis Paused' : 'Previous Analysis'}
                                  </Text>
                               </View>
 
+                              {/* Credits Info (Top Right) */}
                               {!isCoolingDown && refreshCostNote && (
                                  <View className="flex-row items-center opacity-90 ml-2">
                                     <Leaf
@@ -388,38 +391,49 @@ export function AiInsightCard({
                               )}
                            </View>
 
+                           {/* Description Text */}
                            <Text className="text-[11px] text-slate-600 dark:text-slate-400 leading-4 mt-1">
                               {!onRefresh
                                  ? 'This insight is based on an older version of your entry.'
                                  : isCoolingDown
-                                   ? 'Updates paused to encourage you to continue to the next step.'
-                                   : isNudgeStep
-                                     ? "You've refined this quite a bit. Ready to move to the next step?"
-                                     : 'Entry has changed. Update analysis?'}
+                                 ? 'Updates paused to encourage you to continue to the next step.'
+                                 : isNudgeStep
+                                 ? "You've refined this quite a bit. Ready to move to the next step?"
+                                 : 'Entry has changed. Update analysis?'}
                            </Text>
                         </View>
 
-                        {onRefresh && !isCoolingDown ? (
-                           <Pressable
-                              onPress={handleRefreshPress}
-                              // CHANGE 2: Added 'mb-0.5' just to align perfectly with the text baseline
-                              className="p-2 mb-0.5 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
-                           >
-                              <RefreshCw
-                                 size={18}
-                                 color={isDark ? '#f8fafc' : '#0f172a'}
-                              />
-                           </Pressable>
-                        ) : isCoolingDown && timeLabel !== '' ? (
-                           <View className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded mb-0.5">
-                              <Text
-                                 className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
-                                 style={{ fontVariant: ['tabular-nums'] }}
+                        {/* RIGHT COLUMN: Button Wrapper */}
+                        <View
+                           className={`justify-end pl-1 ${
+                              !isCoolingDown && refreshCostNote ? 'pt-5' : ''
+                           }`}
+                        >
+                           {onRefresh && !isCoolingDown ? (
+                              <Pressable
+                                 onPress={handleRefreshPress}
+                                 className="p-2 mb-0.5 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
                               >
-                                 {timeLabel}
-                              </Text>
-                           </View>
-                        ) : null}
+                                 <RefreshCw
+                                    size={18}
+                                    color={isDark ? '#f8fafc' : '#0f172a'}
+                                 />
+                              </Pressable>
+                           ) : isCoolingDown && timeLabel !== '' ? (
+                              <View
+                                 className={`px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded mb-0.5 ${
+                                    !isCoolingDown && refreshCostNote ? 'mt-auto' : ''
+                                 }`}
+                              >
+                                 <Text
+                                    className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
+                                    style={{ fontVariant: ['tabular-nums'] }}
+                                 >
+                                    {timeLabel}
+                                 </Text>
+                              </View>
+                           ) : null}
+                        </View>
                      </View>
                   )}
 
@@ -715,19 +729,20 @@ function AnimatedSpectrumRow({
 
       // TIMELINE:
       // T+0ms: Quote Begins Fade
-      // T+800ms: Pills Begin Fade (500ms duration) -> Fully visible at 1300ms
-      // T+1400ms: Scanner Begins (Ensures pills are fully visible)
+      // T+400ms: Pills Begin Fade (Previously 1000ms)
+      // T+600ms: Scanner Begins (Previously 1200ms)
       
-      const DELAY_UNTIL_SCAN = startDelay + 1400; 
+      const DELAY_UNTIL_SCAN = startDelay + 600; 
 
       const timer = setTimeout(() => {
          const SWIPE_SPEED = 800;
          const SWIPE_EASING = Easing.inOut(Easing.sin);
 
-         scannerProgress.value = 0;
          startHaptics();
 
-         const dist = Math.abs(1 - targetPosition);
+         // FIX: Calculate distance from 0 (Left) because the sequence 
+         // moves Right -> Left, ending at 0 before the final move.
+         const dist = Math.abs(targetPosition - 0);
          const finalDuration = dist === 0 ? 0 : SWIPE_SPEED * dist;
 
          const onFinish = (finished: boolean | undefined) => {
@@ -738,7 +753,7 @@ function AnimatedSpectrumRow({
                   withSpring(1.0, { damping: 15, stiffness: 150 })
                );
                revealState.value = withDelay(
-                  500, 
+                  300, 
                   withTiming(1, { duration: 800 })
                );
             } else {
@@ -746,17 +761,17 @@ function AnimatedSpectrumRow({
             }
          };
 
+         // ANIMATION: Right (1) -> Left (0) -> Target (from 0)
          scannerProgress.value = withSequence(
             withTiming(1, { duration: SWIPE_SPEED, easing: SWIPE_EASING }),
             withTiming(0, { duration: SWIPE_SPEED, easing: SWIPE_EASING }),
-            withTiming(1, { duration: SWIPE_SPEED, easing: SWIPE_EASING }),
             dist > 0
                ? withTiming(
                     targetPosition,
                     { duration: finalDuration, easing: Easing.out(Easing.sin) },
                     onFinish
                  )
-               : withDelay(50, withTiming(1, { duration: 0 }, onFinish))
+               : withDelay(50, withTiming(0, { duration: 0 }, onFinish))
          );
       }, DELAY_UNTIL_SCAN);
 
@@ -855,8 +870,8 @@ function AnimatedSpectrumRow({
    const basePill = 'flex-1 py-2 rounded-lg items-center justify-center border';
    const baseText = 'font-medium text-xs';
 
-   // PILLS START APPEARING SOON AFTER QUOTE
-   const PILLS_ENTRY_DELAY = startDelay + 800;
+   // CHANGE: Pills appear sooner (+400ms)
+   const PILLS_ENTRY_DELAY = startDelay + 400;
 
    return (
       <View className="gap-3">

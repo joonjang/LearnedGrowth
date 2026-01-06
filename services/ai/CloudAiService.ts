@@ -186,7 +186,7 @@ export class CloudAiService implements AbcAiService {
         if (fingerprint.includes("ai-limit-exceeded")) {
           throw new AiError(
             "ai-limit",
-            "Monthly AI limit reached for the free plan.",
+            "Daily AI limit reached for the free plan.",
             429
           );
         }

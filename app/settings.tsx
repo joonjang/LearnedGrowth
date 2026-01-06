@@ -20,11 +20,13 @@ import {
    useCallback,
    useEffect,
    useMemo,
+   useRef,
    useState,
    type ReactNode,
 } from 'react';
 import {
    ActivityIndicator,
+   AppState,
    Alert,
    Keyboard,
    KeyboardAvoidingView,
@@ -134,6 +136,8 @@ export default function SettingsScreen() {
    const [couponCode, setCouponCode] = useState('');
    const [redeemingCoupon, setRedeemingCoupon] = useState(false);
     const [couponMessage, setCouponMessage] = useState<string | null>(null);
+   const profileRef = useRef(profile);
+   const [nowTs, setNowTs] = useState(() => Date.now());
 
 
    useEffect(() => {
@@ -141,6 +145,16 @@ export default function SettingsScreen() {
       const t = setTimeout(() => setBillingNote(null), 3000);
       return () => clearTimeout(t);
    }, [billingNote]);
+
+   useEffect(() => {
+      profileRef.current = profile;
+   }, [profile]);
+
+   useEffect(() => {
+      if (!profile?.aiCycleStart) return;
+      const interval = setInterval(() => setNowTs(Date.now()), 1000);
+      return () => clearInterval(interval);
+   }, [profile?.aiCycleStart]);
 
    // --- Computed ---
    const isSignedIn = status === 'signedIn';
@@ -154,11 +168,28 @@ export default function SettingsScreen() {
    const biometricUnavailable = !biometricInfo.hasHardware;
    const biometricNeedsEnroll = biometricInfo.hasHardware && !biometricInfo.isEnrolled;
 
+   const checkCreditsCycle = useCallback(() => {
+      if (status !== 'signedIn') return;
+      const currentProfile = profileRef.current;
+      const aiUsed = currentProfile?.aiCallsUsed ?? 0;
+      const remaining = Math.max(FREE_MONTHLY_CREDITS - aiUsed, 0);
+      if (currentProfile && remaining < FREE_MONTHLY_CREDITS) {
+         refreshProfile();
+         return;
+      }
+      refreshProfileIfStale();
+   }, [refreshProfile, refreshProfileIfStale, status]);
+
    useFocusEffect(
       useCallback(() => {
-         if (status !== 'signedIn') return;
-         refreshProfileIfStale();
-      }, [refreshProfileIfStale, status])
+         checkCreditsCycle();
+         const subscription = AppState.addEventListener('change', (state) => {
+            if (state === 'active') {
+               checkCreditsCycle();
+            }
+         });
+         return () => subscription.remove();
+      }, [checkCreditsCycle])
    );
 
    useEffect(() => {
@@ -321,12 +352,35 @@ export default function SettingsScreen() {
    };
 
    const planLabel = useMemo(() => entitlementActive ? 'Growth Plus' : 'Free Plan', [entitlementActive]);
-   const refillLabel = useMemo(() => {
+   const nextResetAt = useMemo(() => {
       if (!profile?.aiCycleStart) return null;
-      const date = new Date(profile.aiCycleStart);
-      date.setMonth(date.getMonth() + 1);
-      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-   }, [profile?.aiCycleStart]);
+      const start = new Date(profile.aiCycleStart);
+      if (Number.isNaN(start.getTime())) return null;
+      const startMs = start.getTime();
+      const dayMs = 24 * 60 * 60 * 1000;
+      const elapsedDays = Math.floor((nowTs - startMs) / dayMs);
+      const nextResetMs = startMs + (elapsedDays + 1) * dayMs;
+      return new Date(nextResetMs);
+   }, [profile?.aiCycleStart, nowTs]);
+   const resetCountdown = useMemo(() => {
+      if (!nextResetAt) return null;
+      const diffMs = Math.max(0, nextResetAt.getTime() - nowTs);
+      const totalSeconds = Math.max(0, Math.floor(diffMs / 1000));
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      if (days > 0) {
+         return `${days}d ${hours.toString().padStart(2, '0')}h`;
+      }
+      return `${hours.toString().padStart(2, '0')}:${minutes
+         .toString()
+         .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+   }, [nextResetAt, nowTs]);
+   const resetSubtext = useMemo(() => {
+      if (!resetCountdown) return 'Resets daily';
+      return `Resets in ${resetCountdown}`;
+   }, [resetCountdown]);
 
    const isLoading = loadingProfile || rcLoading;
 
@@ -385,9 +439,9 @@ export default function SettingsScreen() {
             {isSignedIn && !hasGrowth && (
                <View className="flex-row gap-3">
                   <StatCard
-                     label="Monthly Credits"
+                     label="Daily Credits"
                      value={String(monthlyRemaining)}
-                     subtext={refillLabel ? `Resets ${refillLabel}` : 'Resets monthly'}
+                     subtext={resetSubtext}
                      isLoading={isLoading}
                      icon={<Zap size={16} color="#fbbf24" fill="#fbbf24" />}
                      shadowClass={shadowClass}

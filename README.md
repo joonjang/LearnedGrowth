@@ -22,9 +22,15 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- Make credit shop for refresh come from a bottom modal
+- Share referal code feature
+- Refresh cooldown based off if it has been refreshed within last two minutes
+
 - Bug login should not stack a new home page, it should replace
 
 - Biometric lock disables the app from all screens until unlocked
+
+- make the dispute ai analysis screen not turn off when getting ai content
 
 - Fine tune dark mode
   - loading ellipse white
@@ -46,6 +52,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - Cloud database sync 
     - log out should hide entries
 
+- Change ai credit from daily to monthly
+
 ## Steps
 
 
@@ -63,6 +71,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Development Journal
+
+### 2026-01-05
+- Updated AiInsight display timing + cool down credit refresh placement
+- Changed monthly credit to daily credit refill for debugging purposes
+  - Changed credit refill to display a countdown and not the date of refill
 
 ### 2026-01-03
 - Made entries list view more efficient with memoization

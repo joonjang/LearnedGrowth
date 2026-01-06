@@ -112,6 +112,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthError(null);
 
       try {
+        const { error: cycleError } = await supabase.rpc("refresh_ai_cycle");
+        if (cycleError && cycleError.code !== "PGRST202") {
+          console.warn("Failed to refresh AI cycle", cycleError);
+        }
+
         const res = await supabase
           .from("profiles")
           .select("plan, ai_calls_used, ai_cycle_start, extra_ai_credits")
@@ -330,7 +335,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) throw new Error("Supabase is not configured");
 
     const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-    const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 
     if (!webClientId) {
       throw new Error("Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID");
