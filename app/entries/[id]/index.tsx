@@ -463,6 +463,7 @@ export default function EntryDetailScreen() {
                               <TimelinePivot variant="full">
                                  {/* HEADER REMOVED: AiInsightCard now handles it internally */}
                                  <AiInsightCard
+                                    entryId={entry.id}
                                     data={aiDisplayData}
                                     onRefresh={
                                        entry.dispute || isEditing

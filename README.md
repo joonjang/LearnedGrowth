@@ -24,7 +24,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - Make credit shop for refresh come from a bottom modal
 - Share referal code feature
-- Refresh cooldown based off if it has been refreshed within last two minutes
+
 
 - Bug login should not stack a new home page, it should replace
 
@@ -76,6 +76,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Updated AiInsight display timing + cool down credit refresh placement
 - Changed monthly credit to daily credit refill for debugging purposes
   - Changed credit refill to display a countdown and not the date of refill
+- Refresh cooldown based off if it has been refreshed within last two minutes
 
 ### 2026-01-03
 - Made entries list view more efficient with memoization

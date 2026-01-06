@@ -113,6 +113,7 @@ export default function ABCAnalysis({
             style={[shadow.ios, shadow.android]}
          >
             <AiInsightCard
+               entryId={entry.id}
                data={aiData}
                streamingText={streamingText}
                loading={loading}
