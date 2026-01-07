@@ -22,6 +22,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- slow down haptic and scanning and make continue button show last
+
 - Add a sprout icon for growth plus members
 
 - Make shadow uniform for ios in setting screen
@@ -77,10 +79,20 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Bug fix
   - free-user bottom sheet no longer unmounts and continue to display
   - ai cycle debug/fix in resetting to every thirty minutes
+  - dispute screen close button can close on tap
+    ### **Bug: Unresponsive UI During Animation Sequence**
 
-  - dispute screen close button missing path
-  - haptic issue
-  - ai insight streaming causing closing lag
+    * **Symptoms:** The "Close" button and other interactions were ignored until the entire entry animation sequence (3-4 seconds) completed.
+    * **Root Cause (Layout Thrashing):**
+    * Using **Reanimated Layout Props** (`entering={FadeInDown}`) on multiple items inside a `ScrollView`.
+    * Each staggered item appearing triggered a **Native Layout Recalculation** to adjust the scroll height.
+    * This repeated resizing flooded the **Native-to-JS Bridge**, preventing touch events (like the Close button tap) from being processed until the queue cleared.
+
+
+    * **The Fix:**
+    * Removed `entering` props.
+    * Switched to **Shared Values** driving standard `style={{ opacity, transform }}`.
+    * **Why it works:** The items now occupy space immediately (even when invisible). This prevents layout recalculations, keeping the Bridge open and the Close button responsive instantly.
 
 ### 2026-01-05
 - Updated AiInsight display timing + cool down credit refresh placement

@@ -1,11 +1,15 @@
+import * as Haptics from 'expo-haptics';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useMemo } from 'react';
 import { Text, View } from 'react-native';
 import Animated, {
+   cancelAnimation,
    Easing,
    Extrapolation,
    interpolate,
    interpolateColor,
+   runOnJS,
+   useAnimatedReaction,
    useAnimatedStyle,
    useSharedValue,
    withDelay,
@@ -15,6 +19,17 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { AI_INSIGHT_ANIMATION } from './animation';
+
+// Updated Helper: Supports 'success' for a stronger finale
+function triggerHaptic(type: 'selection' | 'final') {
+   'worklet';
+   if (type === 'final') {
+      // "Success" is a distinct double-tap pattern that feels very "Done"
+      runOnJS(Haptics.notificationAsync)(Haptics.NotificationFeedbackType.Success);
+   } else {
+      runOnJS(Haptics.selectionAsync)();
+   }
+}
 
 export function AnimatedSpectrumRow({
    label,
@@ -52,12 +67,10 @@ export function AnimatedSpectrumRow({
          inactiveBg: isDark ? '#0f172a' : '#f8fafc',
          inactiveBorder: isDark ? '#1e293b' : '#f1f5f9',
          inactiveText: isDark ? '#475569' : '#94a3b8',
-         bufferBgLow: isDark ? '#0f172a' : '#f8fafc',
-         bufferBgHigh: isDark ? 'rgba(99, 102, 241, 0.25)' : '#e0e7ff',
-         bufferBorderLow: isDark ? '#1e293b' : '#f1f5f9',
-         bufferBorderHigh: isDark ? 'rgba(99, 102, 241, 0.6)' : '#c7d2fe',
-         bufferTextLow: isDark ? '#475569' : '#94a3b8',
-         bufferTextHigh: isDark ? '#a5b4fc' : '#6366f1',
+         
+         // Ghost Beam Color
+         highlightBg: isDark ? '#334155' : '#e2e8f0', 
+
          greenBg: isDark ? 'rgba(6, 95, 70, 0.5)' : '#d1fae5',
          greenBorder: isDark ? '#065f46' : '#a7f3d0',
          greenText: isDark ? '#a7f3d0' : '#065f46',
@@ -71,16 +84,12 @@ export function AnimatedSpectrumRow({
       [isDark]
    );
 
-   // --- SHARED VALUES ---
-   // We use this to control visibility instead of 'entering' props
    const rowVisibility = useSharedValue(skipAnimation ? 1 : 0);
-   
    const revealState = useSharedValue(0);
-   const scannerProgress = useSharedValue(skipAnimation ? targetPosition : 0);
+   const scannerProgress = useSharedValue(skipAnimation ? targetPosition : -0.5); 
    const impactScale = useSharedValue(1);
 
    useEffect(() => {
-      // 1. Immediate Visibility Animation (Replaces FadeInDown)
       if (!skipAnimation) {
          rowVisibility.value = withDelay(
             startDelay, 
@@ -88,7 +97,6 @@ export function AnimatedSpectrumRow({
          );
       }
 
-      // 2. Scanner Logic
       if (skipAnimation) {
          scannerProgress.value = targetPosition;
          revealState.value = withTiming(1, { duration: spectrum.revealSkipDuration });
@@ -96,21 +104,19 @@ export function AnimatedSpectrumRow({
       }
 
       const DELAY_UNTIL_SCAN = startDelay + spectrum.scanDelayOffset;
-      const SWIPE_SPEED = spectrum.swipeSpeed;
-      const SWIPE_EASING = Easing.inOut(Easing.sin);
-      const dist = Math.abs(targetPosition - 0);
-      const finalDuration = dist === 0 ? 0 : SWIPE_SPEED * dist;
+      const SCAN_SPEED = 1400; 
 
       const onFinish = (finished: boolean | undefined) => {
          'worklet';
          if (finished) {
+            triggerHaptic('final'); // Stronger "Success" haptic
             impactScale.value = withSequence(
-               withTiming(0.92, { duration: spectrum.impactShrinkDuration }),
-               withSpring(1.0, spectrum.impactSpring)
+               withTiming(0.95, { duration: 100 }),
+               withSpring(1.0, { damping: 12, stiffness: 200 })
             );
             revealState.value = withDelay(
-               spectrum.revealDelayAfterFinish,
-               withTiming(1, { duration: spectrum.revealAfterFinishDuration })
+               100,
+               withTiming(1, { duration: 500 })
             );
          }
       };
@@ -118,66 +124,116 @@ export function AnimatedSpectrumRow({
       scannerProgress.value = withDelay(
          DELAY_UNTIL_SCAN,
          withSequence(
-            withTiming(1, { duration: SWIPE_SPEED, easing: SWIPE_EASING }),
-            withTiming(0, { duration: SWIPE_SPEED, easing: SWIPE_EASING }),
-            dist > 0
-               ? withTiming(targetPosition, { duration: finalDuration, easing: Easing.out(Easing.sin) }, onFinish)
-               : withDelay(spectrum.noMoveDelay, withTiming(0, { duration: 0 }, onFinish))
+            withTiming(1.5, { duration: SCAN_SPEED, easing: Easing.inOut(Easing.quad) }),
+            withTiming(-0.5, { duration: SCAN_SPEED, easing: Easing.inOut(Easing.quad) }),
+            withTiming(targetPosition, { duration: SCAN_SPEED * 0.8, easing: Easing.out(Easing.quad) }, onFinish)
          )
       );
-   }, [targetPosition, startDelay, skipAnimation, spectrum, scannerProgress, rowVisibility, revealState, impactScale]);
+
+      return () => {
+         cancelAnimation(scannerProgress);
+         cancelAnimation(revealState);
+         cancelAnimation(impactScale);
+         cancelAnimation(rowVisibility);
+      };
+   }, [targetPosition, startDelay, skipAnimation, spectrum]);
+
+   // --- ANTICIPATORY HAPTICS ---
+   useAnimatedReaction(
+      () => scannerProgress.value,
+      (current, prev) => {
+         if (skipAnimation || !prev || current === prev) return;
+
+         const PILL_CENTERS = [0.0, 0.5, 1.0];
+         
+         // ANTICIPATION FACTOR:
+         // We fire the haptic 0.08 units *before* the beam hits the center.
+         // This accounts for bridge latency (~16ms) and perception lag (~50ms),
+         // making the "click" feel like it happens exactly when the beam is brightest.
+         const OFFSET = 0.08; 
+
+         // Determine direction
+         const movingRight = current > prev;
+
+         // Check if we crossed the "Trigger Line" for any pill
+         const hit = PILL_CENTERS.some(center => {
+            // If moving right, the trigger line is slightly to the left of center (center - OFFSET)
+            // If moving left, the trigger line is slightly to the right of center (center + OFFSET)
+            const triggerPoint = center + (movingRight ? -OFFSET : OFFSET);
+            
+            return (prev < triggerPoint && current >= triggerPoint) || 
+                   (prev > triggerPoint && current <= triggerPoint);
+         });
+
+         if (hit) {
+             triggerHaptic('selection');
+         }
+      }
+   );
 
    // --- STYLES ---
+   const entryStyle = useAnimatedStyle(() => ({
+      opacity: rowVisibility.value,
+      transform: [{ translateY: interpolate(rowVisibility.value, [0, 1], [10, 0]) }]
+   }));
 
-   // This style handles the "Fade In Down" effect manually on the UI thread
-   const entryStyle = useAnimatedStyle(() => {
-      return {
-         opacity: rowVisibility.value,
-         transform: [
-             { translateY: interpolate(rowVisibility.value, [0, 1], [15, 0]) }
-         ]
-      };
-   });
+   const usePillLogic = (pillPosition: number, isWinner: boolean, activeType: 'green' | 'red' | 'mixed') => {
+      
+      const highlightStyle = useAnimatedStyle(() => {
+         const dist = Math.abs(scannerProgress.value - pillPosition);
+         const opacity = interpolate(dist, [0, 0.45], [1, 0], Extrapolation.CLAMP);
 
-   const usePillAnimatedStyles = (pillPosition: number, isWinner: boolean, activeType: 'green' | 'red' | 'mixed') => {
+         return {
+            opacity: interpolate(revealState.value, [0, 1], [opacity, 0]), 
+         };
+      });
+
       const containerStyle = useAnimatedStyle(() => {
-         const positionDelta = scannerProgress.value - pillPosition;
-         const intensity = Math.exp(-Math.pow(positionDelta, 2) / 0.1);
-         const currentBufferBg = interpolateColor(intensity, [0, 1], [theme.bufferBgLow, theme.bufferBgHigh]);
-         const currentBufferBorder = interpolateColor(intensity, [0, 1], [theme.bufferBorderLow, theme.bufferBorderHigh]);
+         if (revealState.value === 0) {
+            return {
+                borderColor: theme.inactiveBorder,
+                backgroundColor: theme.inactiveBg,
+                transform: [{ scale: 1 }]
+            };
+         }
+         
          const finalBg = isWinner ? theme[`${activeType}Bg`] : theme.inactiveBg;
          const finalBorder = isWinner ? theme[`${activeType}Border`] : theme.inactiveBorder;
+         
          return {
-            backgroundColor: interpolateColor(revealState.value, [0, 1], [currentBufferBg, finalBg]),
-            borderColor: interpolateColor(revealState.value, [0, 1], [currentBufferBorder, finalBorder]),
+            backgroundColor: interpolateColor(revealState.value, [0, 1], [theme.inactiveBg, finalBg]),
+            borderColor: interpolateColor(revealState.value, [0, 1], [theme.inactiveBorder, finalBorder]),
             transform: [{ scale: isWinner ? impactScale.value : 1 }],
          };
       });
+
       const textStyle = useAnimatedStyle(() => {
-         const positionDelta = scannerProgress.value - pillPosition;
-         const intensity = Math.exp(-Math.pow(positionDelta, 2) / 0.15);
-         const currentBufferText = interpolateColor(intensity, [0, 1], [theme.bufferTextLow, theme.bufferTextHigh]);
+         if (revealState.value === 0) return { color: theme.inactiveText };
+         
          const finalText = isWinner ? theme[`${activeType}Text`] : theme.inactiveText;
-         return { color: interpolateColor(revealState.value, [0, 1], [currentBufferText, finalText]) };
+         return { 
+             color: interpolateColor(revealState.value, [0, 1], [theme.inactiveText, finalText]) 
+         };
       });
-      return { containerStyle, textStyle };
+
+      return { containerStyle, highlightStyle, textStyle };
    };
 
    const insightAnimStyle = useAnimatedStyle(() => ({
       opacity: revealState.value,
-      transform: [{ translateY: interpolate(revealState.value, [0, 1], [10, 0], Extrapolation.CLAMP) }],
+      transform: [{ translateY: interpolate(revealState.value, [0, 1], [5, 0], Extrapolation.CLAMP) }],
    }));
 
-   const leftStyles = usePillAnimatedStyles(0.0, isOptimistic, 'green');
-   const mixedStyles = usePillAnimatedStyles(0.5, isMixed, 'mixed');
-   const rightStyles = usePillAnimatedStyles(1.0, isPessimistic, 'red');
-   const basePill = 'flex-1 py-2 rounded-lg items-center justify-center border';
-   const baseText = 'font-medium text-xs';
+   const left = usePillLogic(0.0, isOptimistic, 'green');
+   const mixed = usePillLogic(0.5, isMixed, 'mixed');
+   const right = usePillLogic(1.0, isPessimistic, 'red');
    
-   // Calculate pill opacity based on the scanner starting
+   const basePill = 'flex-1 py-2 rounded-lg items-center justify-center border overflow-hidden relative';
+   const baseText = 'font-medium text-xs z-10'; 
+   const overlayBase = 'absolute top-0 bottom-0 left-0 right-0';
+
    const pillsVisibleStyle = useAnimatedStyle(() => {
       if(skipAnimation) return { opacity: 1 };
-      // Pills fade in slightly after the main row fades in
       const showPills = rowVisibility.value > 0.5 ? 1 : 0;
       return { opacity: withTiming(showPills, { duration: 500 }) };
    });
@@ -198,19 +254,20 @@ export function AnimatedSpectrumRow({
             </Animated.Text>
          )}
 
-         {/* Pills Container */}
-         <Animated.View
-            className="flex-row items-center gap-1.5"
-            style={pillsVisibleStyle}
-         >
-            <Animated.View className={basePill} style={leftStyles.containerStyle}>
-               <Animated.Text className={baseText} style={leftStyles.textStyle}>{leftText}</Animated.Text>
+         <Animated.View className="flex-row items-center gap-1.5" style={pillsVisibleStyle}>
+            <Animated.View className={basePill} style={left.containerStyle}>
+                <Animated.View style={[left.highlightStyle, { backgroundColor: theme.highlightBg }]} className={overlayBase} />
+                <Animated.Text className={baseText} style={left.textStyle}>{leftText}</Animated.Text>
             </Animated.View>
-            <Animated.View className={`${basePill} max-w-[20%]`} style={mixedStyles.containerStyle}>
-               <Animated.Text className={baseText} style={mixedStyles.textStyle}>Mixed</Animated.Text>
+
+            <Animated.View className={`${basePill} max-w-[20%]`} style={mixed.containerStyle}>
+                <Animated.View style={[mixed.highlightStyle, { backgroundColor: theme.highlightBg }]} className={overlayBase} />
+                <Animated.Text className={baseText} style={mixed.textStyle}>Mixed</Animated.Text>
             </Animated.View>
-            <Animated.View className={basePill} style={rightStyles.containerStyle}>
-               <Animated.Text className={baseText} style={rightStyles.textStyle}>{rightText}</Animated.Text>
+
+            <Animated.View className={basePill} style={right.containerStyle}>
+                <Animated.View style={[right.highlightStyle, { backgroundColor: theme.highlightBg }]} className={overlayBase} />
+                <Animated.Text className={baseText} style={right.textStyle}>{rightText}</Animated.Text>
             </Animated.View>
          </Animated.View>
 
