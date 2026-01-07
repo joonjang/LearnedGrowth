@@ -6,7 +6,7 @@ import { LearnedGrowthResponse } from '@/models/aiService';
 import { useAuth } from '@/providers/AuthProvider';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useColorScheme } from 'nativewind';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutAnimation, Pressable, View } from 'react-native';
 
 import { AiInsightCreditShopSheet } from '../../CreditShopSheet';
@@ -123,11 +123,10 @@ export function AiInsightCard({
    }, []);
 
    useEffect(() => {
-      const snapshot =
-         refreshWindowStore.get(refreshWindowKey) ?? {
-            timestamps: [],
-            lastRetryCount: retryCount,
-         };
+      const snapshot = refreshWindowStore.get(refreshWindowKey) ?? {
+         timestamps: [],
+         lastRetryCount: retryCount,
+      };
 
       let timestamps = [...snapshot.timestamps];
       let lastRetryCount = snapshot.lastRetryCount;
@@ -169,9 +168,9 @@ export function AiInsightCard({
 
    const refreshWindowSnapshot = refreshWindowStore.get(refreshWindowKey);
    const windowStart = nowMs - windowMs;
-   const timestampsInWindow = (
-      refreshWindowSnapshot?.timestamps ?? []
-   ).filter((timestamp) => timestamp >= windowStart);
+   const timestampsInWindow = (refreshWindowSnapshot?.timestamps ?? []).filter(
+      (timestamp) => timestamp >= windowStart
+   );
    const refreshesInWindow = timestampsInWindow.length;
    const isCoolingDown = refreshesInWindow >= maxRetries;
    const isNudgeStep = refreshesInWindow === maxRetries - 1;
@@ -221,20 +220,34 @@ export function AiInsightCard({
       }
    };
 
-   const handleRefreshPress = async () => {
-      const noCredits = availableCredits !== null && availableCredits <= 0;
-      if (noCredits) {
+   // Inside AiInsightCard.tsx
+
+   const handleRefreshPress = useCallback(async () => {
+      // FIX: Only enforce credit limits if the user is on the 'free' plan.
+      // If isFreePlan is false (subscriber), we skip this check.
+      const isCreditRestricted =
+         isFreePlan && availableCredits !== null && availableCredits <= 0;
+
+      if (isCreditRestricted) {
          openShopSheet();
          return;
       }
+
       try {
          await onRefresh?.();
       } finally {
          if (status === 'signedIn') {
-            refreshProfile();
+            void refreshProfile();
          }
       }
-   };
+   }, [
+      availableCredits,
+      onRefresh,
+      openShopSheet,
+      refreshProfile,
+      status,
+      isFreePlan, // <--- Make sure to add this to the dependency array
+   ]);
 
    // --- ANIMATION TIMINGS ---
    const animationTimeline = useMemo(
@@ -251,10 +264,10 @@ export function AiInsightCard({
    const emotionalLogic = analysis?.emotionalLogic;
    const previewText = suggestions?.counterBelief || emotionalLogic;
 
-   const iconColor = isDark ? '#818cf8' : '#4f46e5'; 
+   const iconColor = isDark ? '#818cf8' : '#4f46e5';
    const textColor = 'text-slate-900 dark:text-slate-100';
    const descColor = 'text-slate-700 dark:text-slate-300';
-return (
+   return (
       <View style={{ opacity: 1 }} className="w-full">
          {/* CHANGE 1: Wrap ONLY the header in Pressable. 
             The header doesn't change size during streaming, so this tap target is stable.
@@ -286,8 +299,8 @@ return (
          )}
 
          {/* --- MINIMIZED STATE --- */}
-         {/* CHANGE 3: Wrap the minimized state explicitly so it can be tapped to expand. 
-         */}
+         {/* CHANGE 3: Wrap the minimized state explicitly so it can be tapped to expand.
+          */}
          {data && isMinimized && (
             <Pressable onPress={toggleMinimized}>
                <AiInsightMinimizedState

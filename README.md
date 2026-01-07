@@ -72,6 +72,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+
+### 2026-01-07
+- Fixed subscriber not being able to refresh
+
 ### 2026-01-06
 - Made credit shop for refresh come from a bottom modal
 - Abstracted bottom sheet styling
