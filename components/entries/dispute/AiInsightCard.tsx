@@ -254,13 +254,15 @@ export function AiInsightCard({
    const iconColor = isDark ? '#818cf8' : '#4f46e5'; 
    const textColor = 'text-slate-900 dark:text-slate-100';
    const descColor = 'text-slate-700 dark:text-slate-300';
-
-   return (
-      <Pressable
-         onPress={allowMinimize ? toggleMinimized : undefined}
-         style={{ opacity: 1 }}
-      >
-         <View className="w-full">
+return (
+      <View style={{ opacity: 1 }} className="w-full">
+         {/* CHANGE 1: Wrap ONLY the header in Pressable. 
+            The header doesn't change size during streaming, so this tap target is stable.
+         */}
+         <Pressable
+            onPress={allowMinimize ? toggleMinimized : undefined}
+            disabled={!allowMinimize}
+         >
             <AiInsightHeader
                allowMinimize={allowMinimize}
                isMinimized={isMinimized}
@@ -270,75 +272,85 @@ export function AiInsightCard({
                iconColor={iconColor}
                isDark={isDark}
             />
+         </Pressable>
 
-            {/* --- ERROR STATE --- */}
-            {error && <AiInsightErrorState error={error} />}
+         {/* --- ERROR STATE --- */}
+         {error && <AiInsightErrorState error={error} />}
 
-            {/* --- LOADING STATE --- */}
-            {isLoading && !error && (
-               <AiInsightLoadingState
-                  renderStreamingText={renderStreamingText}
-               />
-            )}
+         {/* --- LOADING STATE --- */}
+         {/* CHANGE 2: This is no longer wrapped in a Pressable.
+            This allows text updates to flow without breaking the touch responder system.
+         */}
+         {isLoading && !error && (
+            <AiInsightLoadingState renderStreamingText={renderStreamingText} />
+         )}
 
-            {/* --- MINIMIZED STATE --- */}
-            {data && isMinimized && (
+         {/* --- MINIMIZED STATE --- */}
+         {/* CHANGE 3: Wrap the minimized state explicitly so it can be tapped to expand. 
+         */}
+         {data && isMinimized && (
+            <Pressable onPress={toggleMinimized}>
                <AiInsightMinimizedState
                   previewText={previewText}
                   isDark={isDark}
                />
-            )}
+            </Pressable>
+         )}
 
-            {/* --- EXPANDED CONTENT --- */}
-            {data && !isMinimized && (
-               <View className="gap-6 pt-1">
-                  <AiInsightStaleBanner
-                     isStale={Boolean(isStale)}
-                     isCoolingDown={isCoolingDown}
-                     isNudgeStep={isNudgeStep}
-                     refreshCostNote={refreshCostNote}
-                     onRefresh={onRefresh}
-                     onRefreshPress={handleRefreshPress}
-                     timeLabel={timeLabel}
-                     isDark={isDark}
-                  />
+         {/* --- EXPANDED CONTENT --- */}
+         {/* CHANGE 4: This content is now just inside a View (inherited from root).
+             Interactions inside here (like "Refresh" or "Info" buttons) will now 
+             work reliably because no parent Pressable is stealing the event.
+         */}
+         {data && !isMinimized && (
+            <View className="gap-6 pt-1">
+               <AiInsightStaleBanner
+                  isStale={Boolean(isStale)}
+                  isCoolingDown={isCoolingDown}
+                  isNudgeStep={isNudgeStep}
+                  refreshCostNote={refreshCostNote}
+                  onRefresh={onRefresh}
+                  onRefreshPress={handleRefreshPress}
+                  timeLabel={timeLabel}
+                  isDark={isDark}
+               />
 
-                  <AiInsightCrisisBanner safety={safety} isDark={isDark} />
+               <AiInsightCrisisBanner safety={safety} isDark={isDark} />
 
-                  <AiInsightEmotionalValidation
-                     emotionalLogic={emotionalLogic}
-                     animationTimeline={animationTimeline}
-                  />
+               <AiInsightEmotionalValidation
+                  emotionalLogic={emotionalLogic}
+                  animationTimeline={animationTimeline}
+               />
 
-                  <AiInsightThinkingPatterns
-                     dims={dims}
-                     showDefinitions={showDefinitions}
-                     toggleHelp={toggleHelp}
-                     animationTimeline={animationTimeline}
-                     isFreshAnalysis={isFreshAnalysis}
-                     isDark={isDark}
-                  />
+               <AiInsightThinkingPatterns
+                  dims={dims}
+                  showDefinitions={showDefinitions}
+                  toggleHelp={toggleHelp}
+                  animationTimeline={animationTimeline}
+                  isFreshAnalysis={isFreshAnalysis}
+                  isDark={isDark}
+               />
 
-                  <AiInsightSuggestion
-                     counterBelief={suggestions?.counterBelief}
-                     animationTimeline={animationTimeline}
-                  />
+               <AiInsightSuggestion
+                  counterBelief={suggestions?.counterBelief}
+                  animationTimeline={animationTimeline}
+               />
 
-                  <AiInsightDisclaimer
-                     allowMinimize={allowMinimize}
-                     toggleMinimized={toggleMinimized}
-                     animationTimeline={animationTimeline}
-                     isDark={isDark}
-                  />
-               </View>
-            )}
-         </View>
+               <AiInsightDisclaimer
+                  allowMinimize={allowMinimize}
+                  toggleMinimized={toggleMinimized}
+                  animationTimeline={animationTimeline}
+                  isDark={isDark}
+               />
+            </View>
+         )}
+
          <AiInsightCreditShopSheet
             sheetRef={shopSheetRef}
             onDismiss={() => {}}
             onSuccess={handleShopSuccess}
             isDark={isDark}
          />
-      </Pressable>
+      </View>
    );
 }

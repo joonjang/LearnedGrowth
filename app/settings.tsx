@@ -59,6 +59,8 @@ const MANAGE_SUBSCRIPTION_URL = Platform.select({
    default: 'https://apps.apple.com/account/subscriptions',
 });
 
+const AI_CYCLE_MS = 30 * 60 * 1000;
+
 export default function SettingsScreen() {
    const {
       status,
@@ -132,7 +134,7 @@ export default function SettingsScreen() {
    const [redeemingCoupon, setRedeemingCoupon] = useState(false);
     const [couponMessage, setCouponMessage] = useState<string | null>(null);
    const profileRef = useRef(profile);
-   const cycleRefreshRef = useRef<number | null>(null);
+   const cycleAnchorRef = useRef<number | null>(null);
    const creditShopSheetRef = useRef<BottomSheetModal | null>(null);
    const [nowTs, setNowTs] = useState(() => Date.now());
 
@@ -345,9 +347,8 @@ export default function SettingsScreen() {
       const start = new Date(profile.aiCycleStart);
       if (Number.isNaN(start.getTime())) return null;
       const startMs = start.getTime();
-      const cycleMs = 30 * 60 * 1000;
-      const elapsedCycles = Math.floor((nowTs - startMs) / cycleMs);
-      const nextResetMs = startMs + (elapsedCycles + 1) * cycleMs;
+      const elapsedCycles = Math.floor((nowTs - startMs) / AI_CYCLE_MS);
+      const nextResetMs = startMs + (elapsedCycles + 1) * AI_CYCLE_MS;
       return new Date(nextResetMs);
    }, [profile?.aiCycleStart, nowTs]);
    const resetCountdown = useMemo(() => {
@@ -371,13 +372,20 @@ export default function SettingsScreen() {
    }, [resetCountdown]);
 
    useEffect(() => {
-      if (!isSignedIn || isOffline || !nextResetAt) return;
-      const nextResetMs = nextResetAt.getTime();
-      if (nowTs < nextResetMs) return;
-      if (cycleRefreshRef.current === nextResetMs) return;
-      cycleRefreshRef.current = nextResetMs;
-      refreshProfile();
-   }, [isSignedIn, isOffline, nextResetAt, nowTs, refreshProfile]);
+      if (!isSignedIn || isOffline || !profile?.aiCycleStart) return;
+      const startMs = new Date(profile.aiCycleStart).getTime();
+      if (Number.isNaN(startMs)) return;
+      const elapsedCycles = Math.floor((nowTs - startMs) / AI_CYCLE_MS);
+      const currentAnchor = startMs + Math.max(0, elapsedCycles) * AI_CYCLE_MS;
+      if (cycleAnchorRef.current === null) {
+         cycleAnchorRef.current = currentAnchor;
+         return;
+      }
+      if (currentAnchor > cycleAnchorRef.current) {
+         cycleAnchorRef.current = currentAnchor;
+         refreshProfile();
+      }
+   }, [isSignedIn, isOffline, profile?.aiCycleStart, nowTs, refreshProfile]);
 
    const isLoading = loadingProfile || rcLoading;
 
