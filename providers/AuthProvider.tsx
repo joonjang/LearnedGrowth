@@ -28,8 +28,11 @@ type AccountPlan = "free" | "invested";
 
 export type AccountProfile = {
   plan: AccountPlan;
-  aiCallsUsed: number;
+  // Per-cycle usage that resets when refresh_ai_cycle runs on app open.
+  aiCycleUsed: number;
   aiCycleStart: string | null;
+  // All-time usage counter for analytics/debugging.
+  lifetimeAiCalls: number;
   extraAiCredits: number;
 };
 
@@ -56,8 +59,9 @@ const AuthContext = createContext<AuthContextShape | null>(null);
 
 const EMPTY_PROFILE: AccountProfile = {
   plan: "free",
-  aiCallsUsed: 0,
+  aiCycleUsed: 0,
   aiCycleStart: null,
+  lifetimeAiCalls: 0,
   extraAiCredits: 0,
 };
 
@@ -65,12 +69,19 @@ const isSupabaseConfigured = Boolean(supabase);
 
 function normalizeProfile(res: PostgrestSingleResponse<any>): AccountProfile | null {
   if (!res?.data) return null;
-  const { plan, ai_calls_used, ai_cycle_start, extra_ai_credits } = res.data;
+  const {
+    plan,
+    ai_cycle_used,
+    ai_cycle_start,
+    lifetime_ai_calls,
+    extra_ai_credits,
+  } = res.data;
   return {
     plan: plan === "invested" ? "invested" : "free",
-    aiCallsUsed: Number.isFinite(ai_calls_used) ? ai_calls_used : 0,
+    aiCycleUsed: Number.isFinite(ai_cycle_used) ? ai_cycle_used : 0,
     aiCycleStart:
       typeof ai_cycle_start === "string" ? ai_cycle_start : ai_cycle_start ?? null,
+    lifetimeAiCalls: Number.isFinite(lifetime_ai_calls) ? lifetime_ai_calls : 0,
     extraAiCredits: Number.isFinite(extra_ai_credits) ? extra_ai_credits : 0,
   };
 }
@@ -119,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const res = await supabase
           .from("profiles")
-          .select("plan, ai_calls_used, ai_cycle_start, extra_ai_credits")
+          .select("plan, ai_cycle_used, ai_cycle_start, lifetime_ai_calls, extra_ai_credits")
           .eq("id", session.user.id)
           .single();
 

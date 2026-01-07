@@ -156,9 +156,9 @@ export default function SettingsScreen() {
    const isSignedIn = status === 'signedIn';
    const entitlementActive = isGrowthPlusActive;
    const hasGrowth = entitlementActive;
-   const aiUsed = profile?.aiCallsUsed ?? 0;
+   const aiUsed = profile?.aiCycleUsed ?? 0;
    const extraCredits = profile?.extraAiCredits ?? 0;
-   const monthlyRemaining = Math.max(FREE_MONTHLY_CREDITS - aiUsed, 0);
+   const cycleRemaining = Math.max(FREE_MONTHLY_CREDITS - aiUsed, 0);
    const darkMode = theme === 'dark';
 
    // const biometricUnavailable = !biometricInfo.hasHardware;
@@ -167,7 +167,7 @@ export default function SettingsScreen() {
    const checkCreditsCycle = useCallback(() => {
       if (status !== 'signedIn') return;
       const currentProfile = profileRef.current;
-      const aiUsed = currentProfile?.aiCallsUsed ?? 0;
+      const aiUsed = currentProfile?.aiCycleUsed ?? 0;
       const remaining = Math.max(FREE_MONTHLY_CREDITS - aiUsed, 0);
       if (currentProfile && remaining < FREE_MONTHLY_CREDITS) {
          refreshProfile();
@@ -344,9 +344,9 @@ export default function SettingsScreen() {
       const start = new Date(profile.aiCycleStart);
       if (Number.isNaN(start.getTime())) return null;
       const startMs = start.getTime();
-      const dayMs = 24 * 60 * 60 * 1000;
-      const elapsedDays = Math.floor((nowTs - startMs) / dayMs);
-      const nextResetMs = startMs + (elapsedDays + 1) * dayMs;
+      const cycleMs = 30 * 60 * 1000;
+      const elapsedCycles = Math.floor((nowTs - startMs) / cycleMs);
+      const nextResetMs = startMs + (elapsedCycles + 1) * cycleMs;
       return new Date(nextResetMs);
    }, [profile?.aiCycleStart, nowTs]);
    const resetCountdown = useMemo(() => {
@@ -365,7 +365,7 @@ export default function SettingsScreen() {
          .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
    }, [nextResetAt, nowTs]);
    const resetSubtext = useMemo(() => {
-      if (!resetCountdown) return 'Resets daily';
+      if (!resetCountdown) return 'Resets every 30 minutes';
       return `Resets in ${resetCountdown}`;
    }, [resetCountdown]);
 
@@ -426,8 +426,8 @@ export default function SettingsScreen() {
             {isSignedIn && !hasGrowth && (
                <View className="flex-row gap-3">
                   <StatCard
-                     label="Daily Credits"
-                     value={String(monthlyRemaining)}
+                     label="Cycle Credits"
+                     value={String(cycleRemaining)}
                      subtext={resetSubtext}
                      isLoading={isLoading}
                      icon={<Zap size={16} color="#fbbf24" fill="#fbbf24" />}

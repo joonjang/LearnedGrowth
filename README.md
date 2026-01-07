@@ -74,6 +74,13 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Made credit shop for refresh come from a bottom modal
 - Abstracted bottom sheet styling
 - Removed biometric display for settings, its for a later time to implement
+- Bug fix
+  - free-user bottom sheet no longer unmounts and continue to display
+  - ai cycle debug/fix in resetting to every thirty minutes
+
+  - dispute screen close button missing path
+  - haptic issue
+  - ai insight streaming causing closing lag
 
 ### 2026-01-05
 - Updated AiInsight display timing + cool down credit refresh placement

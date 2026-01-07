@@ -94,7 +94,7 @@ export function AiInsightCard({
    const availableCredits = useMemo(() => {
       if (!profile) return null;
       return (
-         Math.max(FREE_MONTHLY_CREDITS - (profile.aiCallsUsed ?? 0), 0) +
+         Math.max(FREE_MONTHLY_CREDITS - (profile.aiCycleUsed ?? 0), 0) +
          (profile.extraAiCredits ?? 0)
       );
    }, [profile]);

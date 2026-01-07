@@ -114,7 +114,7 @@ export default function FreeUserChoiceScreen() {
    const effectiveSignedIn = isSignedIn || hasSession;
    
    const availableCredits = profile
-      ? Math.max(FREE_MONTHLY_CREDITS - profile.aiCallsUsed, 0) +
+      ? Math.max(FREE_MONTHLY_CREDITS - profile.aiCycleUsed, 0) +
         (profile.extraAiCredits ?? 0)
       : null;
 
