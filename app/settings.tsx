@@ -132,6 +132,7 @@ export default function SettingsScreen() {
    const [redeemingCoupon, setRedeemingCoupon] = useState(false);
     const [couponMessage, setCouponMessage] = useState<string | null>(null);
    const profileRef = useRef(profile);
+   const cycleRefreshRef = useRef<number | null>(null);
    const creditShopSheetRef = useRef<BottomSheetModal | null>(null);
    const [nowTs, setNowTs] = useState(() => Date.now());
 
@@ -368,6 +369,15 @@ export default function SettingsScreen() {
       if (!resetCountdown) return 'Resets every 30 minutes';
       return `Resets in ${resetCountdown}`;
    }, [resetCountdown]);
+
+   useEffect(() => {
+      if (!isSignedIn || isOffline || !nextResetAt) return;
+      const nextResetMs = nextResetAt.getTime();
+      if (nowTs < nextResetMs) return;
+      if (cycleRefreshRef.current === nextResetMs) return;
+      cycleRefreshRef.current = nextResetMs;
+      refreshProfile();
+   }, [isSignedIn, isOffline, nextResetAt, nowTs, refreshProfile]);
 
    const isLoading = loadingProfile || rcLoading;
 
