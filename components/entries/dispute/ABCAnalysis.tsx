@@ -1,5 +1,5 @@
 import { getShadow } from '@/lib/shadow';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
@@ -9,6 +9,11 @@ import { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { ArrowRight } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import Animated, {
+   useAnimatedStyle,
+   useSharedValue,
+   withTiming,
+} from 'react-native-reanimated';
 
 type Props = {
    entry: Entry;
@@ -39,10 +44,29 @@ export default function ABCAnalysis({
 }: Props) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const shadow = useMemo(
-      () => getShadow({ isDark, preset: 'sm' }),
-      [isDark]
-   );
+   const shadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
+   
+   const [areAnimationsDone, setAreAnimationsDone] = useState(false);
+   const buttonOpacity = useSharedValue(0);
+
+   useEffect(() => {
+      if (areAnimationsDone) {
+         buttonOpacity.value = withTiming(1, { duration: 500 });
+      } else {
+         // Optional: Reset if you want it to hide again when refreshing
+         buttonOpacity.value = 0;
+      }
+   }, [areAnimationsDone, buttonOpacity]);
+
+   const buttonFadeStyle = useAnimatedStyle(() => ({
+      opacity: buttonOpacity.value,
+   }));
+
+   useEffect(() => {
+      setAreAnimationsDone(false);
+      buttonOpacity.value = 0;
+   }, [entry.id, aiData?.createdAt, buttonOpacity]);
+
    return (
       <ScrollView
          className="flex-1"
@@ -118,15 +142,19 @@ export default function ABCAnalysis({
                streamingText={streamingText}
                loading={loading}
                error={error}
-               onRefresh={onRefresh}
+               onRefresh={() => {
+                  setAreAnimationsDone(false);
+                  onRefresh();
+               }}
                retryCount={retryCount}
                maxRetries={maxRetries}
                updatedAt={entry.updatedAt}
+               onAnimationComplete={() => setAreAnimationsDone(true)}
             />
             {onGoToSteps && aiData ? (
-               <View
+               <Animated.View
                   className={`p-1 mt-6 mb-3 ${shadow.className}`}
-                  style={[shadow.ios, shadow.android]}
+                  style={[shadow.ios, shadow.android, buttonFadeStyle]}
                >
                   <WideButton
                      label={'Continue'}
@@ -134,7 +162,7 @@ export default function ABCAnalysis({
                      onPress={onGoToSteps}
                      variant={'primary'}
                   />
-               </View>
+               </Animated.View>
             ) : null}
          </View>
       </ScrollView>

@@ -10,20 +10,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutAnimation, Pressable, View } from 'react-native';
 
 import { AiInsightCreditShopSheet } from '../../CreditShopSheet';
+import AiInsightExpandedContent from './aiInsightCard/AiInsightExpandedContent';
 import { getAiInsightAnimationTimeline } from './aiInsightCard/animation';
 import {
-   AiInsightCrisisBanner,
-   AiInsightDisclaimer,
-   AiInsightEmotionalValidation,
    AiInsightErrorState,
    AiInsightHeader,
    AiInsightLoadingState,
-   AiInsightMinimizedState,
-   AiInsightStaleBanner,
-   AiInsightSuggestion,
-   AiInsightThinkingPatterns,
+   AiInsightMinimizedState
 } from './aiInsightCard/sections';
-import { useCooldownLabel } from './aiInsightCard/useCooldownLabel';
 
 type RefreshWindowState = {
    timestamps: number[];
@@ -44,6 +38,7 @@ type Props = {
    updatedAt?: string;
    allowMinimize?: boolean;
    initiallyMinimized?: boolean;
+   onAnimationComplete?: () => void;
 };
 
 export function AiInsightCard({
@@ -57,6 +52,7 @@ export function AiInsightCard({
    updatedAt,
    allowMinimize = false,
    initiallyMinimized = false,
+   onAnimationComplete,
 }: Props) {
    const refreshWindowKey = entryId ?? 'ai-insight-default';
    const { colorScheme } = useColorScheme();
@@ -184,11 +180,6 @@ export function AiInsightCard({
       refreshProfileIfStale();
    }, [refreshProfileIfStale, status]);
 
-   const timeLabel = useCooldownLabel(
-      isCoolingDown,
-      cooldownAnchor,
-      COOLDOWN_MINUTES
-   );
 
    // --- FRESHNESS LOGIC ---
    const isFreshAnalysis = useMemo(() => {
@@ -204,10 +195,6 @@ export function AiInsightCard({
          ? '…' + streamingText.slice(-MAX_VISIBLE_CHARS)
          : streamingText;
    const isLoading = !data && !error;
-
-   const openShopSheet = () => {
-      shopSheetRef.current?.present();
-   };
 
    const handleShopSuccess = async () => {
       shopSheetRef.current?.dismiss();
@@ -229,7 +216,7 @@ export function AiInsightCard({
          isFreePlan && availableCredits !== null && availableCredits <= 0;
 
       if (isCreditRestricted) {
-         openShopSheet();
+         shopSheetRef.current?.present();
          return;
       }
 
@@ -243,7 +230,6 @@ export function AiInsightCard({
    }, [
       availableCredits,
       onRefresh,
-      openShopSheet,
       refreshProfile,
       status,
       isFreePlan, // <--- Make sure to add this to the dependency array
@@ -256,11 +242,9 @@ export function AiInsightCard({
    );
 
    // --- VARIABLES FOR RENDER ---
-   const safety = data?.safety;
    const analysis = data?.analysis;
    const suggestions = data?.suggestions;
    const isStale = data?.isStale;
-   const dims = analysis?.dimensions;
    const emotionalLogic = analysis?.emotionalLogic;
    const previewText = suggestions?.counterBelief || emotionalLogic;
 
@@ -316,46 +300,24 @@ export function AiInsightCard({
              work reliably because no parent Pressable is stealing the event.
          */}
          {data && !isMinimized && (
-            <View className="gap-6 pt-1">
-               <AiInsightStaleBanner
-                  isStale={Boolean(isStale)}
-                  isCoolingDown={isCoolingDown}
-                  isNudgeStep={isNudgeStep}
-                  refreshCostNote={refreshCostNote}
-                  onRefresh={onRefresh}
-                  onRefreshPress={handleRefreshPress}
-                  timeLabel={timeLabel}
-                  isDark={isDark}
-               />
-
-               <AiInsightCrisisBanner safety={safety} isDark={isDark} />
-
-               <AiInsightEmotionalValidation
-                  emotionalLogic={emotionalLogic}
-                  animationTimeline={animationTimeline}
-               />
-
-               <AiInsightThinkingPatterns
-                  dims={dims}
-                  showDefinitions={showDefinitions}
-                  toggleHelp={toggleHelp}
-                  animationTimeline={animationTimeline}
-                  isFreshAnalysis={isFreshAnalysis}
-                  isDark={isDark}
-               />
-
-               <AiInsightSuggestion
-                  counterBelief={suggestions?.counterBelief}
-                  animationTimeline={animationTimeline}
-               />
-
-               <AiInsightDisclaimer
-                  allowMinimize={allowMinimize}
-                  toggleMinimized={toggleMinimized}
-                  animationTimeline={animationTimeline}
-                  isDark={isDark}
-               />
-            </View>
+            <AiInsightExpandedContent
+               data={data}
+               isStale={Boolean(data.isStale)}
+               isCoolingDown={isCoolingDown}
+               isNudgeStep={isNudgeStep}
+               refreshCostNote={refreshCostNote}
+               onRefresh={onRefresh}
+               onRefreshPress={handleRefreshPress}
+               cooldownAnchorMs={cooldownAnchor.getTime()} // Pass time as number
+               isDark={isDark}
+               animationTimeline={animationTimeline}
+               showDefinitions={showDefinitions}
+               toggleHelp={toggleHelp}
+               allowMinimize={allowMinimize}
+               toggleMinimized={toggleMinimized}
+               isFreshAnalysis={isFreshAnalysis}
+               onAnimationComplete={onAnimationComplete} // Pass the signal down
+            />
          )}
 
          <AiInsightCreditShopSheet

@@ -136,7 +136,7 @@ export function AnimatedSpectrumRow({
          cancelAnimation(impactScale);
          cancelAnimation(rowVisibility);
       };
-   }, [targetPosition, startDelay, skipAnimation, spectrum]);
+   }, [targetPosition, startDelay, skipAnimation, spectrum, scannerProgress, rowVisibility, revealState, impactScale]);
 
    // --- ANTICIPATORY HAPTICS ---
    useAnimatedReaction(
