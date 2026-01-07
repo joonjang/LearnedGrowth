@@ -12,13 +12,40 @@ import {
    RefreshCw,
    TriangleAlert,
 } from 'lucide-react-native';
+import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+   Easing,
+   useAnimatedStyle,
+   useSharedValue,
+   withDelay,
+   withTiming
+} from 'react-native-reanimated';
 
-import type { AnimationTimeline } from './animation';
 import { AnimatedSpectrumRow } from './AnimatedSpectrumRow';
-import type { InsightDimensions, InsightSafety } from './types';
+import type { AnimationTimeline } from './animation';
+import { InsightDimensions, InsightSafety } from './types';
 
+
+// --- HELPER HOOK ---
+// This replaces the 'entering' prop. It creates a simple fade-in style 
+// that runs on the UI thread without triggering layout changes.
+function useDelayedAppearance(delay: number) {
+   const opacity = useSharedValue(0);
+   const translateY = useSharedValue(10); // Slight slide up
+
+   useEffect(() => {
+      opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
+      translateY.value = withDelay(delay, withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) }));
+   }, [delay, opacity, translateY]);
+
+   return useAnimatedStyle(() => ({
+      opacity: opacity.value,
+      transform: [{ translateY: translateY.value }]
+   }));
+}
+
+// --- HEADER ---
 export type AiInsightHeaderProps = {
    allowMinimize: boolean;
    isMinimized: boolean;
@@ -46,15 +73,10 @@ export function AiInsightHeader({
                   AI Analysis
                </Text>
                {isStale && isMinimized && (
-                  <Clock3
-                     size={14}
-                     color={isDark ? '#94a3b8' : '#64748b'}
-                     style={{ opacity: 0.8 }}
-                  />
+                  <Clock3 size={14} color={isDark ? '#94a3b8' : '#64748b'} style={{ opacity: 0.8 }} />
                )}
             </View>
 
-            {/* Icon Pivot Wrapper */}
             {allowMinimize && (
                <View className="rounded-full px-2 py-1">
                   <Quote size={14} color={iconColor} />
@@ -63,9 +85,7 @@ export function AiInsightHeader({
          </View>
 
          {allowMinimize && isMinimized && (
-            <Text
-               className={`text-sm font-medium mb-3 opacity-80 ${descColor}`}
-            >
+            <Text className={`text-sm font-medium mb-3 opacity-80 ${descColor}`}>
                Observed thinking patterns.
             </Text>
          )}
@@ -73,6 +93,7 @@ export function AiInsightHeader({
    );
 }
 
+// --- ERROR & LOADING ---
 export function AiInsightErrorState({ error }: { error: string }) {
    return (
       <View className="py-2">
@@ -122,6 +143,7 @@ export function AiInsightMinimizedState({
    );
 }
 
+// --- STALE BANNER ---
 export type AiInsightStaleBannerProps = {
    isStale: boolean;
    isCoolingDown: boolean;
@@ -145,45 +167,30 @@ export function AiInsightStaleBanner({
 }: AiInsightStaleBannerProps) {
    if (!isStale) return null;
 
+   const containerStyle = isCoolingDown
+      ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+      : isNudgeStep
+      ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+      : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
+
    return (
-      <View
-         className={`flex-row justify-between p-3 rounded-lg border mb-2 ${
-            isCoolingDown
-               ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-               : isNudgeStep
-               ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-               : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-         }`}
-      >
-         {/* LEFT COLUMN: Header + Text */}
+      <View className={`flex-row justify-between p-3 rounded-lg border mb-2 ${containerStyle}`}>
          <View className="flex-1 mr-2">
-            {/* Header Row */}
             <View className="flex-row items-center justify-between">
                <View className="flex-row items-center gap-2">
                   {isCoolingDown ? (
-                     <Hourglass
-                        size={16}
-                        color={isDark ? '#94a3b8' : '#64748b'}
-                     />
+                     <Hourglass size={16} color={isDark ? '#94a3b8' : '#64748b'} />
                   ) : (
-                     <Clock3
-                        size={16}
-                        color={isDark ? '#94a3b8' : '#64748b'}
-                     />
+                     <Clock3 size={16} color={isDark ? '#94a3b8' : '#64748b'} />
                   )}
                   <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
                      {isCoolingDown ? 'Analysis Paused' : 'Previous Analysis'}
                   </Text>
                </View>
 
-               {/* Credits Info (Top Right) */}
                {!isCoolingDown && refreshCostNote && (
                   <View className="flex-row items-center opacity-90 ml-2">
-                     <Leaf
-                        size={10}
-                        color={isDark ? '#f59e0b' : '#b45309'}
-                        style={{ marginRight: 3 }}
-                     />
+                     <Leaf size={10} color={isDark ? '#f59e0b' : '#b45309'} style={{ marginRight: 3 }} />
                      <Text className="text-[10px] font-semibold text-amber-700 dark:text-amber-200">
                         {refreshCostNote}
                      </Text>
@@ -191,44 +198,28 @@ export function AiInsightStaleBanner({
                )}
             </View>
 
-            {/* Description Text */}
             <Text className="text-[11px] text-slate-600 dark:text-slate-400 leading-4 mt-1">
                {!onRefresh
                   ? 'This insight is based on an older version of your entry.'
                   : isCoolingDown
-                  ? 'Updates paused to encourage you to continue to the next step.'
+                  ? 'Updates paused to enable deeper thinking.'
                   : isNudgeStep
-                  ? "You've refined this quite a bit. Ready to move to the next step?"
+                  ? "You've refined this quite a bit. Consider moving on to the next phase after refreshing."
                   : 'Entry has changed. Update analysis?'}
             </Text>
          </View>
 
-         {/* RIGHT COLUMN: Button Wrapper */}
-         <View
-            className={`justify-end pl-1 ${
-               !isCoolingDown && refreshCostNote ? 'pt-5' : ''
-            }`}
-         >
+         <View className={`justify-end pl-1 ${!isCoolingDown && refreshCostNote ? 'pt-5' : ''}`}>
             {onRefresh && !isCoolingDown ? (
                <Pressable
                   onPress={onRefreshPress}
                   className="p-2 mb-0.5 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
                >
-                  <RefreshCw
-                     size={18}
-                     color={isDark ? '#f8fafc' : '#0f172a'}
-                  />
+                  <RefreshCw size={18} color={isDark ? '#f8fafc' : '#0f172a'} />
                </Pressable>
             ) : isCoolingDown && timeLabel !== '' ? (
-               <View
-                  className={`px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded mb-0.5 ${
-                     !isCoolingDown && refreshCostNote ? 'mt-auto' : ''
-                  }`}
-               >
-                  <Text
-                     className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
-                     style={{ fontVariant: ['tabular-nums'] }}
-                  >
+               <View className={`px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded mb-0.5 ${!isCoolingDown && refreshCostNote ? 'mt-auto' : ''}`}>
+                  <Text className="text-[11px] font-bold text-slate-500 dark:text-slate-400" style={{ fontVariant: ['tabular-nums'] }}>
                      {timeLabel}
                   </Text>
                </View>
@@ -238,6 +229,7 @@ export function AiInsightStaleBanner({
    );
 }
 
+// --- CRISIS ---
 export function AiInsightCrisisBanner({
    safety,
    isDark,
@@ -250,10 +242,7 @@ export function AiInsightCrisisBanner({
    return (
       <View className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 border border-red-100 dark:border-red-800">
          <View className="flex-row items-center gap-2 mb-1">
-            <TriangleAlert
-               size={16}
-               color={isDark ? '#fecaca' : '#991b1b'}
-            />
+            <TriangleAlert size={16} color={isDark ? '#fecaca' : '#991b1b'} />
             <Text className="text-sm font-bold text-red-800 dark:text-red-200">
                You deserve support
             </Text>
@@ -265,6 +254,7 @@ export function AiInsightCrisisBanner({
    );
 }
 
+// --- EMOTIONAL VALIDATION ---
 export function AiInsightEmotionalValidation({
    emotionalLogic,
    animationTimeline,
@@ -272,10 +262,13 @@ export function AiInsightEmotionalValidation({
    emotionalLogic?: string | null;
    animationTimeline: AnimationTimeline;
 }) {
+   // Replaced entering prop with custom hook
+   const animStyle = useDelayedAppearance(animationTimeline.emotionAppear);
+
    if (!emotionalLogic) return null;
 
    return (
-      <Animated.View entering={FadeInDown.delay(animationTimeline.emotionAppear)}>
+      <Animated.View style={animStyle}>
          <Text className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
             Your reaction makes sense
          </Text>
@@ -286,6 +279,7 @@ export function AiInsightEmotionalValidation({
    );
 }
 
+// --- THINKING PATTERNS ---
 export type AiInsightThinkingPatternsProps = {
    dims?: InsightDimensions | null;
    showDefinitions: boolean;
@@ -303,11 +297,14 @@ export function AiInsightThinkingPatterns({
    isFreshAnalysis,
    isDark,
 }: AiInsightThinkingPatternsProps) {
+   // Replaced entering prop
+   const headerStyle = useDelayedAppearance(animationTimeline.headerAppear);
+
    if (!dims) return null;
 
    return (
       <View>
-         <Animated.View entering={FadeInDown.delay(animationTimeline.headerAppear)}>
+         <Animated.View style={headerStyle}>
             <View className="flex-row items-center justify-between mb-4">
                <View className="flex-row items-center gap-2">
                   <Layers size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
@@ -316,7 +313,6 @@ export function AiInsightThinkingPatterns({
                   </Text>
                </View>
 
-               {/* GUIDE PILL */}
                <Pressable onPress={toggleHelp}>
                   <View
                      className={`flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-full border ${
@@ -325,23 +321,14 @@ export function AiInsightThinkingPatterns({
                            : 'border-transparent'
                      }`}
                   >
-                     <BookOpen
-                        size={12}
-                        color={isDark ? '#94a3b8' : '#64748b'}
-                     />
+                     <BookOpen size={12} color={isDark ? '#94a3b8' : '#64748b'} />
                      <Text className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                         Guide
                      </Text>
                      {showDefinitions ? (
-                        <ChevronUp
-                           size={12}
-                           color={isDark ? '#94a3b8' : '#64748b'}
-                        />
+                        <ChevronUp size={12} color={isDark ? '#94a3b8' : '#64748b'} />
                      ) : (
-                        <ChevronDown
-                           size={12}
-                           color={isDark ? '#94a3b8' : '#64748b'}
-                        />
+                        <ChevronDown size={12} color={isDark ? '#94a3b8' : '#64748b'} />
                      )}
                   </View>
                </Pressable>
@@ -354,50 +341,45 @@ export function AiInsightThinkingPatterns({
          </Animated.View>
 
          <View className="gap-6">
-            <Animated.View entering={FadeInDown.delay(animationTimeline.timeStart)}>
-               <AnimatedSpectrumRow
-                  label="Time"
-                  subLabel="(Permanence)"
-                  leftText="Temporary"
-                  rightText="Permanent"
-                  score={dims.permanence.score}
-                  insight={dims.permanence.insight}
-                  detectedPhrase={dims.permanence.detectedPhrase}
-                  startDelay={animationTimeline.timeStart}
-                  skipAnimation={!isFreshAnalysis}
-               />
-            </Animated.View>
-            <Animated.View entering={FadeInDown.delay(animationTimeline.scopeStart)}>
-               <AnimatedSpectrumRow
-                  label="Scope"
-                  subLabel="(Pervasiveness)"
-                  leftText="Specific"
-                  rightText="Pervasive"
-                  score={dims.pervasiveness.score}
-                  insight={dims.pervasiveness.insight}
-                  detectedPhrase={dims.pervasiveness.detectedPhrase}
-                  startDelay={animationTimeline.scopeStart}
-                  skipAnimation={!isFreshAnalysis}
-               />
-            </Animated.View>
-            <Animated.View entering={FadeInDown.delay(animationTimeline.blameStart)}>
-               <AnimatedSpectrumRow
-                  label="Blame"
-                  subLabel="(Personalization)"
-                  leftText="External"
-                  rightText="Internal"
-                  score={dims.personalization.score}
-                  insight={dims.personalization.insight}
-                  detectedPhrase={dims.personalization.detectedPhrase}
-                  startDelay={animationTimeline.blameStart}
-                  skipAnimation={!isFreshAnalysis}
-               />
-            </Animated.View>
+            <AnimatedSpectrumRow
+               label="Time"
+               subLabel="(Permanence)"
+               leftText="Temporary"
+               rightText="Permanent"
+               score={dims.permanence.score}
+               insight={dims.permanence.insight}
+               detectedPhrase={dims.permanence.detectedPhrase}
+               startDelay={animationTimeline.timeStart}
+               skipAnimation={!isFreshAnalysis}
+            />
+            <AnimatedSpectrumRow
+               label="Scope"
+               subLabel="(Pervasiveness)"
+               leftText="Specific"
+               rightText="Pervasive"
+               score={dims.pervasiveness.score}
+               insight={dims.pervasiveness.insight}
+               detectedPhrase={dims.pervasiveness.detectedPhrase}
+               startDelay={animationTimeline.scopeStart}
+               skipAnimation={!isFreshAnalysis}
+            />
+            <AnimatedSpectrumRow
+               label="Blame"
+               subLabel="(Personalization)"
+               leftText="External"
+               rightText="Internal"
+               score={dims.personalization.score}
+               insight={dims.personalization.insight}
+               detectedPhrase={dims.personalization.detectedPhrase}
+               startDelay={animationTimeline.blameStart}
+               skipAnimation={!isFreshAnalysis}
+            />
          </View>
       </View>
    );
 }
 
+// --- SUGGESTION ---
 export function AiInsightSuggestion({
    counterBelief,
    animationTimeline,
@@ -405,11 +387,14 @@ export function AiInsightSuggestion({
    counterBelief?: string | null;
    animationTimeline: AnimationTimeline;
 }) {
+   // Replaced entering prop
+   const animStyle = useDelayedAppearance(animationTimeline.suggestionStart);
+
    if (!counterBelief) return null;
 
    return (
       <Animated.View
-         entering={FadeInDown.delay(animationTimeline.suggestionStart).springify()}
+         style={animStyle}
          className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 p-4 border border-indigo-100 dark:border-indigo-800/50 mt-2"
       >
          <View className="flex-row items-center gap-2 mb-2">
@@ -425,6 +410,7 @@ export function AiInsightSuggestion({
    );
 }
 
+// --- DISCLAIMER ---
 export type AiInsightDisclaimerProps = {
    allowMinimize: boolean;
    toggleMinimized: () => void;
@@ -438,9 +424,13 @@ export function AiInsightDisclaimer({
    animationTimeline,
    isDark,
 }: AiInsightDisclaimerProps) {
+   
+   // Replaced entering prop
+   const animStyle = useDelayedAppearance(animationTimeline.disclaimerStart);
+
    return (
       <Animated.View
-         entering={FadeInDown.delay(animationTimeline.disclaimerStart)}
+         style={animStyle}
          className="flex-row gap-2 mt-1 px-1 opacity-70"
       >
          <Info
@@ -461,10 +451,7 @@ export function AiInsightDisclaimer({
                <Text className="text-xs font-bold text-slate-500 dark:text-slate-400">
                   Less
                </Text>
-               <ChevronUp
-                  size={12}
-                  color={isDark ? '#94a3b8' : '#64748b'}
-               />
+               <ChevronUp size={12} color={isDark ? '#94a3b8' : '#64748b'} />
             </Pressable>
          )}
       </Animated.View>
