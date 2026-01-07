@@ -75,6 +75,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2026-01-07
 - Fixed subscriber not being able to refresh
+- ABCAnalysis continue button appears after all animation completes
 
 ### 2026-01-06
 - Made credit shop for refresh come from a bottom modal
