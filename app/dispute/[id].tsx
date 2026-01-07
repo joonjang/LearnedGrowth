@@ -1,5 +1,5 @@
 import rawAbcde from '@/assets/data/abcde.json';
-import { MAX_AI_RETRIES } from '@/components/constants';
+import { MAX_AI_RETRIES, ROUTE_ENTRIES } from '@/components/constants';
 import ABCAnalysis from '@/components/entries/dispute/ABCAnalysis';
 import DisputeSteps from '@/components/entries/dispute/DisputeSteps';
 import { useAbcAi } from '@/hooks/useAbcAi';
@@ -55,7 +55,6 @@ const STEP_ORDER = [
    'energy',
 ] as const;
 
-
 export default function DisputeScreen() {
    useResizeMode();
    const params = useLocalSearchParams<{
@@ -110,6 +109,8 @@ export default function DisputeScreen() {
       useAbcAi();
 
    const isMountedRef = useRef(true);
+   // --- FIX: ADD REF LOCK ---
+   const isClosingRef = useRef(false);
 
    useEffect(() => {
       isMountedRef.current = true;
@@ -236,46 +237,45 @@ export default function DisputeScreen() {
          setForm((f) => ({ ...f, [k]: v })),
       []
    );
-const submit = useCallback(async () => {
-  if (!entry) return;
+   
+   const submit = useCallback(async () => {
+      if (!entry) return;
 
-  const dispute = buildDisputeText(trimmedForm);
-  const nextEnergy = trimmedForm.energy;
+      const dispute = buildDisputeText(trimmedForm);
+      const nextEnergy = trimmedForm.energy;
 
-  const patch: Partial<Entry> = {};
-  if (dispute !== (entry.dispute ?? '')) patch.dispute = dispute;
-  if (nextEnergy !== (entry.energy ?? '')) patch.energy = nextEnergy;
+      const patch: Partial<Entry> = {};
+      if (dispute !== (entry.dispute ?? '')) patch.dispute = dispute;
+      if (nextEnergy !== (entry.energy ?? '')) patch.energy = nextEnergy;
 
-  const hasChanges = Object.keys(patch).length > 0;
-  if (hasChanges) {
-    void updateEntry(entry.id, patch).catch((e) =>
-      console.error('Failed to save dispute', e)
-    );
-  }
+      const hasChanges = Object.keys(patch).length > 0;
+      if (hasChanges) {
+         void updateEntry(entry.id, patch).catch((e) =>
+            console.error('Failed to save dispute', e)
+         );
+      }
 
-  if (hapticsEnabled && hapticsAvailable) triggerHaptic();
+      if (hapticsEnabled && hapticsAvailable) triggerHaptic();
 
-  const targetRoute = {
-    pathname: '/entries/[id]',
-    params: { id: String(entry.id), animateInstant: '1' },
-  } as const;
+      const targetRoute = {
+         pathname: '/entries/[id]',
+         params: { id: String(entry.id), animateInstant: '1' },
+      } as const;
 
-  // ✅ No nav-state hook. No route-tree scan. No crash.
-  if (router.canGoBack()) {
-    router.back();
-    return;
-  }
+      if (router.canGoBack()) {
+         router.back();
+         return;
+      }
 
-  router.replace(targetRoute);
-}, [
-  entry,
-  hapticsAvailable,
-  hapticsEnabled,
-  triggerHaptic,
-  trimmedForm,
-  updateEntry,
-]);
-
+      router.replace(targetRoute);
+   }, [
+      entry,
+      hapticsAvailable,
+      hapticsEnabled,
+      triggerHaptic,
+      trimmedForm,
+      updateEntry,
+   ]);
 
    const scrollToBottom = useCallback((animated = true) => {
       const ref = scrollRef.current;
@@ -298,7 +298,6 @@ const submit = useCallback(async () => {
       if (!entry) return;
       setIsRegenerating(true);
       try {
-         // Trigger the hook's analyze function
          const result = await analyze({
             adversity: entry.adversity,
             belief: entry.belief,
@@ -306,7 +305,6 @@ const submit = useCallback(async () => {
          });
 
          setIsRegenerating(false);
-         // Increment and Save
          const nextRetryCount = (entry.aiRetryCount ?? 0) + 1;
 
          await updateEntry(entry.id, {
@@ -364,21 +362,43 @@ const submit = useCallback(async () => {
    }, [analysisProgress, stepsProgress, viewMode]);
 
    const showAnalysis = viewMode === 'analysis';
+
+   // --- FIX: SAFE HANDLE CLOSE ---
    const handleClose = useCallback(() => {
+      // 1. Idempotency Check
+      if (isClosingRef.current) return;
+      isClosingRef.current = true;
+
+      const safeGoBack = () => {
+         if (router.canGoBack()) {
+            router.back();
+         } else {
+            router.replace(ROUTE_ENTRIES);
+         }
+      };
+
       if (!hasUnsavedChanges) {
-         router.back();
+         safeGoBack();
          return;
       }
+
       Keyboard.dismiss();
       Alert.alert(
          'Discard changes?',
          'You have unsaved changes. Close without saving?',
          [
-            { text: 'Cancel', style: 'cancel' },
+            { 
+               text: 'Cancel', 
+               style: 'cancel',
+               onPress: () => {
+                  // Unlock if cancelled
+                  isClosingRef.current = false;
+               }
+            },
             {
                text: 'Discard',
                style: 'destructive',
-               onPress: () => router.back(),
+               onPress: safeGoBack, // Lock remains active here
             },
          ]
       );
@@ -428,7 +448,7 @@ const submit = useCallback(async () => {
                      setField={setField}
                      setIdx={setIdx}
                      onSubmit={submit}
-                     onExit={() => router.back()}
+                     onExit={handleClose} // Use safe close here too
                      disableNext={currentEmpty}
                      hasUnsavedChanges={hasUnsavedChanges}
                      scrollRef={scrollRef}
@@ -437,13 +457,10 @@ const submit = useCallback(async () => {
                      inputRef={inputRef}
                      inputBoxDims={inputBoxDims}
                      inputBoxAnimatedStyle={inputBoxAnimatedStyle}
-                     // Pass a simple style object if component expects style, or className if it supports it.
-                     // Assuming 'promptContainerStyle' is a legacy style prop in the child:
                      promptContainerStyle={{
                         flexGrow: 1,
                         justifyContent: 'space-evenly',
                      }}
-                     // onShowInsights={() => setViewMode('analysis')}
                      contentTopPadding={topPadding}
                   />
                </Animated.View>
@@ -461,7 +478,7 @@ const submit = useCallback(async () => {
                      error={error}
                      streamingText={streamText}
                      contentTopPadding={topPadding}
-                     onExit={handleClose}
+                     onExit={handleClose} // Safe close with lock
                      onGoToSteps={() => setViewMode('steps')}
                      onRefresh={handleRefreshAnalysis}
                      retryCount={entry?.aiRetryCount ?? 0}
