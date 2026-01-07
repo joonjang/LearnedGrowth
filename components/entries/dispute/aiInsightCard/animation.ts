@@ -1,43 +1,46 @@
 export const AI_INSIGHT_ANIMATION = {
    timeline: {
       baseStagger: 75,
-      emotionAppearDelay: 500,
-      headerAppearDelay: 800,
-      timeStartDelay: 1000,
-      rowDuration: 3900,
-      blameGap: 500,
-      suggestionOffset: 3600,
-      disclaimerDelayOffset: 200,
+      startDelay: 300,        // Start the whole sequence sooner
+      headerGap: 300,         // Gap between Emotion and Section Header
+      rowGap: 300,            // Gap between Section Header and First Row
+      rowDuration: 5400,      // Time for one row to finish scanning
+      suggestionGap: 0,     // Gap after last row finishes before Suggestion appears
+      disclaimerGap: 200,     // Gap between Suggestion and Disclaimer
    },
    spectrum: {
       revealSkipDuration: 600,
-      scanDelayOffset: 600,
-      swipeSpeed: 800,
-      hapticInterval: 150,
-      impactShrinkDuration: 150,
-      impactSpring: { damping: 15, stiffness: 150 },
-      revealDelayAfterFinish: 300,
-      revealAfterFinishDuration: 800,
-      noMoveDelay: 50,
-      phraseEntryDuration: 600,
-      pillsEntryOffset: 400,
-      pillsEntryDuration: 500,
+      scanDelayOffset: 500,
    },
 };
 
 export const getAiInsightAnimationTimeline = (isFresh: boolean) => {
-   const timeline = AI_INSIGHT_ANIMATION.timeline;
-   const baseStagger = timeline.baseStagger;
-   const emotionAppear = isFresh ? timeline.emotionAppearDelay : 0;
-   const headerAppear = isFresh ? timeline.headerAppearDelay : baseStagger;
-   const timeStart = isFresh ? timeline.timeStartDelay : baseStagger * 2;
-   const rowDuration = isFresh ? timeline.rowDuration : 0;
-   const scopeStart = timeStart + rowDuration + (isFresh ? 0 : baseStagger);
-   const blameStart =
-      scopeStart + rowDuration + (isFresh ? timeline.blameGap : baseStagger);
-   const suggestionStart =
-      blameStart + (isFresh ? timeline.suggestionOffset : baseStagger);
-   const disclaimerStart = suggestionStart + timeline.disclaimerDelayOffset;
+   const t = AI_INSIGHT_ANIMATION.timeline;
+   
+   // 1. Emotional Validation (Top)
+   const emotionAppear = isFresh ? t.startDelay : 0;
+
+   // 2. Thinking Patterns Header (Below Emotion)
+   const headerAppear = isFresh 
+      ? emotionAppear + t.headerGap 
+      : t.baseStagger;
+
+   // 3. Row 1: Time (Below Header)
+   const timeStart = isFresh 
+      ? headerAppear + t.rowGap 
+      : t.baseStagger * 2;
+
+   // 4. Row 2: Scope (Waits for Row 1 to finish scan)
+   const scopeStart = timeStart + (isFresh ? t.rowDuration : t.baseStagger);
+
+   // 5. Row 3: Blame (Waits for Row 2 to finish scan)
+   const blameStart = scopeStart + (isFresh ? t.rowDuration : t.baseStagger);
+
+   // 6. Suggestion (Waits for Row 3 to finish scan)
+   const suggestionStart = blameStart + (isFresh ? t.rowDuration + t.suggestionGap : t.baseStagger);
+
+   // 7. Disclaimer (Bottom)
+   const disclaimerStart = suggestionStart + (isFresh ? t.disclaimerGap : t.baseStagger);
 
    return {
       emotionAppear,
