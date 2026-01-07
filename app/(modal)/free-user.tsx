@@ -1,17 +1,17 @@
 import AiDisclaimerModal from '@/components/appInfo/AiDisclaimerModal';
 import {
+   BOTTOM_SHEET_BG_DARK,
+   BOTTOM_SHEET_BG_LIGHT,
+   bottomSheetBackgroundStyle,
+   bottomSheetHandleIndicatorStyle,
+} from '@/components/bottomSheetStyles';
+import {
    AI_ANALYSIS_CREDIT_COST,
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_CONTENT_PADDING,
    FREE_MONTHLY_CREDITS,
    ROUTE_LOGIN,
 } from '@/components/constants';
-import {
-   BOTTOM_SHEET_BG_DARK,
-   BOTTOM_SHEET_BG_LIGHT,
-   bottomSheetBackgroundStyle,
-   bottomSheetHandleIndicatorStyle,
-} from '@/components/bottomSheetStyles';
 import CreditShop from '@/components/CreditShop';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
@@ -19,7 +19,7 @@ import {
    BottomSheetBackdrop,
    BottomSheetBackdropProps,
    BottomSheetModal,
-   BottomSheetScrollView,
+   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -30,101 +30,127 @@ import {
    Sparkles,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { LayoutAnimation, Pressable, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { InteractionManager, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function FreeUserChoiceScreen() {
    const router = useRouter();
    const insets = useSafeAreaInsets();
    const modalRef = useRef<BottomSheetModal>(null);
+   const navigationTargetRef = useRef<any>(null);
+   
+   // 1. Memoized Animation Config
+   const animationConfigs = useMemo(
+      () => ({
+         damping: 50,
+         mass: 0.6,
+         stiffness: 350,
+      }),
+      []
+   );
+
    const {
       status,
       profile,
       loadingProfile,
-      refreshProfile,
       refreshProfileIfStale,
       user,
    } = useAuth();
+   
    const { id, autoAi } = useLocalSearchParams<{
       id?: string | string[];
       autoAi?: string | string[];
    }>();
 
    const [showShop, setShowShop] = useState(false);
-   const isRedirecting = useRef(false);
    const [showDisclaimer, setShowDisclaimer] = useState(false);
+   
    const [pendingTarget, setPendingTarget] = useState<{
       path: string;
       requiresAuth: boolean;
    } | null>(null);
+   
+   // Derived state (lightweight calculations don't need state)
    const hasAccountConsent =
       user?.user_metadata?.has_agreed_to_ai === true ||
       user?.user_metadata?.has_agreed_to_ai === 'true';
+
    const [hasConsent, setHasConsent] = useState<boolean>(hasAccountConsent);
    const [hasSession, setHasSession] = useState(false);
 
-   // Ensure credits are accurate the moment this screen opens
    useEffect(() => {
       refreshProfileIfStale();
    }, [refreshProfileIfStale]);
 
+   // Sync local consent state if user object updates from remote
    useEffect(() => {
       setHasConsent(hasAccountConsent);
    }, [hasAccountConsent]);
 
-   // Track Supabase session directly to avoid redirect loops while auth status settles
    useEffect(() => {
-      const client = supabase;
-      if (!client) return;
+      // Direct reference to supabase avoids dependency array issues
+      if (!supabase) return;
 
       let mounted = true;
       const syncSession = async () => {
-         const { data } = await client.auth.getSession();
+         const { data } = await supabase!.auth.getSession();
          if (mounted) setHasSession(Boolean(data.session));
       };
       syncSession();
-      const sub = client.auth.onAuthStateChange((_event, session) => {
+      
+      const { data: subData } = supabase.auth.onAuthStateChange((_event, session) => {
          if (mounted) setHasSession(Boolean(session));
       });
+      
       return () => {
          mounted = false;
-         sub?.data?.subscription?.unsubscribe();
+         subData?.subscription?.unsubscribe();
       };
    }, []);
 
-   // Logic Helpers
    const entryId = Array.isArray(id) ? id[0] : id;
    const isSignedIn = status === 'signedIn';
-    const effectiveSignedIn = isSignedIn || hasSession;
+   const effectiveSignedIn = isSignedIn || hasSession;
+   
    const availableCredits = profile
       ? Math.max(FREE_MONTHLY_CREDITS - profile.aiCallsUsed, 0) +
         (profile.extraAiCredits ?? 0)
       : null;
-   const creditAvailability = (() => {
+
+   // 2. Memoize derived string to prevent reallocation on every render
+   const creditAvailability = useMemo(() => {
       if (!isSignedIn) return 'Sign in to see your credits.';
       if (loadingProfile) return 'Checking credits...';
       if (availableCredits === null) return 'Credits unavailable right now.';
       const suffix = availableCredits === 1 ? '' : 's';
       return `${availableCredits} credit${suffix} available.`;
-   })();
+   }, [isSignedIn, loadingProfile, availableCredits]);
 
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
 
-   const theme = {
+   // 3. CRITICAL: Memoize the Theme Object
+   // Previously, this created a new object on every frame, forcing children to re-render.
+   const theme = useMemo(() => ({
       bg: isDark ? BOTTOM_SHEET_BG_DARK : BOTTOM_SHEET_BG_LIGHT,
       text: isDark ? '#f8fafc' : '#0f172a',
       subText: isDark ? '#cbd5e1' : '#64748b',
-      // Amber Card
       amberText: isDark ? '#fde68a' : '#b45309',
       amberSub: isDark ? 'rgba(254, 243, 199, 0.8)' : 'rgba(146, 64, 14, 0.8)',
       amberBorder: 'border-amber-500',
       amberBg: isDark ? 'bg-amber-500/10' : 'bg-amber-50',
-      // Slate Card
       slateBorder: isDark ? 'border-slate-700' : 'border-slate-200',
       slateBg: isDark ? 'bg-slate-800' : 'bg-slate-50',
-   };
+   }), [isDark]);
+
+   // 4. Memoize Static/Dynamic Styles
+   // Prevents passing new style objects to BottomSheetView on every render.
+   const contentContainerStyle = useMemo(() => ({
+      paddingHorizontal: BOTTOM_SHEET_CONTENT_PADDING,
+      paddingTop: 16,
+      paddingBottom: insets.bottom + 20,
+   }), [insets.bottom]);
 
    const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -140,32 +166,37 @@ export default function FreeUserChoiceScreen() {
    );
 
    useEffect(() => {
-      const id = requestAnimationFrame(() => {
+      const rafId = requestAnimationFrame(() => {
          modalRef.current?.present();
       });
-      return () => cancelAnimationFrame(id);
+      return () => cancelAnimationFrame(rafId);
    }, []);
 
    const handleDismiss = useCallback(() => {
-      if (isRedirecting.current) return;
-      router.back();
+      if (navigationTargetRef.current) {
+         router.replace(navigationTargetRef.current);
+         navigationTargetRef.current = null;
+      } else {
+         router.back();
+      }
    }, [router]);
 
    const proceedToPath = useCallback(
       (path: string, requiresAuth: boolean) => {
-         isRedirecting.current = true;
+         let target: any = path;
 
          if (requiresAuth && !effectiveSignedIn) {
             const redirectPath = `/(modal)/free-user?id=${entryId}&autoAi=1`;
-            router.replace({
+            target = {
                pathname: ROUTE_LOGIN,
                params: { redirect: encodeURIComponent(redirectPath) },
-            } as any);
-         } else {
-            router.replace(path as any);
+            };
          }
+         
+         navigationTargetRef.current = target;
+         modalRef.current?.dismiss();
       },
-      [effectiveSignedIn, entryId, router]
+      [effectiveSignedIn, entryId]
    );
 
    const checkConsentAndNavigate = useCallback(
@@ -183,8 +214,10 @@ export default function FreeUserChoiceScreen() {
    const handleChoice = useCallback(
       (requiresAuth: boolean) => {
          if (requiresAuth && availableCredits === 0) {
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-            setShowShop((prev) => !prev); // Toggle the shop visibility
+            // Using InteractionManager ensures we don't stutter if a gesture is active
+            InteractionManager.runAfterInteractions(() => {
+               setShowShop((prev) => !prev);
+            });
             return;
          }
 
@@ -215,11 +248,52 @@ export default function FreeUserChoiceScreen() {
       ]
    );
 
-   const autoAiRequested =
-      (Array.isArray(autoAi) ? autoAi[0] : autoAi) === '1';
+   // 5. Memoize Event Handlers
+   // These were previously defined inline, causing re-renders of children (CreditShop/Disclaimer)
+   
+   const handlePurchaseSuccess = useCallback(() => {
+      InteractionManager.runAfterInteractions(() => {
+         setShowShop(false);
+      });
+   }, []);
+
+   const handleShopCancel = useCallback(() => {
+      InteractionManager.runAfterInteractions(() => {
+         setShowShop(false);
+      });
+   }, []);
+
+   const handleDisclaimerCancel = useCallback(() => {
+      setShowDisclaimer(false);
+      setPendingTarget(null);
+   }, []);
+
+   const handleDisclaimerConfirm = useCallback(async () => {
+      try {
+        if (supabase && user) {
+           await supabase.auth.updateUser({
+              data: { has_agreed_to_ai: true },
+           });
+        }
+      } catch (error) {
+        console.error('Error saving AI consent to account:', error);
+      }
+      setHasConsent(true);
+      setShowDisclaimer(false);
+      if (pendingTarget) {
+        const { path, requiresAuth } = pendingTarget;
+        setPendingTarget(null);
+        setTimeout(() => proceedToPath(path, requiresAuth), 250);
+      }
+   }, [user, pendingTarget, proceedToPath]);
+
+   // Wrapper for inline arrow functions in render
+   const handleChoiceTrue = useCallback(() => handleChoice(true), [handleChoice]);
+   const handleChoiceFalse = useCallback(() => handleChoice(false), [handleChoice]);
+
+   const autoAiRequested = (Array.isArray(autoAi) ? autoAi[0] : autoAi) === '1';
    const hasAutoTriggeredRef = useRef(false);
 
-   // If we were redirected here post-login to resume AI flow, auto-trigger once
    useEffect(() => {
       if (!autoAiRequested || hasAutoTriggeredRef.current) return;
       if (!effectiveSignedIn) return;
@@ -227,31 +301,21 @@ export default function FreeUserChoiceScreen() {
       handleChoice(true);
    }, [autoAiRequested, effectiveSignedIn, handleChoice]);
 
-   const handlePurchaseSuccess = () => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setShowShop(false);
-   };
-
    return (
       <>
          <BottomSheetModal
             ref={modalRef}
-            onDismiss={handleDismiss}
+            onDismiss={handleDismiss} 
+            animationConfigs={animationConfigs}
             index={0}
             enableDynamicSizing={true}
             enablePanDownToClose
             backdropComponent={renderBackdrop}
+            // These functions are likely cheap, but if they return new objects, BottomSheet might re-render.
             handleIndicatorStyle={bottomSheetHandleIndicatorStyle(isDark)}
             backgroundStyle={bottomSheetBackgroundStyle(isDark, theme.bg)}
          >
-            <BottomSheetScrollView
-               contentContainerStyle={{
-                  paddingHorizontal: BOTTOM_SHEET_CONTENT_PADDING,
-                  paddingTop: 16,
-                  paddingBottom: insets.bottom + 20,
-               }}
-            >
-               {/* Header */}
+            <BottomSheetView style={contentContainerStyle}>
                <View className="mb-6">
                   <Text className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-1">
                      {availableCredits === 0 ? 'Out of credits' : 'Free plan'}
@@ -271,29 +335,21 @@ export default function FreeUserChoiceScreen() {
                   </Text>
                </View>
 
-               {/* If Shop is active, show the shop and a 'Back' button */}
                {showShop ? (
                   <View>
                      <CreditShop onSuccess={handlePurchaseSuccess} />
 
                      <Pressable
-                        onPress={() => {
-                           LayoutAnimation.configureNext(
-                              LayoutAnimation.Presets.easeInEaseOut
-                           );
-                           setShowShop(false);
-                        }}
+                        onPress={handleShopCancel}
                         className="mt-4 py-3 items-center"
                      >
                         <Text style={{ color: theme.subText }}>Cancel</Text>
                      </Pressable>
                   </View>
                ) : (
-                  /* Normal View */
                   <View className="gap-3">
-                     {/* AI Option */}
                      <Pressable
-                        onPress={() => handleChoice(true)}
+                        onPress={handleChoiceTrue}
                         className={`flex-row items-center justify-between rounded-2xl border ${theme.amberBorder} ${theme.amberBg} py-4 px-4 active:opacity-90`}
                      >
                         <View className="flex-1 pr-3">
@@ -325,7 +381,6 @@ export default function FreeUserChoiceScreen() {
                            </View>
                         </View>
 
-                        {/* Icon changes if 0 credits */}
                         {availableCredits === 0 ? (
                            <PlusCircle size={24} color={theme.amberText} />
                         ) : (
@@ -333,9 +388,8 @@ export default function FreeUserChoiceScreen() {
                         )}
                     </Pressable>
 
-                     {/* Manual Option (Always available) */}
                      <Pressable
-                        onPress={() => handleChoice(false)}
+                        onPress={handleChoiceFalse}
                         className={`flex-row items-center justify-between rounded-2xl border ${theme.slateBorder} ${theme.slateBg} py-4 px-4 active:opacity-90`}
                      >
                         <View className="flex-1 pr-3">
@@ -356,34 +410,18 @@ export default function FreeUserChoiceScreen() {
                      </Pressable>
                   </View>
                )}
-            </BottomSheetScrollView>
+            </BottomSheetView>
          </BottomSheetModal>
 
-         <AiDisclaimerModal
-            visible={showDisclaimer}
-         onCancel={() => {
-            setShowDisclaimer(false);
-            setPendingTarget(null);
-         }}
-         onConfirm={async () => {
-            try {
-               if (supabase && user) {
-                  await supabase.auth.updateUser({
-                     data: { has_agreed_to_ai: true },
-                  });
-               }
-            } catch (error) {
-               console.error('Error saving AI consent to account:', error);
-            }
-            setHasConsent(true);
-            setShowDisclaimer(false);
-            if (pendingTarget) {
-               const { path, requiresAuth } = pendingTarget;
-               setPendingTarget(null);
-               setTimeout(() => proceedToPath(path, requiresAuth), 250);
-               }
-            }}
-         />
+         {/* 6. Lazy Render Disclaimer Modal */}
+         {/* Only mount this component if we actually need it. */ }
+         {showDisclaimer && (
+             <AiDisclaimerModal
+                visible={showDisclaimer}
+                onCancel={handleDisclaimerCancel}
+                onConfirm={handleDisclaimerConfirm}
+             />
+         )}
       </>
    );
 }
