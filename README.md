@@ -22,8 +22,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- slow down haptic and scanning and make continue button show last
-
 - Add a sprout icon for growth plus members
 
 - Make shadow uniform for ios in setting screen

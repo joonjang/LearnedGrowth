@@ -52,3 +52,54 @@ app-example
 /api/
 
 .tmp-export/
+
+# ----------------------------
+# Build artifacts (Android)
+# ----------------------------
+*.apk
+*.aab
+*.apks
+
+# accidentally created "artifacts" with no extension
+artifacts
+artifacts/
+extracted/
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Android/Gradle build outputs (only if you ever commit /android)
+android/app/build/
+android/build/
+**/build/
+.gradle/
+local.properties
+
+# EAS local build outputs
+*.eas-build-*
+eas-build-*
+eas-build/
+.eas/
+eas-build-local-*/
+eas-local-build-*/
+
+# Logs & reports
+*.log
+reports/
+coverage/
+
+# ----------------------------
+# iOS build artifacts (if you ever commit /ios)
+# ----------------------------
+*.ipa
+*.xcarchive
+DerivedData/
+Pods/
+
+# ----------------------------
+# Optional: keep secrets out
+# ----------------------------
+*.keystore
+*.keystore.backup
+*.upload-keystore
