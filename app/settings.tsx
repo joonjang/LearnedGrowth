@@ -503,7 +503,7 @@ export default function SettingsScreen() {
                <View className="flex-row gap-3">
                   <StatCard
                      label="Cycle Credits"
-                     value={String(cycleRemaining)}
+                     value={`${cycleRemaining} / ${FREE_MONTHLY_CREDITS}`}
                      subtext={resetSubtext}
                      isLoading={isLoading}
                      icon={<Zap size={16} color="#fbbf24" fill="#fbbf24" />}

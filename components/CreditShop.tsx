@@ -241,7 +241,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
 
                   <View className="bg-emerald-600 dark:bg-emerald-500 rounded-xl py-3.5 items-center shadow-md shadow-emerald-900/20">
                      <Text className="text-white font-bold text-lg tracking-wide">
-                        Become Limitless
+                        Continue
                      </Text>
                   </View>
 
@@ -315,7 +315,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                </Text>
             </Pressable>
             
-            <View className="flex-row justify-center gap-4">
+            <View className="flex-row justify-center gap-4 mt-3">
                <Pressable
                   onPress={() => openLink('https://learnedgrowth.com/terms')}
                >

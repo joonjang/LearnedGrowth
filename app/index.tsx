@@ -13,6 +13,7 @@ import { getShadow } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
 import { Link, router } from 'expo-router';
 import {
+   ChevronDown,
    CircleDashed,
    Flame,
    Info,
@@ -22,10 +23,21 @@ import {
    Zap,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Modal, Platform, Pressable, SectionList, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+   LayoutChangeEvent,
+   Modal,
+   Platform,
+   Pressable,
+   SectionList,
+   Text,
+   View,
+} from 'react-native';
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
 import Animated, {
+   Extrapolation,
+   interpolate,
+   useAnimatedRef,
    useAnimatedScrollHandler,
    useAnimatedStyle,
    useSharedValue,
@@ -233,6 +245,8 @@ export default function EntriesScreen() {
    const iconColor = isDark ? '#cbd5e1' : '#475569';
    const { lock: lockNavigation } = useNavigationLock();
    const [showHelpModal, setShowHelpModal] = useState(false);
+   const [listHeaderHeight, setListHeaderHeight] = useState(0);
+   const listRef = useAnimatedRef<SectionList<RowItem, EntrySection>>();
 
    const shadowSm = useMemo(
       () => getShadow({ isDark, preset: 'sm' }),
@@ -254,6 +268,28 @@ export default function EntriesScreen() {
             { translateY: withTiming(showFab ? 0 : 20) },
          ],
          pointerEvents: showFab ? 'auto' : 'none',
+      };
+   });
+
+   const scrollIndicatorStyle = useAnimatedStyle(() => {
+      return {
+         opacity: interpolate(
+            scrollY.value,
+            [0, 60], // Range: 0px to 60px of scroll
+            [0.4, 0], // Opacity: starts at 0.4, fades to 0
+            Extrapolation.CLAMP
+         ),
+         transform: [
+            // Optional: Move it up slightly as it fades for a "floating away" feel
+            {
+               translateY: interpolate(
+                  scrollY.value,
+                  [0, 60],
+                  [0, -10],
+                  Extrapolation.CLAMP
+               ),
+            },
+         ],
       };
    });
 
@@ -346,6 +382,27 @@ export default function EntriesScreen() {
    );
    const sections = useMemo(() => buildSections(rowsWithUndo), [rowsWithUndo]);
 
+   const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
+      const nextHeight = Math.round(event.nativeEvent.layout.height);
+      setListHeaderHeight((prev) => (prev === nextHeight ? prev : nextHeight));
+   }, []);
+
+   const scrollToContent = useCallback(() => {
+      if (sections.length === 0 || !listRef.current) return;
+      if (listHeaderHeight > 0) {
+         listRef.current
+            .getScrollResponder()
+            ?.scrollTo({ y: listHeaderHeight, animated: true });
+         return;
+      }
+      listRef.current.scrollToLocation({
+         sectionIndex: 0,
+         itemIndex: 0,
+         animated: true,
+         viewOffset: insets.top + 40,
+      });
+   }, [insets.top, listHeaderHeight, listRef, sections.length]);
+
    // --- Global Dashboard Data (Current Week: Mon-Sun) ---
    const dashboardData = useMemo(() => {
       const allEntries = store.rows;
@@ -428,6 +485,18 @@ export default function EntriesScreen() {
    const hasEntries = store.rows.length > 0;
    const hasHydrated = store.lastHydratedAt !== null;
    const showQuickStart = hasHydrated && !store.isHydrating && !hasEntries;
+   const prevHasEntries = useRef(hasEntries);
+
+   useEffect(() => {
+      if (!prevHasEntries.current && hasEntries) {
+         requestAnimationFrame(() => {
+            listRef.current
+               ?.getScrollResponder()
+               ?.scrollTo({ y: 0, animated: false });
+         });
+      }
+      prevHasEntries.current = hasEntries;
+   }, [hasEntries, listRef]);
 
    const streakData = useMemo(() => {
       const today = new Date();
@@ -557,8 +626,9 @@ export default function EntriesScreen() {
             return false;
          }}
       >
-         {/* FIXED: Using createAnimatedComponent version with Explicit Generics */}
-         <AnimatedSectionList
+         {/* FIXED: Using createAnimatedComponent version with explicit generics */}
+         <AnimatedSectionList<RowItem, EntrySection>
+            ref={listRef}
             sections={sections}
             keyExtractor={(item) => `${item.kind}-${item.entry.id}`}
             className="flex-1"
@@ -573,6 +643,7 @@ export default function EntriesScreen() {
                   <View
                      style={{ paddingTop: insets.top + 12 }}
                      className="px-6 pb-6 bg-slate-50 dark:bg-slate-900"
+                     onLayout={handleHeaderLayout}
                   >
                      {/* Header Top Bar */}
                      <View className="flex-row items-center justify-between mb-4">
@@ -650,6 +721,18 @@ export default function EntriesScreen() {
                            </Pressable>
                         </Link>
                      </View>
+
+                     <Animated.View
+                        className="items-center mt-4"
+                        style={scrollIndicatorStyle}
+                     >
+                        <Pressable
+                           onPress={scrollToContent}
+                           hitSlop={20} // Makes it easier to tap
+                        >
+                           <ChevronDown size={24} color={iconColor} />
+                        </Pressable>
+                     </Animated.View>
                   </View>
                ) : null
             }
@@ -697,7 +780,7 @@ export default function EntriesScreen() {
             presentationStyle="pageSheet"
             onRequestClose={() => setShowHelpModal(false)}
          >
-              {Platform.OS === 'android' && ( <TopFade height={insets.top + 12}  /> )}
+            {Platform.OS === 'android' && <TopFade height={insets.top + 12} />}
             <View className="flex-1 pt-2 bg-slate-50 dark:bg-slate-900">
                <QuickStart
                   isModal={true}

@@ -58,6 +58,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Quickstart information viewable from index
 - Fixed sudden flash of QuickStart in index screen
 - Fixed EntriesScreen thoughts reframed from relative to current day to weekly count from Monday to Sunday
+- Added indicator to scroll for EntriesScreen + first entry back now displays something
 
 
 ### 2026-01-08
