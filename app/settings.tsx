@@ -15,6 +15,7 @@ import {
    ChevronUp,
    Cloud,
    ShieldCheck,
+   Sprout,
    TicketPlus,
    TriangleAlert,
    Zap,
@@ -534,9 +535,18 @@ export default function SettingsScreen() {
                            <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">
                               Current Plan
                            </Text>
-                           <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                              {planLabel}
-                           </Text>
+                           <View className="flex-row items-center gap-2">
+                              <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                                 {planLabel}
+                              </Text>
+                              {hasGrowth && (
+                                 <Sprout
+                                    size={20}
+                                    // Green-600 for light mode, Green-400 for dark mode
+                                    color={isDark ? '#4ade80' : '#16a34a'}
+                                 />
+                              )}
+                           </View>
                         </View>
                         {!hasGrowth && (
                            <Pressable

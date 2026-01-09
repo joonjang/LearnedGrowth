@@ -24,8 +24,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - Fix sudden flash of QuickStart in index screen
 
-- Add a sprout icon for growth plus members
-
 - Make shadow uniform for ios in setting screen
 
 - Bug login should not stack a new home page, it should replace
@@ -58,6 +56,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Development Journal
+
+### 2026-01-09
+- Added a sprout icon for growth plus members
 
 
 ### 2026-01-08
