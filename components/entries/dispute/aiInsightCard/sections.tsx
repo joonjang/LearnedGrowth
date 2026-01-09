@@ -16,32 +16,42 @@ import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import Animated, {
    Easing,
+   runOnJS,
    useAnimatedStyle,
    useSharedValue,
    withDelay,
-   withTiming
+   withTiming,
 } from 'react-native-reanimated';
 
 import { AnimatedSpectrumRow } from './AnimatedSpectrumRow';
 import type { AnimationTimeline } from './animation';
 import { InsightDimensions, InsightSafety } from './types';
 
-
 // --- HELPER HOOK ---
-// This replaces the 'entering' prop. It creates a simple fade-in style 
+// This replaces the 'entering' prop. It creates a simple fade-in style
 // that runs on the UI thread without triggering layout changes.
-function useDelayedAppearance(delay: number) {
+function useDelayedAppearance(delay: number, onComplete?: () => void) {
    const opacity = useSharedValue(0);
    const translateY = useSharedValue(10); // Slight slide up
 
    useEffect(() => {
-      opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
-      translateY.value = withDelay(delay, withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) }));
-   }, [delay, opacity, translateY]);
+      opacity.value = withDelay(delay, withTiming(1, { duration: 600 }, 
+
+         (finished) => {
+            if (finished && onComplete) {
+               runOnJS(onComplete)();
+            }
+         }
+       ));
+      translateY.value = withDelay(
+         delay,
+         withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) })
+      );
+   }, [delay, onComplete, opacity, translateY]);
 
    return useAnimatedStyle(() => ({
       opacity: opacity.value,
-      transform: [{ translateY: translateY.value }]
+      transform: [{ translateY: translateY.value }],
    }));
 }
 
@@ -73,7 +83,11 @@ export function AiInsightHeader({
                   AI Analysis
                </Text>
                {isStale && isMinimized && (
-                  <Clock3 size={14} color={isDark ? '#94a3b8' : '#64748b'} style={{ opacity: 0.8 }} />
+                  <Clock3
+                     size={14}
+                     color={isDark ? '#94a3b8' : '#64748b'}
+                     style={{ opacity: 0.8 }}
+                  />
                )}
             </View>
 
@@ -85,7 +99,9 @@ export function AiInsightHeader({
          </View>
 
          {allowMinimize && isMinimized && (
-            <Text className={`text-sm font-medium mb-3 opacity-80 ${descColor}`}>
+            <Text
+               className={`text-sm font-medium mb-3 opacity-80 ${descColor}`}
+            >
                Observed thinking patterns.
             </Text>
          )}
@@ -170,16 +186,21 @@ export function AiInsightStaleBanner({
    const containerStyle = isCoolingDown
       ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
       : isNudgeStep
-      ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-      : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
+        ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+        : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
 
    return (
-      <View className={`flex-row justify-between p-3 rounded-lg border mb-2 ${containerStyle}`}>
+      <View
+         className={`flex-row justify-between p-3 rounded-lg border mb-2 ${containerStyle}`}
+      >
          <View className="flex-1 mr-2">
             <View className="flex-row items-center justify-between">
                <View className="flex-row items-center gap-2">
                   {isCoolingDown ? (
-                     <Hourglass size={16} color={isDark ? '#94a3b8' : '#64748b'} />
+                     <Hourglass
+                        size={16}
+                        color={isDark ? '#94a3b8' : '#64748b'}
+                     />
                   ) : (
                      <Clock3 size={16} color={isDark ? '#94a3b8' : '#64748b'} />
                   )}
@@ -190,7 +211,11 @@ export function AiInsightStaleBanner({
 
                {!isCoolingDown && refreshCostNote && (
                   <View className="flex-row items-center opacity-90 ml-2">
-                     <Leaf size={10} color={isDark ? '#f59e0b' : '#b45309'} style={{ marginRight: 3 }} />
+                     <Leaf
+                        size={10}
+                        color={isDark ? '#f59e0b' : '#b45309'}
+                        style={{ marginRight: 3 }}
+                     />
                      <Text className="text-[10px] font-semibold text-amber-700 dark:text-amber-200">
                         {refreshCostNote}
                      </Text>
@@ -202,14 +227,16 @@ export function AiInsightStaleBanner({
                {!onRefresh
                   ? 'This insight is based on an older version of your entry.'
                   : isCoolingDown
-                  ? 'Updates paused to enable deeper thinking.'
-                  : isNudgeStep
-                  ? "You've refined this quite a bit. Consider moving on to the next phase after refreshing."
-                  : 'Entry has changed. Update analysis?'}
+                    ? 'Updates paused to enable deeper thinking.'
+                    : isNudgeStep
+                      ? "You've refined this quite a bit. Consider moving on to the next phase after refreshing."
+                      : 'Entry has changed. Update analysis?'}
             </Text>
          </View>
 
-         <View className={`justify-end pl-1 ${!isCoolingDown && refreshCostNote ? 'pt-5' : ''}`}>
+         <View
+            className={`justify-end pl-1 ${!isCoolingDown && refreshCostNote ? 'pt-5' : ''}`}
+         >
             {onRefresh && !isCoolingDown ? (
                <Pressable
                   onPress={onRefreshPress}
@@ -218,8 +245,13 @@ export function AiInsightStaleBanner({
                   <RefreshCw size={18} color={isDark ? '#f8fafc' : '#0f172a'} />
                </Pressable>
             ) : isCoolingDown && timeLabel !== '' ? (
-               <View className={`px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded mb-0.5 ${!isCoolingDown && refreshCostNote ? 'mt-auto' : ''}`}>
-                  <Text className="text-[11px] font-bold text-slate-500 dark:text-slate-400" style={{ fontVariant: ['tabular-nums'] }}>
+               <View
+                  className={`px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded mb-0.5 ${!isCoolingDown && refreshCostNote ? 'mt-auto' : ''}`}
+               >
+                  <Text
+                     className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
+                     style={{ fontVariant: ['tabular-nums'] }}
+                  >
                      {timeLabel}
                   </Text>
                </View>
@@ -321,14 +353,23 @@ export function AiInsightThinkingPatterns({
                            : 'border-transparent'
                      }`}
                   >
-                     <BookOpen size={12} color={isDark ? '#94a3b8' : '#64748b'} />
+                     <BookOpen
+                        size={12}
+                        color={isDark ? '#94a3b8' : '#64748b'}
+                     />
                      <Text className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                         Guide
                      </Text>
                      {showDefinitions ? (
-                        <ChevronUp size={12} color={isDark ? '#94a3b8' : '#64748b'} />
+                        <ChevronUp
+                           size={12}
+                           color={isDark ? '#94a3b8' : '#64748b'}
+                        />
                      ) : (
-                        <ChevronDown size={12} color={isDark ? '#94a3b8' : '#64748b'} />
+                        <ChevronDown
+                           size={12}
+                           color={isDark ? '#94a3b8' : '#64748b'}
+                        />
                      )}
                   </View>
                </Pressable>
@@ -386,9 +427,11 @@ export function AiInsightSuggestion({
 }: {
    counterBelief?: string | null;
    animationTimeline: AnimationTimeline;
+   
 }) {
    // Replaced entering prop
    const animStyle = useDelayedAppearance(animationTimeline.suggestionStart);
+
 
    if (!counterBelief) return null;
 
@@ -416,6 +459,7 @@ export type AiInsightDisclaimerProps = {
    toggleMinimized: () => void;
    animationTimeline: AnimationTimeline;
    isDark: boolean;
+   onAnimationComplete?: () => void;
 };
 
 export function AiInsightDisclaimer({
@@ -423,10 +467,10 @@ export function AiInsightDisclaimer({
    toggleMinimized,
    animationTimeline,
    isDark,
+   onAnimationComplete,
 }: AiInsightDisclaimerProps) {
-   
    // Replaced entering prop
-   const animStyle = useDelayedAppearance(animationTimeline.disclaimerStart);
+   const animStyle = useDelayedAppearance(animationTimeline.disclaimerStart, onAnimationComplete);
 
    return (
       <Animated.View
@@ -439,9 +483,8 @@ export function AiInsightDisclaimer({
             style={{ marginTop: 2 }}
          />
          <Text className="flex-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
-            This analysis is generated by AI and is for self-reflection
-            purposes only. It is not a substitute for professional mental
-            health advice.
+            This analysis is generated by AI and is for self-reflection purposes
+            only. It is not a substitute for professional mental health advice.
          </Text>
          {allowMinimize && (
             <Pressable

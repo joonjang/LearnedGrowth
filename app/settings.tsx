@@ -1,8 +1,5 @@
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
-import {
-   FREE_MONTHLY_CREDITS,
-   ROUTE_LOGIN
-} from '@/components/constants';
+import { FREE_MONTHLY_CREDITS, ROUTE_LOGIN } from '@/components/constants';
 import { AiInsightCreditShopSheet } from '@/components/CreditShopSheet';
 import SendFeedback from '@/components/SendFeedback';
 import { getShadow } from '@/lib/shadow';
@@ -13,7 +10,15 @@ import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import NetInfo from '@react-native-community/netinfo';
 import { router, useFocusEffect } from 'expo-router';
-import { ChevronDown, ChevronUp, TicketPlus, TriangleAlert, Zap } from 'lucide-react-native';
+import {
+   ChevronDown,
+   ChevronUp,
+   Cloud,
+   ShieldCheck,
+   TicketPlus,
+   TriangleAlert,
+   Zap,
+} from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import {
    useCallback,
@@ -38,6 +43,7 @@ import {
    Switch,
    Text,
    TextInput,
+   TouchableWithoutFeedback,
    View,
    ViewStyle,
 } from 'react-native';
@@ -48,10 +54,6 @@ import Animated, {
    withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const STORAGE_KEYS = {
-   biometric: 'prefs:biometricLock',
-} as const;
 
 const MANAGE_SUBSCRIPTION_URL = Platform.select({
    ios: 'https://apps.apple.com/account/subscriptions',
@@ -77,7 +79,7 @@ export default function SettingsScreen() {
       error: rcError,
       restorePurchases,
       isGrowthPlusActive,
-      refreshCustomerInfo
+      refreshCustomerInfo,
    } = useRevenueCat();
 
    const {
@@ -97,9 +99,12 @@ export default function SettingsScreen() {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const iconColor = isDark ? '#94a3b8' : '#64748b';
-   
+
    // --- UNIFORM SHADOW LOGIC ---
-   const shadowSm = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
+   const shadowSm = useMemo(
+      () => getShadow({ isDark, preset: 'sm' }),
+      [isDark]
+   );
    const shadowGreen = useMemo(
       () =>
          getShadow({
@@ -112,9 +117,15 @@ export default function SettingsScreen() {
    );
 
    // Pre-calculate the styles to keep JSX clean
-   const commonShadowStyle = useMemo(() => [shadowSm.ios, shadowSm.android], [shadowSm]);
-   const greenShadowStyle = useMemo(() => [shadowGreen.ios, shadowGreen.android], [shadowGreen]);
-   
+   const commonShadowStyle = useMemo(
+      () => [shadowSm.ios, shadowSm.android],
+      [shadowSm]
+   );
+   const greenShadowStyle = useMemo(
+      () => [shadowGreen.ios, shadowGreen.android],
+      [shadowGreen]
+   );
+
    // Keep the className for web support (if your getShadow returns one)
    const commonShadowClass = shadowSm.className;
    const greenShadowClass = shadowGreen.className;
@@ -128,18 +139,17 @@ export default function SettingsScreen() {
    const [billingAction, setBillingAction] = useState<
       null | 'upgrade' | 'consumable' | 'restore' | 'manage'
    >(null);
-   
+
    const [actionsCollapsed, setActionsCollapsed] = useState(true);
    const [showDeleteModal, setShowDeleteModal] = useState(false);
    const [couponExpanded, setCouponExpanded] = useState(false);
    const [couponCode, setCouponCode] = useState('');
    const [redeemingCoupon, setRedeemingCoupon] = useState(false);
-    const [couponMessage, setCouponMessage] = useState<string | null>(null);
+   const [couponMessage, setCouponMessage] = useState<string | null>(null);
    const profileRef = useRef(profile);
    const creditShopSheetRef = useRef<BottomSheetModal | null>(null);
    const [nowTs, setNowTs] = useState(() => Date.now());
    const cycleAnchorRef = useRef<number | null>(null);
-
 
    useEffect(() => {
       if (!billingNote) return;
@@ -201,32 +211,32 @@ export default function SettingsScreen() {
 
    // --- Handlers ---
    const handleRestore = async () => {
-      if (isOffline) { 
-         setBillingNote('Go online to restore purchases.'); 
-         return; 
+      if (isOffline) {
+         setBillingNote('Go online to restore purchases.');
+         return;
       }
 
       setBillingAction('restore');
       setBillingNote(null);
 
       try {
-         const customerInfo = await restorePurchases(); 
+         const customerInfo = await restorePurchases();
          await refreshCustomerInfo();
          await refreshProfile();
-         
-         const hasActiveSubscription = customerInfo.activeSubscriptions.length > 0;
+
+         const hasActiveSubscription =
+            customerInfo.activeSubscriptions.length > 0;
 
          if (hasActiveSubscription) {
-             Alert.alert("Success", "Your subscription has been restored.");
-             setBillingNote(null); 
+            Alert.alert('Success', 'Your subscription has been restored.');
+            setBillingNote(null);
          } else {
-             Alert.alert(
-                "No Subscriptions Found", 
-                "We couldn't find any active subscriptions for this account."
-             );
-             setBillingNote(null);
+            Alert.alert(
+               'No Subscriptions Found',
+               "We couldn't find any active subscriptions for this account."
+            );
+            setBillingNote(null);
          }
-
       } catch (err: any) {
          setBillingNote(err?.message ?? 'Restore failed.');
       } finally {
@@ -292,7 +302,10 @@ export default function SettingsScreen() {
    };
 
    const openCreditShop = () => {
-      if (!isSignedIn) { router.push(ROUTE_LOGIN as any); return; }
+      if (!isSignedIn) {
+         router.push(ROUTE_LOGIN as any);
+         return;
+      }
       creditShopSheetRef.current?.present();
    };
 
@@ -308,21 +321,49 @@ export default function SettingsScreen() {
 
    const performDeleteAccount = async (): Promise<boolean> => {
       if (isOffline) return false;
+
       try {
          const supabase = getSupabaseClient();
+
+         // 1. Backend Delete
          const { error } = await supabase.functions.invoke('delete-account');
          if (error) throw new Error(error.message);
-         
-         await signOut();
-         router.push(ROUTE_LOGIN);
-         return true; 
+
+         // 2. Close the custom "Type delete to confirm" modal immediately
+         setShowDeleteModal(false);
+
+         // 3. Clear local session data (silently)
+         try {
+            await signOut();
+         } catch (e) {
+            console.log('Local signout cleanup error:', e);
+         }
+
+         // 4. Show Native Alert AND wait for user input
+         // We ONLY navigate to login after they press "OK"
+         Alert.alert(
+            'Account Deleted',
+            'Your account and data have been permanently removed from the server.',
+            [
+               {
+                  text: 'OK',
+                  style: 'default',
+               },
+            ],
+            { cancelable: false } // Prevent clicking outside to dismiss
+         );
+
+         return true;
       } catch (err: any) {
          Alert.alert('Delete account', err?.message ?? 'Delete failed.');
-         return false; 
+         return false;
       }
    };
 
-   const planLabel = useMemo(() => entitlementActive ? 'Growth Plus' : 'Free Plan', [entitlementActive]);
+   const planLabel = useMemo(
+      () => (entitlementActive ? 'Growth Plus' : 'Free Plan'),
+      [entitlementActive]
+   );
    const nextResetAt = useMemo(() => {
       if (!profile?.aiCycleStart) return null;
       const start = new Date(profile.aiCycleStart);
@@ -372,9 +413,8 @@ export default function SettingsScreen() {
 
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
-         
-         <DeleteConfirmationModal 
-            visible={showDeleteModal} 
+         <DeleteConfirmationModal
+            visible={showDeleteModal}
             onClose={() => setShowDeleteModal(false)}
             onConfirm={performDeleteAccount}
             isDark={isDark}
@@ -390,35 +430,73 @@ export default function SettingsScreen() {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
          >
-             {/* HEADER */}
+            {/* HEADER */}
             <View className="flex-row justify-between items-start mb-2">
-                <View className="flex-1 mr-4">
-                    <Text className="text-3xl font-extrabold text-slate-900 dark:text-slate-50">Settings</Text>
-                    <Text numberOfLines={1} className="text-[15px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                        {user?.email ?? 'Not signed in'}
-                    </Text>
-                </View>
-                <View className="mt-1">
-                    <RoundedCloseButton onPress={() => router.back()} />
-                </View>
+               <View className="flex-1 mr-4">
+                  <Text className="text-3xl font-extrabold text-slate-900 dark:text-slate-50">
+                     Settings
+                  </Text>
+                  <Text
+                     numberOfLines={1}
+                     className="text-[15px] font-medium text-slate-500 dark:text-slate-400 mt-0.5"
+                  >
+                     {user?.email ?? 'Not signed in'}
+                  </Text>
+               </View>
+               <View className="mt-1">
+                  <RoundedCloseButton onPress={() => router.back()} />
+               </View>
             </View>
 
             {/* OFFLINE INDICATOR */}
             {isOffline && (
                <View className="bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 p-3 rounded-xl flex-row items-center gap-3">
                   <View className="w-2 h-2 rounded-full bg-amber-500" />
-                  <Text className="text-sm font-bold text-amber-800 dark:text-amber-200">You are offline.</Text>
+                  <Text className="text-sm font-bold text-amber-800 dark:text-amber-200">
+                     You are offline.
+                  </Text>
                </View>
             )}
 
             {!user && (
-               <Pressable
-                  className={`w-full items-center justify-center py-3 rounded-xl bg-indigo-600 dark:bg-indigo-500 ${commonShadowClass}`}
+               <View
+                  className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 ${commonShadowClass}`}
                   style={commonShadowStyle}
-                  onPress={() => router.push(ROUTE_LOGIN)}
                >
-                  <Text className="text-white font-bold">Sign In To Enable Features</Text>
-               </Pressable>
+                  <View className="flex-row items-start gap-4 mb-4">
+                     <View className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/30 items-center justify-center">
+                        <Cloud size={24} color="#6366f1" />
+                     </View>
+                     <View className="flex-1">
+                        <Text className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                           Save your progress
+                        </Text>
+                        <Text className="text-sm text-slate-500 dark:text-slate-400 leading-5 mt-1">
+                           Sign in to back up your entries and sync across your
+                           devices.
+                        </Text>
+                     </View>
+                  </View>
+
+                  <Pressable
+                     className="w-full h-[50px] items-center justify-center rounded-xl bg-indigo-600 active:bg-indigo-700"
+                     onPress={() => router.push(ROUTE_LOGIN)}
+                  >
+                     <Text className="text-white font-bold text-[16px]">
+                        Sign In / Create Account
+                     </Text>
+                  </Pressable>
+
+                  <View className="flex-row items-center justify-center gap-1.5 mt-3 opacity-60">
+                     <ShieldCheck
+                        size={12}
+                        color={isDark ? '#94a3b8' : '#64748b'}
+                     />
+                     <Text className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Your data is private and encrypted.
+                     </Text>
+                  </View>
+               </View>
             )}
 
             {/* STATS */}
@@ -447,13 +525,20 @@ export default function SettingsScreen() {
 
             {/* SUBSCRIPTION CARD */}
             {isSignedIn && user && (
-               <View className={`bg-white dark:bg-slate-900 rounded-2xl  border border-slate-200 dark:border-slate-700 ${commonShadowClass}`} style={commonShadowStyle}>
+               <View
+                  className={`bg-white dark:bg-slate-900 rounded-2xl  border border-slate-200 dark:border-slate-700 ${commonShadowClass}`}
+                  style={commonShadowStyle}
+               >
                   {/* Plan Status Header */}
                   <View className="p-4">
                      <View className="flex-row justify-between items-center">
                         <View>
-                           <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Current Plan</Text>
-                           <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{planLabel}</Text>
+                           <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                              Current Plan
+                           </Text>
+                           <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                              {planLabel}
+                           </Text>
                         </View>
                         {!hasGrowth && (
                            <Pressable
@@ -470,7 +555,9 @@ export default function SettingsScreen() {
                               value={couponCode}
                               onChangeText={setCouponCode}
                               placeholder="Enter coupon"
-                              placeholderTextColor={isDark ? '#94a3b8' : '#94a3b8'}
+                              placeholderTextColor={
+                                 isDark ? '#94a3b8' : '#94a3b8'
+                              }
                               className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                               autoCapitalize="none"
                               autoCorrect={false}
@@ -483,9 +570,14 @@ export default function SettingsScreen() {
                               className={`px-3 py-2 rounded-lg bg-slate-700`}
                            >
                               {redeemingCoupon ? (
-                                 <ActivityIndicator size="small" color="white" />
+                                 <ActivityIndicator
+                                    size="small"
+                                    color="white"
+                                 />
                               ) : (
-                                 <Text className="text-white font-semibold">Apply</Text>
+                                 <Text className="text-white font-semibold">
+                                    Apply
+                                 </Text>
                               )}
                            </Pressable>
                         </View>
@@ -506,7 +598,9 @@ export default function SettingsScreen() {
                               style={greenShadowStyle}
                            >
                               <View className="w-full items-center">
-                                 <Text className="text-white font-bold text-[16px] text-center">Get More Analysis</Text>
+                                 <Text className="text-white font-bold text-[16px] text-center">
+                                    Get More Analysis
+                                 </Text>
                               </View>
                            </Pressable>
                         </>
@@ -516,14 +610,21 @@ export default function SettingsScreen() {
                            disabled={billingAction === 'manage'}
                            className="items-center justify-center bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700"
                         >
-                           <Text className="font-semibold text-slate-700 dark:text-slate-200">Manage Subscription</Text>
+                           <Text className="font-semibold text-slate-700 dark:text-slate-200">
+                              Manage Subscription
+                           </Text>
                         </Pressable>
                      )}
 
-
-                     <Pressable onPress={handleRestore} disabled={billingAction === 'restore' || isOffline} className="self-center py-1">
+                     <Pressable
+                        onPress={handleRestore}
+                        disabled={billingAction === 'restore' || isOffline}
+                        className="self-center py-1"
+                     >
                         <Text className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                           {billingAction === 'restore' ? 'Restoring purchases...' : 'Restore Purchases'}
+                           {billingAction === 'restore'
+                              ? 'Restoring purchases...'
+                              : 'Restore Purchases'}
                         </Text>
                      </Pressable>
                      {(billingNote || rcError) && (
@@ -536,34 +637,79 @@ export default function SettingsScreen() {
             )}
 
             {/* PREFERENCES */}
-            <View className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 gap-5 ${commonShadowClass}`} style={commonShadowStyle}>
-               <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">Preferences</Text>
+            <View
+               className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 gap-5 ${commonShadowClass}`}
+               style={commonShadowStyle}
+            >
+               <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                  Preferences
+               </Text>
 
-               <SettingRow title="Dark Mode" description="Switch between light and dark theme.">
-                  <Switch value={darkMode} onValueChange={(val) => setTheme(val ? 'dark' : 'light')} disabled={prefsLoading} thumbColor={switchThumbColor} trackColor={{ false: '#e2e8f0', true: '#16a34a' }} />
+               <SettingRow
+                  title="Dark Mode"
+                  description="Switch between light and dark theme."
+               >
+                  <Switch
+                     value={darkMode}
+                     onValueChange={(val) => setTheme(val ? 'dark' : 'light')}
+                     disabled={prefsLoading}
+                     thumbColor={switchThumbColor}
+                     trackColor={{ false: '#e2e8f0', true: '#16a34a' }}
+                  />
                </SettingRow>
 
-               <SettingRow title="Haptic Feedback" description="Tactile vibrations on interaction.">
-                  <Switch value={hapticsEnabled} onValueChange={setHapticsEnabled} disabled={prefsLoading || !hapticsAvailable} thumbColor={switchThumbColor} trackColor={{ false: '#e2e8f0', true: '#16a34a' }} />
+               <SettingRow
+                  title="Haptic Feedback"
+                  description="Tactile vibrations on interaction."
+               >
+                  <Switch
+                     value={hapticsEnabled}
+                     onValueChange={setHapticsEnabled}
+                     disabled={prefsLoading || !hapticsAvailable}
+                     thumbColor={switchThumbColor}
+                     trackColor={{ false: '#e2e8f0', true: '#16a34a' }}
+                  />
                </SettingRow>
             </View>
 
             {/* ACCOUNT ACTIONS */}
             {isSignedIn && (
-               <View className={`bg-white dark:bg-slate-900 rounded-2xl  border border-slate-200 dark:border-slate-700 ${commonShadowClass}`} style={commonShadowStyle}>
-                  <Pressable className="flex-row justify-between items-center p-4 active:bg-slate-50 dark:active:bg-slate-800" onPress={() => setActionsCollapsed(!actionsCollapsed)}>
-                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">Account Actions</Text>
-                     {actionsCollapsed ? <ChevronDown size={20} color={iconColor} /> : <ChevronUp size={20} color={iconColor} />}
+               <View
+                  className={`bg-white dark:bg-slate-900 rounded-2xl  border border-slate-200 dark:border-slate-700 ${commonShadowClass}`}
+                  style={commonShadowStyle}
+               >
+                  <Pressable
+                     className="flex-row justify-between items-center p-4 active:bg-slate-50 dark:active:bg-slate-800"
+                     onPress={() => setActionsCollapsed(!actionsCollapsed)}
+                  >
+                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                        Account Actions
+                     </Text>
+                     {actionsCollapsed ? (
+                        <ChevronDown size={20} color={iconColor} />
+                     ) : (
+                        <ChevronUp size={20} color={iconColor} />
+                     )}
                   </Pressable>
 
                   {!actionsCollapsed && (
                      <View className="p-4 pt-0 gap-3">
-                        <Pressable onPress={() => Alert.alert('Sign out', 'Confirm?', [{ text: 'Cancel' }, { text: 'Sign Out', onPress: signOut }])} className="py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 items-center">
-                           <Text className="font-bold text-slate-700 dark:text-slate-200 text-[15px]">Sign Out</Text>
+                        <Pressable
+                           onPress={() =>
+                              Alert.alert('Sign out', 'Confirm?', [
+                                 { text: 'Cancel' },
+                                 { text: 'Sign Out', onPress: signOut },
+                              ])
+                           }
+                           className="py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 items-center"
+                        >
+                           <Text className="font-bold text-slate-700 dark:text-slate-200 text-[15px]">
+                              Sign Out
+                           </Text>
                         </Pressable>
-                        
-                        <Pressable 
-                           onPress={() => setShowDeleteModal(true)} 
+
+                        <Pressable
+                           onPress={() => setShowDeleteModal(true)}
                            className="mt-3 py-2 items-center active:opacity-60"
                         >
                            <Text className="font-semibold text-red-500 dark:text-red-400 text-[15px]">
@@ -576,13 +722,18 @@ export default function SettingsScreen() {
             )}
 
             {/* FEEDBACK */}
-            <View className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700  ${commonShadowClass}`} style={commonShadowStyle}>
-                <View className="p-4">
-                   <SendFeedback />
-                </View>
+            <View
+               className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700  ${commonShadowClass}`}
+               style={commonShadowStyle}
+            >
+               <View className="p-4">
+                  <SendFeedback />
+               </View>
             </View>
 
-            <Text className="text-center text-xs text-slate-400 dark:text-slate-600 pb-4">Version 1.0.0</Text>
+            <Text className="text-center text-xs text-slate-400 dark:text-slate-600 pb-4">
+               Version 1.0.0
+            </Text>
          </ScrollView>
 
          <AiInsightCreditShopSheet
@@ -597,80 +748,128 @@ export default function SettingsScreen() {
 
 // --- SUB COMPONENTS ---
 
-function DeleteConfirmationModal({ visible, onClose, onConfirm, isDark }: { visible: boolean; onClose: () => void; onConfirm: () => Promise<boolean>; isDark: boolean }) {
-    const [confirmText, setConfirmText] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    
-    useEffect(() => {
-        if (visible) {
-            setConfirmText('');
-            setIsLoading(false);
-        }
-    }, [visible]);
+function DeleteConfirmationModal({
+   visible,
+   onClose,
+   onConfirm,
+   isDark,
+}: {
+   visible: boolean;
+   onClose: () => void;
+   onConfirm: () => Promise<boolean>;
+   isDark: boolean;
+}) {
+   const [confirmText, setConfirmText] = useState('');
+   const [isLoading, setIsLoading] = useState(false);
 
-    const handleConfirm = async () => {
-        setIsLoading(true);
-        const success = await onConfirm();
-        if (!success) {
-            setIsLoading(false);
-        }
-    };
+   useEffect(() => {
+      if (visible) {
+         setConfirmText('');
+         setIsLoading(false);
+      }
+   }, [visible]);
 
-    const isMatch = confirmText.toLowerCase() === 'delete';
+   const handleConfirm = async () => {
+      setIsLoading(true);
+      const success = await onConfirm();
+      if (!success) {
+         setIsLoading(false);
+      }
+   };
 
-    return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 justify-center items-center bg-black/60 px-6">
-                <View className="w-full bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 gap-4">
-                    <View className="items-center gap-2">
-                        <View className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 items-center justify-center">
-                            <TriangleAlert size={24} color="#ef4444" />
-                        </View>
-                        <Text className="text-xl font-black text-slate-900 dark:text-white text-center">Delete Account?</Text>
-                        <Text className="text-sm text-slate-500 dark:text-slate-400 text-center px-2">
-                            This action is permanent. All your data will be wiped immediately.
+   const isMatch = confirmText.toLowerCase() === 'delete';
+
+   return (
+      <Modal
+         visible={visible}
+         transparent
+         animationType="fade"
+         onRequestClose={onClose}
+      >
+         <KeyboardAvoidingView
+            behavior={'padding'}
+            className="flex-1 justify-center items-center bg-black/60 px-6"
+         >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+               <View className="w-full bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 gap-4">
+                  <View className="items-center gap-2">
+                     <View className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 items-center justify-center">
+                        <TriangleAlert size={24} color="#ef4444" />
+                     </View>
+                     <Text className="text-xl font-black text-slate-900 dark:text-white text-center">
+                        Delete Account?
+                     </Text>
+                     <Text className="text-sm text-slate-500 dark:text-slate-400 text-center px-2">
+                        This action is permanent. All your data will be wiped
+                        immediately.
+                     </Text>
+                  </View>
+
+                  <View className="gap-2">
+                     <Text className="text-xs font-bold uppercase text-slate-400 ml-1">
+                        Type &quot;delete&quot; to confirm
+                     </Text>
+                     <TextInput
+                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center font-bold text-slate-900 dark:text-white"
+                        placeholder="delete"
+                        placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+                        autoCapitalize="none"
+                        value={confirmText}
+                        onChangeText={setConfirmText}
+                     />
+                  </View>
+
+                  <View className="flex-row gap-3 mt-2">
+                     <Pressable
+                        onPress={onClose}
+                        disabled={isLoading}
+                        className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl items-center"
+                     >
+                        <Text className="font-bold text-slate-700 dark:text-slate-300">
+                           Cancel
                         </Text>
-                    </View>
-
-                    <View className="gap-2">
-                        <Text className="text-xs font-bold uppercase text-slate-400 ml-1">Type &quot;delete&quot; to confirm</Text>
-                        <TextInput 
-                            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center font-bold text-slate-900 dark:text-white"
-                            placeholder="delete"
-                            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-                            autoCapitalize="none"
-                            value={confirmText}
-                            onChangeText={setConfirmText}
-                        />
-                    </View>
-
-                    <View className="flex-row gap-3 mt-2">
-                        <Pressable onPress={onClose} disabled={isLoading} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl items-center">
-                            <Text className="font-bold text-slate-700 dark:text-slate-300">Cancel</Text>
-                        </Pressable>
-                        <Pressable 
-                            onPress={handleConfirm} 
-                            disabled={!isMatch || isLoading}
-                            className={`flex-1 py-3 rounded-xl items-center ${isMatch ? 'bg-red-600' : 'bg-slate-200 dark:bg-slate-800 opacity-50'}`}
-                        >
-                            {isLoading ? <ActivityIndicator color="white" size="small" /> : <Text className={`font-bold ${isMatch ? 'text-white' : 'text-slate-400'}`}>Delete</Text>}
-                        </Pressable>
-                    </View>
-                </View>
-            </KeyboardAvoidingView>
-        </Modal>
-    );
+                     </Pressable>
+                     <Pressable
+                        onPress={handleConfirm}
+                        disabled={!isMatch || isLoading}
+                        className={`flex-1 py-3 rounded-xl items-center ${isMatch ? 'bg-red-600' : 'bg-slate-200 dark:bg-slate-800 opacity-50'}`}
+                     >
+                        {isLoading ? (
+                           <ActivityIndicator color="white" size="small" />
+                        ) : (
+                           <Text
+                              className={`font-bold ${isMatch ? 'text-white' : 'text-slate-400'}`}
+                           >
+                              Delete
+                           </Text>
+                        )}
+                     </Pressable>
+                  </View>
+               </View>
+            </TouchableWithoutFeedback>
+         </KeyboardAvoidingView>
+      </Modal>
+   );
 }
 
-function StatCard({ label, value, subtext, isLoading, isHighlight, icon, shadowClass, shadowStyle }: { 
-   label: string; 
-   value: string; 
-   subtext: string; 
-   isLoading?: boolean; 
+function StatCard({
+   label,
+   value,
+   subtext,
+   isLoading,
+   isHighlight,
+   icon,
+   shadowClass,
+   shadowStyle,
+}: {
+   label: string;
+   value: string;
+   subtext: string;
+   isLoading?: boolean;
    isHighlight?: boolean;
    icon?: ReactNode;
    shadowClass?: string;
-   shadowStyle?: StyleProp<ViewStyle>; 
+   shadowStyle?: StyleProp<ViewStyle>;
 }) {
    const pulseOpacity = useSharedValue(0.6);
    const pulseStyle = useAnimatedStyle(() => ({
@@ -691,10 +890,17 @@ function StatCard({ label, value, subtext, isLoading, isHighlight, icon, shadowC
    }, [isLoading, pulseOpacity]);
 
    return (
-      <View className={`flex-1 p-4 rounded-2xl border justify-between ${shadowClass ?? ''} ${isHighlight ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`} style={shadowStyle}>
+      <View
+         className={`flex-1 p-4 rounded-2xl border justify-between ${shadowClass ?? ''} ${isHighlight ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}
+         style={shadowStyle}
+      >
          <View className="flex-row justify-between items-start">
-             <Text className={`text-xs font-bold uppercase tracking-wider mb-2 ${isHighlight ? 'text-green-600 dark:text-green-400' : 'text-slate-400'}`}>{label}</Text>
-             {icon}
+            <Text
+               className={`text-xs font-bold uppercase tracking-wider mb-2 ${isHighlight ? 'text-green-600 dark:text-green-400' : 'text-slate-400'}`}
+            >
+               {label}
+            </Text>
+            {icon}
          </View>
          <View>
             {isLoading ? (
@@ -703,20 +909,44 @@ function StatCard({ label, value, subtext, isLoading, isHighlight, icon, shadowC
                   style={pulseStyle}
                />
             ) : (
-               <Text className={`text-2xl font-black ${isHighlight ? 'text-green-700 dark:text-green-300' : 'text-slate-900 dark:text-slate-100'}`}>{value}</Text>
+               <Text
+                  className={`text-2xl font-black ${isHighlight ? 'text-green-700 dark:text-green-300' : 'text-slate-900 dark:text-slate-100'}`}
+               >
+                  {value}
+               </Text>
             )}
-            <Text className={`text-[10px] mt-1 ${isHighlight ? 'text-green-600/70 dark:text-green-300/60' : 'text-slate-400'}`}>{subtext}</Text>
+            <Text
+               className={`text-[10px] mt-1 ${isHighlight ? 'text-green-600/70 dark:text-green-300/60' : 'text-slate-400'}`}
+            >
+               {subtext}
+            </Text>
          </View>
       </View>
    );
 }
 
-function SettingRow({ title, description, children, disabled }: { title: string; description: string; children: ReactNode; disabled?: boolean }) {
+function SettingRow({
+   title,
+   description,
+   children,
+   disabled,
+}: {
+   title: string;
+   description: string;
+   children: ReactNode;
+   disabled?: boolean;
+}) {
    return (
-      <View className={`flex-row items-center justify-between ${disabled ? 'opacity-50' : ''}`}>
+      <View
+         className={`flex-row items-center justify-between ${disabled ? 'opacity-50' : ''}`}
+      >
          <View className="flex-1 mr-4">
-            <Text className="text-[16px] font-bold text-slate-900 dark:text-slate-100">{title}</Text>
-            <Text className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5 leading-5">{description}</Text>
+            <Text className="text-[16px] font-bold text-slate-900 dark:text-slate-100">
+               {title}
+            </Text>
+            <Text className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5 leading-5">
+               {description}
+            </Text>
          </View>
          {children}
       </View>

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View } from 'react-native';
 
 import { LearnedGrowthResponse } from '@/models/aiService';
@@ -68,30 +68,6 @@ export default function AiInsightExpandedContent({
    const cooldownAnchor = new Date(cooldownAnchorMs);
    const timeLabel = useCooldownLabel(isCoolingDown, cooldownAnchor, 2);
 
-   // --- SIGNAL COMPLETION TO PARENT ---
-   useEffect(() => {
-      if (!onAnimationComplete) return;
-
-      const duration = isFreshAnalysis ? animationTimeline.totalDuration : 0;
-
-      // If no animation, signal next tick (don’t wait 100ms arbitrarily)
-      if (!isFreshAnalysis) {
-         const raf = requestAnimationFrame(() => onAnimationComplete());
-         return () => cancelAnimationFrame(raf);
-      }
-
-      const timer = setTimeout(() => {
-         onAnimationComplete();
-      }, duration);
-
-      return () => clearTimeout(timer);
-   }, [
-      isFreshAnalysis,
-      animationTimeline.totalDuration,
-      onAnimationComplete,
-      data.createdAt, 
-   ]);
-
    return (
       <View className="gap-6 pt-1">
          <AiInsightStaleBanner
@@ -123,7 +99,7 @@ export default function AiInsightExpandedContent({
 
          <AiInsightSuggestion
             counterBelief={suggestions?.counterBelief}
-            animationTimeline={animationTimeline}
+            animationTimeline={animationTimeline}     
          />
 
          <AiInsightDisclaimer
@@ -131,6 +107,7 @@ export default function AiInsightExpandedContent({
             toggleMinimized={toggleMinimized}
             animationTimeline={animationTimeline}
             isDark={isDark}
+            onAnimationComplete={ onAnimationComplete }
          />
       </View>
    );

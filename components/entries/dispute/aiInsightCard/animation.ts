@@ -42,8 +42,6 @@ export const getAiInsightAnimationTimeline = (isFresh: boolean) => {
    // 7. Disclaimer (Bottom)
    const disclaimerStart = suggestionStart + (isFresh ? t.disclaimerGap : t.baseStagger);
 
-   // Total time 
-   const totalDuration = 8800;
 
    return {
       emotionAppear,
@@ -53,7 +51,6 @@ export const getAiInsightAnimationTimeline = (isFresh: boolean) => {
       blameStart,
       suggestionStart,
       disclaimerStart,
-      totalDuration
    };
 };
 

@@ -1,5 +1,5 @@
 import { getShadow } from '@/lib/shadow';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
@@ -12,7 +12,7 @@ import { useColorScheme } from 'nativewind';
 import Animated, {
    useAnimatedStyle,
    useSharedValue,
-   withTiming,
+   withTiming
 } from 'react-native-reanimated';
 
 type Props = {
@@ -48,24 +48,23 @@ export default function ABCAnalysis({
    
    const [areAnimationsDone, setAreAnimationsDone] = useState(false);
    const buttonOpacity = useSharedValue(0);
-
-   useEffect(() => {
-      if (areAnimationsDone) {
-         buttonOpacity.value = withTiming(1, { duration: 500 });
-      } else {
-         // Optional: Reset if you want it to hide again when refreshing
-         buttonOpacity.value = 0;
-      }
-   }, [areAnimationsDone, buttonOpacity]);
-
    const buttonFadeStyle = useAnimatedStyle(() => ({
       opacity: buttonOpacity.value,
    }));
 
+   const handleAnimationComplete = useCallback(() => {
+      setAreAnimationsDone(true);
+   }, []);
+
    useEffect(() => {
-      setAreAnimationsDone(false);
-      buttonOpacity.value = 0;
-   }, [entry.id, aiData?.createdAt, buttonOpacity]);
+      if (areAnimationsDone) {
+         // Fade in smoothly over 
+         buttonOpacity.value = withTiming(1, { duration: 300 });
+      } else {
+         // Hide instantly (useful if refreshing data)
+         buttonOpacity.value = 0;
+      }
+   }, [areAnimationsDone, buttonOpacity]);
 
    return (
       <ScrollView
@@ -149,12 +148,13 @@ export default function ABCAnalysis({
                retryCount={retryCount}
                maxRetries={maxRetries}
                updatedAt={entry.updatedAt}
-               onAnimationComplete={() => setAreAnimationsDone(true)}
+               onAnimationComplete={handleAnimationComplete}
             />
             {onGoToSteps && aiData ? (
                <Animated.View
                   className={`p-1 mt-6 mb-3 ${shadow.className}`}
                   style={[shadow.ios, shadow.android, buttonFadeStyle]}
+                  
                >
                   <WideButton
                      label={'Continue'}

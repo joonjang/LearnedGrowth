@@ -65,6 +65,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Updated restore purchase to display alert
 - Made learnedgrowth.com landing page
   - Set up email
+- Abstracted login OTP form login to authProvider
+- subscribed user now has plan column labelled as growth_plus instead of invested
+- Updated supabase sql guard from invested to growth_plus
+- Fixed timing of continue button animation to happen sequentially
+- Setting page sign in button implemented
 
 ### 2026-01-07
 - Fixed subscriber not being able to refresh

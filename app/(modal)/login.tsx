@@ -1,15 +1,14 @@
-import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
-import {
-   BOTTOM_SHEET_BACKDROP_OPACITY,
-   BOTTOM_SHEET_CONTENT_PADDING,
-   ROUTE_ENTRIES,
-} from '@/components/constants';
 import {
    BOTTOM_SHEET_BG_DARK,
    BOTTOM_SHEET_BG_LIGHT,
    bottomSheetBackgroundStyle,
 } from '@/components/bottomSheetStyles';
-import { supabase } from '@/lib/supabase';
+import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
+import {
+   BOTTOM_SHEET_BACKDROP_OPACITY,
+   BOTTOM_SHEET_CONTENT_PADDING
+} from '@/components/constants';
+// ❌ DELETE: import { supabase } from '@/lib/supabase'; <-- No longer needed here
 import { useAuth } from '@/providers/AuthProvider';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {
@@ -37,16 +36,15 @@ export default function AuthModal() {
    const insets = useSafeAreaInsets();
    const modalRef = useRef<BottomSheetModal>(null);
 
-   // 1. GUARD FLAGS
    const isRedirecting = useRef(false);
    const isSubmitting = useRef(false);
 
-   // 2. GET GLOBAL SESSION (The Fix)
-   // We pull the session/status from the global provider. 
-   // If Supabase auto-logs us in, these will update instantly.
+   // ✅ GET ALL ACTIONS FROM PROVIDER
    const {
       signInWithApple,
       signInWithGoogle,
+      sendOtp, // <--- New
+      verifyOtp, // <--- New
       status: authStatus,
    } = useAuth();
 
@@ -70,9 +68,6 @@ export default function AuthModal() {
       placeholder: isDark ? '#94a3b8' : '#64748b',
    };
 
-   // Toggle this if you want pure sign-in without creating accounts.
-   const shouldCreateUser = true;
-
    const [email, setEmail] = useState('');
    const [code, setCode] = useState('');
    const [step, setStep] = useState<'email' | 'code'>('email');
@@ -91,21 +86,22 @@ export default function AuthModal() {
    }, [router]);
 
    const handleSuccess = useCallback(() => {
-      // Prevent multiple redirects
       if (isRedirecting.current) return;
       isRedirecting.current = true;
 
+      if (router.canGoBack()) {
+         router.dismiss();
+      }
+
       if (redirectPath) {
-         if (router.canGoBack()) router.dismiss();
+         // Add a delay so the modal closes cleanly BEFORE we navigate
          setTimeout(() => {
-            router.push(redirectPath as any);
-         }, 100);
-      } else {
-         if (router.canGoBack()) router.dismiss();
-         router.replace(ROUTE_ENTRIES);
+            router.replace(redirectPath as any);
+         }, 300);
       }
    }, [redirectPath, router]);
 
+   // Auto-close when Provider says we are signed in
    useEffect(() => {
       if (authStatus === 'signedIn' && !isRedirecting.current) {
          setStatus('idle');
@@ -120,7 +116,6 @@ export default function AuthModal() {
    ) => {
       if (isSubmitting.current) return;
       isSubmitting.current = true;
-      
       setError(null);
       setStatus(type);
 
@@ -129,9 +124,7 @@ export default function AuthModal() {
          if (result === false) {
             setStatus('idle');
             isSubmitting.current = false;
-            return;
          }
-         // handleSuccess is handled by the useEffect above now
       } catch (err: any) {
          setError(err?.message ?? 'Authentication failed.');
          setStatus('idle');
@@ -139,26 +132,21 @@ export default function AuthModal() {
       }
    };
 
+   // --- CLEANER EMAIL HANDLERS ---
+
    const onSendEmail = async () => {
-      if (!supabase) return setError('Supabase client not initialized');
       if (isSubmitting.current) return;
-      
+
       const normalizedEmail = email.trim().toLowerCase();
       if (!normalizedEmail) return setError('Please enter your email.');
-      
+
       isSubmitting.current = true;
       setError(null);
       setStatus('sending');
-      const otpPayload = {
-         email: normalizedEmail,
-         options: { shouldCreateUser },
-      };
-      
+
       try {
-         const { error } = await supabase.auth.signInWithOtp(otpPayload);
-         
-         if (error) throw error;
-         
+         // ✅ DELEGATE TO PROVIDER
+         await sendOtp(normalizedEmail);
          setStep('code');
       } catch (err: any) {
          setError(err?.message ?? 'Failed to send code.');
@@ -168,71 +156,27 @@ export default function AuthModal() {
       }
    };
 
-const onVerifyCode = async () => {
-      // 1. Guards
-      if (!supabase) return setError('Supabase client not initialized');
+   const onVerifyCode = async () => {
       if (isSubmitting.current) return;
-      
+
       const normalizedEmail = email.trim().toLowerCase();
       const cleanCode = code.trim().replace(/\s+/g, '');
 
       if (!normalizedEmail) return setError('Please enter your email.');
-      // REMOVED the strict length check to allow for flexibility
       if (!cleanCode) return setError('Please enter the verification code.');
-   
+
       isSubmitting.current = true;
       setError(null);
       setStatus('verifying');
-   
-      try {
-         // Pre-check: If we are already logged in, stop here.
-         const { data: preSession } = await supabase.auth.getSession();
-         if (preSession?.session) {
-            setStatus('idle');
-            isSubmitting.current = false;
-            handleSuccess();
-            return;
-         }
 
-         // --- THE FIX: DUAL STRATEGY ---
-         
-         // Attempt 1: Try as a New User ('signup')
-         let { error } = await supabase.auth.verifyOtp({
-            email: normalizedEmail,
-            token: cleanCode,
-            type: 'signup',
-         });
-   
-         // Attempt 2: If that failed, try as Existing User ('magiclink')
-         if (error) {
-            const { error: magicLinkError } = await supabase.auth.verifyOtp({
-               email: normalizedEmail,
-               token: cleanCode,
-               type: 'magiclink',
-            });
-            // Update the error variable. If this succeeds, error becomes null.
-            error = magicLinkError;
-         }
-   
-         // If BOTH failed, throw the error
-         if (error) throw error;
-   
-         // Success!
-         setStatus('idle');
-         isSubmitting.current = false;
-         handleSuccess();
-         
+      try {
+         // ✅ DELEGATE TO PROVIDER
+         await verifyOtp(normalizedEmail, cleanCode);
+
+         // If verifyOtp doesn't throw, we are good.
+         // The useEffect above listening to 'authStatus' will handle the redirect.
       } catch (err: any) {
-         // Safety Net: Check if session exists anyway
-         const { data: sessionData } = await supabase.auth.getSession();
-         if (sessionData?.session) {
-            setStatus('idle');
-            isSubmitting.current = false;
-            handleSuccess();
-            return;
-         }
-   
-         setError(err?.message ?? 'Invalid code or expired. Please try again.');
+         setError(err?.message ?? 'Invalid code or expired.');
          setStatus('idle');
          isSubmitting.current = false;
       }
@@ -250,6 +194,8 @@ const onVerifyCode = async () => {
    return (
       <BottomSheetModal
          ref={modalRef}
+         enableContentPanningGesture={false}
+         enableHandlePanningGesture={false}
          onDismiss={handleDismiss}
          index={0}
          enableDynamicSizing={true}
@@ -279,15 +225,20 @@ const onVerifyCode = async () => {
          >
             <View className="mb-6 pt-4 pr-8">
                <View className="absolute right-0">
-                  <RoundedCloseButton onPress={() => modalRef.current?.dismiss()} />
+                  <RoundedCloseButton
+                     onPress={() => modalRef.current?.dismiss()}
+                  />
                </View>
-               <Text className="text-3xl font-bold mb-2" style={{ color: theme.text }}>
+               <Text
+                  className="text-3xl font-bold mb-2"
+                  style={{ color: theme.text }}
+               >
                   {step === 'email' ? 'Welcome' : 'Check your Email'}
                </Text>
                <Text className="text-base" style={{ color: theme.subText }}>
                   {step === 'email'
                      ? 'Sign in to sync your journal.'
-                     : `We sent a code to ${email.trim() || 'your email'}.`}
+                     : <Text>We sent a code to <Text style={{fontWeight: 'bold'}}>{email.trim() || 'your email'}</Text>.</Text>}
                </Text>
             </View>
 
@@ -296,15 +247,22 @@ const onVerifyCode = async () => {
                   <View className="gap-3 mb-6">
                      {Platform.OS === 'ios' && (
                         <AppleAuthentication.AppleAuthenticationButton
-                           buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                           buttonType={
+                              AppleAuthentication.AppleAuthenticationButtonType
+                                 .SIGN_IN
+                           }
                            buttonStyle={
                               isDark
-                                 ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
-                                 : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                                 ? AppleAuthentication
+                                      .AppleAuthenticationButtonStyle.WHITE
+                                 : AppleAuthentication
+                                      .AppleAuthenticationButtonStyle.BLACK
                            }
                            cornerRadius={14}
                            style={{ width: '100%', height: 50 }}
-                           onPress={() => handleSocial(signInWithApple, 'apple')}
+                           onPress={() =>
+                              handleSocial(signInWithApple, 'apple')
+                           }
                         />
                      )}
                      <Pressable
@@ -316,8 +274,15 @@ const onVerifyCode = async () => {
                            <ActivityIndicator color={theme.text} />
                         ) : (
                            <>
-                              <FontAwesome name="google" size={20} color={theme.text} />
-                              <Text className="ml-2 font-semibold text-[16px]" style={{ color: theme.text }}>
+                              <FontAwesome
+                                 name="google"
+                                 size={20}
+                                 color={theme.text}
+                              />
+                              <Text
+                                 className="ml-2 font-semibold text-[16px]"
+                                 style={{ color: theme.text }}
+                              >
                                  Continue with Google
                               </Text>
                            </>
@@ -326,11 +291,20 @@ const onVerifyCode = async () => {
                   </View>
 
                   <View className="flex-row items-center gap-3 mb-6 opacity-50">
-                     <View className="flex-1 h-[1px]" style={{ backgroundColor: theme.subText }} />
-                     <Text className="text-xs font-bold uppercase" style={{ color: theme.subText }}>
+                     <View
+                        className="flex-1 h-[1px]"
+                        style={{ backgroundColor: theme.subText }}
+                     />
+                     <Text
+                        className="text-xs font-bold uppercase"
+                        style={{ color: theme.subText }}
+                     >
                         OR
                      </Text>
-                     <View className="flex-1 h-[1px]" style={{ backgroundColor: theme.subText }} />
+                     <View
+                        className="flex-1 h-[1px]"
+                        style={{ backgroundColor: theme.subText }}
+                     />
                   </View>
                </>
             )}
@@ -345,9 +319,12 @@ const onVerifyCode = async () => {
                      keyboardType="email-address"
                      autoCapitalize="none"
                      autoCorrect={false}
-                     autoComplete="email" 
+                     autoComplete="email"
                      textContentType="emailAddress"
-                     style={{ backgroundColor: theme.inputBg, color: theme.text }}
+                     style={{
+                        backgroundColor: theme.inputBg,
+                        color: theme.text,
+                     }}
                      className={`h-[54px] rounded-[14px] px-4 text-base border ${theme.inputBorder}`}
                   />
                ) : (
@@ -377,7 +354,9 @@ const onVerifyCode = async () => {
                            isSubmitting.current = false;
                         }}
                      >
-                        <Text style={{ color: theme.subText }}>Change email</Text>
+                        <Text style={{ color: theme.subText }}>
+                           Change email
+                        </Text>
                      </Pressable>
                   </>
                )}
@@ -390,7 +369,7 @@ const onVerifyCode = async () => {
             )}
 
             <Pressable
-               className={`h-[54px] rounded-[14px] items-center justify-center mb-5 bg-dispute-cta active:opacity-90 ${status !== 'idle' ? 'opacity-70' : ''}`}
+               className={`h-[54px] rounded-[14px] items-center justify-center mb-1 bg-dispute-cta active:opacity-90 ${status !== 'idle' ? 'opacity-70' : ''}`}
                onPress={step === 'email' ? onSendEmail : onVerifyCode}
                disabled={status !== 'idle'}
             >
@@ -402,6 +381,28 @@ const onVerifyCode = async () => {
                   </Text>
                )}
             </Pressable>
+
+            {/* 👇 NEW: Manual "Skip to Code" Button */}
+            {step === 'email' && (
+               <Pressable
+                  className="items-center py-3"
+                  onPress={() => {
+                     const normalized = email.trim();
+                     if (!normalized) {
+                        setError('Please enter your email address first.');
+                        return;
+                     }
+                     // Just switch screens. Do NOT call sendOtp().
+                     setStep('code');
+                     setError(null);
+                  }}
+               >
+                  <Text className="text-sm" style={{ color: theme.subText }}>
+                     Already have a code?{' '}
+                     <Text className="font-bold">Enter it here</Text>
+                  </Text>
+               </Pressable>
+            )}
          </BottomSheetScrollView>
       </BottomSheetModal>
    );
