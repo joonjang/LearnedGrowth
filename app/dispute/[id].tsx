@@ -14,6 +14,10 @@ import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import {
+   activateKeepAwakeAsync,
+   deactivateKeepAwake,
+} from 'expo-keep-awake';
+import {
    router,
    useLocalSearchParams,
 } from 'expo-router';
@@ -54,6 +58,7 @@ const STEP_ORDER = [
    'usefulness',
    'energy',
 ] as const;
+const KEEP_AWAKE_TAG = 'abc-analysis';
 
 export default function DisputeScreen() {
    useResizeMode();
@@ -362,6 +367,15 @@ export default function DisputeScreen() {
    }, [analysisProgress, stepsProgress, viewMode]);
 
    const showAnalysis = viewMode === 'analysis';
+   useEffect(() => {
+      if (showAnalysis) {
+         activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => {});
+         return () => {
+            deactivateKeepAwake(KEEP_AWAKE_TAG).catch(() => {});
+         };
+      }
+      deactivateKeepAwake(KEEP_AWAKE_TAG).catch(() => {});
+   }, [showAnalysis]);
 
    // --- FIX: SAFE HANDLE CLOSE ---
    const handleClose = useCallback(() => {

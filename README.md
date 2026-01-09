@@ -22,7 +22,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- make the dispute ai analysis screen not turn off when getting ai content
+
 
 - Fine tune dark mode
   - loading ellipse white
@@ -58,6 +58,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Added indicator to scroll for EntriesScreen + first entry back now displays something
 - Changed ai credit from daily to monthly
 - app AI cycle date agnostic from backend, went from start time to expirary time which means the app gets the deadline and doesnt need to predict the future
+- ABCAnalysis screen does not turn off when viewed
 
 ### 2026-01-08
 - Updated CreditShop subscription and added terms and privacy policy to abide with app policy
