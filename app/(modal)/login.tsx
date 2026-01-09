@@ -183,7 +183,7 @@ export default function AuthModal() {
 
 
    const snapPoints = useMemo(() => {
-      return step === 'email' ? ['60%'] : ['40%'];
+      return step === 'email' ? ( Platform.OS === 'ios' ?['60%'] : ['49%'] ): ['40%'];
    }, [step]);
 
    return (
