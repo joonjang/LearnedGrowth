@@ -2,12 +2,14 @@ import { ROUTE_LOGIN } from '@/components/constants';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
-import { Check, Crown, Leaf, Sprout } from 'lucide-react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { Check, Crown, Infinity, Leaf, Sprout } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
    ActivityIndicator,
    Alert,
+   Linking, // <--- Added for links
    Pressable,
    Text,
    View,
@@ -21,7 +23,7 @@ type Props = {
 };
 
 export default function CreditShop({ onUpgrade, onSuccess }: Props) {
-   const { offerings, buyConsumable, refreshCustomerInfo, showPaywall } =
+   const { offerings, buyConsumable, refreshCustomerInfo, showPaywall, restorePurchases } =
       useRevenueCat();
    const { refreshProfile, status, profile } = useAuth();
    const { colorScheme } = useColorScheme();
@@ -55,35 +57,43 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
       }
    }, [onSuccess, onUpgrade, refreshProfile, showPaywall]);
 
-   if (!isSignedIn) {
-      return (
-         <View className="p-6 items-center gap-3">
-            <Text className="text-base font-semibold text-slate-900 dark:text-slate-100 text-center">
-               Sign in to purchase credits or subscribe.
-            </Text>
-            <Pressable
-               onPress={() => router.push(ROUTE_LOGIN)}
-               className="px-4 py-2 rounded-full bg-emerald-600 active:bg-emerald-700"
-            >
-               <Text className="text-white font-bold">Log In / Sign Up</Text>
-            </Pressable>
-         </View>
-      );
-   }
+   const handleRestore = async () => {
+      try {
+         const customerInfo = await restorePurchases();
+         // Update your auth profile to reflect the restored status
+         await refreshProfile();
 
-   // 1. Get Consumables ('credits' offering)
-   const creditOffering = offerings?.all['credits'];
-   const packages =
+         if (customerInfo.activeSubscriptions.length > 0) {
+            Alert.alert('Success', 'Your subscription has been restored.');
+         } else {
+            Alert.alert(
+               'No Subscriptions',
+               "We couldn't find any active subscriptions to restore."
+            );
+         }
+      } catch (e: any) {
+         Alert.alert('Restore Failed', e.message);
+      }
+   };
+
+   // --- DATA PREP ---
+   const creditOffering = offerings?.current;
+   const allPackages =
       creditOffering?.availablePackages.sort(
          (a, b) => a.product.price - b.product.price
       ) || [];
 
-   // 2. Get Subscription ('monthly' package from 'current' offering or specific one)
-   // We look for the monthly package to get the real price string
-   const monthlyPackage = offerings?.current?.availablePackages.find(
+   // 1. Find Monthly for the "Hero" section
+   const monthlyPackage = allPackages.find(
       (pkg) => pkg.identifier === '$rc_monthly' || pkg.packageType === 'MONTHLY'
    );
    const monthlyPrice = monthlyPackage?.product.priceString;
+
+   // 2. Filter ONLY credit packs for the "Grid" section
+   // This fixes the "two extra items" bug
+   const creditPackages = allPackages
+      .filter((pkg) => pkg.identifier.includes('credit_'))
+      .sort((a, b) => a.product.price - b.product.price);
 
    const handleBuy = async (pkg: PurchasesPackage) => {
       if (status !== 'signedIn') {
@@ -108,6 +118,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
          await buyConsumable(pkg.product.identifier);
          await refreshCustomerInfo();
 
+         // Polling logic to wait for database sync
          const startExtra = profileRef.current?.extraAiCredits ?? 0;
          const pollDelays = [600, 1200, 2000, 3200];
          for (const delay of pollDelays) {
@@ -127,7 +138,40 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
       }
    };
 
-   // Loading State
+   const openLink = async (url: string) => {
+      try {
+         // This opens the in-app browser modal
+         await WebBrowser.openBrowserAsync(url, {
+            presentationStyle:
+               WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+            dismissButtonStyle: 'close',
+            controlsColor: '#10b981', // Your emerald color
+            toolbarColor: isDark ? '#0f172a' : '#ffffff', // Matches your theme
+         });
+      } catch (e) {
+         // Fallback to standard browser if something goes wrong
+         Linking.openURL(url).catch(() => {});
+      }
+   };
+
+   // --- RENDER ---
+
+   if (!isSignedIn) {
+      return (
+         <View className="p-6 items-center gap-3">
+            <Text className="text-base font-semibold text-slate-900 dark:text-slate-100 text-center">
+               Sign in to purchase credits or subscribe.
+            </Text>
+            <Pressable
+               onPress={() => router.push(ROUTE_LOGIN)}
+               className="px-4 py-2 rounded-full bg-emerald-600 active:bg-emerald-700"
+            >
+               <Text className="text-white font-bold">Log In / Sign Up</Text>
+            </Pressable>
+         </View>
+      );
+   }
+
    if (!creditOffering) {
       return (
          <View className="p-10 items-center justify-center">
@@ -137,14 +181,18 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
    }
 
    return (
-      <View className="gap-6 pt-2">
+      <View className="gap-6 pt-2 ">
+         {/* Added pb-8 for spacing at bottom */}
+
          {/* 1. THE HERO: Monthly Subscription */}
          <View>
-            <View className="flex-row items-center gap-2 mb-3">
-               <Crown size={16} color={isDark ? '#fbbf24' : '#d97706'} />
-               <Text className="text-xs font-bold uppercase text-amber-600 dark:text-amber-400 tracking-wider">
-                  Recommended
-               </Text>
+            <View className="flex-row items-center justify-between mb-3">
+               <View className="flex-row items-center gap-2">
+                  <Crown size={16} color={isDark ? '#fbbf24' : '#d97706'} />
+                  <Text className="text-xs font-bold uppercase text-amber-600 dark:text-amber-400 tracking-wider">
+                     Recommended
+                  </Text>
+               </View>
             </View>
 
             <Pressable
@@ -152,33 +200,54 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                className="relative overflow-hidden rounded-2xl border-2 active:opacity-95 border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 dark:border-emerald-400"
             >
                <View className="p-4">
-                  <View className="flex-row items-center gap-3 mb-3">
-                     <View className="p-2.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20">
+                  <View className="flex-row items-center gap-3 mb-4">
+                     <View className="p-3 rounded-full bg-emerald-100 dark:bg-emerald-500/20">
                         <Sprout
-                           size={20}
+                           size={24}
                            color={isDark ? '#34d399' : '#059669'}
                         />
                      </View>
-                     <View>
-                        <Text className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                     <View className="flex-1">
+                        <Text className="text-xl font-bold text-slate-900 dark:text-slate-100">
                            Growth Plus
                         </Text>
-                        <Text className="text-xs text-emerald-700 dark:text-emerald-300 font-bold">
-                           {monthlyPrice} / month
+                        <Text className="text-sm text-slate-500 dark:text-slate-400">
+                           Remove monthly limits
+                        </Text>
+                     </View>
+                     <View className="items-end">
+                        <Text className="text-lg font-bold text-emerald-700 dark:text-emerald-300">
+                           {monthlyPrice}
+                        </Text>
+                        <Text className="text-[10px] text-slate-400 font-medium uppercase">
+                           per month
                         </Text>
                      </View>
                   </View>
 
-                  <View className="gap-2 mb-4">
-                     <FeatureRow text="Unlimited AI Analysis" />
-                     <FeatureRow text="Deep Pattern Recognition" />
+                  <View className="gap-2.5 mb-5 pl-1">
+                     {/* Feature 1: The big seller */}
+                     <View className="flex-row items-center gap-2">
+                        <Infinity size={14} color="#10b981" />
+                        <Text className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                           Unlimited AI Analysis
+                        </Text>
+                     </View>
+                     {/* Feature 2: Accurate to ABCDE Method */}
+                     <FeatureRow text="Explore Alternative Views" />
+                     {/* Feature 3: Analytics */}
+                     <FeatureRow text="Advanced Pattern Recognition" />
                   </View>
 
-                  <View className="bg-emerald-600 dark:bg-emerald-500 rounded-xl py-3 items-center shadow-sm shadow-emerald-900/20">
-                     <Text className="text-white font-bold text-xl">
-                        Subscribe
+                  <View className="bg-emerald-600 dark:bg-emerald-500 rounded-xl py-3.5 items-center shadow-md shadow-emerald-900/20">
+                     <Text className="text-white font-bold text-lg tracking-wide">
+                        Become Limitless
                      </Text>
                   </View>
+
+                  <Text className="text-center text-[10px] text-slate-400 mt-2">
+                     Cancel anytime in your settings.
+                  </Text>
                </View>
             </Pressable>
          </View>
@@ -192,7 +261,8 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
             </View>
 
             <View className="flex-row gap-3">
-               {packages.map((pkg) => {
+               {/* FIX: Use creditPackages instead of packages */}
+               {creditPackages.map((pkg) => {
                   const count = getCreditCount(pkg);
                   const isBuying = buyingPackage === pkg.identifier;
 
@@ -234,20 +304,47 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                })}
             </View>
          </View>
+
+         {/* 3. LEGAL FOOTER (Mandatory) */}
+         <View className="mt-2 items-center">
+
+            {/* Restore Button (Primary Secondary Action) */}
+            <Pressable onPress={handleRestore}>
+               <Text className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  Restore Purchases
+               </Text>
+            </Pressable>
+            
+            <View className="flex-row justify-center gap-4">
+               <Pressable
+                  onPress={() => openLink('https://learnedgrowth.com/terms')}
+               >
+                  <Text className="text-xs text-slate-400 dark:text-slate-500 text-center">
+                     Terms of Service
+                  </Text>
+               </Pressable>
+               <Pressable
+                  onPress={() => openLink('https://learnedgrowth.com/privacy')}
+               >
+                  <Text className="text-xs text-slate-400 dark:text-slate-500 text-center">
+                     Privacy Policy
+                  </Text>
+               </Pressable>
+            </View>
+         </View>
       </View>
    );
 }
 
-// Logic: Check Product ID explicitly
+// Logic: STRICT MATCHING
 function getCreditCount(pkg: PurchasesPackage) {
-   const productId = pkg.product.identifier;
-   const identifier = pkg.identifier.toLowerCase();
+   const identifier = pkg.identifier;
 
-   if (productId === 'prod092f097225' || productId === 'credit_small') return 5;
-   if (productId === 'prod497e0e5d84' || productId === 'credit_medium') return 10;
-   if (productId === 'prodff5774de6e' || productId === 'credit_large') return 15;
+   if (identifier === 'credit_small') return 5;
+   if (identifier === 'credit_medium') return 10;
+   if (identifier === 'credit_large') return 15;
 
-   if (identifier.includes('small') || identifier === '$rc_monthly') return 5;
+   if (identifier.includes('small')) return 5;
    if (identifier.includes('medium')) return 10;
    if (identifier.includes('large')) return 15;
 

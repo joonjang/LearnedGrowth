@@ -24,7 +24,7 @@ import {
 } from "react";
 import { Platform } from "react-native";
 
-type AccountPlan = "free" | "invested";
+type AccountPlan = "free" | "growth_plus";
 
 export type AccountProfile = {
   plan: AccountPlan;
@@ -77,7 +77,7 @@ function normalizeProfile(res: PostgrestSingleResponse<any>): AccountProfile | n
     extra_ai_credits,
   } = res.data;
   return {
-    plan: plan === "invested" ? "invested" : "free",
+    plan: plan === "growth_plus" ? "growth_plus" : "free",
     aiCycleUsed: Number.isFinite(ai_cycle_used) ? ai_cycle_used : 0,
     aiCycleStart:
       typeof ai_cycle_start === "string" ? ai_cycle_start : ai_cycle_start ?? null,

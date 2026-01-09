@@ -77,6 +77,7 @@ export default function SettingsScreen() {
       error: rcError,
       restorePurchases,
       isGrowthPlusActive,
+      refreshCustomerInfo
    } = useRevenueCat();
 
    const {
@@ -223,14 +224,38 @@ export default function SettingsScreen() {
 
    // --- Handlers ---
    const handleRestore = async () => {
-      if (isOffline) { setBillingNote('Go online to restore purchases.'); return; }
+      if (isOffline) { 
+         setBillingNote('Go online to restore purchases.'); 
+         return; 
+      }
+
       setBillingAction('restore');
       setBillingNote(null);
+
       try {
-         await restorePurchases();
+         // 1. Capture the customer info returned by RevenueCat
+         const customerInfo = await restorePurchases(); 
+         await refreshCustomerInfo();
          await refreshProfile();
-         setBillingNote('Purchases restored.');
+         
+         // 2. Check if they actually have an active subscription now
+         const hasActiveSubscription = customerInfo.activeSubscriptions.length > 0;
+
+         if (hasActiveSubscription) {
+             // Case A: Success! They have their stuff back.
+             Alert.alert("Success", "Your subscription has been restored.");
+             setBillingNote(null); // Clear any inline notes since we used an Alert
+         } else {
+             // Case B: The restore "worked" (no error), but they bought nothing previously.
+             Alert.alert(
+                "No Subscriptions Found", 
+                "We couldn't find any active subscriptions for this account."
+             );
+             setBillingNote(null);
+         }
+
       } catch (err: any) {
+         // Case C: Network error or Apple server error
          setBillingNote(err?.message ?? 'Restore failed.');
       } finally {
          setBillingAction(null);
@@ -319,11 +344,12 @@ export default function SettingsScreen() {
    const handleCreditShopSuccess = useCallback(async () => {
       creditShopSheetRef.current?.dismiss();
       try {
+         await refreshCustomerInfo();
          await refreshProfile();
       } catch (err) {
          console.warn('Failed to refresh credits after purchase', err);
       }
-   }, [refreshProfile]);
+   }, [refreshCustomerInfo, refreshProfile]);
 
    const performDeleteAccount = async (): Promise<boolean> => {
       if (isOffline) return false;

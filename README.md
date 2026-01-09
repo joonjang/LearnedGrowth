@@ -22,6 +22,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+
 - Add a sprout icon for growth plus members
 
 - Make shadow uniform for ios in setting screen
@@ -70,6 +71,13 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+
+### 2026-01-08
+- Updated CreditShop subscription and added terms and privacy policy to abide with app policy
+  - Updated paywall to feature ios/android and yearly option
+- Updated restore purchase to display alert
+- Made learnedgrowth.com landing page
+  - Set up email
 
 ### 2026-01-07
 - Fixed subscriber not being able to refresh
