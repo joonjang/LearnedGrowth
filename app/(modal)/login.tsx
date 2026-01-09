@@ -26,7 +26,7 @@ import {
    Platform,
    Pressable,
    Text,
-   View
+   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -181,10 +181,15 @@ export default function AuthModal() {
       }
    };
 
+   const isIOS = Platform.OS === 'ios';
 
    const snapPoints = useMemo(() => {
-      return step === 'email' ? ( Platform.OS === 'ios' ?['60%'] : ['49%'] ): ['40%'];
-   }, [step]);
+      // Tune these numbers for your exact layout
+      if (step === 'email') {
+         return [isIOS ? '60%' : '49%']; // email step is taller on iOS (Apple button)
+      }
+      return [isIOS ? '40%' : '37%']; // code step
+   }, [step, isIOS]);
 
    return (
       <BottomSheetModal
@@ -195,13 +200,11 @@ export default function AuthModal() {
          index={0}
          // 👇 FIX 1: Use fixed snap points instead of dynamic sizing
          snapPoints={snapPoints}
-         enableDynamicSizing={false} 
-         
+         enableDynamicSizing={false}
          enablePanDownToClose={false}
          handleComponent={() => null}
          handleIndicatorStyle={{ height: 0, opacity: 0 }}
          backgroundStyle={bottomSheetBackgroundStyle(isDark, theme.bg)}
-         
          // 👇 FIX 2: Standard keyboard handling works perfectly with fixed snap points
          keyboardBehavior="interactive"
          keyboardBlurBehavior="restore"
@@ -347,8 +350,11 @@ export default function AuthModal() {
                            isSubmitting.current = false;
                         }}
                      >
-                        <Text className="mb-3 text-sm" style={{ color: theme.subText }}>
-                          Wrong email? Tap here to change.
+                        <Text
+                           className="mb-3 text-sm"
+                           style={{ color: theme.subText }}
+                        >
+                           Wrong email? Tap here to change.
                         </Text>
                      </Pressable>
 
@@ -371,15 +377,15 @@ export default function AuthModal() {
                )}
             </View>
 
-<View className='mb-1'>
-  <Text
-    className="text-center text-sm font-medium text-rose-500"
-    // keeps the space even when empty
-    style={{ opacity: error ? 1 : 0 }}
-  >
-    {error ?? ' '}
-  </Text>
-</View>
+            <View className="mb-1">
+               <Text
+                  className="text-center text-sm font-medium text-rose-500"
+                  // keeps the space even when empty
+                  style={{ opacity: error ? 1 : 0 }}
+               >
+                  {error ?? ' '}
+               </Text>
+            </View>
 
             <Pressable
                className={`h-[54px] rounded-[14px] items-center justify-center mb-1 bg-dispute-cta active:opacity-90 ${status !== 'idle' ? 'opacity-70' : ''}`}
