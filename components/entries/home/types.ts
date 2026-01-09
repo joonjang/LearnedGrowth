@@ -15,7 +15,7 @@ export type ThreePScore = { score: number };
 
 export type DashboardData = {
   weeklyCount: number;
-  last7DaysScore: number | null;
+  weeklyScore: number | null;
   threePs: {
     permanence: ThreePScore;
     pervasiveness: ThreePScore;

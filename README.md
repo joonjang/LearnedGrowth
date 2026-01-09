@@ -22,11 +22,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- Fix sudden flash of QuickStart in index screen
 
-- Make shadow uniform for ios in setting screen
-
-- Bug login should not stack a new home page, it should replace
 
 - make the dispute ai analysis screen not turn off when getting ai content
 
@@ -60,6 +56,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ### 2026-01-09
 - Added a sprout icon for growth plus members
 - Quickstart information viewable from index
+- Fixed sudden flash of QuickStart in index screen
+- Fixed EntriesScreen thoughts reframed from relative to current day to weekly count from Monday to Sunday
 
 
 ### 2026-01-08

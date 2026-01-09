@@ -346,31 +346,33 @@ export default function EntriesScreen() {
    );
    const sections = useMemo(() => buildSections(rowsWithUndo), [rowsWithUndo]);
 
-   // --- Global Dashboard Data (Last 7 Days) ---
+   // --- Global Dashboard Data (Current Week: Mon-Sun) ---
    const dashboardData = useMemo(() => {
       const allEntries = store.rows;
 
-      // FIXED: Removed unused 'now' variable
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 7);
-      cutoff.setHours(0, 0, 0, 0);
+      const weekStart = getWeekStart(new Date());
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
 
-      const recentEntries = allEntries.filter(
-         (e) => new Date(e.createdAt) >= cutoff
-      );
+      const weekEntries = allEntries.filter((e) => {
+         const created = safeParseDate(e.createdAt);
+         if (!created) return false;
+         return created >= weekStart && created <= weekEnd;
+      });
 
-      const recentWithDispute = recentEntries.filter(
+      const weekWithDispute = weekEntries.filter(
          (e) => (e.dispute ?? '').trim().length > 0
       );
 
-      const weeklyCount = recentWithDispute.length;
+      const weeklyCount = weekWithDispute.length;
 
-      if (recentEntries.length === 0)
-         return { weeklyCount, last7DaysScore: null, threePs: null };
+      if (weekEntries.length === 0)
+         return { weeklyCount, weeklyScore: null, threePs: null };
 
       let optSum = 0;
       let optCount = 0;
-      recentEntries.forEach((e) => {
+      weekEntries.forEach((e) => {
          const score = getNumericScore(
             e.aiResponse?.meta?.optimismScore ??
                e.aiResponse?.meta?.sentimentScore
@@ -388,7 +390,7 @@ export default function EntriesScreen() {
          pers: { good: 0, total: 0 },
       };
 
-      recentEntries.forEach((e) => {
+      weekEntries.forEach((e) => {
          const dims = e.aiResponse?.analysis?.dimensions;
          if (dims) {
             if (dims.permanence) {
@@ -414,7 +416,7 @@ export default function EntriesScreen() {
 
       return {
          weeklyCount,
-         last7DaysScore: avgScore,
+         weeklyScore: avgScore,
          threePs: {
             permanence: { score: getScore(threePsStats.perm) },
             pervasiveness: { score: getScore(threePsStats.perv) },
@@ -424,7 +426,8 @@ export default function EntriesScreen() {
    }, [store.rows]);
 
    const hasEntries = store.rows.length > 0;
-   const showQuickStart = !store.isHydrating && !hasEntries;
+   const hasHydrated = store.lastHydratedAt !== null;
+   const showQuickStart = hasHydrated && !store.isHydrating && !hasEntries;
 
    const streakData = useMemo(() => {
       const today = new Date();
@@ -650,7 +653,7 @@ export default function EntriesScreen() {
                   </View>
                ) : null
             }
-            ListEmptyComponent={store.isHydrating ? null : <QuickStart />}
+            ListEmptyComponent={showQuickStart ? <QuickStart /> : null}
             onScrollBeginDrag={() => {
                closeMenu();
                closeActiveSwipeable();

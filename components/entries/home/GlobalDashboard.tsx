@@ -21,9 +21,9 @@ type Props = {
 const GlobalDashboard = React.memo(({ data, shadowSm, isDark }: Props) => {
   const [showHelp, setShowHelp] = useState(false);
 
-  if (data.last7DaysScore === null) return null;
+  if (data.weeklyScore === null) return null;
 
-  const mood = getMoodConfig(data.last7DaysScore, isDark);
+  const mood = getMoodConfig(data.weeklyScore, isDark);
 
   const toggleHelp = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);

@@ -11,6 +11,7 @@ export function useEntries() {
    const allIds = store((s) => s.allIds);
    const byId = store((s) => s.byId);
    const isHydrating = store((s) => s.isHydrating);
+   const lastHydratedAt = store((s) => s.lastHydratedAt);
    const pending = store((s) => s.pending);
    const errors = store((s) => s.errors);
 
@@ -92,6 +93,7 @@ export function useEntries() {
    return {
       rows,
       isHydrating,
+      lastHydratedAt,
       pending,
       errors,
       hydrate,
