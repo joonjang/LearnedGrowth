@@ -20,6 +20,7 @@ import {
    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import RoundedCloseButton from '../buttons/RoundedCloseButton';
 
 // Helper to map keys to tones
 const getToneForKey = (key: string): FieldTone => {
@@ -153,7 +154,12 @@ const SCENARIO_STYLES = {
    },
 } as const;
 
-export default function QuickStartScreen() {
+type Props = {
+   isModal?: boolean;
+   onClose?: () => void;
+}
+
+export default function QuickStartScreen({ isModal, onClose }: Props) {
    const insets = useSafeAreaInsets();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
@@ -215,19 +221,26 @@ export default function QuickStartScreen() {
       <View className="flex-1 bg-slate-50 dark:bg-slate-950">
          <ScrollView
             contentContainerStyle={{
-               paddingTop: insets.top + 20,
+               paddingTop: !isModal ? insets.top + 20 : 20,
                paddingBottom: insets.bottom + 140,
             }}
             showsVerticalScrollIndicator={false}
          >
-            {/* Header - EXACTLY AS REQUESTED */}
             <View className="px-6 mb-8">
-               <Text
-                  className="text-3xl font-black tracking-tight text-slate-900 dark:text-white"
-                  accessibilityRole="header"
-               >
-                  Let&apos;s untangle your thoughts.
-               </Text>
+               <View className="flex-row justify-between items-start">
+                  <Text
+                     className="flex-1 mr-4 text-3xl font-black tracking-tight text-slate-900 dark:text-white"
+                     accessibilityRole="header"
+                  >
+                     Let&apos;s untangle your thoughts.
+                  </Text>
+                  
+                  {isModal && (
+                     <View className="mt-1.5">
+                        <RoundedCloseButton onPress={() => onClose?.()} />
+                     </View>
+                  )}
+               </View>
 
                <Text className="mt-3 text-base leading-7 text-slate-600 dark:text-slate-400">
                   When things go wrong, we often tell ourselves a{' '}
@@ -300,11 +313,7 @@ export default function QuickStartScreen() {
                      See it in action
                   </Text>
                </View>
-               <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }}
-               >
+               <View className="flex-row flex-wrap justify-evenly">
                   {SCENARIOS.map((scenario, index) => {
                      const isActive = index === activeScenarioIndex;
                      // pick palette by scenario + dark mode + active
@@ -325,7 +334,7 @@ export default function QuickStartScreen() {
                         <Pressable
                            key={scenario.id}
                            onPress={() => handleScenarioChange(index)}
-                           className="flex-row items-center justify-center rounded-full px-4 py-2 border"
+                           className="flex-row items-center justify-center rounded-full px-2 py-2 border"
                            style={{
                               backgroundColor: palette.bg,
                               borderColor: palette.border,
@@ -349,7 +358,7 @@ export default function QuickStartScreen() {
                         </Pressable>
                      );
                   })}
-               </ScrollView>
+               </View>
             </View>
 
             {/* Timeline */}
@@ -440,6 +449,7 @@ export default function QuickStartScreen() {
          </ScrollView>
 
          {/* Footer CTA */}
+         {!isModal && (
          <View
             className="absolute bottom-0 left-0 right-0 px-6 pt-4"
             style={{ paddingBottom: insets.bottom + 16 }}
@@ -454,7 +464,7 @@ export default function QuickStartScreen() {
                   }
                }}
             >
-               <Text className="text-lg font-bold text-center text-white">
+               <Text className="text-lg font-bold text-center text-white" numberOfLines={1}>
                   Try a 2-minute entry
                </Text>
                <View className="absolute right-4 opacity-50">
@@ -465,6 +475,7 @@ export default function QuickStartScreen() {
                No perfection required. Just start.
             </Text>
          </View>
+         )}
       </View>
    );
 }

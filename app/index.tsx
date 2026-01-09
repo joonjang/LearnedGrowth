@@ -6,6 +6,7 @@ import SectionHeader from '@/components/entries/home/SectionHeader';
 import StreakCard from '@/components/entries/home/StreakCard';
 import { CategorySegment, WeekSummary } from '@/components/entries/home/types';
 import { isOptimistic } from '@/components/entries/home/utils';
+import TopFade from '@/components/TopFade';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getShadow } from '@/lib/shadow';
@@ -14,6 +15,7 @@ import { Link, router } from 'expo-router';
 import {
    CircleDashed,
    Flame,
+   Info,
    Plus,
    Settings,
    Sun,
@@ -21,7 +23,7 @@ import {
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, SectionList, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, SectionList, Text, View } from 'react-native';
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
 import Animated, {
    useAnimatedScrollHandler,
@@ -230,6 +232,7 @@ export default function EntriesScreen() {
    const isDark = colorScheme === 'dark';
    const iconColor = isDark ? '#cbd5e1' : '#475569';
    const { lock: lockNavigation } = useNavigationLock();
+   const [showHelpModal, setShowHelpModal] = useState(false);
 
    const shadowSm = useMemo(
       () => getShadow({ isDark, preset: 'sm' }),
@@ -581,15 +584,32 @@ export default function EntriesScreen() {
                               </Text>
                            </Text>
                         </View>
-                        <Link href="/settings" asChild>
-                           <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
-                              <Settings
+
+                        {/* 👇 Right Side Icons Container */}
+                        <View className="flex-row items-center gap-3">
+                           {/* Help Button */}
+                           <Pressable
+                              onPress={() => setShowHelpModal(true)}
+                              className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80"
+                           >
+                              <Info
                                  size={20}
                                  color={iconColor}
                                  strokeWidth={2.5}
                               />
                            </Pressable>
-                        </Link>
+
+                           {/* Settings Button */}
+                           <Link href="/settings" asChild>
+                              <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
+                                 <Settings
+                                    size={20}
+                                    color={iconColor}
+                                    strokeWidth={2.5}
+                                 />
+                              </Pressable>
+                           </Link>
+                        </View>
                      </View>
 
                      {/* GLOBAL DASHBOARD */}
@@ -668,6 +688,20 @@ export default function EntriesScreen() {
                </Link>
             </Animated.View>
          )}
+         <Modal
+            visible={showHelpModal}
+            animationType="slide"
+            presentationStyle="pageSheet"
+            onRequestClose={() => setShowHelpModal(false)}
+         >
+              {Platform.OS === 'android' && ( <TopFade height={insets.top + 12}  /> )}
+            <View className="flex-1 pt-2 bg-slate-50 dark:bg-slate-900">
+               <QuickStart
+                  isModal={true}
+                  onClose={() => setShowHelpModal(false)}
+               />
+            </View>
+         </Modal>
       </View>
    );
 }

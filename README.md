@@ -59,6 +59,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ### 2026-01-09
 - Added a sprout icon for growth plus members
+- Quickstart information viewable from index
 
 
 ### 2026-01-08
