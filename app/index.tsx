@@ -33,7 +33,9 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // --- FIXED: Create Animated Component ---
-const AnimatedSectionList = Animated.createAnimatedComponent(SectionList) as typeof SectionList;
+const AnimatedSectionList = Animated.createAnimatedComponent(
+   SectionList
+) as typeof SectionList;
 
 // --- Types ---
 
@@ -305,7 +307,10 @@ export default function EntriesScreen() {
       (entry: Entry) => {
          closeMenu();
          closeActiveSwipeable();
-         setUndoSlots((prev) => [...prev.filter((e) => e.id !== entry.id), entry]);
+         setUndoSlots((prev) => [
+            ...prev.filter((e) => e.id !== entry.id),
+            entry,
+         ]);
          const timer = setTimeout(() => {
             setUndoSlots((prev) => prev.filter((e) => e.id !== entry.id));
             undoTimers.current.delete(entry.id);
@@ -416,6 +421,7 @@ export default function EntriesScreen() {
    }, [store.rows]);
 
    const hasEntries = store.rows.length > 0;
+   const showQuickStart = !store.isHydrating && !hasEntries;
 
    const streakData = useMemo(() => {
       const today = new Date();
@@ -492,46 +498,46 @@ export default function EntriesScreen() {
 
    const renderItem = useCallback(
       ({ item }: { item: RowItem }) => {
-        if (item.kind === 'undo')
-          return (
-            <UndoRow
-              entry={item.entry}
-              onUndo={() => handleUndo(item.entry)}
-              durationMs={UNDO_TIMEOUT_MS}
+         if (item.kind === 'undo')
+            return (
+               <UndoRow
+                  entry={item.entry}
+                  onUndo={() => handleUndo(item.entry)}
+                  durationMs={UNDO_TIMEOUT_MS}
+               />
+            );
+         return (
+            <EntryRow
+               entry={item.entry}
+               isMenuOpen={openMenuEntryId === item.entry.id}
+               onToggleMenu={() => toggleMenu(item.entry.id)}
+               onCloseMenu={closeMenu}
+               onMenuLayout={setOpenMenuBounds}
+               onSwipeOpen={onRowSwipeOpen}
+               onSwipeClose={onRowSwipeClose}
+               closeActiveSwipeable={closeActiveSwipeable}
+               onEdit={() =>
+                  lockNavigation(() =>
+                     router.push({
+                        pathname: '/entries/[id]',
+                        params: { id: item.entry.id, mode: 'edit' },
+                     })
+                  )
+               }
+               onDelete={() => requestDelete(item.entry)}
             />
-          );
-        return (
-          <EntryRow
-            entry={item.entry}
-            isMenuOpen={openMenuEntryId === item.entry.id}
-            onToggleMenu={() => toggleMenu(item.entry.id)}
-            onCloseMenu={closeMenu}
-            onMenuLayout={setOpenMenuBounds}
-            onSwipeOpen={onRowSwipeOpen}
-            onSwipeClose={onRowSwipeClose}
-            closeActiveSwipeable={closeActiveSwipeable}
-            onEdit={() =>
-              lockNavigation(() =>
-                router.push({
-                  pathname: '/entries/[id]',
-                  params: { id: item.entry.id, mode: 'edit' },
-                })
-              )
-            }
-            onDelete={() => requestDelete(item.entry)}
-          />
-        );
+         );
       },
       [
-        closeActiveSwipeable,
-        closeMenu,
-        handleUndo,
-        lockNavigation,
-        onRowSwipeClose,
-        onRowSwipeOpen,
-        openMenuEntryId,
-        requestDelete,
-        toggleMenu,
+         closeActiveSwipeable,
+         closeMenu,
+         handleUndo,
+         lockNavigation,
+         onRowSwipeClose,
+         onRowSwipeOpen,
+         openMenuEntryId,
+         requestDelete,
+         toggleMenu,
       ]
    );
 
@@ -570,7 +576,9 @@ export default function EntriesScreen() {
                            </Text>
                            <Text className="text-2xl font-extrabold text-slate-900 dark:text-white">
                               {dashboardData.weeklyCount} {thoughtLabel}{' '}
-                              <Text className="text-indigo-600 font-extrabold">Reframed</Text>
+                              <Text className="text-indigo-600 font-extrabold">
+                                 Reframed
+                              </Text>
                            </Text>
                         </View>
                         <Link href="/settings" asChild>
@@ -632,32 +640,34 @@ export default function EntriesScreen() {
          />
 
          {/* FLOATING ACTION BUTTON (FAB) */}
-         <Animated.View
-            style={[
-               {
-                  position: 'absolute',
-                  bottom: insets.bottom + 24,
-                  right: 24,
-                  zIndex: 50,
-               },
-               fabStyle,
-            ]}
-         >
-            <Link href="/new" asChild>
-               <Pressable
-                  className="h-14 w-14 bg-indigo-600 rounded-full items-center justify-center shadow-xl active:bg-indigo-700"
-                  style={{
-                     shadowColor: '#4f46e5',
-                     shadowOpacity: 0.4,
-                     shadowRadius: 4,
-                     shadowOffset: { width: 0, height: 4 },
-                     elevation: 8,
-                  }}
-               >
-                  <Plus size={28} color="white" strokeWidth={2.5} />
-               </Pressable>
-            </Link>
-         </Animated.View>
+         {!showQuickStart && (
+            <Animated.View
+               style={[
+                  {
+                     position: 'absolute',
+                     bottom: insets.bottom + 24,
+                     right: 24,
+                     zIndex: 50,
+                  },
+                  fabStyle,
+               ]}
+            >
+               <Link href="/new" asChild>
+                  <Pressable
+                     className="h-14 w-14 bg-indigo-600 rounded-full items-center justify-center shadow-xl active:bg-indigo-700"
+                     style={{
+                        shadowColor: '#4f46e5',
+                        shadowOpacity: 0.4,
+                        shadowRadius: 4,
+                        shadowOffset: { width: 0, height: 4 },
+                        elevation: 8,
+                     }}
+                  >
+                     <Plus size={28} color="white" strokeWidth={2.5} />
+                  </Pressable>
+               </Link>
+            </Animated.View>
+         )}
       </View>
    );
 }

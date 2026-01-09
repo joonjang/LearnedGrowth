@@ -22,6 +22,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- Fix sudden flash of QuickStart in index screen
 
 - Add a sprout icon for growth plus members
 
@@ -71,6 +72,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Fixed timing of continue button animation to happen sequentially
 - Setting page sign in button implemented
 - Fixed login screen keyboard display floating above and below screen
+- QuickStart see it in action pills now look presentable
 
 ### 2026-01-07
 - Fixed subscriber not being able to refresh

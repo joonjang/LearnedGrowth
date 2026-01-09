@@ -86,11 +86,9 @@ export default function SettingsScreen() {
       loading: prefsLoading,
       hapticsEnabled,
       hapticsAvailable,
-      triggerHaptic,
       theme,
       setHapticsEnabled,
       setTheme,
-      clearError: clearPrefError,
    } = usePreferences();
 
    const insets = useSafeAreaInsets();
