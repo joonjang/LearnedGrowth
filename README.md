@@ -54,19 +54,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
     - log out should hide entries
 
 
-## Steps
-
-
-- Account screen/Setting
-
-  - if subscribed, manage subscription. links to app store management sheet 
-  - restore purchases to re-sync active subscription of reinstall app
-    - webhook should update with the supabase database to match
-
-- App store payment testing + revenuecat
-  - test fails and restore purchase
-
-
 ---
 
 ## Development Journal

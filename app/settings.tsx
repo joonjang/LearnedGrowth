@@ -98,9 +98,8 @@ export default function SettingsScreen() {
    const isDark = colorScheme === 'dark';
    const iconColor = isDark ? '#94a3b8' : '#64748b';
    
-   // Shadows
+   // --- UNIFORM SHADOW LOGIC ---
    const shadowSm = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
-   const shadowClass = shadowSm.className;
    const shadowGreen = useMemo(
       () =>
          getShadow({
@@ -111,7 +110,15 @@ export default function SettingsScreen() {
          }),
       [isDark]
    );
+
+   // Pre-calculate the styles to keep JSX clean
+   const commonShadowStyle = useMemo(() => [shadowSm.ios, shadowSm.android], [shadowSm]);
+   const greenShadowStyle = useMemo(() => [shadowGreen.ios, shadowGreen.android], [shadowGreen]);
    
+   // Keep the className for web support (if your getShadow returns one)
+   const commonShadowClass = shadowSm.className;
+   const greenShadowClass = shadowGreen.className;
+
    // Colors
    const switchThumbColor = isDark ? '#1e293b' : '#ffffff';
 
@@ -121,12 +128,6 @@ export default function SettingsScreen() {
    const [billingAction, setBillingAction] = useState<
       null | 'upgrade' | 'consumable' | 'restore' | 'manage'
    >(null);
-
-   // const [biometricEnabled, setBiometricEnabled] = useState(false);
-   // const [biometricInfo, setBiometricInfo] = useState({
-   //    hasHardware: false,
-   //    isEnrolled: false,
-   // });
    
    const [actionsCollapsed, setActionsCollapsed] = useState(true);
    const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -135,9 +136,9 @@ export default function SettingsScreen() {
    const [redeemingCoupon, setRedeemingCoupon] = useState(false);
     const [couponMessage, setCouponMessage] = useState<string | null>(null);
    const profileRef = useRef(profile);
-   const cycleAnchorRef = useRef<number | null>(null);
    const creditShopSheetRef = useRef<BottomSheetModal | null>(null);
    const [nowTs, setNowTs] = useState(() => Date.now());
+   const cycleAnchorRef = useRef<number | null>(null);
 
 
    useEffect(() => {
@@ -164,9 +165,6 @@ export default function SettingsScreen() {
    const extraCredits = profile?.extraAiCredits ?? 0;
    const cycleRemaining = Math.max(FREE_MONTHLY_CREDITS - aiUsed, 0);
    const darkMode = theme === 'dark';
-
-   // const biometricUnavailable = !biometricInfo.hasHardware;
-   // const biometricNeedsEnroll = biometricInfo.hasHardware && !biometricInfo.isEnrolled;
 
    const checkCreditsCycle = useCallback(() => {
       if (status !== 'signedIn') return;
@@ -201,27 +199,6 @@ export default function SettingsScreen() {
       return () => unsubscribe();
    }, []);
 
-   // useEffect(() => {
-   //    AsyncStorage.getItem(STORAGE_KEYS.biometric)
-   //       .then((val) => setBiometricEnabled(val === 'true'))
-   //       .catch((err) => console.warn(err));
-   // }, []);
-
-   // const refreshBiometricInfo = useCallback(async () => {
-   //    try {
-   //       const hasHardware = await LocalAuthentication.hasHardwareAsync();
-   //       const isEnrolled = hasHardware ? await LocalAuthentication.isEnrolledAsync() : false;
-   //       setBiometricInfo({ hasHardware, isEnrolled });
-   //       return { hasHardware, isEnrolled };
-   //    } catch {
-   //       const fallback = { hasHardware: false, isEnrolled: false };
-   //       setBiometricInfo(fallback);
-   //       return fallback;
-   //    }
-   // }, []);
-
-   // useEffect(() => { refreshBiometricInfo(); }, [refreshBiometricInfo]);
-
    // --- Handlers ---
    const handleRestore = async () => {
       if (isOffline) { 
@@ -233,20 +210,16 @@ export default function SettingsScreen() {
       setBillingNote(null);
 
       try {
-         // 1. Capture the customer info returned by RevenueCat
          const customerInfo = await restorePurchases(); 
          await refreshCustomerInfo();
          await refreshProfile();
          
-         // 2. Check if they actually have an active subscription now
          const hasActiveSubscription = customerInfo.activeSubscriptions.length > 0;
 
          if (hasActiveSubscription) {
-             // Case A: Success! They have their stuff back.
              Alert.alert("Success", "Your subscription has been restored.");
-             setBillingNote(null); // Clear any inline notes since we used an Alert
+             setBillingNote(null); 
          } else {
-             // Case B: The restore "worked" (no error), but they bought nothing previously.
              Alert.alert(
                 "No Subscriptions Found", 
                 "We couldn't find any active subscriptions for this account."
@@ -255,7 +228,6 @@ export default function SettingsScreen() {
          }
 
       } catch (err: any) {
-         // Case C: Network error or Apple server error
          setBillingNote(err?.message ?? 'Restore failed.');
       } finally {
          setBillingAction(null);
@@ -275,23 +247,6 @@ export default function SettingsScreen() {
          setBillingAction(null);
       }
    };
-
-   // const handleToggleBiometric = async (next: boolean) => {
-   //    clearPrefError();
-   //    const info = await refreshBiometricInfo();
-   //    if (!info.hasHardware) return;
-   //    if (!info.isEnrolled) {
-   //       Alert.alert('Biometrics not set up', 'Please enable in device settings.');
-   //       return;
-   //    }
-   //    if (next) {
-   //       const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Enable lock' });
-   //       if (!result.success) return;
-   //    }
-   //    setBiometricEnabled(next);
-   //    AsyncStorage.setItem(STORAGE_KEYS.biometric, String(next));
-   //    if (next && hapticsEnabled) triggerHaptic();
-   // };
 
    const formatCouponMessage = (msg: string) => {
       const cleaned = msg.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
@@ -458,8 +413,8 @@ export default function SettingsScreen() {
 
             {!user && (
                <Pressable
-                  className={`w-full items-center justify-center py-3 rounded-xl bg-indigo-600 dark:bg-indigo-500 ${shadowClass}`}
-                  style={[shadowSm.ios, shadowSm.android]}
+                  className={`w-full items-center justify-center py-3 rounded-xl bg-indigo-600 dark:bg-indigo-500 ${commonShadowClass}`}
+                  style={commonShadowStyle}
                   onPress={() => router.push(ROUTE_LOGIN)}
                >
                   <Text className="text-white font-bold">Sign In To Enable Features</Text>
@@ -475,8 +430,8 @@ export default function SettingsScreen() {
                      subtext={resetSubtext}
                      isLoading={isLoading}
                      icon={<Zap size={16} color="#fbbf24" fill="#fbbf24" />}
-                     shadowClass={shadowClass}
-                     shadowStyle={[shadowSm.ios, shadowSm.android]}
+                     shadowClass={commonShadowClass}
+                     shadowStyle={commonShadowStyle}
                   />
                   <StatCard
                      label="Extra Analysis"
@@ -484,15 +439,15 @@ export default function SettingsScreen() {
                      subtext="Non-expiring"
                      isLoading={isLoading}
                      isHighlight
-                     shadowClass={shadowClass}
-                     shadowStyle={[shadowSm.ios, shadowSm.android]}
+                     shadowClass={commonShadowClass}
+                     shadowStyle={commonShadowStyle}
                   />
                </View>
             )}
 
             {/* SUBSCRIPTION CARD */}
             {isSignedIn && user && (
-               <View className={`bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 ${shadowClass}`} style={[shadowSm.ios, shadowSm.android]}>
+               <View className={`bg-white dark:bg-slate-900 rounded-2xl  border border-slate-200 dark:border-slate-700 ${commonShadowClass}`} style={commonShadowStyle}>
                   {/* Plan Status Header */}
                   <View className="p-4">
                      <View className="flex-row justify-between items-center">
@@ -547,8 +502,8 @@ export default function SettingsScreen() {
                         <>
                            <Pressable
                               onPress={openCreditShop}
-                              className={`bg-green-600 active:bg-green-700 rounded-xl p-4 items-center ${shadowGreen.className}`}
-                              style={[shadowGreen.ios, shadowGreen.android]}
+                              className={`bg-green-600 active:bg-green-700 rounded-xl p-4 items-center ${greenShadowClass}`}
+                              style={greenShadowStyle}
                            >
                               <View className="w-full items-center">
                                  <Text className="text-white font-bold text-[16px] text-center">Get More Analysis</Text>
@@ -581,7 +536,7 @@ export default function SettingsScreen() {
             )}
 
             {/* PREFERENCES */}
-            <View className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 gap-5 ${shadowClass}`} style={[shadowSm.ios, shadowSm.android]}>
+            <View className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 gap-5 ${commonShadowClass}`} style={commonShadowStyle}>
                <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">Preferences</Text>
 
                <SettingRow title="Dark Mode" description="Switch between light and dark theme.">
@@ -591,27 +546,11 @@ export default function SettingsScreen() {
                <SettingRow title="Haptic Feedback" description="Tactile vibrations on interaction.">
                   <Switch value={hapticsEnabled} onValueChange={setHapticsEnabled} disabled={prefsLoading || !hapticsAvailable} thumbColor={switchThumbColor} trackColor={{ false: '#e2e8f0', true: '#16a34a' }} />
                </SettingRow>
-
-               {/* TODO: integrate biometric preference and privacy */}
-               {/* <View>
-                   <SettingRow title="Biometric Lock" description="Require FaceID/TouchID on launch." disabled={prefsLoading || biometricUnavailable}>
-                      <Switch value={biometricEnabled} onValueChange={handleToggleBiometric} disabled={prefsLoading || biometricUnavailable || biometricNeedsEnroll} thumbColor={switchThumbColor} trackColor={{ false: '#e2e8f0', true: '#16a34a' }} />
-                   </SettingRow>
-                   <View className="ml-1 min-h-[16px]">
-                       {biometricUnavailable ? (
-                           <Text className="text-xs leading-4 text-slate-400">* Biometric hardware not detected on this device.</Text>
-                       ) : biometricNeedsEnroll ? (
-                           <Pressable onPress={() => Linking.openSettings()}>
-                               <Text className="text-xs leading-4 text-amber-600 dark:text-amber-500 font-medium">* Biometrics not set up. Tap to open Settings.</Text>
-                           </Pressable>
-                       ) : null}
-                   </View>
-               </View> */}
             </View>
 
             {/* ACCOUNT ACTIONS */}
             {isSignedIn && (
-               <View className={`bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 ${shadowClass}`} style={[shadowSm.ios, shadowSm.android]}>
+               <View className={`bg-white dark:bg-slate-900 rounded-2xl  border border-slate-200 dark:border-slate-700 ${commonShadowClass}`} style={commonShadowStyle}>
                   <Pressable className="flex-row justify-between items-center p-4 active:bg-slate-50 dark:active:bg-slate-800" onPress={() => setActionsCollapsed(!actionsCollapsed)}>
                      <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">Account Actions</Text>
                      {actionsCollapsed ? <ChevronDown size={20} color={iconColor} /> : <ChevronUp size={20} color={iconColor} />}
@@ -623,7 +562,6 @@ export default function SettingsScreen() {
                            <Text className="font-bold text-slate-700 dark:text-slate-200 text-[15px]">Sign Out</Text>
                         </Pressable>
                         
-                        {/* DELETE BUTTON: Ghost Style, Standard Text Size, More Spacing */}
                         <Pressable 
                            onPress={() => setShowDeleteModal(true)} 
                            className="mt-3 py-2 items-center active:opacity-60"
@@ -638,7 +576,7 @@ export default function SettingsScreen() {
             )}
 
             {/* FEEDBACK */}
-            <View className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden ${shadowClass}`} style={[shadowSm.ios, shadowSm.android]}>
+            <View className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700  ${commonShadowClass}`} style={commonShadowStyle}>
                 <View className="p-4">
                    <SendFeedback />
                 </View>
