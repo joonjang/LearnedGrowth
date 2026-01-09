@@ -155,9 +155,7 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
     () => {
       const active = customerInfo?.entitlements?.active ?? {};
       return Boolean(
-        active[GROWTH_PLUS_ENTITLEMENT] ||
-          active["growth_plus"] ||
-          active["Growth Plus"]
+        active[GROWTH_PLUS_ENTITLEMENT]
       );
     },
     [customerInfo?.entitlements?.active]
