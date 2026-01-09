@@ -70,6 +70,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Updated supabase sql guard from invested to growth_plus
 - Fixed timing of continue button animation to happen sequentially
 - Setting page sign in button implemented
+- Fixed login screen keyboard display floating above and below screen
 
 ### 2026-01-07
 - Fixed subscriber not being able to refresh

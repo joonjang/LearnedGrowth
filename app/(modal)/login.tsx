@@ -6,7 +6,7 @@ import {
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
-   BOTTOM_SHEET_CONTENT_PADDING
+   BOTTOM_SHEET_CONTENT_PADDING,
 } from '@/components/constants';
 // ❌ DELETE: import { supabase } from '@/lib/supabase'; <-- No longer needed here
 import { useAuth } from '@/providers/AuthProvider';
@@ -20,14 +20,13 @@ import {
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    ActivityIndicator,
-   Keyboard,
    Platform,
    Pressable,
    Text,
-   View,
+   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -182,14 +181,10 @@ export default function AuthModal() {
       }
    };
 
-   useEffect(() => {
-      const event =
-         Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-      const sub = Keyboard.addListener(event, () =>
-         modalRef.current?.snapToIndex(0)
-      );
-      return () => sub.remove();
-   }, []);
+
+   const snapPoints = useMemo(() => {
+      return step === 'email' ? ['60%'] : ['40%'];
+   }, [step]);
 
    return (
       <BottomSheetModal
@@ -198,11 +193,16 @@ export default function AuthModal() {
          enableHandlePanningGesture={false}
          onDismiss={handleDismiss}
          index={0}
-         enableDynamicSizing={true}
+         // 👇 FIX 1: Use fixed snap points instead of dynamic sizing
+         snapPoints={snapPoints}
+         enableDynamicSizing={false} 
+         
          enablePanDownToClose={false}
          handleComponent={() => null}
          handleIndicatorStyle={{ height: 0, opacity: 0 }}
          backgroundStyle={bottomSheetBackgroundStyle(isDark, theme.bg)}
+         
+         // 👇 FIX 2: Standard keyboard handling works perfectly with fixed snap points
          keyboardBehavior="interactive"
          keyboardBlurBehavior="restore"
          topInset={insets.top}
@@ -223,7 +223,7 @@ export default function AuthModal() {
             }}
             keyboardShouldPersistTaps="handled"
          >
-            <View className="mb-6 pt-4 pr-8">
+            <View className="mb-6 pt-2 pr-8 ">
                <View className="absolute right-0">
                   <RoundedCloseButton
                      onPress={() => modalRef.current?.dismiss()}
@@ -236,9 +236,17 @@ export default function AuthModal() {
                   {step === 'email' ? 'Welcome' : 'Check your Email'}
                </Text>
                <Text className="text-base" style={{ color: theme.subText }}>
-                  {step === 'email'
-                     ? 'Sign in to sync your journal.'
-                     : <Text>We sent a code to <Text style={{fontWeight: 'bold'}}>{email.trim() || 'your email'}</Text>.</Text>}
+                  {step === 'email' ? (
+                     'Sign in to sync your journal.'
+                  ) : (
+                     <Text>
+                        We sent a code to{' '}
+                        <Text style={{ fontWeight: 'bold' }}>
+                           {email.trim() || 'your email'}
+                        </Text>
+                        .
+                     </Text>
+                  )}
                </Text>
             </View>
 
@@ -309,7 +317,7 @@ export default function AuthModal() {
                </>
             )}
 
-            <View className="gap-4 mb-6">
+            <View className="gap-4 mb-1">
                {step === 'email' ? (
                   <BottomSheetTextInput
                      placeholder="Email address"
@@ -329,6 +337,21 @@ export default function AuthModal() {
                   />
                ) : (
                   <>
+                     <Pressable
+                        className="items-center"
+                        onPress={() => {
+                           setStep('email');
+                           setCode('');
+                           setError(null);
+                           setStatus('idle');
+                           isSubmitting.current = false;
+                        }}
+                     >
+                        <Text className="mb-3 text-sm" style={{ color: theme.subText }}>
+                          Wrong email? Tap here to change.
+                        </Text>
+                     </Pressable>
+
                      <BottomSheetTextInput
                         placeholder="Enter verification code"
                         placeholderTextColor={theme.placeholder}
@@ -344,29 +367,19 @@ export default function AuthModal() {
                         }}
                         className={`h-[54px] rounded-[14px] px-4 text-base border ${theme.inputBorder}`}
                      />
-                     <Pressable
-                        className="items-center"
-                        onPress={() => {
-                           setStep('email');
-                           setCode('');
-                           setError(null);
-                           setStatus('idle');
-                           isSubmitting.current = false;
-                        }}
-                     >
-                        <Text style={{ color: theme.subText }}>
-                           Change email
-                        </Text>
-                     </Pressable>
                   </>
                )}
             </View>
 
-            {error && (
-               <Text className="mb-4 text-center text-sm text-rose-500 font-medium">
-                  {error}
-               </Text>
-            )}
+<View className='mb-1'>
+  <Text
+    className="text-center text-sm font-medium text-rose-500"
+    // keeps the space even when empty
+    style={{ opacity: error ? 1 : 0 }}
+  >
+    {error ?? ' '}
+  </Text>
+</View>
 
             <Pressable
                className={`h-[54px] rounded-[14px] items-center justify-center mb-1 bg-dispute-cta active:opacity-90 ${status !== 'idle' ? 'opacity-70' : ''}`}
