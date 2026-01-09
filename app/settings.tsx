@@ -62,8 +62,6 @@ const MANAGE_SUBSCRIPTION_URL = Platform.select({
    default: 'https://apps.apple.com/account/subscriptions',
 });
 
-const AI_CYCLE_MS = 30 * 60 * 1000;
-
 export default function SettingsScreen() {
    const {
       status,
@@ -161,10 +159,10 @@ export default function SettingsScreen() {
    }, [profile]);
 
    useEffect(() => {
-      if (!profile?.aiCycleStart) return;
+      if (!profile?.aiCycleExpiresAt) return;
       const interval = setInterval(() => setNowTs(Date.now()), 1000);
       return () => clearInterval(interval);
-   }, [profile?.aiCycleStart]);
+   }, [profile?.aiCycleExpiresAt]);
 
    // --- Computed ---
    const isSignedIn = status === 'signedIn';
@@ -364,49 +362,46 @@ export default function SettingsScreen() {
       [entitlementActive]
    );
    const nextResetAt = useMemo(() => {
-      if (!profile?.aiCycleStart) return null;
-      const start = new Date(profile.aiCycleStart);
-      if (Number.isNaN(start.getTime())) return null;
-      const startMs = start.getTime();
-      const elapsedCycles = Math.floor((nowTs - startMs) / AI_CYCLE_MS);
-      const nextResetMs = startMs + (elapsedCycles + 1) * AI_CYCLE_MS;
-      return new Date(nextResetMs);
-   }, [profile?.aiCycleStart, nowTs]);
+      if (!profile?.aiCycleExpiresAt) return null;
+      const expiresAt = new Date(profile.aiCycleExpiresAt);
+      if (Number.isNaN(expiresAt.getTime())) return null;
+      return expiresAt;
+   }, [profile?.aiCycleExpiresAt]);
    const resetCountdown = useMemo(() => {
       if (!nextResetAt) return null;
       const diffMs = Math.max(0, nextResetAt.getTime() - nowTs);
       const totalSeconds = Math.max(0, Math.floor(diffMs / 1000));
       const days = Math.floor(totalSeconds / 86400);
-      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      if (days >= 1) {
+         const dayLabel = days === 1 ? 'day' : 'days';
+         return `${days} ${dayLabel}`;
+      }
+      const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
       const seconds = totalSeconds % 60;
-      if (days > 0) {
-         return `${days}d ${hours.toString().padStart(2, '0')}h`;
+      if (hours >= 1) {
+         return `${hours.toString().padStart(2, '0')}:${minutes
+            .toString()
+            .padStart(2, '0')}`;
       }
-      return `${hours.toString().padStart(2, '0')}:${minutes
+      return `${minutes.toString().padStart(2, '0')}:${seconds
          .toString()
-         .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+         .padStart(2, '0')}`;
    }, [nextResetAt, nowTs]);
    const resetSubtext = useMemo(() => {
-      if (!resetCountdown) return 'Resets every 30 minutes';
+      if (!resetCountdown) return 'Resets soon';
       return `Resets in ${resetCountdown}`;
    }, [resetCountdown]);
 
    useEffect(() => {
-      if (!isSignedIn || isOffline || !profile?.aiCycleStart) return;
-      const startMs = new Date(profile.aiCycleStart).getTime();
-      if (Number.isNaN(startMs)) return;
-      const elapsedCycles = Math.floor((nowTs - startMs) / AI_CYCLE_MS);
-      const currentAnchor = startMs + Math.max(0, elapsedCycles) * AI_CYCLE_MS;
-      if (cycleAnchorRef.current === null) {
-         cycleAnchorRef.current = currentAnchor;
-         return;
-      }
-      if (currentAnchor > cycleAnchorRef.current) {
-         cycleAnchorRef.current = currentAnchor;
-         refreshProfile();
-      }
-   }, [isSignedIn, isOffline, profile?.aiCycleStart, nowTs, refreshProfile]);
+      if (!isSignedIn || isOffline || !nextResetAt) return;
+      const expiresAtMs = nextResetAt.getTime();
+      if (Number.isNaN(expiresAtMs)) return;
+      if (nowTs < expiresAtMs) return;
+      if (cycleAnchorRef.current === expiresAtMs) return;
+      cycleAnchorRef.current = expiresAtMs;
+      refreshProfile();
+   }, [isSignedIn, isOffline, nextResetAt, nowTs, refreshProfile]);
 
    const isLoading = loadingProfile || rcLoading;
 

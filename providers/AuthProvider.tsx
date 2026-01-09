@@ -29,7 +29,7 @@ type AccountPlan = "free" | "growth_plus";
 export type AccountProfile = {
   plan: AccountPlan;
   aiCycleUsed: number;
-  aiCycleStart: string | null;
+  aiCycleExpiresAt: string | null;
   lifetimeAiCalls: number;
   extraAiCredits: number;
 };
@@ -59,7 +59,7 @@ const AuthContext = createContext<AuthContextShape | null>(null);
 const EMPTY_PROFILE: AccountProfile = {
   plan: "free",
   aiCycleUsed: 0,
-  aiCycleStart: null,
+  aiCycleExpiresAt: null,
   lifetimeAiCalls: 0,
   extraAiCredits: 0,
 };
@@ -71,15 +71,17 @@ function normalizeProfile(res: PostgrestSingleResponse<any>): AccountProfile | n
   const {
     plan,
     ai_cycle_used,
-    ai_cycle_start,
+    ai_cycle_expires_at,
     lifetime_ai_calls,
     extra_ai_credits,
   } = res.data;
   return {
     plan: plan === "growth_plus" ? "growth_plus" : "free",
     aiCycleUsed: Number.isFinite(ai_cycle_used) ? ai_cycle_used : 0,
-    aiCycleStart:
-      typeof ai_cycle_start === "string" ? ai_cycle_start : ai_cycle_start ?? null,
+    aiCycleExpiresAt:
+      typeof ai_cycle_expires_at === "string"
+        ? ai_cycle_expires_at
+        : ai_cycle_expires_at ?? null,
     lifetimeAiCalls: Number.isFinite(lifetime_ai_calls) ? lifetime_ai_calls : 0,
     extraAiCredits: Number.isFinite(extra_ai_credits) ? extra_ai_credits : 0,
   };
@@ -127,11 +129,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.warn("Failed to refresh AI cycle", cycleError);
         }
 
-        const res = await supabase
+        const baseColumns =
+          "plan, ai_cycle_used, lifetime_ai_calls, extra_ai_credits";
+        const columnsWithExpiry = `${baseColumns}, ai_cycle_expires_at`;
+
+        let res = await supabase
           .from("profiles")
-          .select("plan, ai_cycle_used, ai_cycle_start, lifetime_ai_calls, extra_ai_credits")
+          .select(columnsWithExpiry)
           .eq("id", session.user.id)
           .single();
+
+        const missingExpiryColumn =
+          res.error &&
+          (res.error.code === "PGRST204" ||
+            res.error.message?.includes("ai_cycle_expires_at"));
+
+        if (missingExpiryColumn) {
+          res = await supabase
+            .from("profiles")
+            .select(baseColumns)
+            .eq("id", session.user.id)
+            .single();
+        }
 
         if (res.error) {
           setAuthError(res.error.message);
