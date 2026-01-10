@@ -59,6 +59,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Changed ai credit from daily to monthly
 - app AI cycle date agnostic from backend, went from start time to expirary time which means the app gets the deadline and doesnt need to predict the future
 - ABCAnalysis screen does not turn off when viewed
+- Updated style for dark mode and android and ios uniformity
+- StreakCard revised
 
 ### 2026-01-08
 - Updated CreditShop subscription and added terms and privacy policy to abide with app policy

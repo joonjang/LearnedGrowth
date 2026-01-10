@@ -1,5 +1,9 @@
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
-import { FREE_MONTHLY_CREDITS, ROUTE_LOGIN } from '@/components/constants';
+import {
+   DISPUTE_CTA_CLASS,
+   FREE_MONTHLY_CREDITS,
+   ROUTE_LOGIN,
+} from '@/components/constants';
 import { AiInsightCreditShopSheet } from '@/components/CreditShopSheet';
 import SendFeedback from '@/components/SendFeedback';
 import { getShadow } from '@/lib/shadow';
@@ -106,9 +110,8 @@ export default function SettingsScreen() {
       () =>
          getShadow({
             isDark,
-            preset: 'sm',
+            preset: 'button',
             colorLight: '#bbf7d0',
-            androidClassName: 'shadow-sm shadow-green-200',
          }),
       [isDark]
    );
@@ -122,10 +125,6 @@ export default function SettingsScreen() {
       () => [shadowGreen.ios, shadowGreen.android],
       [shadowGreen]
    );
-
-   // Keep the className for web support (if your getShadow returns one)
-   const commonShadowClass = shadowSm.className;
-   const greenShadowClass = shadowGreen.className;
 
    // Colors
    const switchThumbColor = isDark ? '#1e293b' : '#ffffff';
@@ -454,7 +453,7 @@ export default function SettingsScreen() {
 
             {!user && (
                <View
-                  className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 ${commonShadowClass}`}
+                  className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-700"
                   style={commonShadowStyle}
                >
                   <View className="flex-row items-start gap-4 mb-4">
@@ -473,7 +472,7 @@ export default function SettingsScreen() {
                   </View>
 
                   <Pressable
-                     className="w-full h-[50px] items-center justify-center rounded-xl bg-indigo-600 active:bg-indigo-700"
+                     className="w-full h-[50px] items-center justify-center rounded-xl bg-indigo-600 dark:bg-indigo-500 active:bg-indigo-700 dark:active:bg-indigo-600"
                      onPress={() => router.push(ROUTE_LOGIN)}
                   >
                      <Text className="text-white font-bold text-[16px]">
@@ -502,7 +501,6 @@ export default function SettingsScreen() {
                      subtext={resetSubtext}
                      isLoading={isLoading}
                      icon={<Zap size={16} color="#fbbf24" fill="#fbbf24" />}
-                     shadowClass={commonShadowClass}
                      shadowStyle={commonShadowStyle}
                   />
                   <StatCard
@@ -511,7 +509,6 @@ export default function SettingsScreen() {
                      subtext="Non-expiring"
                      isLoading={isLoading}
                      isHighlight
-                     shadowClass={commonShadowClass}
                      shadowStyle={commonShadowStyle}
                   />
                </View>
@@ -520,7 +517,7 @@ export default function SettingsScreen() {
             {/* SUBSCRIPTION CARD */}
             {isSignedIn && user && (
                <View
-                  className={`bg-white dark:bg-slate-900 rounded-2xl  border border-slate-200 dark:border-slate-700 ${commonShadowClass}`}
+                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700"
                   style={commonShadowStyle}
                >
                   {/* Plan Status Header */}
@@ -570,7 +567,7 @@ export default function SettingsScreen() {
                                  Keyboard.dismiss();
                                  handleRedeemCoupon();
                               }}
-                              className={`px-3 py-2 rounded-lg bg-slate-700`}
+                              className="px-3 py-2 rounded-lg bg-slate-700 dark:bg-slate-600"
                            >
                               {redeemingCoupon ? (
                                  <ActivityIndicator
@@ -597,7 +594,7 @@ export default function SettingsScreen() {
                         <>
                            <Pressable
                               onPress={openCreditShop}
-                              className={`bg-green-600 active:bg-green-700 rounded-xl p-4 items-center ${greenShadowClass}`}
+                              className={`rounded-xl p-4 items-center ${DISPUTE_CTA_CLASS}`}
                               style={greenShadowStyle}
                            >
                               <View className="w-full items-center">
@@ -641,7 +638,7 @@ export default function SettingsScreen() {
 
             {/* PREFERENCES */}
             <View
-               className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 gap-5 ${commonShadowClass}`}
+               className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 gap-5"
                style={commonShadowStyle}
             >
                <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
@@ -678,7 +675,7 @@ export default function SettingsScreen() {
             {/* ACCOUNT ACTIONS */}
             {isSignedIn && (
                <View
-                  className={`bg-white dark:bg-slate-900 rounded-2xl  border border-slate-200 dark:border-slate-700 ${commonShadowClass}`}
+                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700"
                   style={commonShadowStyle}
                >
                   <Pressable
@@ -726,7 +723,7 @@ export default function SettingsScreen() {
 
             {/* FEEDBACK */}
             <View
-               className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700  ${commonShadowClass}`}
+               className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700"
                style={commonShadowStyle}
             >
                <View className="p-4">
@@ -862,7 +859,6 @@ function StatCard({
    isLoading,
    isHighlight,
    icon,
-   shadowClass,
    shadowStyle,
 }: {
    label: string;
@@ -871,7 +867,6 @@ function StatCard({
    isLoading?: boolean;
    isHighlight?: boolean;
    icon?: ReactNode;
-   shadowClass?: string;
    shadowStyle?: StyleProp<ViewStyle>;
 }) {
    const pulseOpacity = useSharedValue(0.6);
@@ -894,12 +889,12 @@ function StatCard({
 
    return (
       <View
-         className={`flex-1 p-4 rounded-2xl border justify-between ${shadowClass ?? ''} ${isHighlight ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}
+         className={`flex-1 p-4 rounded-2xl border justify-between ${isHighlight ? 'bg-green-50 dark:bg-dispute-bgDark border-green-200 dark:border-dispute-borderDark' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}
          style={shadowStyle}
       >
          <View className="flex-row justify-between items-start">
             <Text
-               className={`text-xs font-bold uppercase tracking-wider mb-2 ${isHighlight ? 'text-green-600 dark:text-green-400' : 'text-slate-400'}`}
+               className={`text-xs font-bold uppercase tracking-wider mb-2 ${isHighlight ? 'text-green-600 dark:text-dispute-textDark' : 'text-slate-400'}`}
             >
                {label}
             </Text>
@@ -913,13 +908,13 @@ function StatCard({
                />
             ) : (
                <Text
-                  className={`text-2xl font-black ${isHighlight ? 'text-green-700 dark:text-green-300' : 'text-slate-900 dark:text-slate-100'}`}
+                  className={`text-2xl font-black ${isHighlight ? 'text-green-700 dark:text-dispute-textDark' : 'text-slate-900 dark:text-slate-100'}`}
                >
                   {value}
                </Text>
             )}
             <Text
-               className={`text-[10px] mt-1 ${isHighlight ? 'text-green-600/70 dark:text-green-300/60' : 'text-slate-400'}`}
+               className={`text-[10px] mt-1 ${isHighlight ? 'text-green-600/70 dark:text-dispute-textDark dark:opacity-70' : 'text-slate-400'}`}
             >
                {subtext}
             </Text>

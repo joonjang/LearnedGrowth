@@ -1,4 +1,12 @@
 export const BTN_HEIGHT = 'h-14 justify-center';
+export const PRIMARY_CTA_CLASS =
+   'bg-indigo-500 active:bg-indigo-600 dark:bg-indigo-800 dark:active:bg-indigo-900';
+export const PRIMARY_CTA_TEXT_CLASS = 'text-white';
+export const PRIMARY_CTA_ICON_COLOR = '#ffffff';
+export const DISPUTE_CTA_CLASS =
+   'bg-emerald-500 active:bg-emerald-600 dark:bg-emerald-800 dark:active:bg-emerald-900';
+export const ANALYSIS_CTA_CLASS =
+   'bg-blue-500 active:bg-blue-600 dark:bg-blue-800 dark:active:bg-blue-900';
 
 export const FREE_MONTHLY_CREDITS = 5;
 export const AI_ANALYSIS_CREDIT_COST = 1;

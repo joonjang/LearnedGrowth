@@ -18,7 +18,7 @@ export default function AiDisclaimerModal({ visible, onCancel, onConfirm }: Prop
      <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onCancel}>
         <View className="flex-1 items-center justify-center bg-black/60 px-4">
            <View
-             className={`w-full max-w-sm overflow-hidden rounded-2xl bg-white p-6 dark:bg-slate-900 ${shadow.className}`}
+             className="w-full max-w-sm overflow-hidden rounded-2xl bg-white p-6 dark:bg-slate-900"
              style={[shadow.ios, shadow.android]}
            >
               <View className="items-center gap-4 mb-6">
@@ -35,7 +35,7 @@ export default function AiDisclaimerModal({ visible, onCancel, onConfirm }: Prop
                  <InfoRow icon={<FileText size={20} color={isDark ? '#94a3b8' : '#64748b'} />} title="Data Processing" description="Your entry text will be sent to our secure AI provider solely to generate this response." />
               </View>
               <View className="gap-3">
-                 <Pressable onPress={onConfirm} className="h-12 w-full items-center justify-center rounded-xl bg-indigo-600 active:bg-indigo-700">
+                 <Pressable onPress={onConfirm} className="h-12 w-full items-center justify-center rounded-xl bg-indigo-600 dark:bg-indigo-500 active:bg-indigo-700 dark:active:bg-indigo-600">
                     <Text className="font-bold text-white text-base">I Understand</Text>
                  </Pressable>
                  <Pressable onPress={onCancel} className="h-12 w-full items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700">

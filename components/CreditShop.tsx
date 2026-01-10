@@ -1,11 +1,12 @@
 import { ROUTE_LOGIN } from '@/components/constants';
+import { getShadow } from '@/lib/shadow';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Check, Crown, Infinity, Leaf, Sprout } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    ActivityIndicator,
    Alert,
@@ -29,6 +30,10 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const isSignedIn = status === 'signedIn';
+   const continueShadow = useMemo(
+      () => getShadow({ isDark, preset: 'button', colorLight: '#064e3b' }),
+      [isDark]
+   );
 
    const [buyingPackage, setBuyingPackage] = useState<string | null>(null);
    const profileRef = useRef(profile);
@@ -164,7 +169,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
             </Text>
             <Pressable
                onPress={() => router.push(ROUTE_LOGIN)}
-               className="px-4 py-2 rounded-full bg-emerald-600 active:bg-emerald-700"
+               className="px-4 py-2 rounded-full bg-emerald-600 dark:bg-emerald-500 active:bg-emerald-700 dark:active:bg-emerald-600"
             >
                <Text className="text-white font-bold">Log In / Sign Up</Text>
             </Pressable>
@@ -239,7 +244,10 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                      <FeatureRow text="Advanced Pattern Recognition" />
                   </View>
 
-                  <View className="bg-emerald-600 dark:bg-emerald-500 rounded-xl py-3.5 items-center shadow-md shadow-emerald-900/20">
+                  <View
+                     className="bg-emerald-600 dark:bg-emerald-500 rounded-xl py-3.5 items-center"
+                     style={[continueShadow.ios, continueShadow.android]}
+                  >
                      <Text className="text-white font-bold text-lg tracking-wide">
                         Continue
                      </Text>

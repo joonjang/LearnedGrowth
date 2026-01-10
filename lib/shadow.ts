@@ -1,4 +1,4 @@
-import { Platform, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, type ViewStyle } from 'react-native';
 
 const BASE_IOS_SHADOW_PRESETS = {
    sm: { opacity: 0.08, radius: 4, offset: { width: 0, height: 2 } },
@@ -7,6 +7,17 @@ const BASE_IOS_SHADOW_PRESETS = {
    xl: { opacity: 0.12, radius: 16, offset: { width: 0, height: 10 } },
    '2xl': { opacity: 0.13, radius: 22, offset: { width: 0, height: 14 } },
 } as const;
+
+const BUTTON_IOS_SHADOW_PRESET = {
+   opacity: 0.12,
+   radius: 2,
+   offset: { width: 0, height: 3 },
+} as const;
+
+const IOS_SHADOW_OPACITY_MULTIPLIER = 1.8;
+const IOS_SHADOW_MAX_OPACITY = 0.22;
+const IOS_BUTTON_OPACITY_MULTIPLIER = 2.1;
+const IOS_BUTTON_MAX_OPACITY = 0.26;
 
 export type IosShadowPreset =
    | keyof typeof BASE_IOS_SHADOW_PRESETS
@@ -19,7 +30,7 @@ const IOS_SHADOW_PRESETS: Record<
 > = {
    ...BASE_IOS_SHADOW_PRESETS,
    card: BASE_IOS_SHADOW_PRESETS.md,
-   button: BASE_IOS_SHADOW_PRESETS.sm,
+   button: BUTTON_IOS_SHADOW_PRESET,
 };
 
 type GetIosShadowStyleOptions = {
@@ -41,7 +52,7 @@ const ANDROID_SHADOW_CLASSES: Record<IosShadowPreset, string> = {
    xl: 'shadow-xl shadow-slate-300 dark:shadow-none',
    '2xl': 'shadow-2xl shadow-slate-300 dark:shadow-none',
    card: 'shadow-md shadow-slate-300 dark:shadow-none',
-   button: 'shadow-sm shadow-slate-300 dark:shadow-none',
+   button: 'shadow-md shadow-slate-300 dark:shadow-none',
 };
 
 const ANDROID_ELEVATION: Record<IosShadowPreset, number> = {
@@ -51,7 +62,7 @@ const ANDROID_ELEVATION: Record<IosShadowPreset, number> = {
    xl: 8,
    '2xl': 10,
    card: 4,
-   button: 2,
+   button: 3,
 };
 
 export function getIosShadowStyle({
@@ -72,9 +83,16 @@ export function getIosShadowStyle({
    }
 
    const selected = IOS_SHADOW_PRESETS[preset];
+   const opacityMultiplier =
+      preset === 'button' ? IOS_BUTTON_OPACITY_MULTIPLIER : IOS_SHADOW_OPACITY_MULTIPLIER;
+   const maxOpacity =
+      preset === 'button' ? IOS_BUTTON_MAX_OPACITY : IOS_SHADOW_MAX_OPACITY;
    return {
       shadowColor: colorLight,
-      shadowOpacity: selected.opacity,
+      shadowOpacity: Math.min(
+         selected.opacity * opacityMultiplier,
+         maxOpacity
+      ),
       shadowRadius: selected.radius,
       shadowOffset: selected.offset,
    };
@@ -82,6 +100,9 @@ export function getIosShadowStyle({
 
 type GetShadowOptions = GetIosShadowStyleOptions & {
    androidClassName?: string;
+   androidElevation?: number;
+   androidBorderColor?: string;
+   androidBorderWidth?: number;
 };
 
 /**
@@ -92,18 +113,39 @@ type GetShadowOptions = GetIosShadowStyleOptions & {
 export function getShadow({ androidClassName, ...opts }: GetShadowOptions) {
    const iosStyle = getIosShadowStyle(opts);
    const baseClass = androidClassName ?? ANDROID_SHADOW_CLASSES[opts.preset ?? 'card'] ?? '';
-   const elevation = ANDROID_ELEVATION[opts.preset ?? 'card'] ?? 0;
+   const elevation =
+      opts.androidElevation ?? ANDROID_ELEVATION[opts.preset ?? 'card'] ?? 0;
+   const androidBorder =
+      Platform.OS === 'android' && opts.androidBorderColor
+         ? {
+              borderColor: opts.androidBorderColor,
+              borderWidth: opts.androidBorderWidth ?? StyleSheet.hairlineWidth,
+           }
+         : undefined;
 
+   // Logic: Calculate specific Android props
    const androidStyle =
       Platform.OS === 'android'
          ? opts.disableInDark && opts.isDark
             ? { elevation: 0 }
-            : { elevation, shadowColor: opts.colorLight ?? '#0f172a' }
+            : {
+                 elevation,
+                 shadowColor: opts.colorLight ?? '#0f172a',
+                 ...(androidBorder ?? {}),
+              }
          : undefined;
 
-   // Preserve the "no shadow in dark mode" behavior for Android too.
+   // Logic: Determine class name
    const className =
       opts.disableInDark && opts.isDark ? 'shadow-none' : baseClass;
 
-   return { ios: iosStyle, android: androidStyle, className };
+   return {
+      // 👇 MERGED: Just pass this to style={}
+      style: [iosStyle, androidStyle], 
+      
+      // Keep explicit separates in case you need them for edge cases
+      ios: iosStyle,
+      android: androidStyle,
+      className,
+   };
 }

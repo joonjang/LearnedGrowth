@@ -1,5 +1,6 @@
+import { getShadow } from '@/lib/shadow';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Text, View } from 'react-native';
 
 type Props = {
@@ -23,6 +24,11 @@ const GradientSpectrumBar = React.memo(
     const trackBg = isDark ? '#1e293b' : '#f1f5f9';
     const markerColor = isDark ? '#ffffff' : '#0f172a';
 
+    const markerShadow = useMemo(
+      () => getShadow({ isDark, preset: 'sm' }),
+      [isDark]
+    );
+
     return (
       <View>
         {label && (
@@ -43,20 +49,20 @@ const GradientSpectrumBar = React.memo(
           />
 
           <View
-            style={{
-              position: 'absolute',
-              top: 0,
-              bottom: 0,
-              width: 12,
-              backgroundColor: markerColor,
-              left: `${position}%`,
-              transform: [{ translateX: -6 }],
-              shadowColor: '#000',
-              shadowOpacity: 0.2,
-              shadowRadius: 2,
-              elevation: 2,
-              borderRadius: 999,
-            }}
+            style={[
+              markerShadow.ios,
+              markerShadow.android,
+              {
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                width: 12,
+                backgroundColor: markerColor,
+                left: `${position}%`,
+                transform: [{ translateX: -6 }],
+                borderRadius: 999,
+              },
+            ]}
           />
         </View>
 

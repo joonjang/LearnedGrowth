@@ -98,8 +98,8 @@ const FlowConnector = ({ isResolved }: { isResolved?: boolean }) => {
          ? '#d1fae5'
          : '#065f46'
       : isDark
-         ? '#475569'
-         : '#cbd5e1';
+         ? '#94a3b8'
+         : '#94a3b8';
 
    return (
       <View className="items-center -my-1.5 z-10 relative">
@@ -128,10 +128,14 @@ const FlowBlock = memo(({
    isResolved?: boolean
 }) => {
    const styles = getFieldStyles(type, false);
+   const beliefGlassBg =
+      type === 'belief' ? 'dark:bg-rose-500/10' : '';
 
    return (
       <View>
-         <View className={`px-3.5 py-3 rounded-xl border ${styles.container} bg-white dark:bg-slate-900/50 shadow-sm`}>
+         <View
+            className={`px-3.5 py-3 rounded-xl border ${styles.container} bg-white dark:bg-slate-900/50 ${beliefGlassBg}`}
+         >
             <Text
                className={`text-[15px] leading-[22px] ${styles.text}`}
                onTextLayout={onLayout}
@@ -220,8 +224,8 @@ export default function EntryCard({
       borderColor: colors.elevatedBorder,
    }));
 
-   const cardShadow = useMemo(() => getShadow({ isDark, preset: 'md' }), [isDark]);
-   const menuShadow = useMemo(() => getShadow({ isDark, preset: 'xl' }), [isDark]);
+   const cardShadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
+   const menuShadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
 
    const menuStyle = useAnimatedStyle(() => ({
       opacity: menuOpacity.value,
@@ -295,7 +299,7 @@ export default function EntryCard({
 
    return (
       <AnimatedPressable
-         className={`p-3 rounded-[24px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 mx-3 my-3 overflow-visible ${cardShadow.className}`}
+         className="p-3 rounded-[24px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 mx-3 my-3 overflow-visible"
          style={[cardAnimatedStyle, cardShadow.ios, cardShadow.android]}
          disabled={navigationLocked}
          onPress={handleOpenEntry}
@@ -359,12 +363,12 @@ export default function EntryCard({
                   <Animated.View
                      ref={menuRef}
                      pointerEvents={isMenuOpen ? 'auto' : 'none'}
-                     className={`absolute z-50 bg-white dark:bg-slate-800 rounded-xl py-2 border border-slate-200 dark:border-slate-700 min-w-[160px] ${menuShadow.className}`}
+                     className="absolute z-50 bg-white dark:bg-slate-800 rounded-xl py-2 border border-slate-200 dark:border-slate-700 min-w-[160px]"
                      style={[
                         menuStyle,
                         menuShadow.ios,
                         menuShadow.android,
-                        { zIndex: 1000, elevation: 50, top: -6, right: 0 },
+                        { zIndex: 1000, top: -6, right: 0 },
                      ]}
                   >
                      <Pressable
@@ -463,12 +467,15 @@ export default function EntryCard({
                   <TouchableOpacity 
                      activeOpacity={0.7}
                      onPress={toggleViewMode}
+                     hitSlop={{ top: 14, bottom: 14, left: 24, right: 24 }}
                   >
-                     <View className={`flex-row items-center gap-1.5 px-3.5 py-2 rounded-full border shadow-sm ${
-                        viewMode === 'reframed' 
-                           ? 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700' 
-                           : 'bg-dispute-bg border-dispute-border dark:bg-dispute-bgDark dark:border-dispute-borderDark'
-                     }`}>
+                     <View
+                        className={`flex-row items-center gap-1.5 px-3.5 py-2 rounded-full border ${
+                           viewMode === 'reframed' 
+                              ? 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700' 
+                              : 'bg-dispute-bg border-dispute-border dark:bg-dispute-bgDark dark:border-dispute-borderDark'
+                        }`}
+                     >
                         {viewMode === 'reframed' ? (
                            <>
                               <History size={13} color={isDark ? '#94a3b8' : '#64748b'} />

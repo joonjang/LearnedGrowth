@@ -7,7 +7,7 @@ import {
    TextInputProps,
    ViewStyle,
 } from 'react-native';
-import Animated, { AnimatedStyleProp } from 'react-native-reanimated';
+import Animated, { AnimatedStyle } from 'react-native-reanimated';
 // REMOVED: import { makeThemedStyles } from '@/theme/theme';
 
 type Dims = { minHeight?: number; maxHeight?: number };
@@ -17,7 +17,7 @@ type Props = {
    onChangeText: (text: string) => void;
    dims?: Dims;
    containerStyle?: ViewStyle;
-   animatedStyle?: AnimatedStyleProp<ViewStyle>;
+   animatedStyle?: AnimatedStyle<ViewStyle>;
    scrollEnabled?: boolean;
    onFocus?: TextInputProps['onFocus'];
    onBlur?: TextInputProps['onBlur'];
@@ -58,7 +58,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
          onPress={() =>
             typeof ref === 'object' && ref?.current ? ref.current.focus() : null
          }
-         className={`rounded-[14px] bg-zinc-50 dark:bg-slate-700 border px-4 py-3 mb-1.5 ${shadow.className} ${
+         className={`rounded-[14px] bg-zinc-50 dark:bg-slate-700 border px-4 py-3 mb-1.5 ${
             focused
                ? 'border-slate-300 dark:border-slate-500 opacity-100'
                : 'border-slate-200 dark:border-slate-700'

@@ -1,8 +1,9 @@
 import { ChevronDown, X } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { WeekSummary } from './types';
 import { getMoodConfig } from './utils';
+import { getShadow } from '@/lib/shadow';
 
 type Props = {
   title: string;
@@ -21,6 +22,10 @@ export default function SectionHeader({
 }: Props) {
   const mood = getMoodConfig(summary.avgOptimism, isDark);
   const [expanded, setExpanded] = useState(false);
+  const badgeShadow = useMemo(
+    () => getShadow({ isDark, preset: 'sm' }),
+    [isDark]
+  );
 
   const hasData = summary.avgOptimism !== null;
 
@@ -71,23 +76,22 @@ export default function SectionHeader({
        >
           <Pressable
              onPress={() => setExpanded(!expanded)}
-              hitSlop={6}
+             hitSlop={6}
              className="overflow-hidden rounded-xl border"
-             style={{
-                minWidth: 132,
-                maxWidth: 220,
-                backgroundColor: expanded 
-                    ? (isDark ? '#1e293b' : '#ffffff') 
-                    : 'transparent',
-                 borderColor: expanded 
-                    ? mood.color 
-                    : (isDark ? '#334155' : '#e2e8f0'),
-                 shadowColor: "#000",
-                 shadowOffset: { width: 0, height: 4 },
-                 shadowOpacity: expanded ? 0.1 : 0,
-                 shadowRadius: 4,
-                 elevation: expanded ? 4 : 0
-              }}
+             style={[
+                {
+                   minWidth: 132,
+                   maxWidth: 220,
+                   backgroundColor: expanded 
+                       ? (isDark ? '#1e293b' : '#ffffff') 
+                       : 'transparent',
+                    borderColor: expanded 
+                       ? mood.color 
+                       : (isDark ? '#334155' : '#e2e8f0'),
+                 },
+                 expanded ? badgeShadow.ios : null,
+                 expanded ? badgeShadow.android : null,
+              ]}
            >
               {/* HEADER ROW: Right Aligned (matches ghost) */}
               <View className="flex-row items-center justify-end gap-1.5 px-2.5 py-1.5">

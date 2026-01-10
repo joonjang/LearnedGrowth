@@ -109,7 +109,7 @@ function EntryRow({
    const { isDark } = useThemeColor();
 
    const shadow = useMemo(
-      () => getShadow({ isDark, preset: 'sm' }),
+      () => getShadow({ isDark, preset: 'button' }),
       [isDark]
    );
 
@@ -154,8 +154,8 @@ function EntryRow({
                >
                   {/* Edit Action */}
                   <View className="items-center gap-1.5">
-                    <Pressable
-                        className={`w-14 h-14 rounded-full items-center justify-center bg-amber-500 active:opacity-90 ${shadow.className}`}
+                     <Pressable
+                        className="w-14 h-14 rounded-full items-center justify-center bg-amber-500 active:bg-amber-600 dark:bg-amber-600 dark:active:bg-amber-700"
                         style={[shadow.ios, shadow.android]}
                         onPress={handleEdit}
                         testID="entry-swipe-edit-btn" // <--- ADDED TEST ID
@@ -169,8 +169,8 @@ function EntryRow({
 
                   {/* Delete Action */}
                   <View className="items-center ml-3 gap-1.5">
-                    <Pressable
-                        className={`w-14 h-14 rounded-full items-center justify-center bg-rose-600 active:opacity-90 ${shadow.className}`}
+                     <Pressable
+                        className="w-14 h-14 rounded-full items-center justify-center bg-rose-600 active:bg-rose-700 dark:bg-rose-700 dark:active:bg-rose-800"
                         style={[shadow.ios, shadow.android]}
                         onPress={handleDelete}
                         testID="entry-swipe-delete-btn" // <--- ADDED TEST ID

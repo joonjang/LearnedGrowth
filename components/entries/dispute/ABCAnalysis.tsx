@@ -90,7 +90,7 @@ export default function ABCAnalysis({
          </View>
 
          <View
-            className={`flex-1 ${shadow.className}`}
+            className="flex-1"
             style={[shadow.ios, shadow.android]}
          >
             {/* Context Box */}
@@ -132,7 +132,7 @@ export default function ABCAnalysis({
          </View>
 
          <View
-            className={`flex-1 ${shadow.className}`}
+            className="flex-1"
             style={[shadow.ios, shadow.android]}
          >
             <AiInsightCard
@@ -152,9 +152,8 @@ export default function ABCAnalysis({
             />
             {onGoToSteps && aiData ? (
                <Animated.View
-                  className={`p-1 mt-6 mb-3 ${shadow.className}`}
+                  className="p-1 mt-6 mb-3"
                   style={[shadow.ios, shadow.android, buttonFadeStyle]}
-                  
                >
                   <WideButton
                      label={'Continue'}

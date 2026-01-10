@@ -22,7 +22,7 @@ export default function EntryContextView({
    );
    return (
       <View
-         className={`bg-slate-100 dark:bg-slate-800 p-3 rounded-xl gap-2.5 border border-slate-200 dark:border-slate-700 ${shadow.className}`}
+         className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl gap-2.5 border border-slate-200 dark:border-slate-700"
          style={[shadow.ios, shadow.android]}
       >
          {/* Adversity */}

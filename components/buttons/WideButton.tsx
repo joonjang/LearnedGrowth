@@ -1,4 +1,8 @@
-import { BTN_HEIGHT } from '@/components/constants';
+import {
+   ANALYSIS_CTA_CLASS,
+   BTN_HEIGHT,
+   DISPUTE_CTA_CLASS,
+} from '@/components/constants';
 import { getShadow } from '@/lib/shadow';
 import { LucideIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
@@ -18,13 +22,13 @@ export default function WideButton({ label, icon, onPress, variant = 'primary' }
    const Icon = icon;
 
    const shadow = useMemo(
-      () => getShadow({ isDark, preset: 'md' }),
+      () => getShadow({ isDark, preset: 'button' }),
       [isDark]
    );
 
-   const bgClass = variant === 'primary' 
-      ? 'bg-dispute-cta dark:bg-green-800' 
-      : 'bg-blue-500 dark:bg-blue-800';
+   const bgClass = variant === 'primary'
+      ? DISPUTE_CTA_CLASS
+      : ANALYSIS_CTA_CLASS;
 
    return (
       <View className="mt-6 mb-3">
@@ -35,7 +39,6 @@ export default function WideButton({ label, icon, onPress, variant = 'primary' }
                flex-row items-center relative ${BTN_HEIGHT}
                ${bgClass}
                px-5 rounded-2xl 
-               ${shadow.className}
                active:opacity-90 active:scale-[0.99]
             `}
          >

@@ -1,8 +1,9 @@
+import { getShadow } from '@/lib/shadow';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
    ActivityIndicator,
    LayoutAnimation,
@@ -16,6 +17,10 @@ export default function SendFeedback() {
    const { user } = useAuth();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const buttonShadow = useMemo(
+      () => getShadow({ isDark, preset: 'button' }),
+      [isDark]
+   );
 
    // Matching the icon color from SettingsScreen
    const iconColor = isDark ? '#94a3b8' : '#64748b'; 
@@ -96,9 +101,10 @@ export default function SendFeedback() {
                />
                
                <Pressable
-                  className={`bg-slate-900 dark:bg-slate-100 py-3 rounded-xl items-center shadow-sm ${
+                  className={`bg-slate-900 dark:bg-slate-100 py-3 rounded-xl items-center ${
                      loading ? 'opacity-70' : 'active:opacity-80'
                   }`}
+                  style={[buttonShadow.ios, buttonShadow.android]}
                   onPress={handleSend}
                   disabled={loading}
                >

@@ -388,7 +388,7 @@ export default function AuthModal() {
             </View>
 
             <Pressable
-               className={`h-[54px] rounded-[14px] items-center justify-center mb-1 bg-dispute-cta active:opacity-90 ${status !== 'idle' ? 'opacity-70' : ''}`}
+               className={`h-[54px] rounded-[14px] items-center justify-center mb-1 bg-dispute-cta dark:bg-dispute-ctaDark active:opacity-90 ${status !== 'idle' ? 'opacity-70' : ''}`}
                onPress={step === 'email' ? onSendEmail : onVerifyCode}
                disabled={status !== 'idle'}
             >

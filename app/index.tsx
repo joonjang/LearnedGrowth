@@ -1,4 +1,9 @@
 import QuickStart from '@/components/appInfo/QuickStart';
+import {
+   PRIMARY_CTA_CLASS,
+   PRIMARY_CTA_ICON_COLOR,
+   PRIMARY_CTA_TEXT_CLASS,
+} from '@/components/constants';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow, { UndoRow } from '@/components/entries/entry/EntryRow';
 import GlobalDashboard from '@/components/entries/home/GlobalDashboard';
@@ -23,7 +28,13 @@ import {
    Zap,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+   useCallback,
+   useEffect,
+   useMemo,
+   useRef,
+   useState,
+} from 'react';
 import {
    LayoutChangeEvent,
    Modal,
@@ -250,6 +261,20 @@ export default function EntriesScreen() {
 
    const shadowSm = useMemo(
       () => getShadow({ isDark, preset: 'sm' }),
+      [isDark]
+   );
+   const ctaShadow = useMemo(
+      () =>
+         getShadow({
+            isDark,
+            preset: 'button',
+            androidElevation: 3,
+            colorLight: '#000000',
+         }),
+      [isDark]
+   );
+   const fabShadow = useMemo(
+      () => getShadow({ isDark, preset: 'lg', colorLight: '#4f46e5' }),
       [isDark]
    );
 
@@ -706,20 +731,20 @@ export default function EntriesScreen() {
                      </View>
 
                      {/* MAIN NEW ENTRY BUTTON */}
-                     <View
-                        className={`mt-12 ${shadowSm.className}`}
-                        style={[shadowSm.ios, shadowSm.android]}
-                     >
-                        <Link href={'/new'} asChild>
+                     <View className="mt-12">
+
                            <Pressable
-                              className={`relative flex-row items-center justify-center overflow-hidden rounded-2xl bg-indigo-600 px-6 py-4 active:bg-indigo-700 ${shadowSm.className}`}
-                              style={[shadowSm.ios, shadowSm.android]}
+                              onPress={() => router.push('/new')}
+                              className={`relative flex-row items-center justify-center rounded-2xl px-6 py-4 ${PRIMARY_CTA_CLASS}`}
+                              style={[ctaShadow.ios, ctaShadow.android]} // ✅ iOS shadow on the actual button is fine
                            >
-                              <Text className="text-lg font-bold text-center text-white">
+                              <Text
+                                 className={`text-lg font-bold text-center ${PRIMARY_CTA_TEXT_CLASS}`}
+                              >
                                  What&apos;s on your mind?
                               </Text>
                            </Pressable>
-                        </Link>
+
                      </View>
 
                      <Animated.View
@@ -760,16 +785,14 @@ export default function EntriesScreen() {
             >
                <Link href="/new" asChild>
                   <Pressable
-                     className="h-14 w-14 bg-indigo-600 rounded-full items-center justify-center shadow-xl active:bg-indigo-700"
-                     style={{
-                        shadowColor: '#4f46e5',
-                        shadowOpacity: 0.4,
-                        shadowRadius: 4,
-                        shadowOffset: { width: 0, height: 4 },
-                        elevation: 8,
-                     }}
+                     className={`h-14 w-14 rounded-full items-center justify-center ${PRIMARY_CTA_CLASS}`}
+                     style={[fabShadow.ios, fabShadow.android]}
                   >
-                     <Plus size={28} color="white" strokeWidth={2.5} />
+                     <Plus
+                        size={28}
+                        color={PRIMARY_CTA_ICON_COLOR}
+                        strokeWidth={2.5}
+                     />
                   </Pressable>
                </Link>
             </Animated.View>

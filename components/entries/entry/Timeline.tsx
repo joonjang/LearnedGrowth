@@ -33,12 +33,12 @@ const ICON_MAP: Record<string, React.ElementType> = {
   energy: Sun,
 };
 
-const getIconColor = (tone: FieldTone) => {
+const getIconColor = (tone: FieldTone, isDark: boolean) => {
   switch (tone) {
-    case 'belief': return '#9a3412'; // orange-800
-    case 'dispute': return '#3730a3'; // indigo-800
-    case 'energy': return '#065f46'; // emerald-800
-    default: return '#64748b'; // slate-500
+    case 'belief': return isDark ? '#fdba74' : '#9a3412'; // orange-300 / orange-800
+    case 'dispute': return isDark ? '#6ee7b7' : '#3730a3'; // emerald-300 / indigo-800
+    case 'energy': return isDark ? '#7dd3fc' : '#065f46'; // sky-300 / emerald-800
+    default: return isDark ? '#cbd5e1' : '#64748b'; // slate-300 / slate-500
   }
 };
 
@@ -59,12 +59,12 @@ export function TimelineItem({
   const shadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
   const styles = getFieldStyles(step.tone, false);
   const Icon = step.icon || ICON_MAP[step.key] || Camera;
-  const iconColor = getIconColor(step.tone);
+  const iconColor = getIconColor(step.tone, isDark);
   const isFull = variant === 'full';
 
   const getCardBackground = () => {
     if (step.tone === 'default' || step.tone === 'neutral') {
-      return 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800';
+      return 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-600';
     }
     return `${styles.container}`;
   };
@@ -75,7 +75,7 @@ export function TimelineItem({
     return (
       <View className="mb-4">
         <View
-          className={`rounded-2xl border px-5 py-4 ${cardBgClass} ${shadow.className}`}
+          className={`rounded-2xl border px-5 py-4 ${cardBgClass}`}
           style={[shadow.ios, shadow.android]}
         >
           <View className="flex-row items-center justify-between mb-2">
@@ -121,7 +121,7 @@ export function TimelineItem({
 
       <View className={`ml-4 flex-1 pt-1 ${!isLast ? 'pb-8' : ''}`}>
         <View
-          className={`rounded-2xl border p-4 ${cardBgClass} ${shadow.className}`}
+          className={`rounded-2xl border p-4 ${cardBgClass}`}
           style={[shadow.ios, shadow.android]}
         >
           <View className="flex-row items-center justify-between mb-1">

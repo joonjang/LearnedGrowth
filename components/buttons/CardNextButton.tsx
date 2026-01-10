@@ -1,11 +1,16 @@
+import AiDisclaimerModal from '@/components/appInfo/AiDisclaimerModal';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { supabase } from '@/lib/supabase';
-import AiDisclaimerModal from '@/components/appInfo/AiDisclaimerModal';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEntriesStore } from '@/providers/EntriesStoreProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
-import { ArrowRight, FileText, Sparkles, type LucideIcon } from 'lucide-react-native';
+import {
+   ArrowRight,
+   FileText,
+   Sparkles,
+   type LucideIcon,
+} from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import WideButton from './WideButton';
 
@@ -38,6 +43,18 @@ export default function CardNextButton({ id }: Prop) {
       user?.user_metadata?.has_agreed_to_ai === 'true';
    const [hasConsent, setHasConsent] = useState<boolean>(hasAccountConsent);
 
+   const navigateToAnalysis = useCallback(() => {
+      router.push(`/dispute/${id}?view=analysis&refresh=true`);
+   }, [id]);
+
+   const checkConsentAndNavigate = useCallback(() => {
+      if (hasConsent) {
+         navigateToAnalysis();
+         return;
+      }
+      setShowDisclaimer(true);
+   }, [hasConsent, navigateToAnalysis]);
+
    useEffect(() => {
       setHasConsent(hasAccountConsent);
    }, [hasAccountConsent]);
@@ -45,18 +62,19 @@ export default function CardNextButton({ id }: Prop) {
    useEffect(() => {
       if (pendingAnalysis && isSubscribed) {
          setPendingAnalysis(false);
-         setTimeout(() => {
+         const t = setTimeout(() => {
             checkConsentAndNavigate();
          }, 500);
+         return () => clearTimeout(t);
       }
-   }, [pendingAnalysis, isSubscribed]);
+   }, [pendingAnalysis, isSubscribed, checkConsentAndNavigate]);
 
    const config = useMemo<ButtonConfig>(() => {
       if (hasCachedAnalysis) {
          return {
             label: 'View Analysis',
             icon: FileText,
-            bgColor: 'bg-blue-500 dark:bg-blue-800',
+            bgColor: 'bg-blue-500 dark:bg-blue-600',
             textColor: 'text-white',
          };
       }
@@ -64,29 +82,19 @@ export default function CardNextButton({ id }: Prop) {
          return {
             label: 'Analyze with AI',
             icon: Sparkles,
-            bgColor: 'bg-dispute-cta dark:bg-green-800',
+            bgColor: 'bg-dispute-cta dark:bg-dispute-ctaDark',
             textColor: 'text-white',
          };
       }
       return {
          label: 'Continue',
          icon: ArrowRight,
-         bgColor: 'bg-dispute-cta dark:bg-green-800',
+         bgColor: 'bg-dispute-cta dark:bg-dispute-ctaDark',
          textColor: 'text-white',
       };
    }, [hasCachedAnalysis, isSubscribed]);
 
-   const navigateToAnalysis = () => {
-      router.push(`/dispute/${id}?view=analysis&refresh=true`);
-   };
-
-   const checkConsentAndNavigate = async () => {
-      if (hasConsent) {
-         navigateToAnalysis();
-         return;
-      }
-      setShowDisclaimer(true);
-   };
+   
 
    const onConfirmDisclaimer = async () => {
       try {

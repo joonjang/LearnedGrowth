@@ -34,7 +34,7 @@ const GlobalDashboard = React.memo(({ data, shadowSm, isDark }: Props) => {
     <View className="gap-4">
       {/* 1. MOOD SUMMARY CARD (Unchanged) */}
       <View
-        className={`p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 ${shadowSm.className}`}
+        className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
         style={[shadowSm.ios, shadowSm.android]}
       >
         <View className="flex-row items-center gap-2 mb-4">
@@ -66,7 +66,7 @@ const GlobalDashboard = React.memo(({ data, shadowSm, isDark }: Props) => {
       {/* 2. THINKING PATTERNS CARD */}
       {data.threePs && (
         <View
-          className={`p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 ${shadowSm.className}`}
+          className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
           style={[shadowSm.ios, shadowSm.android]}
         >
           <View className="flex-row items-center justify-between mb-4">

@@ -252,7 +252,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
 
                {/* The ABC Card - Updated colors to match Theme */}
                <View
-                  className={`mt-6 rounded-2xl bg-white p-5 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 ${cardShadow.className}`}
+                  className="mt-6 rounded-2xl bg-white p-5 dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
                   style={[cardShadow.ios, cardShadow.android]}
                >
                   <Text className="text-base leading-7 text-slate-700 dark:text-slate-300">
@@ -455,7 +455,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
             style={{ paddingBottom: insets.bottom + 16 }}
          >
             <Pressable
-               className="relative flex-row items-center justify-center overflow-hidden rounded-2xl bg-indigo-600 px-6 py-4 active:bg-indigo-700"
+               className="relative flex-row items-center justify-center overflow-hidden rounded-2xl bg-indigo-600 dark:bg-indigo-500 px-6 py-4 active:bg-indigo-700 dark:active:bg-indigo-600"
                onPress={() => {
                   try {
                      router.push('/new');
