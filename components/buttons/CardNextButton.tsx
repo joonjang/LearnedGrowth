@@ -128,7 +128,7 @@ export default function CardNextButton({ id }: Prop) {
             params: { id },
          } as any);
       });
-   }, [hasCachedAnalysis, id, isSubscribed, lockNavigation]);
+   }, [checkConsentAndNavigate, hasCachedAnalysis, id, isSubscribed, lockNavigation]);
 
    return (
       <>

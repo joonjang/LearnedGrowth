@@ -1,9 +1,16 @@
 import { useMemo } from 'react';
-import { TextStyle } from 'react-native';
+import { Platform, TextStyle } from 'react-native';
 import {
    useReanimatedKeyboardAnimation,
 } from 'react-native-keyboard-controller';
-import { useAnimatedStyle } from 'react-native-reanimated';
+import {
+   Easing,
+   interpolate,
+   useAnimatedReaction,
+   useAnimatedStyle,
+   useSharedValue,
+   withTiming,
+} from 'react-native-reanimated';
 import { useKeyboardVisible } from './useKeyboardVisible';
 import { useResponsiveFont } from './useResponsiveFont';
 
@@ -13,6 +20,23 @@ export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
    const isKeyboardVisible = useKeyboardVisible();
    const { scaleFont } = useResponsiveFont();
    const { progress } = useReanimatedKeyboardAnimation();
+   const smoothProgress = useSharedValue(0);
+   const isAndroid = Platform.OS === 'android';
+
+   useAnimatedReaction(
+      () => progress.value,
+      (next) => {
+         if (isAndroid) {
+            smoothProgress.value = next;
+            return;
+         }
+         smoothProgress.value = withTiming(next, {
+            duration: 200,
+            easing: Easing.out(Easing.cubic),
+         });
+      },
+      [isAndroid, smoothProgress]
+   );
 
    const fontSizes = useMemo(() => {
       if (variant === 'compact') {
@@ -56,16 +80,22 @@ export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
          max: variant === 'compact' ? 160 : 240,
       };
 
-      const minHeight =
-         hidden.min + (shown.min - hidden.min) * progress.value;
-      const maxHeight =
-         hidden.max + (shown.max - hidden.max) * progress.value;
+      const minHeight = interpolate(
+         smoothProgress.value,
+         [0, 1],
+         [hidden.min, shown.min]
+      );
+      const maxHeight = interpolate(
+         smoothProgress.value,
+         [0, 1],
+         [hidden.max, shown.max]
+      );
 
       return {
          minHeight,
          maxHeight,
       };
-   }, [progress, variant]);
+   }, [smoothProgress, variant]);
 
    const promptMaxHeight = useMemo(() => {
       if (!isKeyboardVisible) return undefined;

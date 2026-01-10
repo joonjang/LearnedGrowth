@@ -10,10 +10,13 @@ import {
    useState,
 } from 'react';
 import {
+   Platform,
    ScrollView,
    StyleProp,
    Text,
+   TextProps,
    TextStyle,
+   TextLayoutEvent,
    View,
    ViewStyle,
 } from 'react-native';
@@ -21,6 +24,54 @@ import ThreeDotsLoader from '../ThreeDotLoader';
 
 const TYPING_SPEED = 35;
 const CHAR_PER_TICK = 1;
+
+const formatTextWithBreaks = (
+   text: string,
+   lineBreaks: number[],
+   limit?: number
+) => {
+   const slice = limit === undefined ? text : text.slice(0, limit);
+   if (!lineBreaks.length || !slice) return slice;
+   let out = '';
+   let prev = 0;
+   for (const br of lineBreaks) {
+      if (br <= 0) continue;
+      if (br >= slice.length) break;
+      out += slice.slice(prev, br) + '\n';
+      prev = br;
+      while (slice[prev] === ' ') prev += 1;
+   }
+   out += slice.slice(prev);
+   return out;
+};
+
+const deriveLineBreaks = (
+   text: string,
+   lines: { text: string }[]
+) => {
+   if (!text || !lines.length) return [];
+   const breaks: number[] = [];
+   let cursor = 0;
+   for (const line of lines) {
+      const lineText = line.text ?? '';
+      if (!lineText) continue;
+      cursor += lineText.length;
+      if (cursor > text.length) cursor = text.length;
+      breaks.push(cursor);
+   }
+   if (!breaks.length) return [];
+   breaks.pop();
+   return breaks;
+};
+
+const areBreaksEqual = (prev: number[] | null, next: number[]) => {
+   if (!prev) return false;
+   if (prev.length !== next.length) return false;
+   for (let i = 0; i < prev.length; i += 1) {
+      if (prev[i] !== next[i]) return false;
+   }
+   return true;
+};
 
 type StopOptions = {
    finish?: boolean;
@@ -40,6 +91,9 @@ type TypewriterProps = {
    allowFontScaling?: boolean;
    adjustsFontSizeToFit?: boolean;
    minimumFontScale?: number;
+   textBreakStrategy?: TextProps['textBreakStrategy'];
+   lineBreakStrategyIOS?: TextProps['lineBreakStrategyIOS'];
+   lineBreaks?: number[];
    tickMs?: number;
    charsPerTick?: number;
 };
@@ -52,8 +106,11 @@ function Typewriter(
       numberOfLines,
       onFinished,
       allowFontScaling = true,
-      adjustsFontSizeToFit = true,
-      minimumFontScale = 0.85,
+      adjustsFontSizeToFit = false,
+      minimumFontScale = 1,
+      textBreakStrategy,
+      lineBreakStrategyIOS,
+      lineBreaks = [],
       tickMs = TYPING_SPEED,
       charsPerTick = CHAR_PER_TICK,
    }: TypewriterProps,
@@ -64,6 +121,7 @@ function Typewriter(
    const progressRef = useRef(0);
    const finishedRef = useRef(false);
    const textRef = useRef(text);
+   const lineBreaksRef = useRef(lineBreaks);
    const onFinishedRef = useRef(onFinished);
 
    useEffect(() => {
@@ -73,6 +131,18 @@ function Typewriter(
    useEffect(() => {
       onFinishedRef.current = onFinished;
    }, [onFinished]);
+
+   useEffect(() => {
+      lineBreaksRef.current = lineBreaks;
+      if (!textRef.current) return;
+      setDisplayed(
+         formatTextWithBreaks(
+            textRef.current,
+            lineBreaksRef.current,
+            progressRef.current
+         )
+      );
+   }, [lineBreaks]);
 
    const clearTimer = useCallback(() => {
       if (timerRef.current) {
@@ -92,7 +162,9 @@ function Typewriter(
          clearTimer();
          if (finish) {
             progressRef.current = textRef.current.length;
-            setDisplayed(textRef.current);
+            setDisplayed(
+               formatTextWithBreaks(textRef.current, lineBreaksRef.current)
+            );
             runFinished();
          }
       },
@@ -119,7 +191,9 @@ function Typewriter(
          return;
       }
 
-      setDisplayed('');
+      setDisplayed(
+         formatTextWithBreaks(textRef.current, lineBreaksRef.current, 0)
+      );
 
       timerRef.current = setInterval(() => {
          const nextIndex = Math.min(
@@ -128,7 +202,13 @@ function Typewriter(
          );
 
          progressRef.current = nextIndex;
-         setDisplayed(textRef.current.slice(0, nextIndex));
+         setDisplayed(
+            formatTextWithBreaks(
+               textRef.current,
+               lineBreaksRef.current,
+               nextIndex
+            )
+         );
 
          if (nextIndex >= textRef.current.length) {
             clearTimer();
@@ -144,6 +224,8 @@ function Typewriter(
          className={className}
          style={style}
          numberOfLines={numberOfLines}
+         textBreakStrategy={textBreakStrategy}
+         lineBreakStrategyIOS={lineBreakStrategyIOS}
          allowFontScaling={allowFontScaling}
          adjustsFontSizeToFit={adjustsFontSizeToFit}
          minimumFontScale={minimumFontScale}
@@ -191,6 +273,7 @@ function PromptDisplay(
    ref: Ref<PromptDisplayHandle>
 ) {
    const readyToAnimate = useDeferredReady(1200);
+   const [lineBreaks, setLineBreaks] = useState<number[] | null>(null);
    const typewriterRef = useRef<TypewriterHandle | null>(null);
 
    useImperativeHandle(
@@ -203,6 +286,10 @@ function PromptDisplay(
       []
    );
 
+   useEffect(() => {
+      setLineBreaks(text ? null : []);
+   }, [text]);
+
    const mergedStyle = useMemo(
       () => [{ flexWrap: 'wrap' as const }, textStyle],
       [textStyle]
@@ -213,8 +300,26 @@ function PromptDisplay(
       () => ({ flexGrow: 0, paddingVertical: 12 }),
       []
    );
+   const effectiveNumberOfLines = scrollEnabled ? undefined : numberOfLines;
+   const textBreakStrategy =
+      Platform.OS === 'android' ? 'highQuality' : undefined;
+   const lineBreakStrategyIOS =
+      Platform.OS === 'ios' ? 'standard' : undefined;
+   const effectiveBreaks = lineBreaks ?? [];
+   const displayText = formatTextWithBreaks(text, effectiveBreaks);
    const loaderClasses = 'items-center min-h-[1px]';
    const textClasses = `font-bold text-slate-900 dark:text-slate-200 shrink ${textClassName ?? ''}`.trim();
+
+   const handleTextLayout = useCallback((event: TextLayoutEvent) => {
+      if (!text) {
+         setLineBreaks([]);
+         return;
+      }
+      const lines = event.nativeEvent.lines ?? [];
+      if (!lines.length) return;
+      const next = deriveLineBreaks(text, lines);
+      setLineBreaks((prev) => (areBreaksEqual(prev, next) ? prev : next));
+   }, [text]);
 
    const loader = (
       <View
@@ -224,29 +329,65 @@ function PromptDisplay(
       </View>
    );
 
+   const canType = readyToAnimate && (lineBreaks !== null || !text);
    const content = visited ? (
       <Text
          className={textClasses}
          style={mergedStyle}
-         numberOfLines={numberOfLines}
-         adjustsFontSizeToFit
-         minimumFontScale={0.85}
+         numberOfLines={effectiveNumberOfLines}
+         textBreakStrategy={textBreakStrategy}
+         lineBreakStrategyIOS={lineBreakStrategyIOS}
+         adjustsFontSizeToFit={false}
+         minimumFontScale={1}
          allowFontScaling
       >
-         {text}
+         {displayText}
       </Text>
-   ) : readyToAnimate ? (
+   ) : canType ? (
       <ForwardedTypewriter
          ref={typewriterRef}
          key={text}
          text={text}
          className={textClasses}
          style={mergedStyle}
-         numberOfLines={numberOfLines}
+         numberOfLines={effectiveNumberOfLines}
+         textBreakStrategy={textBreakStrategy}
+         lineBreakStrategyIOS={lineBreakStrategyIOS}
+         adjustsFontSizeToFit={false}
+         minimumFontScale={1}
+         allowFontScaling
+         lineBreaks={effectiveBreaks}
          onFinished={onVisited}
       />
    ) : (
       loader
+   );
+
+   const contentWithMeasurement = (
+      <View style={{ position: 'relative', width: '100%' }}>
+         {!!text && (
+            <Text
+               className={textClasses}
+               style={[
+                  mergedStyle,
+                  { position: 'absolute', opacity: 0, width: '100%' },
+               ]}
+               numberOfLines={effectiveNumberOfLines}
+               textBreakStrategy={textBreakStrategy}
+               lineBreakStrategyIOS={lineBreakStrategyIOS}
+               adjustsFontSizeToFit={false}
+               minimumFontScale={1}
+               allowFontScaling
+               pointerEvents="none"
+               accessibilityElementsHidden
+               importantForAccessibility="no-hide-descendants"
+               onTextLayout={handleTextLayout}
+            >
+               {text}
+            </Text>
+         )}
+         {content}
+      </View>
    );
 
    if (!scrollEnabled) {
@@ -255,7 +396,7 @@ function PromptDisplay(
             className={`${containerClasses} ${containerClassName ?? ''}`}
             style={containerStyle}
          >
-            {content}
+            {contentWithMeasurement}
          </View>
       );
    }
@@ -275,7 +416,7 @@ function PromptDisplay(
             showsVerticalScrollIndicator={false}
             bounces={false}
          >
-            {content}
+            {contentWithMeasurement}
          </ScrollView>
       </View>
    );

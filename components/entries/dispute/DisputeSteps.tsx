@@ -1,7 +1,5 @@
 import React, { useCallback } from 'react';
 import {
-   Alert,
-   Keyboard,
    NativeScrollEvent,
    NativeSyntheticEvent,
    ScrollView,
@@ -86,20 +84,8 @@ export default function DisputeSteps({
    const promptRef = React.useRef<PromptDisplayHandle | null>(null);
 
    const handleClose = useCallback(() => {
-      if (!hasUnsavedChanges) {
-         onExit();
-         return;
-      }
-      Keyboard.dismiss();
-      Alert.alert(
-         'Discard changes?',
-         'You have unsaved changes. Close without saving?',
-         [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Discard', style: 'destructive', onPress: () => onExit() },
-         ]
-      );
-   }, [hasUnsavedChanges, onExit]);
+      onExit();
+   }, [onExit]);
 
    const handleStepChange = useCallback(
       (direction: 'next' | 'back') => {
@@ -189,7 +175,6 @@ export default function DisputeSteps({
                setIdx={setIdx}
                onSubmit={onSubmit}
                onExit={onExit}
-               hasUnsavedChanges={hasUnsavedChanges}
                disableNext={disableNext}
                inputRef={inputRef}
                onNext={() => handleStepChange('next')}

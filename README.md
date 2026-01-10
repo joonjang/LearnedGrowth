@@ -50,6 +50,12 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2026-01-10
+- Keyboard display improvements
+  - No longer jumpy during text input
+  - Android keyboard event trigger immediate for instant size change
+- PromptDisplay character distribution spread out more evenly
+
 ### 2026-01-09
 - Added a sprout icon for growth plus members
 - Quickstart information viewable from index

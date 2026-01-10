@@ -274,7 +274,7 @@ export default function EntriesScreen() {
       [isDark]
    );
    const fabShadow = useMemo(
-      () => getShadow({ isDark, preset: 'lg', colorLight: '#4f46e5' }),
+      () => getShadow({ isDark, preset: 'button', colorLight: '#4f46e5' }),
       [isDark]
    );
 
@@ -726,12 +726,11 @@ export default function EntriesScreen() {
                            days={streakData.days}
                            icon={streakIcon}
                            shadowSm={shadowSm}
-                           rangeLabel="Mon - Sun"
                         />
                      </View>
 
                      {/* MAIN NEW ENTRY BUTTON */}
-                     <View className="mt-12">
+                     <View className="mt-3">
 
                            <Pressable
                               onPress={() => router.push('/new')}
