@@ -55,6 +55,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - No longer jumpy during text input
   - Android keyboard event trigger immediate for instant size change
 - PromptDisplay character distribution spread out more evenly
+- Fixed StreakCard triggering known NativeWind mounting issue for dynamic styles
 
 ### 2026-01-09
 - Added a sprout icon for growth plus members
