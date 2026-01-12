@@ -20,6 +20,7 @@ import {
    View,
    ViewStyle,
 } from 'react-native';
+import Animated, { AnimatedStyle } from 'react-native-reanimated';
 import ThreeDotsLoader from '../ThreeDotLoader';
 
 const TYPING_SPEED = 35;
@@ -220,7 +221,7 @@ function Typewriter(
    }, [charsPerTick, clearTimer, runFinished, tickMs, text]);
 
    return (
-      <Text
+      <Animated.Text
          className={className}
          style={style}
          numberOfLines={numberOfLines}
@@ -231,7 +232,7 @@ function Typewriter(
          minimumFontScale={minimumFontScale}
       >
          {displayed}
-      </Text>
+      </Animated.Text>
    );
 }
 
@@ -249,12 +250,15 @@ type Props = {
    visited: boolean;
    onVisited?: () => void;
    textStyle: TextStyle;
+   textAnimatedStyle?: AnimatedStyle<TextStyle>;
    textClassName?: string;
    containerClassName?: string;
    containerStyle?: StyleProp<ViewStyle>;
+   containerAnimatedStyle?: AnimatedStyle<ViewStyle>;
    numberOfLines?: number;
    maxHeight?: number;
    scrollEnabled?: boolean;
+   freezeLineBreaks?: boolean;
 };
 
 function PromptDisplay(
@@ -263,12 +267,15 @@ function PromptDisplay(
       visited,
       onVisited,
       textStyle,
+      textAnimatedStyle,
       textClassName,
       containerClassName,
       containerStyle,
+      containerAnimatedStyle,
       numberOfLines,
       maxHeight,
       scrollEnabled = false,
+      freezeLineBreaks = true,
    }: Props,
    ref: Ref<PromptDisplayHandle>
 ) {
@@ -315,11 +322,12 @@ function PromptDisplay(
          setLineBreaks([]);
          return;
       }
+      if (freezeLineBreaks && lineBreaks !== null) return;
       const lines = event.nativeEvent.lines ?? [];
       if (!lines.length) return;
       const next = deriveLineBreaks(text, lines);
       setLineBreaks((prev) => (areBreaksEqual(prev, next) ? prev : next));
-   }, [text]);
+   }, [freezeLineBreaks, lineBreaks, text]);
 
    const loader = (
       <View
@@ -331,9 +339,9 @@ function PromptDisplay(
 
    const canType = readyToAnimate && (lineBreaks !== null || !text);
    const content = visited ? (
-      <Text
+      <Animated.Text
          className={textClasses}
-         style={mergedStyle}
+         style={[mergedStyle, textAnimatedStyle]}
          numberOfLines={effectiveNumberOfLines}
          textBreakStrategy={textBreakStrategy}
          lineBreakStrategyIOS={lineBreakStrategyIOS}
@@ -342,14 +350,14 @@ function PromptDisplay(
          allowFontScaling
       >
          {displayText}
-      </Text>
+      </Animated.Text>
    ) : canType ? (
       <ForwardedTypewriter
          ref={typewriterRef}
          key={text}
          text={text}
          className={textClasses}
-         style={mergedStyle}
+         style={[mergedStyle, textAnimatedStyle]}
          numberOfLines={effectiveNumberOfLines}
          textBreakStrategy={textBreakStrategy}
          lineBreakStrategyIOS={lineBreakStrategyIOS}
@@ -392,21 +400,23 @@ function PromptDisplay(
 
    if (!scrollEnabled) {
       return (
-         <View
+         <Animated.View
             className={`${containerClasses} ${containerClassName ?? ''}`}
-            style={containerStyle}
+            style={[containerStyle, containerAnimatedStyle]}
          >
             {contentWithMeasurement}
-         </View>
+         </Animated.View>
       );
    }
 
    return (
-      <View
+      <Animated.View
          className={`${containerClasses} ${containerClassName ?? ''}`}
          style={[
             containerStyle,
             maxHeight ? { maxHeight, overflow: 'hidden' } : null,
+            scrollEnabled ? { overflow: 'hidden' } : null,
+            containerAnimatedStyle,
          ]}
       >
          <ScrollView
@@ -418,7 +428,7 @@ function PromptDisplay(
          >
             {contentWithMeasurement}
          </ScrollView>
-      </View>
+      </Animated.View>
    );
 }
 

@@ -70,9 +70,10 @@ export default function NewEntryModal() {
    const promptRef = useRef<PromptDisplayHandle | null>(null);
    const {
       promptTextStyle,
+      promptTextAnimatedStyle,
+      promptContainerAnimatedStyle,
       inputBoxDims,
       inputBoxAnimatedStyle,
-      promptMaxHeight,
    } = usePromptLayout();
    
    
@@ -229,7 +230,9 @@ export default function NewEntryModal() {
                      visited={hasVisited(currKey)}
                      onVisited={() => markVisited(currKey)}
                      textStyle={promptTextStyle}
-                     maxHeight={promptMaxHeight}
+                     textAnimatedStyle={promptTextAnimatedStyle}
+                     containerAnimatedStyle={promptContainerAnimatedStyle}
+                     freezeLineBreaks
                      scrollEnabled
                      numberOfLines={6}
                      containerStyle={{ flexGrow: 1, justifyContent: 'space-evenly' }}

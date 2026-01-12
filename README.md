@@ -22,10 +22,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-
-
-- Fine tune dark mode
-  - loading ellipse white
+- add shadow to fab button
 
 - Have a distinction for production tables and edge functions and development versions
 

@@ -232,9 +232,10 @@ export default function DisputeScreen() {
    const inputRef = useRef<TextInput>(null);
    const {
       promptTextStyle,
+      promptTextAnimatedStyle,
+      promptContainerAnimatedStyle,
       inputBoxDims,
       inputBoxAnimatedStyle,
-      promptMaxHeight,
    } = usePromptLayout('compact');
 
    const setField = useCallback(
@@ -455,7 +456,8 @@ export default function DisputeScreen() {
                      currKey={currKey}
                      prompts={suggestionPrompts}
                      promptTextStyle={promptTextStyle}
-                     promptMaxHeight={promptMaxHeight}
+                     promptTextAnimatedStyle={promptTextAnimatedStyle}
+                     promptContainerAnimatedStyle={promptContainerAnimatedStyle}
                      hasVisited={hasVisited}
                      markVisited={markVisited}
                      form={form}

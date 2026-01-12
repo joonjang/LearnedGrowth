@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Platform, TextStyle } from 'react-native';
+import { TextStyle } from 'react-native';
 import {
    useReanimatedKeyboardAnimation,
 } from 'react-native-keyboard-controller';
@@ -11,31 +11,33 @@ import {
    useSharedValue,
    withTiming,
 } from 'react-native-reanimated';
-import { useKeyboardVisible } from './useKeyboardVisible';
 import { useResponsiveFont } from './useResponsiveFont';
 
 export type PromptLayoutVariant = 'default' | 'compact';
 
 export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
-   const isKeyboardVisible = useKeyboardVisible();
    const { scaleFont } = useResponsiveFont();
    const { progress } = useReanimatedKeyboardAnimation();
-   const smoothProgress = useSharedValue(0);
-   const isAndroid = Platform.OS === 'android';
+   const smoothProgress = useSharedValue(progress.value);
 
+   // Follow native keyboard progress; only smooth large jumps (common on Android).
    useAnimatedReaction(
       () => progress.value,
-      (next) => {
-         if (isAndroid) {
+      (next, prev) => {
+         if (prev == null) {
             smoothProgress.value = next;
             return;
          }
-         smoothProgress.value = withTiming(next, {
-            duration: 200,
-            easing: Easing.out(Easing.cubic),
-         });
-      },
-      [isAndroid, smoothProgress]
+         const delta = Math.abs(next - prev);
+         if (delta > 0.2) {
+            smoothProgress.value = withTiming(next, {
+               duration: 200,
+               easing: Easing.out(Easing.cubic),
+            });
+            return;
+         }
+         smoothProgress.value = next;
+      }
    );
 
    const fontSizes = useMemo(() => {
@@ -51,17 +53,27 @@ export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
       };
    }, [variant, scaleFont]);
 
-   const promptTextStyle: TextStyle = useMemo(() => {
-      const fontSize = isKeyboardVisible
-         ? fontSizes.minFont
-         : fontSizes.baseFont;
-      return {
-         fontSize,
-         // lineHeight: Math.round(fontSize * 1.18),
+   const promptTextStyle: TextStyle = useMemo(
+      () => ({
+         fontSize: fontSizes.baseFont,
+         // lineHeight: Math.round(fontSizes.baseFont * 1.18),
          flexShrink: 1,
          flexWrap: 'wrap' as const,
-      };
-   }, [isKeyboardVisible, fontSizes]);
+      }),
+      [fontSizes.baseFont]
+   );
+
+   const promptTextAnimatedStyle = useAnimatedStyle(
+      () => {
+         const fontSize = interpolate(
+            smoothProgress.value,
+            [0, 1],
+            [fontSizes.baseFont, fontSizes.minFont]
+         );
+         return { fontSize };
+      },
+      [fontSizes.baseFont, fontSizes.minFont, smoothProgress]
+   );
 
    const inputBoxDims = useMemo(() => {
       // Base (keyboard hidden) dims to keep the component shape consistent before animation kicks in.
@@ -97,10 +109,24 @@ export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
       };
    }, [smoothProgress, variant]);
 
-   const promptMaxHeight = useMemo(() => {
-      if (!isKeyboardVisible) return undefined;
-      return variant === 'compact' ? 200 : 240;
-   }, [isKeyboardVisible, variant]);
+   const promptContainerAnimatedStyle = useAnimatedStyle(
+      () => {
+         const shownMax = variant === 'compact' ? 200 : 240;
+         const maxHeight = interpolate(
+            smoothProgress.value,
+            [0, 1],
+            [10000, shownMax]
+         );
+         return { maxHeight };
+      },
+      [smoothProgress, variant]
+   );
 
-   return { promptTextStyle, inputBoxDims, inputBoxAnimatedStyle, promptMaxHeight };
+   return {
+      promptTextStyle,
+      promptTextAnimatedStyle,
+      promptContainerAnimatedStyle,
+      inputBoxDims,
+      inputBoxAnimatedStyle,
+   };
 }

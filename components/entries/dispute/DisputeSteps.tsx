@@ -3,9 +3,13 @@ import {
    NativeScrollEvent,
    NativeSyntheticEvent,
    ScrollView,
+   StyleProp,
    TextInput,
-   View
+   TextStyle,
+   View,
+   ViewStyle
 } from 'react-native';
+import { AnimatedStyle } from 'react-native-reanimated';
 
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import StepperButton from '@/components/buttons/StepperButton';
@@ -35,8 +39,9 @@ type Props = {
    idx: number;
    currKey: NewInputDisputeType;
    prompts: Record<NewInputDisputeType, string>;
-   promptTextStyle: any;
-   promptMaxHeight?: number;
+   promptTextStyle: TextStyle;
+   promptTextAnimatedStyle?: AnimatedStyle<TextStyle>;
+   promptContainerAnimatedStyle?: AnimatedStyle<ViewStyle>;
    hasVisited: (key: NewInputDisputeType) => boolean;
    markVisited: (key: NewInputDisputeType) => void;
    form: Record<NewInputDisputeType, string>;
@@ -50,9 +55,9 @@ type Props = {
    handleScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
    scrollToBottom: (animated?: boolean) => void;
    inputRef: React.RefObject<TextInput | null>;
-   inputBoxDims: any;
-   inputBoxAnimatedStyle?: any;
-   promptContainerStyle?: any;
+   inputBoxDims: { minHeight?: number; maxHeight?: number };
+   inputBoxAnimatedStyle?: AnimatedStyle<ViewStyle>;
+   promptContainerStyle?: StyleProp<ViewStyle>;
    contentTopPadding?: number;
 };
 
@@ -62,7 +67,8 @@ export default function DisputeSteps({
    currKey,
    prompts,
    promptTextStyle,
-   promptMaxHeight,
+   promptTextAnimatedStyle,
+   promptContainerAnimatedStyle,
    hasVisited,
    markVisited,
    form,
@@ -147,7 +153,9 @@ export default function DisputeSteps({
                visited={hasVisited(currKey)}
                onVisited={() => markVisited(currKey)}
                textStyle={promptTextStyle}
-               maxHeight={promptMaxHeight}
+               textAnimatedStyle={promptTextAnimatedStyle}
+               containerAnimatedStyle={promptContainerAnimatedStyle}
+               freezeLineBreaks
                scrollEnabled
                numberOfLines={6}
                containerStyle={promptContainerStyle ?? { flexGrow: 1, justifyContent: 'space-evenly' }}
