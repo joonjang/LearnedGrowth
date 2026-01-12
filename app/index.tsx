@@ -330,6 +330,10 @@ export default function EntriesScreen() {
       new Map()
    );
 
+   const handleNewEntryPress = useCallback(() => {
+      lockNavigation(() => router.push('/new'));
+   }, [lockNavigation]);
+
    // --- Actions ---
    const closeMenu = useCallback(() => {
       if (openMenuEntryId !== null) {
@@ -733,7 +737,7 @@ export default function EntriesScreen() {
                      <View className="mt-3">
 
                            <Pressable
-                              onPress={() => router.push('/new')}
+                              onPress={handleNewEntryPress}
                               className={`relative flex-row items-center justify-center rounded-2xl px-6 py-4 ${PRIMARY_CTA_CLASS}`}
                               style={[ctaShadow.ios, ctaShadow.android]} // ✅ iOS shadow on the actual button is fine
                            >
@@ -782,18 +786,17 @@ export default function EntriesScreen() {
                   fabStyle,
                ]}
             >
-               <Link href="/new" asChild>
-                  <Pressable
-                     className={`h-14 w-14 rounded-full items-center justify-center ${PRIMARY_CTA_CLASS}`}
-                     style={[fabShadow.ios, fabShadow.android]}
-                  >
-                     <Plus
-                        size={28}
-                        color={PRIMARY_CTA_ICON_COLOR}
-                        strokeWidth={2.5}
-                     />
-                  </Pressable>
-               </Link>
+               <Pressable
+                  onPress={handleNewEntryPress}
+                  className={`h-14 w-14 rounded-full items-center justify-center ${PRIMARY_CTA_CLASS}`}
+                  style={[fabShadow.ios, fabShadow.android]}
+               >
+                  <Plus
+                     size={28}
+                     color={PRIMARY_CTA_ICON_COLOR}
+                     strokeWidth={2.5}
+                  />
+               </Pressable>
             </Animated.View>
          )}
          <Modal

@@ -374,10 +374,11 @@ function PromptDisplay(
    const contentWithMeasurement = (
       <View style={{ position: 'relative', width: '100%' }}>
          {!!text && (
-            <Text
+            <Animated.Text
                className={textClasses}
                style={[
                   mergedStyle,
+                  textAnimatedStyle,
                   { position: 'absolute', opacity: 0, width: '100%' },
                ]}
                numberOfLines={effectiveNumberOfLines}
@@ -392,7 +393,7 @@ function PromptDisplay(
                onTextLayout={handleTextLayout}
             >
                {text}
-            </Text>
+            </Animated.Text>
          )}
          {content}
       </View>
