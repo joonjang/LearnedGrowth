@@ -9,7 +9,6 @@ import {
    BOTTOM_SHEET_CONTENT_PADDING,
    DISPUTE_CTA_CLASS,
 } from '@/components/constants';
-// ❌ DELETE: import { supabase } from '@/lib/supabase'; <-- No longer needed here
 import { useAuth } from '@/providers/AuthProvider';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {
@@ -24,9 +23,11 @@ import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    ActivityIndicator,
+   Keyboard,
    Platform,
    Pressable,
    Text,
+   useWindowDimensions,
    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -75,6 +76,7 @@ export default function AuthModal() {
       'idle' | 'sending' | 'verifying' | 'apple' | 'google'
    >('idle');
    const [error, setError] = useState<string | null>(null);
+   const keyboardVisibleRef = useRef(false);
 
    useEffect(() => {
       setTimeout(() => modalRef.current?.present(), 100);
@@ -183,14 +185,60 @@ export default function AuthModal() {
    };
 
    const isIOS = Platform.OS === 'ios';
+   const { height: windowHeight } = useWindowDimensions();
 
    const snapPoints = useMemo(() => {
-      // Tune these numbers for your exact layout
-      if (step === 'email') {
-         return [isIOS ? '60%' : '49%']; // email step is taller on iOS (Apple button)
-      }
-      return [isIOS ? '40%' : '37%']; // code step
-   }, [step, isIOS]);
+      const emailBaseRatio = isIOS ? 0.6 : 0.49;
+      const emailExpandedRatio = isIOS ? 0.9 : 0.49;
+      const codeBaseRatio = isIOS ? 0.4 : 0.37;
+      const codeExpandedRatio = isIOS ? 0.70 : 0.37;
+
+      const baseRatio = step === 'email' ? emailBaseRatio : codeBaseRatio;
+      const expandedRatio =
+         step === 'email' ? emailExpandedRatio : codeExpandedRatio;
+
+      const baseHeight = Math.round(windowHeight * baseRatio);
+      const expandedHeight = Math.round(windowHeight * expandedRatio);
+
+      return isIOS ? [baseHeight, expandedHeight] : [baseHeight];
+   }, [isIOS, step, windowHeight]);
+
+   const snapToKeyboardState = useCallback(
+      (visible: boolean) => {
+         if (!isIOS) return;
+         modalRef.current?.snapToIndex(visible ? 1 : 0);
+      },
+      [isIOS]
+   );
+
+   useEffect(() => {
+      if (!isIOS) return;
+      const handleShow = () => {
+         keyboardVisibleRef.current = true;
+         snapToKeyboardState(true);
+      };
+      const handleHide = () => {
+         keyboardVisibleRef.current = false;
+         snapToKeyboardState(false);
+      };
+
+      const willShow = Keyboard.addListener('keyboardWillShow', handleShow);
+      const didShow = Keyboard.addListener('keyboardDidShow', handleShow);
+      const willHide = Keyboard.addListener('keyboardWillHide', handleHide);
+      const didHide = Keyboard.addListener('keyboardDidHide', handleHide);
+
+      return () => {
+         willShow.remove();
+         didShow.remove();
+         willHide.remove();
+         didHide.remove();
+      };
+   }, [isIOS, snapToKeyboardState]);
+
+   useEffect(() => {
+      if (!isIOS) return;
+      snapToKeyboardState(keyboardVisibleRef.current);
+   }, [isIOS, snapToKeyboardState, step]);
 
    return (
       <BottomSheetModal
@@ -206,8 +254,8 @@ export default function AuthModal() {
          handleComponent={() => null}
          handleIndicatorStyle={{ height: 0, opacity: 0 }}
          backgroundStyle={bottomSheetBackgroundStyle(isDark, theme.bg)}
-         // 👇 FIX 2: Standard keyboard handling works perfectly with fixed snap points
-         keyboardBehavior="interactive"
+         // 👇 FIX 2: Expand to a stable height on iOS when keyboard shows
+         keyboardBehavior={isIOS ? 'extend' : 'interactive'}
          keyboardBlurBehavior="restore"
          topInset={insets.top}
          backdropComponent={(props) => (
@@ -328,6 +376,8 @@ export default function AuthModal() {
                      placeholderTextColor={theme.placeholder}
                      value={email}
                      onChangeText={setEmail}
+                     onFocus={() => snapToKeyboardState(true)}
+                     onBlur={() => snapToKeyboardState(false)}
                      keyboardType="email-address"
                      autoCapitalize="none"
                      autoCorrect={false}
@@ -364,6 +414,8 @@ export default function AuthModal() {
                         placeholderTextColor={theme.placeholder}
                         value={code}
                         onChangeText={setCode}
+                        onFocus={() => snapToKeyboardState(true)}
+                        onBlur={() => snapToKeyboardState(false)}
                         keyboardType="number-pad"
                         textContentType="oneTimeCode"
                         style={{

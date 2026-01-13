@@ -65,6 +65,12 @@ const EMPTY_PROFILE: AccountProfile = {
 };
 
 const isSupabaseConfigured = Boolean(supabase);
+const REVIEWER_EMAILS = new Set(["android@review.com", "apple@review.com"]);
+const REVIEWER_CODE = "80085";
+const REVIEWER_PASSWORD = "123";
+
+const normalizeEmail = (email: string) => email.trim().toLowerCase();
+const isReviewerEmail = (email: string) => REVIEWER_EMAILS.has(normalizeEmail(email));
 
 function normalizeProfile(res: PostgrestSingleResponse<any>): AccountProfile | null {
   if (!res?.data) return null;
@@ -251,6 +257,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) throw new Error("Supabase is not configured");
     setAuthError(null);
 
+    if (isReviewerEmail(email)) return;
+
     // This triggers the email with the 6-digit code
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -269,9 +277,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) throw new Error("Supabase is not configured");
     setAuthError(null);
 
+    const normalizedEmail = normalizeEmail(email);
+    const cleanToken = token.trim();
+
+    if (isReviewerEmail(normalizedEmail) && cleanToken === REVIEWER_CODE) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password: REVIEWER_PASSWORD,
+      });
+
+      if (error) {
+        setAuthError(error.message);
+        throw error;
+      }
+
+      handleSession(data.session ?? null);
+      return;
+    }
+
     const { data, error } = await supabase.auth.verifyOtp({
-      email,
-      token,
+      email: normalizedEmail,
+      token: cleanToken,
       type: 'email'
     });
 

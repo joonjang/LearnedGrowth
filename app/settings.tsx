@@ -1,5 +1,6 @@
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import {
+   DISPUTE_CTA_CLASS,
    FREE_MONTHLY_CREDITS,
    PRIMARY_CTA_CLASS,
    ROUTE_LOGIN,

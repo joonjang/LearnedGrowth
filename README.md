@@ -47,6 +47,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Refactored promptDisplay from display character to having final text and then unveiling it
 - Made QuickStart button idempotent
 - Input now has character limit
+- Added reviewer account for android@reviewer.com and apple@reviewer.com --> 80085
 
 ### 2026-01-10
 - Keyboard display improvements
