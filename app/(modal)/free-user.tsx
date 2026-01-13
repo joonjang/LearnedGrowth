@@ -27,7 +27,7 @@ import {
    ArrowRight,
    Leaf,
    PlusCircle,
-   Sparkles,
+   UserSearch
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -80,7 +80,10 @@ export default function FreeUserChoiceScreen() {
    const [hasSession, setHasSession] = useState(false);
 
    useEffect(() => {
-      refreshProfileIfStale();
+      const task = InteractionManager.runAfterInteractions(() => {
+         refreshProfileIfStale();
+      });
+      return () => task.cancel?.();
    }, [refreshProfileIfStale]);
 
    // Sync local consent state if user object updates from remote
@@ -166,10 +169,20 @@ export default function FreeUserChoiceScreen() {
    );
 
    useEffect(() => {
-      const rafId = requestAnimationFrame(() => {
-         modalRef.current?.present();
+      let cancelled = false;
+      let rafId: number | null = null;
+      const task = InteractionManager.runAfterInteractions(() => {
+         if (cancelled) return;
+         rafId = requestAnimationFrame(() => {
+            if (cancelled) return;
+            modalRef.current?.present();
+         });
       });
-      return () => cancelAnimationFrame(rafId);
+      return () => {
+         cancelled = true;
+         if (rafId !== null) cancelAnimationFrame(rafId);
+         task.cancel?.();
+      };
    }, []);
 
    const handleDismiss = useCallback(() => {
@@ -301,6 +314,15 @@ export default function FreeUserChoiceScreen() {
       handleChoice(true);
    }, [autoAiRequested, effectiveSignedIn, handleChoice]);
 
+   const handleIndicatorStyle = useMemo(
+      () => bottomSheetHandleIndicatorStyle(isDark),
+      [isDark]
+   );
+   const backgroundStyle = useMemo(
+      () => bottomSheetBackgroundStyle(isDark, theme.bg),
+      [isDark, theme.bg]
+   );
+
    return (
       <>
          <BottomSheetModal
@@ -312,8 +334,8 @@ export default function FreeUserChoiceScreen() {
             enablePanDownToClose
             backdropComponent={renderBackdrop}
             // These functions are likely cheap, but if they return new objects, BottomSheet might re-render.
-            handleIndicatorStyle={bottomSheetHandleIndicatorStyle(isDark)}
-            backgroundStyle={bottomSheetBackgroundStyle(isDark, theme.bg)}
+            handleIndicatorStyle={handleIndicatorStyle}
+            backgroundStyle={backgroundStyle}
          >
             <BottomSheetView style={contentContainerStyle}>
                <View className="mb-6">
@@ -384,7 +406,7 @@ export default function FreeUserChoiceScreen() {
                         {availableCredits === 0 ? (
                            <PlusCircle size={24} color={theme.amberText} />
                         ) : (
-                           <Sparkles size={24} color={theme.amberText} />
+                           <UserSearch size={24} color={theme.amberText} />
                         )}
                     </Pressable>
 

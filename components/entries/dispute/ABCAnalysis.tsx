@@ -45,6 +45,7 @@ export default function ABCAnalysis({
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const shadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
+   const shadowGutter = 6;
    
    const [areAnimationsDone, setAreAnimationsDone] = useState(false);
    const buttonOpacity = useSharedValue(0);
@@ -69,13 +70,14 @@ export default function ABCAnalysis({
    return (
       <ScrollView
          className="flex-1"
+         style={{ marginHorizontal: -shadowGutter }}
          contentContainerStyle={{
             paddingTop: contentTopPadding ?? 24,
             paddingBottom: 48,
             flexGrow: 1,
             justifyContent: 'space-between',
             gap: 16,
-            padding: 2,
+            paddingHorizontal: shadowGutter,
          }}
          keyboardShouldPersistTaps="always"
          showsVerticalScrollIndicator={false}

@@ -13,7 +13,6 @@ import {
    Platform,
    ScrollView,
    StyleProp,
-   Text,
    TextStyle,
    View,
    ViewStyle
@@ -156,23 +155,17 @@ function PromptDisplay(
       Platform.OS === 'android' ? 'highQuality' : undefined;
    const lineBreakStrategyIOS =
       Platform.OS === 'ios' ? 'standard' : undefined;
-   const displayText = text;
    const loaderClasses = 'items-center min-h-[1px]';
    const textClasses = `font-bold text-slate-900 dark:text-slate-200 shrink ${textClassName ?? ''}`.trim();
    const safeRevealVisibleText =
       text && revealVisibleText && text.startsWith(revealVisibleText)
          ? revealVisibleText
          : '';
-
-   const loader = (
-      <View
-         className={loaderClasses}
-      >
-         <ThreeDotsLoader />
-      </View>
-   );
-
    const canReveal = readyToAnimate;
+   const showLoader = !visited && !canReveal;
+   const visibleText = visited
+      ? text
+      : (canReveal ? safeRevealVisibleText : '');
 
    useEffect(() => {
       clearRevealTimer();
@@ -208,51 +201,55 @@ function PromptDisplay(
       text,
    ]);
 
-   const staticText = (
-      <Animated.Text
-         className={textClasses}
-         style={[mergedStyle, textAnimatedStyle]}
-         numberOfLines={effectiveNumberOfLines}
-         textBreakStrategy={textBreakStrategy}
-         lineBreakStrategyIOS={lineBreakStrategyIOS}
-         adjustsFontSizeToFit={false}
-         minimumFontScale={1}
-         allowFontScaling
-      >
-         {displayText}
-      </Animated.Text>
-   );
-   const revealText = (
-      <Animated.Text
-         className={textClasses}
-         style={[mergedStyle, textAnimatedStyle]}
-         numberOfLines={effectiveNumberOfLines}
-         textBreakStrategy={textBreakStrategy}
-         lineBreakStrategyIOS={lineBreakStrategyIOS}
-         adjustsFontSizeToFit={false}
-         minimumFontScale={1}
-         allowFontScaling
-         accessibilityLabel={safeRevealVisibleText}
-      >
-         {safeRevealVisibleText}
-         {text.length > safeRevealVisibleText.length ? (
-            <Text style={{ color: 'transparent' }}>
-               {text.slice(safeRevealVisibleText.length)}
-            </Text>
-         ) : null}
-      </Animated.Text>
-   );
-   const content = visited ? (
-      staticText
-   ) : canReveal ? (
-      revealText
-   ) : (
-      loader
-   );
-
    const contentWithMeasurement = (
-      <View style={{ width: '100%' }}>
-         {content}
+      <View style={{ width: '100%', position: 'relative' }}>
+         <Animated.Text
+            className={textClasses}
+            style={[mergedStyle, textAnimatedStyle, { opacity: 0 }]}
+            numberOfLines={effectiveNumberOfLines}
+            textBreakStrategy={textBreakStrategy}
+            lineBreakStrategyIOS={lineBreakStrategyIOS}
+            adjustsFontSizeToFit={false}
+            minimumFontScale={1}
+            allowFontScaling
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+         >
+            {text}
+         </Animated.Text>
+         <Animated.Text
+            className={textClasses}
+            style={[
+               mergedStyle,
+               textAnimatedStyle,
+               { position: 'absolute', top: 0, left: 0, right: 0 },
+            ]}
+            numberOfLines={effectiveNumberOfLines}
+            textBreakStrategy={textBreakStrategy}
+            lineBreakStrategyIOS={lineBreakStrategyIOS}
+            adjustsFontSizeToFit={false}
+            minimumFontScale={1}
+            allowFontScaling
+            accessibilityLabel={visibleText}
+         >
+            {visibleText}
+         </Animated.Text>
+         {showLoader ? (
+            <View
+               className={loaderClasses}
+               pointerEvents="none"
+               style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+               }}
+            >
+               <ThreeDotsLoader />
+            </View>
+         ) : null}
       </View>
    );
 
