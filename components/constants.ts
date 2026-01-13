@@ -36,6 +36,9 @@ export const DISPUTE_STEP_CHAR_LIMITS = {
 
 export const ENTRY_CHAR_WARN_MIN_REMAINING = 20;
 export const ENTRY_CHAR_WARN_RATIO = 0.1;
+export const INPUT_BOX_TOP_INSET = 8;
+export const INPUT_BOX_BOTTOM_INSET = 6;
+export const INPUT_BOX_HORIZONTAL_INSET = 16;
 
 export const ABCDE_FIELD = [
    {

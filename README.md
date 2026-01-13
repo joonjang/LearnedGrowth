@@ -38,6 +38,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+### 2026-01-13
+- input box navigation and style changed
+- added dev login
+
 ### 2026-01-12
 - made button going to /new idempotent
 - removed choppines of text prompt display

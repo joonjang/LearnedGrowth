@@ -169,7 +169,15 @@ export default function NewEntryModal() {
             STEP_ORDER.length - 1
          );
          const nextKey = STEP_ORDER[nextIdx];
-         inputRef.current?.setNativeProps({ text: form[nextKey] ?? '' });
+         const nextValue = form[nextKey] ?? '';
+         inputRef.current?.setNativeProps({ text: nextValue });
+         if (Platform.OS === 'android') {
+            requestAnimationFrame(() => {
+               inputRef.current?.setNativeProps({
+                  selection: { start: 0, end: 0 },
+               });
+            });
+         }
          setIdx(nextIdx);
       },
       [form, idx, inputRef, setIdx]
@@ -246,7 +254,6 @@ export default function NewEntryModal() {
 
                {/* INPUT WRAPPER */}
                   <InputBox
-
                      ref={inputRef}
                      value={form[currKey]}
                      onChangeText={setField(currKey)}

@@ -65,7 +65,11 @@ const EMPTY_PROFILE: AccountProfile = {
 };
 
 const isSupabaseConfigured = Boolean(supabase);
-const REVIEWER_EMAILS = new Set(["android@review.com", "apple@review.com"]);
+const REVIEWER_EMAILS = new Set([
+  "android@review.com",
+  "apple@review.com",
+  "dev@test.com",
+]);
 const REVIEWER_CODE = "80085";
 const REVIEWER_PASSWORD = "123";
 

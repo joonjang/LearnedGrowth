@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import {
    NativeScrollEvent,
    NativeSyntheticEvent,
+   Platform,
    ScrollView,
    StyleProp,
    TextInput,
@@ -108,7 +109,15 @@ export default function DisputeSteps({
             DISPUTE_STEP_ORDER.length - 1
          );
          const nextKey = DISPUTE_STEP_ORDER[nextIdx];
-         inputRef.current?.setNativeProps({ text: form[nextKey] ?? '' });
+         const nextValue = form[nextKey] ?? '';
+         inputRef.current?.setNativeProps({ text: nextValue });
+         if (Platform.OS === 'android') {
+            requestAnimationFrame(() => {
+               inputRef.current?.setNativeProps({
+                  selection: { start: 0, end: 0 },
+               });
+            });
+         }
          setIdx(nextIdx);
       },
       [form, idx, inputRef, setIdx]

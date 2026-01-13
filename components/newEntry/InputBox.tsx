@@ -1,10 +1,19 @@
 import {
    ENTRY_CHAR_WARN_MIN_REMAINING,
    ENTRY_CHAR_WARN_RATIO,
+   INPUT_BOX_BOTTOM_INSET,
+   INPUT_BOX_HORIZONTAL_INSET,
+   INPUT_BOX_TOP_INSET,
 } from '@/components/constants';
 import { getShadow } from '@/lib/shadow';
 import { useColorScheme } from 'nativewind';
-import { forwardRef, useMemo, useState } from 'react';
+import {
+   forwardRef,
+   useCallback,
+   useMemo,
+   useRef,
+   useState,
+} from 'react';
 import {
    Pressable,
    Text,
@@ -45,16 +54,20 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
       compact = false,
       autoCorrect = true,
       maxLength,
+      onScroll,
       ...rest
    },
    ref
 ) {
    const [focused, setFocused] = useState(false);
+   const inputRef = useRef<TextInput | null>(null);
    
    // Hook for placeholder color
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const placeholderColor = isDark ? '#94a3b8' : '#64748b';
+   const fontSize = compact ? 18 : 22;
+   const lineHeight = Math.round(fontSize * 1.3);
    const shadow = useMemo(
       () => getShadow({ isDark, preset: focused ? 'md' : 'sm' }),
       [focused, isDark]
@@ -70,12 +83,26 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
          ? 'text-rose-600 dark:text-rose-400'
          : 'text-amber-600 dark:text-amber-400';
 
+   const setRefs = useCallback(
+      (node: TextInput | null) => {
+         inputRef.current = node;
+         if (typeof ref === 'function') {
+            ref(node);
+            return;
+         }
+         if (ref && typeof ref === 'object') {
+            ref.current = node;
+         }
+      },
+      [ref]
+   );
+
    return (
       <AnimatedPressable
          onPress={() =>
-            typeof ref === 'object' && ref?.current ? ref.current.focus() : null
+            inputRef.current ? inputRef.current.focus() : null
          }
-         className={`rounded-[14px] bg-zinc-50 dark:bg-slate-700 border px-4 py-3 mb-1.5 ${
+         className={`rounded-[14px] bg-zinc-50 dark:bg-slate-700 border mb-1.5 ${
             focused
                ? 'border-slate-300 dark:border-slate-500 opacity-100'
                : 'border-slate-200 dark:border-slate-700'
@@ -84,19 +111,29 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
       >
           
          <TextInput
-            ref={ref}
+            ref={setRefs}
             testID="entry-input"
             placeholder={placeholder}
             value={value}
             onChangeText={onChangeText}
             autoCorrect={autoCorrect}
             // Compact vs Standard Text Size
-            className={`text-slate-900 dark:text-slate-100 leading-6 ${compact ? 'text-lg' : 'text-[22px]'}`}
-            style={{ includeFontPadding: false, paddingBottom: 24 }} // NativeWind handles most, but this is specific
+            className="flex-1 text-slate-900 dark:text-slate-100"
+            style={{
+               includeFontPadding: false,
+               margin: 0,
+               padding: 0,
+               paddingHorizontal: INPUT_BOX_HORIZONTAL_INSET,
+               fontSize,
+               lineHeight,
+               paddingTop: INPUT_BOX_TOP_INSET,
+               paddingBottom: INPUT_BOX_BOTTOM_INSET,
+            }} // NativeWind handles most, but this is specific
             multiline
             scrollEnabled={scrollEnabled}
             textAlignVertical="top"
             placeholderTextColor={placeholderColor}
+            onScroll={onScroll}
             onFocus={(e) => {
                setFocused(true);
                rest.onFocus?.(e);
@@ -108,8 +145,11 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
             maxLength={maxLength}
             {...rest}
          />
-        {showCount && (
-            <View className="mt-1 absolute bottom-2 right-2 flex-row justify-end">
+         {showCount && (
+            <View
+               className="mt-1 absolute bottom-2 flex-row justify-end"
+               style={{ right: INPUT_BOX_HORIZONTAL_INSET }}
+            >
                <Text className={`text-[11px] font-medium ${counterClassName}`}>
                   {charCount}/{maxLength}
                </Text>

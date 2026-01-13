@@ -69,14 +69,13 @@ export default function StepperButton({
          handleExit();
          return;
       }
+      if (wasFocused) {
+         Keyboard.dismiss();
+      }
       if (onBack) {
          onBack();
       } else {
          setIdx((i) => Math.max(i - 1, 0));
-      }
-
-      if (wasFocused) {
-         setTimeout(() => inputRef?.current?.focus?.(), 0);
       }
    }, [canGoBack, handleExit, inputRef, onBack, setIdx]);
 
