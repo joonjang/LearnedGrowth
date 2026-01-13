@@ -7,6 +7,7 @@ import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_CONTENT_PADDING,
+   DISPUTE_CTA_CLASS,
 } from '@/components/constants';
 // ❌ DELETE: import { supabase } from '@/lib/supabase'; <-- No longer needed here
 import { useAuth } from '@/providers/AuthProvider';
@@ -388,7 +389,7 @@ export default function AuthModal() {
             </View>
 
             <Pressable
-               className={`h-[54px] rounded-[14px] items-center justify-center mb-1 bg-dispute-cta dark:bg-dispute-ctaDark active:opacity-90 ${status !== 'idle' ? 'opacity-70' : ''}`}
+               className={`h-[54px] rounded-[14px] items-center justify-center mb-1 ${DISPUTE_CTA_CLASS} active:opacity-90 ${status !== 'idle' ? 'opacity-70' : ''}`}
                onPress={step === 'email' ? onSendEmail : onVerifyCode}
                disabled={status !== 'idle'}
             >

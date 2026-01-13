@@ -1,7 +1,7 @@
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import {
-   DISPUTE_CTA_CLASS,
    FREE_MONTHLY_CREDITS,
+   PRIMARY_CTA_CLASS,
    ROUTE_LOGIN,
 } from '@/components/constants';
 import { AiInsightCreditShopSheet } from '@/components/CreditShopSheet';
@@ -472,7 +472,7 @@ export default function SettingsScreen() {
                   </View>
 
                   <Pressable
-                     className="w-full h-[50px] items-center justify-center rounded-xl bg-indigo-600 dark:bg-indigo-500 active:bg-indigo-700 dark:active:bg-indigo-600"
+                     className={`w-full h-[50px] items-center justify-center rounded-xl ${PRIMARY_CTA_CLASS}`}
                      onPress={() => router.push(ROUTE_LOGIN)}
                   >
                      <Text className="text-white font-bold text-[16px]">
