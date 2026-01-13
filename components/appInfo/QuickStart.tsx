@@ -5,12 +5,13 @@ import {
    TimelinePivot,
    TimelineStepDef,
 } from '@/components/entries/entry/Timeline';
+import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getShadow } from '@/lib/shadow';
 import { FieldTone } from '@/lib/theme';
 import { router } from 'expo-router';
 import { ArrowRight, Briefcase, HeartCrack, Users } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    AccessibilityInfo,
    Animated,
@@ -163,11 +164,16 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
    const insets = useSafeAreaInsets();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { lock: lockNavigation, locked: navigationLocked } = useNavigationLock();
    const [activeScenarioIndex, setActiveScenarioIndex] = useState(0);
    const [reduceMotion, setReduceMotion] = useState(false);
    const activeScenario = SCENARIOS[activeScenarioIndex];
    const cardShadow = useMemo(
       () => getShadow({ isDark, preset: 'sm' }),
+      [isDark]
+   );
+   const buttonShadow = useMemo(
+      () => getShadow({ isDark, preset: 'button', colorLight: '#4f46e5' }),
       [isDark]
    );
 
@@ -216,6 +222,16 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
          });
       });
    };
+
+   const handleCtaPress = useCallback(() => {
+      lockNavigation(() => {
+         try {
+            router.push('/new');
+         } catch (e) {
+            console.warn('Navigation unavailable for /new', e);
+         }
+      });
+   }, [lockNavigation]);
 
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-950">
@@ -455,14 +471,10 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
             style={{ paddingBottom: insets.bottom + 16 }}
          >
             <Pressable
-               className="relative flex-row items-center justify-center overflow-hidden rounded-2xl bg-indigo-600 dark:bg-indigo-500 px-6 py-4 active:bg-indigo-700 dark:active:bg-indigo-600"
-               onPress={() => {
-                  try {
-                     router.push('/new');
-                  } catch (e) {
-                     console.warn('Navigation unavailable for /new', e);
-                  }
-               }}
+               className={`relative flex-row items-center justify-center rounded-2xl bg-indigo-600 dark:bg-indigo-500 px-6 py-4 active:bg-indigo-700 dark:active:bg-indigo-600 ${buttonShadow.className}`}
+               style={[buttonShadow.ios, buttonShadow.android]}
+               onPress={handleCtaPress}
+               disabled={navigationLocked}
             >
                <Text className="text-lg font-bold text-center text-white" numberOfLines={1}>
                   Try a 2-minute entry

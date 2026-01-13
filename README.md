@@ -22,12 +22,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- Have a distinction for production tables and edge functions and development versions
-
-
----
-
-- BACKLOG 
 - add a report problem button to send a snapshot of the issue
 - enable user to get extra analysis if someone signs up using their referal code
 
@@ -35,10 +29,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - Entry categorization upon subscription
 - Animate minimize and show for EntryDetail Screen
-
-- Auth guard
-  - Cloud database sync 
-    - log out should hide entries
 
 
 ---
@@ -52,6 +42,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - removed consequence from displaying for 
   - shadow no longer clipped
 - Refactored promptDisplay from display character to having final text and then unveiling it
+- Made QuickStart button idempotent
 
 ### 2026-01-10
 - Keyboard display improvements

@@ -17,7 +17,7 @@ import { useAuth } from './AuthProvider';
 const EntriesStoreContext = createContext<EntriesStore | null>(null);
 
 export function EntriesStoreProvider({ children }: { children: ReactNode }) {
-   const { adapter, ready, error } = useEntriesAdapter();
+   const { adapter, ready } = useEntriesAdapter();
    const { user } = useAuth();
    const devSeeded = useRef(false);
    const lastLinkedAccountId = useRef<string | null>(null);
