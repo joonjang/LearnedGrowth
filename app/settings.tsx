@@ -1,4 +1,3 @@
-import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import {
    DISPUTE_CTA_CLASS,
    FREE_MONTHLY_CREDITS,
@@ -16,6 +15,7 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import NetInfo from '@react-native-community/netinfo';
 import { router, useFocusEffect } from 'expo-router';
 import {
+   ChevronLeft,
    ChevronDown,
    ChevronUp,
    Cloud,
@@ -425,8 +425,15 @@ export default function SettingsScreen() {
             keyboardShouldPersistTaps="handled"
          >
             {/* HEADER */}
-            <View className="flex-row justify-between items-start mb-2">
-               <View className="flex-1 mr-4">
+            <View className="flex-row items-start gap-2 mb-2">
+               <Pressable
+                  onPress={() => router.back()}
+                  hitSlop={8}
+                  className="mt-1 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
+               >
+                  <ChevronLeft size={26} strokeWidth={2.8} color={iconColor} />
+               </Pressable>
+               <View className="flex-1">
                   <Text className="text-3xl font-extrabold text-slate-900 dark:text-slate-50">
                      Settings
                   </Text>
@@ -436,9 +443,6 @@ export default function SettingsScreen() {
                   >
                      {user?.email ?? 'Not signed in'}
                   </Text>
-               </View>
-               <View className="mt-1">
-                  <RoundedCloseButton onPress={() => router.back()} />
                </View>
             </View>
 
