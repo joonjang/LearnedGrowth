@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { TextStyle } from 'react-native';
 import {
+   KeyboardController,
    useReanimatedKeyboardAnimation,
 } from 'react-native-keyboard-controller';
 import {
@@ -11,6 +12,7 @@ import {
    useSharedValue,
    withTiming,
 } from 'react-native-reanimated';
+import { useKeyboardVisible } from './useKeyboardVisible';
 import { useResponsiveFont } from './useResponsiveFont';
 
 export type PromptLayoutVariant = 'default' | 'compact';
@@ -18,7 +20,9 @@ export type PromptLayoutVariant = 'default' | 'compact';
 export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
    const { scaleFont } = useResponsiveFont();
    const { progress } = useReanimatedKeyboardAnimation();
-   const smoothProgress = useSharedValue(progress.value);
+   const isKeyboardVisible = useKeyboardVisible();
+   const initialTarget = KeyboardController.isVisible?.() ? 1 : 0;
+   const smoothProgress = useSharedValue(initialTarget);
 
    // Follow native keyboard progress; only smooth large jumps (common on Android).
    useAnimatedReaction(
@@ -64,6 +68,18 @@ export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
    );
 
    const promptTextAnimatedStyle = useAnimatedStyle(
+      () => {
+         const fontSize = interpolate(
+            smoothProgress.value,
+            [0, 1],
+            [fontSizes.baseFont, fontSizes.minFont]
+         );
+         return { fontSize };
+      },
+      [fontSizes.baseFont, fontSizes.minFont, smoothProgress]
+   );
+
+   const promptTextMeasureStyle = useAnimatedStyle(
       () => {
          const fontSize = interpolate(
             smoothProgress.value,
@@ -125,6 +141,8 @@ export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
    return {
       promptTextStyle,
       promptTextAnimatedStyle,
+      promptTextMeasureStyle,
+      promptLineBreakKey: isKeyboardVisible ? 'keyboard' : 'default',
       promptContainerAnimatedStyle,
       inputBoxDims,
       inputBoxAnimatedStyle,

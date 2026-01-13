@@ -41,6 +41,8 @@ type Props = {
    prompts: Record<NewInputDisputeType, string>;
    promptTextStyle: TextStyle;
    promptTextAnimatedStyle?: AnimatedStyle<TextStyle>;
+   promptTextMeasureStyle?: AnimatedStyle<TextStyle>;
+   promptLineBreakKey?: string | number;
    promptContainerAnimatedStyle?: AnimatedStyle<ViewStyle>;
    hasVisited: (key: NewInputDisputeType) => boolean;
    markVisited: (key: NewInputDisputeType) => void;
@@ -68,6 +70,8 @@ export default function DisputeSteps({
    prompts,
    promptTextStyle,
    promptTextAnimatedStyle,
+   promptTextMeasureStyle,
+   promptLineBreakKey,
    promptContainerAnimatedStyle,
    hasVisited,
    markVisited,
@@ -87,6 +91,7 @@ export default function DisputeSteps({
    promptContainerStyle,
    contentTopPadding,
 }: Props) {
+   const shadowGutter = 6;
    const promptRef = React.useRef<PromptDisplayHandle | null>(null);
 
    const handleClose = useCallback(() => {
@@ -113,11 +118,13 @@ export default function DisputeSteps({
          <ScrollView
             ref={scrollRef}
             className="flex-1"
+            style={{ marginHorizontal: -shadowGutter }}
             contentContainerStyle={{
                flexGrow: 1,
                justifyContent: 'space-between',
                gap: 16,
-               paddingTop: contentTopPadding ?? 24
+               paddingTop: contentTopPadding ?? 24,
+               paddingHorizontal: shadowGutter,
             }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -154,6 +161,8 @@ export default function DisputeSteps({
                onVisited={() => markVisited(currKey)}
                textStyle={promptTextStyle}
                textAnimatedStyle={promptTextAnimatedStyle}
+               textMeasureStyle={promptTextMeasureStyle}
+               lineBreakKey={promptLineBreakKey}
                containerAnimatedStyle={promptContainerAnimatedStyle}
                freezeLineBreaks
                scrollEnabled

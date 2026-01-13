@@ -71,6 +71,8 @@ export default function NewEntryModal() {
    const {
       promptTextStyle,
       promptTextAnimatedStyle,
+      promptTextMeasureStyle,
+      promptLineBreakKey,
       promptContainerAnimatedStyle,
       inputBoxDims,
       inputBoxAnimatedStyle,
@@ -231,6 +233,8 @@ export default function NewEntryModal() {
                      onVisited={() => markVisited(currKey)}
                      textStyle={promptTextStyle}
                      textAnimatedStyle={promptTextAnimatedStyle}
+                     textMeasureStyle={promptTextMeasureStyle}
+                     lineBreakKey={promptLineBreakKey}
                      containerAnimatedStyle={promptContainerAnimatedStyle}
                      freezeLineBreaks
                      scrollEnabled

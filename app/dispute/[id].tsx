@@ -233,6 +233,8 @@ export default function DisputeScreen() {
    const {
       promptTextStyle,
       promptTextAnimatedStyle,
+      promptTextMeasureStyle,
+      promptLineBreakKey,
       promptContainerAnimatedStyle,
       inputBoxDims,
       inputBoxAnimatedStyle,
@@ -457,6 +459,8 @@ export default function DisputeScreen() {
                      prompts={suggestionPrompts}
                      promptTextStyle={promptTextStyle}
                      promptTextAnimatedStyle={promptTextAnimatedStyle}
+                     promptTextMeasureStyle={promptTextMeasureStyle}
+                     promptLineBreakKey={promptLineBreakKey}
                      promptContainerAnimatedStyle={promptContainerAnimatedStyle}
                      hasVisited={hasVisited}
                      markVisited={markVisited}

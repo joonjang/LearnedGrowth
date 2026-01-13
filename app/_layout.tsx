@@ -39,7 +39,6 @@ export default function RootLayout() {
                            options={{
                               presentation: 'card',
                               headerShown: false,
-                              animation: 'fade_from_bottom',
                            }}
                         />
                         <Stack.Screen

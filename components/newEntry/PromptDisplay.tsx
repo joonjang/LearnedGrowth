@@ -14,11 +14,9 @@ import {
    ScrollView,
    StyleProp,
    Text,
-   TextProps,
    TextStyle,
-   TextLayoutEvent,
    View,
-   ViewStyle,
+   ViewStyle
 } from 'react-native';
 import Animated, { AnimatedStyle } from 'react-native-reanimated';
 import ThreeDotsLoader from '../ThreeDotLoader';
@@ -26,219 +24,10 @@ import ThreeDotsLoader from '../ThreeDotLoader';
 const TYPING_SPEED = 35;
 const CHAR_PER_TICK = 1;
 
-const formatTextWithBreaks = (
-   text: string,
-   lineBreaks: number[],
-   limit?: number
-) => {
-   const slice = limit === undefined ? text : text.slice(0, limit);
-   if (!lineBreaks.length || !slice) return slice;
-   let out = '';
-   let prev = 0;
-   for (const br of lineBreaks) {
-      if (br <= 0) continue;
-      if (br >= slice.length) break;
-      out += slice.slice(prev, br) + '\n';
-      prev = br;
-      while (slice[prev] === ' ') prev += 1;
-   }
-   out += slice.slice(prev);
-   return out;
-};
-
-const deriveLineBreaks = (
-   text: string,
-   lines: { text: string }[]
-) => {
-   if (!text || !lines.length) return [];
-   const breaks: number[] = [];
-   let cursor = 0;
-   for (const line of lines) {
-      const lineText = line.text ?? '';
-      if (!lineText) continue;
-      cursor += lineText.length;
-      if (cursor > text.length) cursor = text.length;
-      breaks.push(cursor);
-   }
-   if (!breaks.length) return [];
-   breaks.pop();
-   return breaks;
-};
-
-const areBreaksEqual = (prev: number[] | null, next: number[]) => {
-   if (!prev) return false;
-   if (prev.length !== next.length) return false;
-   for (let i = 0; i < prev.length; i += 1) {
-      if (prev[i] !== next[i]) return false;
-   }
-   return true;
-};
 
 type StopOptions = {
    finish?: boolean;
 };
-
-type TypewriterHandle = {
-   stop: (options?: StopOptions) => void;
-   finish: () => void;
-};
-
-type TypewriterProps = {
-   text: string;
-   className?: string;
-   style?: StyleProp<TextStyle>;
-   numberOfLines?: number;
-   onFinished?: () => void;
-   allowFontScaling?: boolean;
-   adjustsFontSizeToFit?: boolean;
-   minimumFontScale?: number;
-   textBreakStrategy?: TextProps['textBreakStrategy'];
-   lineBreakStrategyIOS?: TextProps['lineBreakStrategyIOS'];
-   lineBreaks?: number[];
-   tickMs?: number;
-   charsPerTick?: number;
-};
-
-function Typewriter(
-   {
-      text,
-      className,
-      style,
-      numberOfLines,
-      onFinished,
-      allowFontScaling = true,
-      adjustsFontSizeToFit = false,
-      minimumFontScale = 1,
-      textBreakStrategy,
-      lineBreakStrategyIOS,
-      lineBreaks = [],
-      tickMs = TYPING_SPEED,
-      charsPerTick = CHAR_PER_TICK,
-   }: TypewriterProps,
-   ref: Ref<TypewriterHandle>
-) {
-   const [displayed, setDisplayed] = useState('');
-   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-   const progressRef = useRef(0);
-   const finishedRef = useRef(false);
-   const textRef = useRef(text);
-   const lineBreaksRef = useRef(lineBreaks);
-   const onFinishedRef = useRef(onFinished);
-
-   useEffect(() => {
-      textRef.current = text;
-   }, [text]);
-
-   useEffect(() => {
-      onFinishedRef.current = onFinished;
-   }, [onFinished]);
-
-   useEffect(() => {
-      lineBreaksRef.current = lineBreaks;
-      if (!textRef.current) return;
-      setDisplayed(
-         formatTextWithBreaks(
-            textRef.current,
-            lineBreaksRef.current,
-            progressRef.current
-         )
-      );
-   }, [lineBreaks]);
-
-   const clearTimer = useCallback(() => {
-      if (timerRef.current) {
-         clearInterval(timerRef.current);
-         timerRef.current = null;
-      }
-   }, []);
-
-   const runFinished = useCallback(() => {
-      if (finishedRef.current) return;
-      finishedRef.current = true;
-      onFinishedRef.current?.();
-   }, []);
-
-   const stop = useCallback(
-      (finish = false) => {
-         clearTimer();
-         if (finish) {
-            progressRef.current = textRef.current.length;
-            setDisplayed(
-               formatTextWithBreaks(textRef.current, lineBreaksRef.current)
-            );
-            runFinished();
-         }
-      },
-      [clearTimer, runFinished]
-   );
-
-   useImperativeHandle(
-      ref,
-      () => ({
-         stop: (options?: StopOptions) => stop(options?.finish ?? false),
-         finish: () => stop(true),
-      }),
-      [stop]
-   );
-
-   useEffect(() => {
-      clearTimer();
-      finishedRef.current = false;
-      progressRef.current = 0;
-
-      if (!textRef.current) {
-         setDisplayed('');
-         runFinished();
-         return;
-      }
-
-      setDisplayed(
-         formatTextWithBreaks(textRef.current, lineBreaksRef.current, 0)
-      );
-
-      timerRef.current = setInterval(() => {
-         const nextIndex = Math.min(
-            progressRef.current + charsPerTick,
-            textRef.current.length
-         );
-
-         progressRef.current = nextIndex;
-         setDisplayed(
-            formatTextWithBreaks(
-               textRef.current,
-               lineBreaksRef.current,
-               nextIndex
-            )
-         );
-
-         if (nextIndex >= textRef.current.length) {
-            clearTimer();
-            runFinished();
-         }
-      }, tickMs);
-
-      return clearTimer;
-   }, [charsPerTick, clearTimer, runFinished, tickMs, text]);
-
-   return (
-      <Animated.Text
-         className={className}
-         style={style}
-         numberOfLines={numberOfLines}
-         textBreakStrategy={textBreakStrategy}
-         lineBreakStrategyIOS={lineBreakStrategyIOS}
-         allowFontScaling={allowFontScaling}
-         adjustsFontSizeToFit={adjustsFontSizeToFit}
-         minimumFontScale={minimumFontScale}
-      >
-         {displayed}
-      </Animated.Text>
-   );
-}
-
-const ForwardedTypewriter = forwardRef<TypewriterHandle, TypewriterProps>(
-   Typewriter
-);
 
 export type PromptDisplayHandle = {
    stop: (options?: StopOptions) => void;
@@ -251,6 +40,8 @@ type Props = {
    onVisited?: () => void;
    textStyle: TextStyle;
    textAnimatedStyle?: AnimatedStyle<TextStyle>;
+   textMeasureStyle?: AnimatedStyle<TextStyle>;
+   lineBreakKey?: string | number;
    textClassName?: string;
    containerClassName?: string;
    containerStyle?: StyleProp<ViewStyle>;
@@ -275,27 +66,80 @@ function PromptDisplay(
       numberOfLines,
       maxHeight,
       scrollEnabled = false,
-      freezeLineBreaks = true,
    }: Props,
    ref: Ref<PromptDisplayHandle>
 ) {
    const readyToAnimate = useDeferredReady(1200);
-   const [lineBreaks, setLineBreaks] = useState<number[] | null>(null);
-   const typewriterRef = useRef<TypewriterHandle | null>(null);
+   const [revealVisibleText, setRevealVisibleText] = useState('');
+   const revealTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+   const revealProgressRef = useRef(0);
+   const revealFinishedRef = useRef(false);
+   const revealTextRef = useRef(text);
+   const revealOnVisitedRef = useRef(onVisited);
+   const prevRevealTextRef = useRef(text);
+
+   useEffect(() => {
+      revealOnVisitedRef.current = onVisited;
+   }, [onVisited]);
+
+   const updateReveal = useCallback((rawIndex: number) => {
+      const fullText = revealTextRef.current ?? '';
+      const safeIndex = Math.max(0, Math.min(rawIndex, fullText.length));
+      setRevealVisibleText(fullText.slice(0, safeIndex));
+   }, []);
+
+   const clearRevealTimer = useCallback(() => {
+      if (revealTimerRef.current) {
+         clearInterval(revealTimerRef.current);
+         revealTimerRef.current = null;
+      }
+   }, []);
+
+   const runFinished = useCallback(() => {
+      if (revealFinishedRef.current) return;
+      revealFinishedRef.current = true;
+      revealOnVisitedRef.current?.();
+   }, []);
+
+   const stopReveal = useCallback(
+      (finish = false) => {
+         clearRevealTimer();
+         if (finish) {
+            revealProgressRef.current = revealTextRef.current.length;
+            updateReveal(revealProgressRef.current);
+            runFinished();
+         }
+      },
+      [clearRevealTimer, runFinished, updateReveal]
+   );
 
    useImperativeHandle(
       ref,
       () => ({
          stop: (options?: StopOptions) =>
-            typewriterRef.current?.stop(options),
-         finish: () => typewriterRef.current?.finish(),
+            stopReveal(options?.finish ?? false),
+         finish: () => stopReveal(true),
       }),
-      []
+      [stopReveal]
    );
 
    useEffect(() => {
-      setLineBreaks(text ? null : []);
-   }, [text]);
+      revealTextRef.current = text;
+      if (!text) {
+         setRevealVisibleText('');
+         prevRevealTextRef.current = text;
+         return;
+      }
+      const isNewText = prevRevealTextRef.current !== text;
+      if (isNewText) {
+         revealProgressRef.current = 0;
+         revealFinishedRef.current = false;
+         updateReveal(0);
+      } else {
+         updateReveal(revealProgressRef.current);
+      }
+      prevRevealTextRef.current = text;
+   }, [text, updateReveal]);
 
    const mergedStyle = useMemo(
       () => [{ flexWrap: 'wrap' as const }, textStyle],
@@ -312,22 +156,13 @@ function PromptDisplay(
       Platform.OS === 'android' ? 'highQuality' : undefined;
    const lineBreakStrategyIOS =
       Platform.OS === 'ios' ? 'standard' : undefined;
-   const effectiveBreaks = lineBreaks ?? [];
-   const displayText = formatTextWithBreaks(text, effectiveBreaks);
+   const displayText = text;
    const loaderClasses = 'items-center min-h-[1px]';
    const textClasses = `font-bold text-slate-900 dark:text-slate-200 shrink ${textClassName ?? ''}`.trim();
-
-   const handleTextLayout = useCallback((event: TextLayoutEvent) => {
-      if (!text) {
-         setLineBreaks([]);
-         return;
-      }
-      if (freezeLineBreaks && lineBreaks !== null) return;
-      const lines = event.nativeEvent.lines ?? [];
-      if (!lines.length) return;
-      const next = deriveLineBreaks(text, lines);
-      setLineBreaks((prev) => (areBreaksEqual(prev, next) ? prev : next));
-   }, [freezeLineBreaks, lineBreaks, text]);
+   const safeRevealVisibleText =
+      text && revealVisibleText && text.startsWith(revealVisibleText)
+         ? revealVisibleText
+         : '';
 
    const loader = (
       <View
@@ -337,8 +172,43 @@ function PromptDisplay(
       </View>
    );
 
-   const canType = readyToAnimate && (lineBreaks !== null || !text);
-   const content = visited ? (
+   const canReveal = readyToAnimate;
+
+   useEffect(() => {
+      clearRevealTimer();
+      if (visited || !canReveal) return;
+      revealFinishedRef.current = false;
+      if (!revealTextRef.current) {
+         setRevealVisibleText('');
+         runFinished();
+         return;
+      }
+      revealTimerRef.current = setInterval(() => {
+         const nextIndex = Math.min(
+            revealProgressRef.current + CHAR_PER_TICK,
+            revealTextRef.current.length
+         );
+
+         revealProgressRef.current = nextIndex;
+         updateReveal(nextIndex);
+
+         if (nextIndex >= revealTextRef.current.length) {
+            clearRevealTimer();
+            runFinished();
+         }
+      }, TYPING_SPEED);
+
+      return clearRevealTimer;
+   }, [
+      canReveal,
+      clearRevealTimer,
+      runFinished,
+      updateReveal,
+      visited,
+      text,
+   ]);
+
+   const staticText = (
       <Animated.Text
          className={textClasses}
          style={[mergedStyle, textAnimatedStyle]}
@@ -351,11 +221,9 @@ function PromptDisplay(
       >
          {displayText}
       </Animated.Text>
-   ) : canType ? (
-      <ForwardedTypewriter
-         ref={typewriterRef}
-         key={text}
-         text={text}
+   );
+   const revealText = (
+      <Animated.Text
          className={textClasses}
          style={[mergedStyle, textAnimatedStyle]}
          numberOfLines={effectiveNumberOfLines}
@@ -364,37 +232,26 @@ function PromptDisplay(
          adjustsFontSizeToFit={false}
          minimumFontScale={1}
          allowFontScaling
-         lineBreaks={effectiveBreaks}
-         onFinished={onVisited}
-      />
+         accessibilityLabel={safeRevealVisibleText}
+      >
+         {safeRevealVisibleText}
+         {text.length > safeRevealVisibleText.length ? (
+            <Text style={{ color: 'transparent' }}>
+               {text.slice(safeRevealVisibleText.length)}
+            </Text>
+         ) : null}
+      </Animated.Text>
+   );
+   const content = visited ? (
+      staticText
+   ) : canReveal ? (
+      revealText
    ) : (
       loader
    );
 
    const contentWithMeasurement = (
-      <View style={{ position: 'relative', width: '100%' }}>
-         {!!text && (
-            <Animated.Text
-               className={textClasses}
-               style={[
-                  mergedStyle,
-                  textAnimatedStyle,
-                  { position: 'absolute', opacity: 0, width: '100%' },
-               ]}
-               numberOfLines={effectiveNumberOfLines}
-               textBreakStrategy={textBreakStrategy}
-               lineBreakStrategyIOS={lineBreakStrategyIOS}
-               adjustsFontSizeToFit={false}
-               minimumFontScale={1}
-               allowFontScaling
-               pointerEvents="none"
-               accessibilityElementsHidden
-               importantForAccessibility="no-hide-descendants"
-               onTextLayout={handleTextLayout}
-            >
-               {text}
-            </Animated.Text>
-         )}
+      <View style={{ width: '100%' }}>
          {content}
       </View>
    );

@@ -22,8 +22,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- add shadow to fab button
-
 - Have a distinction for production tables and edge functions and development versions
 
 
@@ -46,6 +44,14 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 ---
 
 ## Development Journal
+
+### 2026-01-12
+- made button going to /new idempotent
+- removed choppines of text prompt display
+- EntryContextView
+  - removed consequence from displaying for 
+  - shadow no longer clipped
+- Refactored promptDisplay from display character to having final text and then unveiling it
 
 ### 2026-01-10
 - Keyboard display improvements
