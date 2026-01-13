@@ -301,9 +301,6 @@ export function AiInsightEmotionalValidation({
 
    return (
       <Animated.View style={animStyle}>
-         <Text className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
-            Your reaction makes sense
-         </Text>
          <Text className="text-sm leading-6 text-slate-700 dark:text-slate-300">
             {emotionalLogic}
          </Text>
