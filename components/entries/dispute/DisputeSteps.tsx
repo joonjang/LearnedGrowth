@@ -17,6 +17,7 @@ import EntryContextView from '@/components/entries/dispute/EntryContextView';
 import InputBox from '@/components/newEntry/InputBox';
 import PromptDisplay, { PromptDisplayHandle } from '@/components/newEntry/PromptDisplay';
 import StepperHeader from '@/components/newEntry/StepperHeader';
+import { DISPUTE_STEP_CHAR_LIMITS } from '@/components/constants';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 
@@ -179,6 +180,7 @@ export default function DisputeSteps({
                value={form[currKey]}
                onChangeText={setField(currKey)}
                placeholder={DISPUTE_PLACEHOLDER[currKey]}
+               maxLength={DISPUTE_STEP_CHAR_LIMITS[currKey]}
                dims={inputBoxDims}
                animatedStyle={inputBoxAnimatedStyle}
                scrollEnabled

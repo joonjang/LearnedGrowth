@@ -1,10 +1,16 @@
+import {
+   ENTRY_CHAR_WARN_MIN_REMAINING,
+   ENTRY_CHAR_WARN_RATIO,
+} from '@/components/constants';
 import { getShadow } from '@/lib/shadow';
 import { useColorScheme } from 'nativewind';
 import { forwardRef, useMemo, useState } from 'react';
 import {
    Pressable,
+   Text,
    TextInput,
    TextInputProps,
+   View,
    ViewStyle,
 } from 'react-native';
 import Animated, { AnimatedStyle } from 'react-native-reanimated';
@@ -38,6 +44,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
       scrollEnabled = true,
       compact = false,
       autoCorrect = true,
+      maxLength,
       ...rest
    },
    ref
@@ -52,6 +59,16 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
       () => getShadow({ isDark, preset: focused ? 'md' : 'sm' }),
       [focused, isDark]
    );
+   const charCount = value.length;
+   const remaining = maxLength ? maxLength - charCount : 0;
+   const warnThreshold = maxLength
+      ? Math.max(ENTRY_CHAR_WARN_MIN_REMAINING, Math.round(maxLength * ENTRY_CHAR_WARN_RATIO))
+      : 0;
+   const showCount = Boolean(maxLength) && remaining <= warnThreshold;
+   const counterClassName =
+      remaining <= 0
+         ? 'text-rose-600 dark:text-rose-400'
+         : 'text-amber-600 dark:text-amber-400';
 
    return (
       <AnimatedPressable
@@ -65,6 +82,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
          }`}
          style={[dims, containerStyle, shadow.ios, shadow.android, animatedStyle]}
       >
+          
          <TextInput
             ref={ref}
             testID="entry-input"
@@ -74,7 +92,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
             autoCorrect={autoCorrect}
             // Compact vs Standard Text Size
             className={`text-slate-900 dark:text-slate-100 leading-6 ${compact ? 'text-lg' : 'text-[22px]'}`}
-            style={{ includeFontPadding: false }} // NativeWind handles most, but this is specific
+            style={{ includeFontPadding: false, paddingBottom: 24 }} // NativeWind handles most, but this is specific
             multiline
             scrollEnabled={scrollEnabled}
             textAlignVertical="top"
@@ -87,8 +105,16 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
                setFocused(false);
                rest.onBlur?.(e);
             }}
+            maxLength={maxLength}
             {...rest}
          />
+        {showCount && (
+            <View className="mt-1 absolute bottom-2 right-2 flex-row justify-end">
+               <Text className={`text-[11px] font-medium ${counterClassName}`}>
+                  {charCount}/{maxLength}
+               </Text>
+            </View>
+         )}
       </AnimatedPressable>
    );
 });

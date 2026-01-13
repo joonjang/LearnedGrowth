@@ -37,12 +37,6 @@
     "plugins": [
       "expo-router",
       [
-        "expo-local-authentication",
-        {
-          "faceIDPermission": "Learned Growth uses Face ID to lock your journal entries."
-        }
-      ],
-      [
         "expo-build-properties",
         {
           "android": {

@@ -19,6 +19,24 @@ export const BOTTOM_SHEET_CONTENT_PADDING = 24;
 export const ROUTE_LOGIN = '/(modal)/login' as const;
 export const ROUTE_ENTRIES = '/' as const;
 
+export const ENTRY_CHAR_LIMITS = {
+   adversity: 300,
+   belief: 300,
+   consequence: 300,
+   dispute: 1000,
+   energy: 300,
+} as const;
+
+export const DISPUTE_STEP_CHAR_LIMITS = {
+   evidence: 300,
+   alternatives: 300,
+   usefulness: 300,
+   energy: ENTRY_CHAR_LIMITS.energy,
+} as const;
+
+export const ENTRY_CHAR_WARN_MIN_REMAINING = 20;
+export const ENTRY_CHAR_WARN_RATIO = 0.1;
+
 export const ABCDE_FIELD = [
    {
       key: 'adversity',

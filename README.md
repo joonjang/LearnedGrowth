@@ -22,6 +22,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- Login 'continue' green color button light and dark mode color is swapped. should be darker
+  - Same with sign in
+
 - add a report problem button to send a snapshot of the issue
 - enable user to get extra analysis if someone signs up using their referal code
 
@@ -43,6 +46,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - shadow no longer clipped
 - Refactored promptDisplay from display character to having final text and then unveiling it
 - Made QuickStart button idempotent
+- Input now has character limit
 
 ### 2026-01-10
 - Keyboard display improvements

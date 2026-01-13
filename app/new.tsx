@@ -4,6 +4,7 @@ import StepperButton from '@/components/buttons/StepperButton';
 import InputBox from '@/components/newEntry/InputBox';
 import PromptDisplay, { PromptDisplayHandle } from '@/components/newEntry/PromptDisplay';
 import StepperHeader from '@/components/newEntry/StepperHeader';
+import { ENTRY_CHAR_LIMITS } from '@/components/constants';
 import { useEntries } from '@/hooks/useEntries';
 import { usePromptLayout } from '@/hooks/usePromptLayout';
 import { usePrompts } from '@/hooks/usePrompts';
@@ -250,6 +251,7 @@ export default function NewEntryModal() {
                      value={form[currKey]}
                      onChangeText={setField(currKey)}
                      placeholder={STEP_PLACEHOLDER[currKey]}
+                     maxLength={ENTRY_CHAR_LIMITS[currKey]}
                      dims={inputBoxDims}
                      animatedStyle={inputBoxAnimatedStyle}
                      scrollEnabled

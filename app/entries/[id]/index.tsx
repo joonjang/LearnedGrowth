@@ -2,6 +2,9 @@ import CardNextButton from '@/components/buttons/CardNextButton';
 import WideButton from '@/components/buttons/WideButton';
 import {
    ABCDE_FIELD,
+   ENTRY_CHAR_LIMITS,
+   ENTRY_CHAR_WARN_MIN_REMAINING,
+   ENTRY_CHAR_WARN_RATIO,
    MAX_AI_RETRIES,
    ROUTE_ENTRIES,
 } from '@/components/constants';
@@ -59,6 +62,15 @@ const getToneForKey = (key: FieldKey): FieldTone => {
    if (key === 'dispute') return 'dispute';
    if (key === 'energy') return 'energy';
    return 'default';
+};
+
+const getCharCountMeta = (value: string, limit: number) => {
+   const remaining = limit - value.length;
+   const warnThreshold = Math.max(
+      ENTRY_CHAR_WARN_MIN_REMAINING,
+      Math.round(limit * ENTRY_CHAR_WARN_RATIO)
+   );
+   return { remaining, show: remaining <= warnThreshold };
 };
 
 export default function EntryDetailScreen() {
@@ -395,24 +407,43 @@ export default function EntryDetailScreen() {
                const rawValue = form[step.key as FieldKey];
                // If it's the specific "Empty" string, treat it as actual empty string
                const effectiveValue = rawValue === 'Empty' ? '' : rawValue;
+               const charLimit =
+                  ENTRY_CHAR_LIMITS[step.key as keyof typeof ENTRY_CHAR_LIMITS];
+               const charMeta = getCharCountMeta(effectiveValue, charLimit);
+               const counterClassName =
+                  charMeta.remaining <= 0
+                     ? 'text-rose-600 dark:text-rose-400'
+                     : 'text-amber-600 dark:text-amber-400';
 
                return (
                   <View key={step.key}>
                      <TimelineItem step={step} variant="full">
                         {isEditing ? (
-                           <TextInput
-                              multiline
-                              value={effectiveValue} // Masked value for Input
-                              onChangeText={setField(step.key as FieldKey)}
-                              placeholder={`Write your ${step.label.toLowerCase()} here...`}
-                              placeholderTextColor={
-                                 isDark ? '#94a3b8' : '#64748b'
-                              }
-                              className={`min-h-[48px] rounded-lg px-3 py-2 text-sm leading-6 ${finalBg} ${fieldStyles.text}`}
-                              scrollEnabled={false}
-                              textAlignVertical="top"
-                              autoCorrect
-                           />
+                           <View>
+                              <TextInput
+                                 multiline
+                                 value={effectiveValue} // Masked value for Input
+                                 onChangeText={setField(step.key as FieldKey)}
+                                 placeholder={`Write your ${step.label.toLowerCase()} here...`}
+                                 placeholderTextColor={
+                                    isDark ? '#94a3b8' : '#64748b'
+                                 }
+                                 className={`min-h-[48px] rounded-lg px-3 py-2 text-sm leading-6 ${finalBg} ${fieldStyles.text}`}
+                                 scrollEnabled={false}
+                                 textAlignVertical="top"
+                                 autoCorrect
+                                 maxLength={charLimit}
+                              />
+                              {charMeta.show && (
+                                 <View className="mt-1 flex-row justify-end">
+                                    <Text
+                                       className={`text-[11px] font-medium ${counterClassName}`}
+                                    >
+                                       {effectiveValue.length}/{charLimit}
+                                    </Text>
+                                 </View>
+                              )}
+                           </View>
                         ) : (
                            <View
                               className={`min-h-[48px] rounded-lg px-3 py-2 ${finalBg}`}
