@@ -13,6 +13,7 @@ import {
    Platform,
    ScrollView,
    StyleProp,
+   TextLayoutEvent,
    TextStyle,
    View,
    ViewStyle
@@ -58,13 +59,16 @@ function PromptDisplay(
       onVisited,
       textStyle,
       textAnimatedStyle,
+      textMeasureStyle,
       textClassName,
       containerClassName,
       containerStyle,
       containerAnimatedStyle,
+      lineBreakKey,
       numberOfLines,
       maxHeight,
       scrollEnabled = false,
+      freezeLineBreaks = false,
    }: Props,
    ref: Ref<PromptDisplayHandle>
 ) {
@@ -73,6 +77,7 @@ function PromptDisplay(
    const revealTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
    const revealProgressRef = useRef(0);
    const revealFinishedRef = useRef(false);
+   const [frozenText, setFrozenText] = useState<string | null>(null);
    const revealTextRef = useRef(text);
    const revealOnVisitedRef = useRef(onVisited);
    const prevRevealTextRef = useRef(text);
@@ -81,11 +86,41 @@ function PromptDisplay(
       revealOnVisitedRef.current = onVisited;
    }, [onVisited]);
 
-   const updateReveal = useCallback((rawIndex: number) => {
-      const fullText = revealTextRef.current ?? '';
-      const safeIndex = Math.max(0, Math.min(rawIndex, fullText.length));
-      setRevealVisibleText(fullText.slice(0, safeIndex));
-   }, []);
+   useEffect(() => {
+      if (!freezeLineBreaks) {
+         setFrozenText(null);
+         return;
+      }
+      setFrozenText(null);
+   }, [freezeLineBreaks, lineBreakKey, text]);
+
+   const buildVisibleText = useCallback(
+      (rawText: string, rawIndex: number) => {
+         if (!rawText) return '';
+         const safeIndex = Math.max(0, Math.min(rawIndex, rawText.length));
+         if (!freezeLineBreaks || !frozenText) {
+            return rawText.slice(0, safeIndex);
+         }
+         let remaining = safeIndex;
+         let displayIndex = 0;
+         while (displayIndex < frozenText.length && remaining > 0) {
+            if (frozenText[displayIndex] !== '\n') {
+               remaining -= 1;
+            }
+            displayIndex += 1;
+         }
+         return frozenText.slice(0, displayIndex);
+      },
+      [freezeLineBreaks, frozenText]
+   );
+
+   const updateReveal = useCallback(
+      (rawIndex: number) => {
+         const fullText = revealTextRef.current ?? '';
+         setRevealVisibleText(buildVisibleText(fullText, rawIndex));
+      },
+      [buildVisibleText]
+   );
 
    const clearRevealTimer = useCallback(() => {
       if (revealTimerRef.current) {
@@ -140,10 +175,15 @@ function PromptDisplay(
       prevRevealTextRef.current = text;
    }, [text, updateReveal]);
 
+   useEffect(() => {
+      updateReveal(revealProgressRef.current);
+   }, [freezeLineBreaks, frozenText, updateReveal]);
+
    const mergedStyle = useMemo(
       () => [{ flexWrap: 'wrap' as const }, textStyle],
       [textStyle]
    );
+   const measureStyle = textMeasureStyle ?? textAnimatedStyle;
    const containerClasses =
       'justify-center min-h-0 px-4 self-stretch w-full pb-4';
    const scrollContentStyle = useMemo(
@@ -157,15 +197,28 @@ function PromptDisplay(
       Platform.OS === 'ios' ? 'standard' : undefined;
    const loaderClasses = 'items-center min-h-[1px]';
    const textClasses = `font-bold text-slate-900 dark:text-slate-200 shrink ${textClassName ?? ''}`.trim();
+   const displayText =
+      freezeLineBreaks && frozenText ? frozenText : text;
    const safeRevealVisibleText =
-      text && revealVisibleText && text.startsWith(revealVisibleText)
+      displayText && revealVisibleText && displayText.startsWith(revealVisibleText)
          ? revealVisibleText
          : '';
    const canReveal = readyToAnimate;
    const showLoader = !visited && !canReveal;
    const visibleText = visited
-      ? text
+      ? displayText
       : (canReveal ? safeRevealVisibleText : '');
+
+   const handleTextLayout = useCallback(
+      (event: TextLayoutEvent) => {
+         if (!freezeLineBreaks) return;
+         const lines = event.nativeEvent.lines ?? [];
+         if (!lines.length) return;
+         const nextFrozen = lines.map((line) => line.text).join('\n');
+         setFrozenText((prev) => (prev === nextFrozen ? prev : nextFrozen));
+      },
+      [freezeLineBreaks]
+   );
 
    useEffect(() => {
       clearRevealTimer();
@@ -205,7 +258,7 @@ function PromptDisplay(
       <View style={{ width: '100%', position: 'relative' }}>
          <Animated.Text
             className={textClasses}
-            style={[mergedStyle, textAnimatedStyle, { opacity: 0 }]}
+            style={[mergedStyle, measureStyle, { opacity: 0 }]}
             numberOfLines={effectiveNumberOfLines}
             textBreakStrategy={textBreakStrategy}
             lineBreakStrategyIOS={lineBreakStrategyIOS}
@@ -215,6 +268,7 @@ function PromptDisplay(
             pointerEvents="none"
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
+            onTextLayout={handleTextLayout}
          >
             {text}
          </Animated.Text>
