@@ -53,6 +53,8 @@ app-example
 
 .tmp-export/
 
+/screenshots
+
 # ----------------------------
 # Build artifacts (Android)
 # ----------------------------
