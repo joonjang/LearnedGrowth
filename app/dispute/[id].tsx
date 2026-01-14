@@ -35,15 +35,16 @@ import {
    Keyboard,
    NativeScrollEvent,
    NativeSyntheticEvent,
+   Platform,
    ScrollView,
    Text,
    TextInput,
    View,
 } from 'react-native';
 import {
-   KeyboardAvoidingView,
+   AndroidSoftInputModes,
+   KeyboardController,
    KeyboardEvents,
-   useResizeMode,
 } from 'react-native-keyboard-controller';
 import Animated, {
    useAnimatedStyle,
@@ -61,7 +62,18 @@ const STEP_ORDER = [
 const KEEP_AWAKE_TAG = 'abc-analysis';
 
 export default function DisputeScreen() {
-   useResizeMode();
+   // Manual Control setup
+   useEffect(() => {
+      if (Platform.OS === 'android') {
+         KeyboardController.setInputMode(AndroidSoftInputModes.SOFT_INPUT_ADJUST_NOTHING);
+      }
+      return () => {
+         if (Platform.OS === 'android') {
+            KeyboardController.setDefaultMode();
+         }
+      };
+   }, []);
+
    const params = useLocalSearchParams<{
       id?: string | string[];
       view?: string | string[];
@@ -84,7 +96,6 @@ export default function DisputeScreen() {
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
    const insets = useSafeAreaInsets();
 
-   // Unified Edge-to-Edge Padding Logic
    const topPadding = insets.top + 12;
 
    const [idx, setIdx] = useState(0);
@@ -114,7 +125,6 @@ export default function DisputeScreen() {
       useAbcAi();
 
    const isMountedRef = useRef(true);
-   // --- FIX: ADD REF LOCK ---
    const isClosingRef = useRef(false);
 
    useEffect(() => {
@@ -124,11 +134,9 @@ export default function DisputeScreen() {
       };
    }, []);
 
+   // ... (AI Trigger Effect - unchanged) ...
    useEffect(() => {
-      // 1. Basic Guards
       if (!entry || !ready) return;
-
-      // 2. Prevent Double-Trigger
       if (!shouldRegenerate || analysisTriggered || lastResult) return;
 
       setAnalysisTriggered(true);
@@ -136,26 +144,20 @@ export default function DisputeScreen() {
 
       (async () => {
          try {
-            // This runs in the background even if screen closes
             const result = await analyze({
                adversity: entry.adversity,
                belief: entry.belief,
                consequence: entry.consequence ?? undefined,
             });
 
-            // UI Update: Guarded (Only if screen is open)
-            if (isMountedRef.current) {
-               setIsRegenerating(false);
-            }
+            if (isMountedRef.current) setIsRegenerating(false);
 
-            // Data Save: UNGUARDED (Runs even if screen is closed)
             const nextRetryCount = (entry.aiRetryCount ?? 0) + 1;
             await updateEntry(entry.id, {
                aiResponse: result.data,
                aiRetryCount: nextRetryCount,
             });
 
-            // Haptics: Guarded
             if (isMountedRef.current && hapticsEnabled && hapticsAvailable) {
                triggerHaptic();
             }
@@ -233,11 +235,9 @@ export default function DisputeScreen() {
    const {
       promptTextStyle,
       promptTextAnimatedStyle,
-      promptTextMeasureStyle,
-      promptLineBreakKey,
-      promptContainerAnimatedStyle,
       inputBoxDims,
       inputBoxAnimatedStyle,
+      keyboardPaddingStyle, // <-- New Style
    } = usePromptLayout('compact');
 
    const setField = useCallback(
@@ -274,7 +274,6 @@ export default function DisputeScreen() {
          router.back();
          return;
       }
-
       router.replace(targetRoute);
    }, [
       entry,
@@ -380,9 +379,7 @@ export default function DisputeScreen() {
       deactivateKeepAwake(KEEP_AWAKE_TAG).catch(() => {});
    }, [showAnalysis]);
 
-   // --- FIX: SAFE HANDLE CLOSE ---
    const handleClose = useCallback(() => {
-      // 1. Idempotency Check
       if (isClosingRef.current) return;
       isClosingRef.current = true;
 
@@ -407,15 +404,12 @@ export default function DisputeScreen() {
             { 
                text: 'Cancel', 
                style: 'cancel',
-               onPress: () => {
-                  // Unlock if cancelled
-                  isClosingRef.current = false;
-               }
+               onPress: () => { isClosingRef.current = false; }
             },
             {
                text: 'Discard',
                style: 'destructive',
-               onPress: safeGoBack, // Lock remains active here
+               onPress: safeGoBack,
             },
          ]
       );
@@ -440,73 +434,69 @@ export default function DisputeScreen() {
    }
 
    return (
-      <>
-         <KeyboardAvoidingView
-            className="flex-1 bg-slate-50 dark:bg-slate-900"
-            behavior={'padding'}
-         >
-            <View className="flex-1 relative">
-               {/* 1. Steps Layer (Dispute) */}
-               <Animated.View
-                  pointerEvents={showAnalysis ? 'none' : 'auto'}
-                  className="absolute inset-0 px-5"
-                  style={stepsAnimatedStyle}
-               >
-                  <DisputeSteps
-                     entry={entry}
-                     idx={idx}
-                     currKey={currKey}
-                     prompts={suggestionPrompts}
-                     promptTextStyle={promptTextStyle}
-                     promptTextAnimatedStyle={promptTextAnimatedStyle}
-                     promptTextMeasureStyle={promptTextMeasureStyle}
-                     promptLineBreakKey={promptLineBreakKey}
-                     promptContainerAnimatedStyle={promptContainerAnimatedStyle}
-                     hasVisited={hasVisited}
-                     markVisited={markVisited}
-                     form={form}
-                     setField={setField}
-                     setIdx={setIdx}
-                     onSubmit={submit}
-                     onExit={handleClose} // Use safe close here too
-                     disableNext={currentEmpty}
-                     hasUnsavedChanges={hasUnsavedChanges}
-                     scrollRef={scrollRef}
-                     handleScroll={handleScroll}
-                     scrollToBottom={scrollToBottom}
-                     inputRef={inputRef}
-                     inputBoxDims={inputBoxDims}
-                     inputBoxAnimatedStyle={inputBoxAnimatedStyle}
-                     promptContainerStyle={{
-                        flexGrow: 1,
-                        justifyContent: 'space-evenly',
-                     }}
-                     contentTopPadding={topPadding}
-                  />
-               </Animated.View>
+      <Animated.View 
+         className="flex-1 bg-slate-50 dark:bg-slate-900"
+         // Apply keyboard padding here to whole screen
+         style={[{ flex: 1 }, keyboardPaddingStyle]}
+      >
+         <View className="flex-1 relative">
+            {/* 1. Steps Layer (Dispute) */}
+            <Animated.View
+               pointerEvents={showAnalysis ? 'none' : 'auto'}
+               className="absolute inset-0 px-5"
+               style={stepsAnimatedStyle}
+            >
+               <DisputeSteps
+                  entry={entry}
+                  idx={idx}
+                  currKey={currKey}
+                  prompts={suggestionPrompts}
+                  promptTextStyle={promptTextStyle}
+                  promptTextAnimatedStyle={promptTextAnimatedStyle}
+                  hasVisited={hasVisited}
+                  markVisited={markVisited}
+                  form={form}
+                  setField={setField}
+                  setIdx={setIdx}
+                  onSubmit={submit}
+                  onExit={handleClose}
+                  disableNext={currentEmpty}
+                  hasUnsavedChanges={hasUnsavedChanges}
+                  scrollRef={scrollRef}
+                  handleScroll={handleScroll}
+                  scrollToBottom={scrollToBottom}
+                  inputRef={inputRef}
+                  inputBoxDims={inputBoxDims}
+                  inputBoxAnimatedStyle={inputBoxAnimatedStyle}
+                  promptContainerStyle={{
+                     flexGrow: 1,
+                     justifyContent: 'space-evenly',
+                  }}
+                  contentTopPadding={topPadding}
+               />
+            </Animated.View>
 
-               {/* 2. Analysis Layer (AI) */}
-               <Animated.View
-                  pointerEvents={showAnalysis ? 'auto' : 'none'}
-                  className="absolute inset-0 px-5"
-                  style={analysisAnimatedStyle}
-               >
-                  <ABCAnalysis
-                     entry={entry}
-                     aiData={aiData}
-                     loading={loading}
-                     error={error}
-                     streamingText={streamText}
-                     contentTopPadding={topPadding}
-                     onExit={handleClose} // Safe close with lock
-                     onGoToSteps={() => setViewMode('steps')}
-                     onRefresh={handleRefreshAnalysis}
-                     retryCount={entry?.aiRetryCount ?? 0}
-                     maxRetries={MAX_AI_RETRIES}
-                  />
-               </Animated.View>
-            </View>
-         </KeyboardAvoidingView>
-      </>
+            {/* 2. Analysis Layer (AI) */}
+            <Animated.View
+               pointerEvents={showAnalysis ? 'auto' : 'none'}
+               className="absolute inset-0 px-5"
+               style={analysisAnimatedStyle}
+            >
+               <ABCAnalysis
+                  entry={entry}
+                  aiData={aiData}
+                  loading={loading}
+                  error={error}
+                  streamingText={streamText}
+                  contentTopPadding={topPadding}
+                  onExit={handleClose}
+                  onGoToSteps={() => setViewMode('steps')}
+                  onRefresh={handleRefreshAnalysis}
+                  retryCount={entry?.aiRetryCount ?? 0}
+                  maxRetries={MAX_AI_RETRIES}
+               />
+            </Animated.View>
+         </View>
+      </Animated.View>
    );
 }

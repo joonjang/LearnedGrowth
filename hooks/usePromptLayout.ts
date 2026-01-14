@@ -2,46 +2,43 @@ import { useMemo } from 'react';
 import { TextStyle } from 'react-native';
 import {
    KeyboardController,
-   useReanimatedKeyboardAnimation,
+   useKeyboardHandler,
 } from 'react-native-keyboard-controller';
 import {
-   Easing,
    interpolate,
-   useAnimatedReaction,
    useAnimatedStyle,
    useSharedValue,
-   withTiming,
 } from 'react-native-reanimated';
-import { useKeyboardVisible } from './useKeyboardVisible';
 import { useResponsiveFont } from './useResponsiveFont';
 
 export type PromptLayoutVariant = 'default' | 'compact';
 
 export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
    const { scaleFont } = useResponsiveFont();
-   const { progress } = useReanimatedKeyboardAnimation();
-   const isKeyboardVisible = useKeyboardVisible();
-   const initialTarget = KeyboardController.isVisible?.() ? 1 : 0;
-   const smoothProgress = useSharedValue(initialTarget);
 
-   // Follow native keyboard progress; only smooth large jumps (common on Android).
-   useAnimatedReaction(
-      () => progress.value,
-      (next, prev) => {
-         if (prev == null) {
-            smoothProgress.value = next;
-            return;
-         }
-         const delta = Math.abs(next - prev);
-         if (delta > 0.2) {
-            smoothProgress.value = withTiming(next, {
-               duration: 200,
-               easing: Easing.out(Easing.cubic),
-            });
-            return;
-         }
-         smoothProgress.value = next;
-      }
+   const initialProgress = KeyboardController.isVisible() ? 1 : 0;
+   const progress = useSharedValue(initialProgress);
+   const height = useSharedValue(0);
+
+   useKeyboardHandler(
+      {
+         onStart: (e) => {
+            'worklet';
+            progress.value = e.progress;
+            height.value = e.height;
+         },
+         onMove: (e) => {
+            'worklet';
+            progress.value = e.progress;
+            height.value = e.height;
+         },
+         onEnd: (e) => {
+            'worklet';
+            progress.value = e.progress;
+            height.value = e.height;
+         },
+      },
+      []
    );
 
    const fontSizes = useMemo(() => {
@@ -60,43 +57,27 @@ export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
    const promptTextStyle: TextStyle = useMemo(
       () => ({
          fontSize: fontSizes.baseFont,
-         // lineHeight: Math.round(fontSizes.baseFont * 1.18),
+         // FIX: Set initial line height explicitly to match animation
+         lineHeight: fontSizes.baseFont * 1.3,
          flexShrink: 1,
-         flexWrap: 'wrap' as const,
+         flexWrap: 'wrap',
       }),
       [fontSizes.baseFont]
    );
 
-   const promptTextAnimatedStyle = useAnimatedStyle(
-      () => {
-         const fontSize = interpolate(
-            smoothProgress.value,
-            [0, 1],
-            [fontSizes.baseFont, fontSizes.minFont]
-         );
-         return { fontSize };
-      },
-      [fontSizes.baseFont, fontSizes.minFont, smoothProgress]
-   );
-
-   const promptTextMeasureStyle = useAnimatedStyle(
-      () => {
-         const fontSize = interpolate(
-            smoothProgress.value,
-            [0, 1],
-            [fontSizes.baseFont, fontSizes.minFont]
-         );
-         return { fontSize };
-      },
-      [fontSizes.baseFont, fontSizes.minFont, smoothProgress]
-   );
-
-   const inputBoxDims = useMemo(() => {
-      // Base (keyboard hidden) dims to keep the component shape consistent before animation kicks in.
-      const baseMin = variant === 'compact' ? 140 : 280;
-      const baseMax = variant === 'compact' ? 280 : 480;
-      return { minHeight: baseMin, maxHeight: baseMax };
-   }, [variant]);
+   const promptTextAnimatedStyle = useAnimatedStyle(() => {
+      const fontSize = interpolate(
+         progress.value,
+         [0, 1],
+         [fontSizes.baseFont, fontSizes.minFont]
+      );
+      
+      // FIX: Round lineHeight to nearest integer. 
+      // Android hates sub-pixel line heights (e.g. 34.42px) and will snap them, causing jumps.
+      const lineHeight = Math.round(fontSize * 1.3);
+      
+      return { fontSize, lineHeight };
+   }, [fontSizes, progress]);
 
    const inputBoxAnimatedStyle = useAnimatedStyle(() => {
       const hidden = {
@@ -108,43 +89,32 @@ export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
          max: variant === 'compact' ? 160 : 240,
       };
 
-      const minHeight = interpolate(
-         smoothProgress.value,
-         [0, 1],
-         [hidden.min, shown.min]
-      );
-      const maxHeight = interpolate(
-         smoothProgress.value,
-         [0, 1],
-         [hidden.max, shown.max]
-      );
+      const minHeight = interpolate(progress.value, [0, 1], [hidden.min, shown.min]);
+      const maxHeight = interpolate(progress.value, [0, 1], [hidden.max, shown.max]);
 
+      return { minHeight, maxHeight };
+   }, [variant, progress]);
+
+   // REMOVED: promptContainerAnimatedStyle
+   // We now let the font size naturally dictate the container height.
+
+   const keyboardPaddingStyle = useAnimatedStyle(() => {
       return {
-         minHeight,
-         maxHeight,
+         paddingBottom: height.value,
       };
-   }, [smoothProgress, variant]);
+   }, [height]);
 
-   const promptContainerAnimatedStyle = useAnimatedStyle(
-      () => {
-         const shownMax = variant === 'compact' ? 200 : 240;
-         const maxHeight = interpolate(
-            smoothProgress.value,
-            [0, 1],
-            [10000, shownMax]
-         );
-         return { maxHeight };
-      },
-      [smoothProgress, variant]
-   );
+   const inputBoxDims = useMemo(() => {
+      const baseMin = variant === 'compact' ? 140 : 280;
+      const baseMax = variant === 'compact' ? 280 : 480;
+      return { minHeight: baseMin, maxHeight: baseMax };
+   }, [variant]);
 
    return {
       promptTextStyle,
       promptTextAnimatedStyle,
-      promptTextMeasureStyle,
-      promptLineBreakKey: isKeyboardVisible ? 'keyboard' : 'default',
-      promptContainerAnimatedStyle,
       inputBoxDims,
       inputBoxAnimatedStyle,
+      keyboardPaddingStyle,
    };
 }

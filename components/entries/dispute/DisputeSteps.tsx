@@ -14,11 +14,11 @@ import { AnimatedStyle } from 'react-native-reanimated';
 
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import StepperButton from '@/components/buttons/StepperButton';
+import { DISPUTE_STEP_CHAR_LIMITS } from '@/components/constants';
 import EntryContextView from '@/components/entries/dispute/EntryContextView';
 import InputBox from '@/components/newEntry/InputBox';
 import PromptDisplay, { PromptDisplayHandle } from '@/components/newEntry/PromptDisplay';
 import StepperHeader from '@/components/newEntry/StepperHeader';
-import { DISPUTE_STEP_CHAR_LIMITS } from '@/components/constants';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 
@@ -165,19 +165,18 @@ export default function DisputeSteps({
             />
 
             <PromptDisplay
+               key={currKey}
                ref={promptRef}
                text={prompts[currKey]}
                visited={hasVisited(currKey)}
                onVisited={() => markVisited(currKey)}
                textStyle={promptTextStyle}
                textAnimatedStyle={promptTextAnimatedStyle}
-               textMeasureStyle={promptTextMeasureStyle}
-               lineBreakKey={promptLineBreakKey}
                containerAnimatedStyle={promptContainerAnimatedStyle}
-               freezeLineBreaks
                scrollEnabled
                numberOfLines={6}
-               containerStyle={promptContainerStyle ?? { flexGrow: 1, justifyContent: 'space-evenly' }}
+               containerStyle={{ flexGrow: 1 }}
+               delay={idx === 0 ? 800 : 0}
             />
          </ScrollView>
 

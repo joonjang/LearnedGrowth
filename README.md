@@ -38,6 +38,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Development Journal
 
+
+### 2026-01-14
+- Fixed ios keyboard lag by optimizing animation
+
 ### 2026-01-13
 - input box navigation and style changed
 - added dev login

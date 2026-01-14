@@ -1,18 +1,17 @@
 import rawAbcde from '@/assets/data/abcde.json';
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import StepperButton from '@/components/buttons/StepperButton';
+import { ENTRY_CHAR_LIMITS } from '@/components/constants';
 import InputBox from '@/components/newEntry/InputBox';
 import PromptDisplay, { PromptDisplayHandle } from '@/components/newEntry/PromptDisplay';
 import StepperHeader from '@/components/newEntry/StepperHeader';
-import { ENTRY_CHAR_LIMITS } from '@/components/constants';
 import { useEntries } from '@/hooks/useEntries';
 import { usePromptLayout } from '@/hooks/usePromptLayout';
 import { usePrompts } from '@/hooks/usePrompts';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
 import { NewInputEntryType } from '@/models/newInputEntryType';
-// REMOVED: import { useTheme } ...
 import { router, useRootNavigationState } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    Alert,
    Keyboard,
@@ -21,8 +20,11 @@ import {
    TextInput,
    View
 } from 'react-native';
-import { KeyboardAvoidingView, useResizeMode } from 'react-native-keyboard-controller';
-// KEPT: Use insets for true edge-to-edge control
+import {
+   AndroidSoftInputModes,
+   KeyboardController
+} from 'react-native-keyboard-controller';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STEP_ORDER = ['adversity', 'belief', 'consequence'] as const;
@@ -37,6 +39,7 @@ const STEP_PLACEHOLDER: Record<NewInputEntryType, string> = {
    consequence: 'Feelings, reactions, and behaviors',
 };
 
+// ... routeTreeHasEntryDetail helper (unchanged) ...
 const routeTreeHasEntryDetail = (state: any, entryId: string | number) => {
    if (!state?.routes?.length) return false;
    for (const route of state.routes as any[]) {
@@ -61,26 +64,35 @@ const routeTreeHasEntryDetail = (state: any, entryId: string | number) => {
 };
 
 export default function NewEntryModal() {
-   useResizeMode();
+   // 1. Remove useResizeMode();
+   // 2. Set AdjustNothing to take full manual control
+   useEffect(() => {
+      if (Platform.OS === 'android') {
+         KeyboardController.setInputMode(AndroidSoftInputModes.SOFT_INPUT_ADJUST_NOTHING);
+      }
+      return () => {
+         if (Platform.OS === 'android') {
+            KeyboardController.setDefaultMode();
+         }
+      };
+   }, []);
+
    const store = useEntries();
-   const insets = useSafeAreaInsets(); // <-- The correct tool for Edge-to-Edge
+   const insets = useSafeAreaInsets();
    const rootNavigationState = useRootNavigationState();
 
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
    const promptRef = useRef<PromptDisplayHandle | null>(null);
+   
    const {
       promptTextStyle,
       promptTextAnimatedStyle,
-      promptTextMeasureStyle,
-      promptLineBreakKey,
-      promptContainerAnimatedStyle,
       inputBoxDims,
       inputBoxAnimatedStyle,
+      keyboardPaddingStyle, // <-- Used for the main view
    } = usePromptLayout();
    
-   
-   // Logic: Start below the notch (insets.top) + some breathing room (12px)
    const topPadding = insets.top + 12;
 
    const [form, setForm] = useState<Record<NewInputEntryType, string>>({
@@ -134,7 +146,6 @@ export default function NewEntryModal() {
 
       try {
          const newEntry = await store.createEntry(adversity, belief, consequence);
-
          const targetRoute = {
             pathname: '/entries/[id]',
             params: { id: newEntry.id, animateInstant: '1' },
@@ -149,8 +160,6 @@ export default function NewEntryModal() {
             router.back();
             return;
          }
-
-         // Replace the modal with the new entry detail to avoid duplicate stacking.
          router.replace(targetRoute);
       } catch (e) {
          console.error('Failed to create entry', e);
@@ -200,29 +209,26 @@ export default function NewEntryModal() {
    }, [hasAnyContent]);
 
    return (
-      <>
-         <KeyboardAvoidingView
-            className="flex-1 bg-slate-50 dark:bg-slate-900"
-            behavior={'padding'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top: 0}
+      <View className="flex-1 bg-slate-50 dark:bg-slate-900">
+         {/* Replaced KeyboardAvoidingView with Animated.View + keyboardPaddingStyle */}
+         <Animated.View 
+            style={[{ flex: 1 }, keyboardPaddingStyle]}
          >
-            {/* NO SafeAreaView Wrapper here. We want the ScrollView to touch the top edge. */}
-            
             <View className="flex-1 px-5">
                <ScrollView
                   className="flex-1"
                   contentContainerStyle={{
                      flexGrow: 1,
-                     gap: 16, // Replaces styles.scrollContent
-                     paddingTop:  Platform.OS === 'android' ? topPadding : 16, // <-- Pushes content down, but lets it scroll up
+                     gap: 16,
+                     paddingTop: Platform.OS === 'android' ? topPadding : 16,
+                     // Add bottom padding so text doesn't hide behind the input during animation
+                     paddingBottom: 20, 
                   }}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
                >
                   {/* HEADER ROW */}
                   <View className="flex-row items-center mb-4">
-                     
-                     {/* Stepper Container */}
                      <View className="flex-1 mr-2">
                         <StepperHeader
                            step={idx + 1}
@@ -230,29 +236,27 @@ export default function NewEntryModal() {
                            label={STEP_LABEL[currKey]}
                         />
                      </View>
-
-                     {/* Close Button */}
                      <RoundedCloseButton onPress={handleClose} />
                   </View>
 
                   <PromptDisplay
+                     key={currKey}
                      ref={promptRef}
                      text={prompts[currKey]}
                      visited={hasVisited(currKey)}
                      onVisited={() => markVisited(currKey)}
                      textStyle={promptTextStyle}
                      textAnimatedStyle={promptTextAnimatedStyle}
-                     textMeasureStyle={promptTextMeasureStyle}
-                     lineBreakKey={promptLineBreakKey}
-                     containerAnimatedStyle={promptContainerAnimatedStyle}
-                     freezeLineBreaks
+                     // textMeasureStyle={promptTextMeasureStyle} // Often not needed if animatedStyle handles it
                      scrollEnabled
                      numberOfLines={6}
-                     containerStyle={{ flexGrow: 1, justifyContent: 'space-evenly' }}
+                     containerStyle={{ flexGrow: 1 }}
+                     delay={idx === 0 ? 800 : 0}
                   />
                </ScrollView>
 
-               {/* INPUT WRAPPER */}
+               {/* Input Area - Now anchored to bottom of the animated view */}
+               <View>
                   <InputBox
                      ref={inputRef}
                      value={form[currKey]}
@@ -275,9 +279,9 @@ export default function NewEntryModal() {
                      onNext={() => handleStepChange('next')}
                      onBack={() => handleStepChange('back')}
                   />
-                
+               </View>
             </View>
-         </KeyboardAvoidingView>
-      </>
+         </Animated.View>
+      </View>
    );
 }

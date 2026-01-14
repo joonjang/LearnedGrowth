@@ -238,7 +238,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
          <ScrollView
             contentContainerStyle={{
                paddingTop: !isModal ? insets.top + 20 : 20,
-               paddingBottom: insets.bottom + 140,
+               // paddingBottom: insets.bottom + 140,
             }}
             showsVerticalScrollIndicator={false}
          >
@@ -467,8 +467,8 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
          {/* Footer CTA */}
          {!isModal && (
          <View
-            className="absolute bottom-0 left-0 right-0 px-6 pt-4"
-            style={{ paddingBottom: insets.bottom + 16 }}
+            className="pt-8 bottom-0 left-0 right-0 px-6 "
+            // style={{ paddingBottom: insets.bottom + 16 }}
          >
             <Pressable
                className={`relative flex-row items-center justify-center rounded-2xl bg-indigo-600 dark:bg-indigo-500 px-6 py-4 active:bg-indigo-700 dark:active:bg-indigo-600 ${buttonShadow.className}`}
