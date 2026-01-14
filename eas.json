@@ -17,28 +17,24 @@
         "simulator": false
       }
     },
-    "ios": {
-      "simulator": false
-    }
-  },
-  "production": {
-    "autoIncrement": true,
-    "android": {
-      "buildType": "app-bundle"
+    "production": {
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "ios": {
+        "simulator": false,
+        "distribution": "store"
+      }
     },
-    "ios": {
-      "simulator": false,
-      "distribution": "store"
+    "playstore": {
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
-  "playstore": {
-    "autoIncrement": true,
-    "android": {
-      "buildType": "app-bundle"
-    }
+  "submit": {
+    "production": {}
   }
-},
-"submit": {
-  "production": {}
-}
 }
