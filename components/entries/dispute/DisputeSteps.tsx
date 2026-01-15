@@ -59,7 +59,6 @@ type Props = {
    handleScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
    scrollToBottom: (animated?: boolean) => void;
    inputRef: React.RefObject<TextInput | null>;
-   inputBoxDims: { minHeight?: number; maxHeight?: number };
    inputBoxAnimatedStyle?: AnimatedStyle<ViewStyle>;
    promptContainerStyle?: StyleProp<ViewStyle>;
    contentTopPadding?: number;
@@ -88,7 +87,6 @@ export default function DisputeSteps({
    handleScroll,
    scrollToBottom,
    inputRef,
-   inputBoxDims,
    inputBoxAnimatedStyle,
    promptContainerStyle,
    contentTopPadding,
@@ -189,7 +187,6 @@ export default function DisputeSteps({
                onChangeText={setField(currKey)}
                placeholder={DISPUTE_PLACEHOLDER[currKey]}
                maxLength={DISPUTE_STEP_CHAR_LIMITS[currKey]}
-               dims={inputBoxDims}
                animatedStyle={inputBoxAnimatedStyle}
                scrollEnabled
                compact

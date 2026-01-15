@@ -15,6 +15,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    Alert,
    Keyboard,
+   NativeScrollEvent,
+   NativeSyntheticEvent,
    Platform,
    ScrollView,
    TextInput,
@@ -22,7 +24,8 @@ import {
 } from 'react-native';
 import {
    AndroidSoftInputModes,
-   KeyboardController
+   KeyboardController,
+   KeyboardEvents
 } from 'react-native-keyboard-controller';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -64,8 +67,6 @@ const routeTreeHasEntryDetail = (state: any, entryId: string | number) => {
 };
 
 export default function NewEntryModal() {
-   // 1. Remove useResizeMode();
-   // 2. Set AdjustNothing to take full manual control
    useEffect(() => {
       if (Platform.OS === 'android') {
          KeyboardController.setInputMode(AndroidSoftInputModes.SOFT_INPUT_ADJUST_NOTHING);
@@ -85,12 +86,15 @@ export default function NewEntryModal() {
    const inputRef = useRef<TextInput>(null);
    const promptRef = useRef<PromptDisplayHandle | null>(null);
    
+   // 1. Add Scroll Refs
+   const scrollRef = useRef<ScrollView>(null);
+   const stickToBottom = useRef(true); // Default to auto-scrolling
+   
    const {
       promptTextStyle,
       promptTextAnimatedStyle,
-      inputBoxDims,
       inputBoxAnimatedStyle,
-      keyboardPaddingStyle, // <-- Used for the main view
+      keyboardPaddingStyle, 
    } = usePromptLayout();
    
    const topPadding = insets.top + 12;
@@ -131,6 +135,45 @@ export default function NewEntryModal() {
    const currentEmpty = !trimmedForm[currKey];
    const [isSubmitting, setIsSubmitting] = useState(false);
    const submittingRef = useRef(false);
+
+   // 2. Scroll Logic Helpers
+   const scrollToBottom = useCallback((animated = true) => {
+      if (stickToBottom.current && scrollRef.current) {
+         scrollRef.current.scrollToEnd({ animated });
+      }
+   }, []);
+
+   const handleScroll = useCallback(
+      (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+         const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+         const paddingToBottom = 20;
+         // If user is within 20px of the bottom, we "stick" to the bottom
+         const isCloseToBottom = 
+            layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+         stickToBottom.current = isCloseToBottom;
+      },
+      []
+   );
+
+   // 3. Keyboard Listener: Force scroll when keyboard opens
+   useEffect(() => {
+      const handleShow = () => {
+         stickToBottom.current = true; // Reset stickiness so it definitely scrolls
+         // Small delay ensures layout calculation of the shrink has happened
+         requestAnimationFrame(() => scrollToBottom(true));
+      };
+      
+      const didShowSub = KeyboardEvents.addListener('keyboardDidShow', handleShow);
+      return () => {
+         didShowSub.remove();
+      };
+   }, [scrollToBottom]);
+
+   // 4. Reset scroll stickiness when step changes
+   useEffect(() => {
+      stickToBottom.current = true;
+      requestAnimationFrame(() => scrollToBottom(false));
+   }, [idx, scrollToBottom]);
 
    const submit = useCallback(async () => {
       if (submittingRef.current) return;
@@ -210,52 +253,52 @@ export default function NewEntryModal() {
 
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
-         {/* Replaced KeyboardAvoidingView with Animated.View + keyboardPaddingStyle */}
-         <Animated.View 
-            style={[{ flex: 1 }, keyboardPaddingStyle]}
-         >
+         <Animated.View style={[{ flex: 1 }, keyboardPaddingStyle]}>
             <View className="flex-1 px-5">
-               <ScrollView
-                  className="flex-1"
-                  contentContainerStyle={{
-                     flexGrow: 1,
-                     gap: 16,
-                     paddingTop: Platform.OS === 'android' ? topPadding : 16,
-                     // Add bottom padding so text doesn't hide behind the input during animation
-                     paddingBottom: 20, 
-                  }}
-                  keyboardShouldPersistTaps="handled"
-                  showsVerticalScrollIndicator={false}
-               >
-                  {/* HEADER ROW */}
-                  <View className="flex-row items-center mb-4">
-                     <View className="flex-1 mr-2">
-                        <StepperHeader
-                           step={idx + 1}
-                           total={STEP_ORDER.length}
-                           label={STEP_LABEL[currKey]}
-                        />
-                     </View>
-                     <RoundedCloseButton onPress={handleClose} />
-                  </View>
+               <View className="flex-1 overflow-hidden">
+                   <ScrollView
+                      ref={scrollRef} // Attach Ref
+                      onScroll={handleScroll} // Listen for manual scrolls
+                      scrollEventThrottle={16}
+                      onContentSizeChange={() => scrollToBottom(true)} // Auto-scroll on resize
+                      className="flex-1"
+                      contentContainerStyle={{
+                         flexGrow: 1,
+                         gap: 16,
+                         paddingTop: Platform.OS === 'android' ? topPadding : 16,
+                         paddingBottom: 10, 
+                      }}
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator={false}
+                      scrollEnabled={true}
+                   >
+                      <View className="flex-row items-center mb-2">
+                         <View className="flex-1 mr-2">
+                            <StepperHeader
+                               step={idx + 1}
+                               total={STEP_ORDER.length}
+                               label={STEP_LABEL[currKey]}
+                            />
+                         </View>
+                         <RoundedCloseButton onPress={handleClose} />
+                      </View>
 
-                  <PromptDisplay
-                     key={currKey}
-                     ref={promptRef}
-                     text={prompts[currKey]}
-                     visited={hasVisited(currKey)}
-                     onVisited={() => markVisited(currKey)}
-                     textStyle={promptTextStyle}
-                     textAnimatedStyle={promptTextAnimatedStyle}
-                     // textMeasureStyle={promptTextMeasureStyle} // Often not needed if animatedStyle handles it
-                     scrollEnabled
-                     numberOfLines={6}
-                     containerStyle={{ flexGrow: 1 }}
-                     delay={idx === 0 ? 800 : 0}
-                  />
-               </ScrollView>
+                      <PromptDisplay
+                         key={currKey}
+                         ref={promptRef}
+                         text={prompts[currKey]}
+                         visited={hasVisited(currKey)}
+                         onVisited={() => markVisited(currKey)}
+                         textStyle={promptTextStyle}
+                         textAnimatedStyle={promptTextAnimatedStyle}
+                         scrollEnabled
+                         numberOfLines={6}
+                         containerStyle={{ flexGrow: 1 }}
+                         delay={idx === 0 ? 800 : 0}
+                      />
+                   </ScrollView>
+               </View>
 
-               {/* Input Area - Now anchored to bottom of the animated view */}
                <View>
                   <InputBox
                      ref={inputRef}
@@ -263,7 +306,7 @@ export default function NewEntryModal() {
                      onChangeText={setField(currKey)}
                      placeholder={STEP_PLACEHOLDER[currKey]}
                      maxLength={ENTRY_CHAR_LIMITS[currKey]}
-                     dims={inputBoxDims}
+                     // No dims needed anymore, animatedStyle handles it
                      animatedStyle={inputBoxAnimatedStyle}
                      scrollEnabled
                   />

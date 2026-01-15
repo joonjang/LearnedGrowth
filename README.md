@@ -22,8 +22,15 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- Login 'continue' green color button light and dark mode color is swapped. should be darker
-  - Same with sign in
+
+- Add app icon and splash screen
+- Login keyboard input is glitchy with doubling typing
+- Make login bottomsheet modal scaleable to small screen
+- Pressinging get more analysis and closing while its processing should still display credit
+
+- when calling api, make the loading display progress
+- consumable purchase not registering 
+- for android the animation doesnt fully finish. maybe its because im using an old phone
 
 - add a report problem button to send a snapshot of the issue
 - enable user to get extra analysis if someone signs up using their referal code
@@ -36,8 +43,16 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ---
 
+npx -y eas-cli@latest build -p android --profile playstore --local
+env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile production --local
+
+
 ## Development Journal
 
+
+### 2026-01-15
+- Made screen scaleable for small screen by making input box based off screen size and not hardcoding
+  - NewEntryModal scrolls down when the text clips 
 
 ### 2026-01-14
 - Fixed ios keyboard lag by optimizing animation

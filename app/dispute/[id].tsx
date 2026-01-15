@@ -232,13 +232,12 @@ export default function DisputeScreen() {
    const scrollRef = useRef<ScrollView | null>(null);
    const stickToBottom = useRef(true);
    const inputRef = useRef<TextInput>(null);
-   const {
+  const {
       promptTextStyle,
       promptTextAnimatedStyle,
-      inputBoxDims,
       inputBoxAnimatedStyle,
-      keyboardPaddingStyle, // <-- New Style
-   } = usePromptLayout('compact');
+      keyboardPaddingStyle,
+   } = usePromptLayout();
 
    const setField = useCallback(
       (k: NewInputDisputeType) => (v: string) =>
@@ -466,7 +465,6 @@ export default function DisputeScreen() {
                   handleScroll={handleScroll}
                   scrollToBottom={scrollToBottom}
                   inputRef={inputRef}
-                  inputBoxDims={inputBoxDims}
                   inputBoxAnimatedStyle={inputBoxAnimatedStyle}
                   promptContainerStyle={{
                      flexGrow: 1,

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { TextStyle } from 'react-native';
+import { TextStyle, useWindowDimensions } from 'react-native';
 import {
    KeyboardController,
    useKeyboardHandler,
@@ -11,104 +11,113 @@ import {
 } from 'react-native-reanimated';
 import { useResponsiveFont } from './useResponsiveFont';
 
-export type PromptLayoutVariant = 'default' | 'compact';
-
-export function usePromptLayout(variant: PromptLayoutVariant = 'default') {
+export function usePromptLayout() {
+   const { height: screenHeight } = useWindowDimensions();
    const { scaleFont } = useResponsiveFont();
 
+   // 0 = Closed, 1 = Open
    const initialProgress = KeyboardController.isVisible() ? 1 : 0;
    const progress = useSharedValue(initialProgress);
-   const height = useSharedValue(0);
+   const keyboardHeight = useSharedValue(0);
 
    useKeyboardHandler(
       {
          onStart: (e) => {
             'worklet';
             progress.value = e.progress;
-            height.value = e.height;
+            keyboardHeight.value = e.height;
          },
          onMove: (e) => {
             'worklet';
             progress.value = e.progress;
-            height.value = e.height;
+            keyboardHeight.value = e.height;
          },
          onEnd: (e) => {
             'worklet';
             progress.value = e.progress;
-            height.value = e.height;
+            keyboardHeight.value = e.height;
          },
       },
       []
    );
 
+   // --- 1. Dynamic Heights ---
+   const layoutConfig = useMemo(() => {
+      const isSmallScreen = screenHeight < 700;
+
+      // State A: KEYBOARD CLOSED (Big Box)
+      // Takes up ~32% of screen. Spacious.
+      const tallHeight = Math.floor(screenHeight * 0.32);
+
+      // State B: KEYBOARD OPEN (Small Box)
+      // AGGRESSIVE SHRINK: Only 15-16% of screen. 
+      // This leaves maximum room for the prompt.
+      // on iPhone SE: ~105px height (enough for ~3 lines of text)
+      const shortRatio = isSmallScreen ? 0.16 : 0.15;
+      const shortHeight = Math.floor(screenHeight * shortRatio);
+
+      return { tallHeight, shortHeight, isSmallScreen };
+   }, [screenHeight]);
+
+   // --- 2. Dynamic Font Sizing ---
    const fontSizes = useMemo(() => {
-      if (variant === 'compact') {
-         return {
-            baseFont: scaleFont(30, { min: 22, max: 40, factor: 0.35 }),
-            minFont: scaleFont(24, { min: 20, max: 32, factor: 0.35 }),
-         };
-      }
+      const { isSmallScreen } = layoutConfig;
       return {
-         baseFont: scaleFont(38, { min: 26, max: 48, factor: 0.4 }),
-         minFont: scaleFont(30, { min: 22, max: 40, factor: 0.4 }),
+         // Base: Huge text when just reading
+         base: isSmallScreen 
+            ? scaleFont(30, { min: 26, max: 34 }) 
+            : scaleFont(38, { min: 30, max: 44 }),
+
+         // Min: When typing, we keep it RELATIVELY large now because
+         // we made the input box smaller to compensate.
+         min: isSmallScreen
+            ? scaleFont(24, { min: 22, max: 26 }) // Kept large!
+            : scaleFont(28, { min: 26, max: 32 }),
       };
-   }, [variant, scaleFont]);
+   }, [layoutConfig, scaleFont]);
+
+   // --- Styles ---
 
    const promptTextStyle: TextStyle = useMemo(
       () => ({
-         fontSize: fontSizes.baseFont,
-         // FIX: Set initial line height explicitly to match animation
-         lineHeight: fontSizes.baseFont * 1.3,
-         flexShrink: 1,
-         flexWrap: 'wrap',
+         fontSize: fontSizes.base,
+         lineHeight: Math.round(fontSizes.base * 1.3),
       }),
-      [fontSizes.baseFont]
+      [fontSizes.base]
    );
 
    const promptTextAnimatedStyle = useAnimatedStyle(() => {
       const fontSize = interpolate(
          progress.value,
          [0, 1],
-         [fontSizes.baseFont, fontSizes.minFont]
+         [fontSizes.base, fontSizes.min]
       );
       
-      // FIX: Round lineHeight to nearest integer. 
-      // Android hates sub-pixel line heights (e.g. 34.42px) and will snap them, causing jumps.
       const lineHeight = Math.round(fontSize * 1.3);
       
       return { fontSize, lineHeight };
-   }, [fontSizes, progress]);
+   }, [fontSizes]);
 
    const inputBoxAnimatedStyle = useAnimatedStyle(() => {
-      const hidden = {
-         min: variant === 'compact' ? 140 : 280,
-         max: variant === 'compact' ? 280 : 480,
-      };
-      const shown = {
-         min: variant === 'compact' ? 100 : 140,
-         max: variant === 'compact' ? 160 : 240,
-      };
+      // Smoothly interpolate height from Big -> Small
+      const height = interpolate(
+         progress.value,
+         [0, 1], 
+         [layoutConfig.tallHeight, layoutConfig.shortHeight]
+      );
 
-      const minHeight = interpolate(progress.value, [0, 1], [hidden.min, shown.min]);
-      const maxHeight = interpolate(progress.value, [0, 1], [hidden.max, shown.max]);
-
-      return { minHeight, maxHeight };
-   }, [variant, progress]);
-
-   // REMOVED: promptContainerAnimatedStyle
-   // We now let the font size naturally dictate the container height.
+      return { height };
+   }, [layoutConfig]);
 
    const keyboardPaddingStyle = useAnimatedStyle(() => {
       return {
-         paddingBottom: height.value,
+         paddingBottom: keyboardHeight.value,
       };
-   }, [height]);
+   }, []);
 
-   const inputBoxDims = useMemo(() => {
-      const baseMin = variant === 'compact' ? 140 : 280;
-      const baseMax = variant === 'compact' ? 280 : 480;
-      return { minHeight: baseMin, maxHeight: baseMax };
-   }, [variant]);
+   const inputBoxDims = useMemo(() => ({
+      height: layoutConfig.tallHeight, 
+   }), [layoutConfig.tallHeight]);
 
    return {
       promptTextStyle,
