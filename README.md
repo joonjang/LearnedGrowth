@@ -22,15 +22,23 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- send feedback needs to go up when keyboard displays
+- card items in home dashboard should tap to something
+- google sign in not functional
 
-- Add app icon and splash screen
 - Login keyboard input is glitchy with doubling typing
 - Make login bottomsheet modal scaleable to small screen
+
 - Pressinging get more analysis and closing while its processing should still display credit
 
 - when calling api, make the loading display progress
+
 - consumable purchase not registering 
+
 - for android the animation doesnt fully finish. maybe its because im using an old phone
+
+
+- Add app icon and splash screen
 
 - add a report problem button to send a snapshot of the issue
 - enable user to get extra analysis if someone signs up using their referal code
@@ -49,6 +57,8 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-01-16
+- fixed login ui 
 
 ### 2026-01-15
 - Made screen scaleable for small screen by making input box based off screen size and not hardcoding
