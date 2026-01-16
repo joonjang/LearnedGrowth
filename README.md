@@ -58,7 +58,8 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 ## Development Journal
 
 ### 2026-01-16
-- fixed login ui 
+- fixed login ui
+  - went from bottomsheet to native modal
 
 ### 2026-01-15
 - Made screen scaleable for small screen by making input box based off screen size and not hardcoding
