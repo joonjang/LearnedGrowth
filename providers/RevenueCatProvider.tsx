@@ -68,15 +68,25 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
       setError(null);
       try {
         if (!configured.current) {
+          // Initial Configuration
           await configureRevenueCat(user?.id ?? null);
           configured.current = true;
           lastUserId.current = user?.id ?? null;
         } else if (user?.id !== lastUserId.current) {
-          if (user?.id) {
-            await logInRevenueCat(user.id);
-          } else {
+          // 🔴 FIX: Handle User Switch Sequentially
+          // This prevents the race condition where we try to write to a cache 
+          // that is being deleted by a logout.
+          
+          // 1. If we had a previous user, explicitly log them out first.
+          if (lastUserId.current) {
             await logOutRevenueCat();
           }
+
+          // 2. If we have a new user, log them in.
+          if (user?.id) {
+            await logInRevenueCat(user.id);
+          }
+          
           lastUserId.current = user?.id ?? null;
         }
 

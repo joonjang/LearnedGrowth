@@ -120,7 +120,7 @@ export default function AuthModal() {
          easing: Easing.out(Easing.cubic),
       });
       opacity.value = withTiming(1, { duration: 300 });
-   }, []);
+   }, [opacity, translateY]);
 
    useEffect(() => {
       if (authStatus === 'signedIn' && !hasNavigated.current) {

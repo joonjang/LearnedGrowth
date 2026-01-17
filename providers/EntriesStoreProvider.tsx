@@ -113,10 +113,14 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
                }
             }
 
-            // Push local entries
-            const locals = await adapter.getAll();
+            // Push local entries (including deletions)
+            const locals = await adapter.getAllIncludingDeleted();
             for (const entry of locals) {
                if (entry.accountId !== user?.id) continue;
+               if (entry.isDeleted) {
+                  await cloud.remove(entry.id);
+                  continue;
+               }
                await cloud.upsert(entry);
             }
 

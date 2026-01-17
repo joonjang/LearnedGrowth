@@ -165,8 +165,6 @@ export class SQLEntriesAdapter implements EntriesAdapter {
       };
    }
 
-   // TODO: create getAllDeleted() for deleted entries
-
    async getAll(): Promise<Entry[]> {
       if (!this.db) {
          return this.entries!.filter((e) => !e.isDeleted)
@@ -188,6 +186,30 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          });
       } catch (e: any) {
          throw new Error(`entries.getAll failed`, { cause: e });
+      }
+   }
+
+   async getAllIncludingDeleted(): Promise<Entry[]> {
+      if (!this.db) {
+         return this.entries!
+            .slice()
+            .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+            .map((e) => this.copyEntry(e));
+      }
+
+      try {
+         return await this.withDb(async (db) => {
+            const rows = await db.getAllAsync<Row>(`
+               SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
+                 created_at, updated_at, account_id, dirty_since, is_deleted
+               FROM entries
+               ORDER BY created_at DESC
+             `);
+
+            return rows.map((row) => this.fromRow(row));
+         });
+      } catch (e: any) {
+         throw new Error(`entries.getAllIncludingDeleted failed`, { cause: e });
       }
    }
 
@@ -430,6 +452,25 @@ export class SQLEntriesAdapter implements EntriesAdapter {
       } catch (e: any) {
          throw new Error(
             `entries.remove failed to remove for ${id}: ${e?.message ?? e}`
+         );
+      }
+   }
+
+   async hardDelete(id: string): Promise<void> {
+      if (!this.db) {
+         const i = this.entries!.findIndex((e) => e.id === id);
+         if (i === -1) return;
+         this.entries!.splice(i, 1);
+         return;
+      }
+
+      try {
+         await this.withDb((db) =>
+            db.runAsync(`DELETE FROM entries WHERE id = $id`, { $id: id })
+         );
+      } catch (e: any) {
+         throw new Error(
+            `entries.hardDelete failed for ${id}: ${e?.message ?? e}`
          );
       }
    }

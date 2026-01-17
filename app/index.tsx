@@ -12,11 +12,12 @@ import StreakCard from '@/components/entries/home/StreakCard';
 import { CategorySegment, WeekSummary } from '@/components/entries/home/types';
 import { isOptimistic } from '@/components/entries/home/utils';
 import TopFade from '@/components/TopFade';
+import { useDeletedEntries } from '@/hooks/useDeletedEntries';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getShadow } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
-import { Link, router } from 'expo-router';
+import { Link, router, useFocusEffect } from 'expo-router';
 import {
    ChevronDown,
    CircleDashed,
@@ -25,6 +26,7 @@ import {
    Plus,
    Settings,
    Sun,
+   Trash2,
    Zap,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
@@ -250,6 +252,7 @@ function formatDate(date: Date) {
 
 export default function EntriesScreen() {
    const store = useEntries();
+   const { deletedCount, refresh: refreshDeletedEntries } = useDeletedEntries();
    const insets = useSafeAreaInsets();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
@@ -333,6 +336,16 @@ export default function EntriesScreen() {
    const handleNewEntryPress = useCallback(() => {
       lockNavigation(() => router.push('/new'));
    }, [lockNavigation]);
+
+   useFocusEffect(
+      useCallback(() => {
+         refreshDeletedEntries();
+      }, [refreshDeletedEntries])
+   );
+
+   useEffect(() => {
+      refreshDeletedEntries();
+   }, [refreshDeletedEntries, store.rows.length]);
 
    // --- Actions ---
    const closeMenu = useCallback(() => {
@@ -690,6 +703,19 @@ export default function EntriesScreen() {
 
                         {/* 👇 Right Side Icons Container */}
                         <View className="flex-row items-center gap-3">
+                           {/* Delete Bin Button */}
+                           {deletedCount > 0 && (
+                              <Link href="/bin" asChild>
+                                 <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
+                                    <Trash2
+                                       size={20}
+                                       color={iconColor}
+                                       strokeWidth={2.5}
+                                    />
+                                 </Pressable>
+                              </Link>
+                           )}
+
                            {/* Help Button */}
                            <Pressable
                               onPress={() => setShowHelpModal(true)}
@@ -701,6 +727,7 @@ export default function EntriesScreen() {
                                  strokeWidth={2.5}
                               />
                            </Pressable>
+
 
                            {/* Settings Button */}
                            <Link href="/settings" asChild>

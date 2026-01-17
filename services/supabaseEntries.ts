@@ -20,6 +20,7 @@ type DbEntry = {
 export interface SupabaseEntriesClient {
   upsert(entry: Entry): Promise<void>;
   remove(id: string): Promise<void>;
+  hardDelete(id: string): Promise<void>;
   fetchAll(): Promise<Entry[]>;
 }
 
@@ -95,6 +96,18 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
     }
   }
 
+  async function hardDelete(id: string) {
+    const { error } = await supabase
+      .from("entries")
+      .delete()
+      .eq("id", id)
+      .eq("account_id", userId);
+    if (error) {
+      console.warn("Supabase hard delete failed", error);
+      throw error;
+    }
+  }
+
   async function fetchAll(): Promise<Entry[]> {
     const columns =
       "id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy, created_at, updated_at, account_id, dirty_since, is_deleted";
@@ -132,5 +145,5 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
     return rows.map(fromDb);
   }
 
-  return { upsert, remove, fetchAll };
+  return { upsert, remove, hardDelete, fetchAll };
 }

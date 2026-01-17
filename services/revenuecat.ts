@@ -7,14 +7,17 @@ import Purchases, {
 } from "react-native-purchases";
 import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 
-
 // Entitlement identifier as configured in RevenueCat dashboard.
 export const GROWTH_PLUS_ENTITLEMENT = "growth_plus_access";
 export const MONTHLY_PACKAGE_IDENTIFIER = "monthly";
 // Default to the smallest consumable pack when a specific product isn't provided.
 export const CONSUMABLE_PRODUCT_IDENTIFIER = "credit_small";
 
-export type PaywallResult = PAYWALL_RESULT; // <--- Don't forget this import
+export type PaywallResult = PAYWALL_RESULT;
+
+const shouldIgnoreRevenueCatLog = (message: string) =>
+  message.includes("Failed to save codable to cache") &&
+  message.includes("revenuecat.etags");
 
 function getRevenueCatApiKey() {
   const isDev = __DEV__;
@@ -24,10 +27,8 @@ function getRevenueCatApiKey() {
   let key: string | undefined = "";
 
   if (isDev) {
-    // Uses the same key for both platforms in Dev (as you requested)
     key = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_DEV;
   } else {
-    // Production needs specific keys for each store
     if (isIOS) {
       key = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_PROD_IOS;
     } else if (isAndroid) {
@@ -36,7 +37,6 @@ function getRevenueCatApiKey() {
   }
 
   if (!key) {
-    // Helpful error message for debugging
     throw new Error(
       `RevenueCat API Key not found. Platform: ${Platform.OS}, Mode: ${
         isDev ? "Dev" : "Release"
@@ -48,7 +48,29 @@ function getRevenueCatApiKey() {
 }
 
 export async function configureRevenueCat(appUserId: string | null) {
-  Purchases.setLogLevel(LOG_LEVEL.INFO);
+  Purchases.setLogHandler((level, message) => {
+    if (shouldIgnoreRevenueCatLog(message)) return;
+    switch (level) {
+      case LOG_LEVEL.DEBUG:
+        console.debug(`[RevenueCat] ${message}`);
+        break;
+      case LOG_LEVEL.INFO:
+        console.info(`[RevenueCat] ${message}`);
+        break;
+      case LOG_LEVEL.WARN:
+        console.warn(`[RevenueCat] ${message}`);
+        break;
+      case LOG_LEVEL.ERROR:
+        console.error(`[RevenueCat] ${message}`);
+        break;
+      default:
+        console.log(`[RevenueCat] ${message}`);
+    }
+  });
+
+  // 🔴 FIX: Changed from INFO to ERROR to prevent console logging crashes
+  Purchases.setLogLevel(LOG_LEVEL.ERROR);
+  
   Purchases.configure({
     apiKey: getRevenueCatApiKey(),
     appUserID: appUserId ?? null,
@@ -64,6 +86,10 @@ export async function logInRevenueCat(appUserId: string) {
 }
 
 export async function logOutRevenueCat() {
+  const isAnonymous = await Purchases.isAnonymous();
+  if (isAnonymous) {
+    return Purchases.getCustomerInfo();
+  }
   const info = await Purchases.logOut();
   return info;
 }
@@ -85,8 +111,6 @@ export async function presentGrowthPlusPaywall(
     displayCloseButton: true,
   });
   if (result === PAYWALL_RESULT.NOT_PRESENTED) {
-    // Fallback to a normal paywall in case the entitlement check short-circuits
-    // or the offering lacks a paywall configuration.
     return RevenueCatUI.presentPaywall({
       offering: offering ?? undefined,
       displayCloseButton: true,

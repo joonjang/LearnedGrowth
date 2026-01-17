@@ -295,6 +295,12 @@ describe.each([
             await db.remove('123');
             await expect(db.remove('123')).resolves.toBeUndefined();
          });
+         it('hardDelete removes entry entirely', async () => {
+            await db.add(entry);
+            await db.hardDelete('123');
+            expect(await db.getById('123')).toBeNull();
+            expect((await db.getAll()).length).toBe(0);
+         });
 
          it('remove keeps createdAt stable', async () => {
             await db.add(entry);
