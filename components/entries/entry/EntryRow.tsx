@@ -2,7 +2,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { getShadow } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
 import { Pencil, Trash2 } from 'lucide-react-native';
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useMemo, useRef } from 'react';
 import {
    Pressable,
    Text,
@@ -13,13 +13,7 @@ import {
 import Swipeable, {
    type SwipeableMethods,
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Animated, {
-   FadeIn,
-   FadeOut,
-   useAnimatedStyle,
-   useSharedValue,
-   withTiming,
-} from 'react-native-reanimated';
+import Animated, { Layout, SlideInUp } from 'react-native-reanimated';
 import EntryCard, { type MenuBounds } from './EntryCard';
 
 type EntryRowProps = {
@@ -35,62 +29,6 @@ type EntryRowProps = {
    onSwipeClose?: (id: string) => void;
    closeActiveSwipeable?: () => string | null;
 };
-
-export function UndoRow({
-   entry,
-   durationMs,
-   onUndo,
-}: {
-   entry: Entry;
-   durationMs: number;
-   onUndo: () => void;
-}) {
-   const progress = useSharedValue(1);
-   const [textWidth, setTextWidth] = useState(0);
-
-   useEffect(() => {
-      progress.value = 1;
-      progress.value = withTiming(0, { duration: durationMs });
-   }, [entry.id, durationMs, progress]);
-
-   const barStyle = useAnimatedStyle(() => ({
-      transform: [{ scaleX: progress.value }],
-      transformOrigin: 'left center',
-   }));
-
-   return (
-      <Animated.View
-         entering={FadeIn.duration(220)}
-         exiting={FadeOut.duration(220)}
-         className="pt-4 pb-10"
-      >
-         <View className="min-h-[80px] justify-center items-center py-1 px-2 gap-0.5">
-            <Pressable
-               accessibilityRole="button"
-               accessibilityLabel="Undo delete"
-               testID="entry-undo-btn" // <--- ADDED TEST ID
-               onPress={onUndo}
-            >
-               <Text
-                  className="text-amber-600 dark:text-amber-400 text-[15px] py-1.5 text-center font-medium"
-                  onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)}
-               >
-                  Undo delete
-               </Text>
-            </Pressable>
-            <View
-               className="h-0.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-0.5"
-               style={textWidth ? { width: textWidth } : undefined}
-            >
-               <Animated.View
-                  className="absolute inset-0 bg-amber-500"
-                  style={barStyle}
-               />
-            </View>
-         </View>
-      </Animated.View>
-   );
-}
 
 function EntryRow({
    entry,
@@ -125,8 +63,8 @@ function EntryRow({
 
    return (
       <Animated.View
-         entering={FadeIn.duration(240)}
-         exiting={FadeOut.duration(240)}
+         layout={Layout.duration(180)}
+         entering={SlideInUp.duration(200)}
          className="pt-4 pb-10"
          style={[style]}
       >

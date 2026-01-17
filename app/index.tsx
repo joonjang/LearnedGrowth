@@ -5,7 +5,7 @@ import {
    PRIMARY_CTA_TEXT_CLASS,
 } from '@/components/constants';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
-import EntryRow, { UndoRow } from '@/components/entries/entry/EntryRow';
+import EntryRow from '@/components/entries/entry/EntryRow';
 import GlobalDashboard from '@/components/entries/home/GlobalDashboard';
 import SectionHeader from '@/components/entries/home/SectionHeader';
 import StreakCard from '@/components/entries/home/StreakCard';
@@ -66,7 +66,7 @@ const AnimatedSectionList = Animated.createAnimatedComponent(
 
 // --- Types ---
 
-type RowItem = { kind: 'entry'; entry: Entry } | { kind: 'undo'; entry: Entry };
+type RowItem = { kind: 'entry'; entry: Entry };
 
 type EntrySection = {
    title: string;
@@ -78,7 +78,6 @@ type EntrySection = {
 
 // --- Config ---
 
-const UNDO_TIMEOUT_MS = 5500;
 const SCROLL_THRESHOLD_FOR_FAB = 320;
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -129,7 +128,7 @@ function getCategorySegments(entries: Entry[]): CategorySegment[] {
 }
 
 function getSectionSummary(rows: RowItem[]): WeekSummary {
-   const entries = rows.filter((r) => r.kind === 'entry').map((r) => r.entry);
+   const entries = rows.map((r) => r.entry);
    if (entries.length === 0)
       return { categorySegments: [], entryCount: 0, avgOptimism: null };
 
@@ -150,18 +149,15 @@ function getSectionSummary(rows: RowItem[]): WeekSummary {
    return { categorySegments, entryCount: entries.length, avgOptimism };
 }
 
-function buildRowsWithUndo(rows: Entry[], undoSlots: Entry[]): RowItem[] {
-   const merged: RowItem[] = rows.map((entry) => ({ kind: 'entry', entry }));
-   for (const entry of undoSlots) {
-      if (!rows.find((r) => r.id === entry.id))
-         merged.push({ kind: 'undo', entry });
-   }
-   return merged.sort((a, b) => {
-      const aTime = new Date(a.entry.createdAt).getTime();
-      const bTime = new Date(b.entry.createdAt).getTime();
-      if (bTime !== aTime) return bTime - aTime;
-      return a.entry.id < b.entry.id ? -1 : a.entry.id > b.entry.id ? 1 : 0;
-   });
+function buildRows(rows: Entry[]): RowItem[] {
+   return rows
+      .map((entry) => ({ kind: 'entry', entry }))
+      .sort((a, b) => {
+         const aTime = new Date(a.entry.createdAt).getTime();
+         const bTime = new Date(b.entry.createdAt).getTime();
+         if (bTime !== aTime) return bTime - aTime;
+         return a.entry.id < b.entry.id ? -1 : a.entry.id > b.entry.id ? 1 : 0;
+      });
 }
 
 function buildSections(rows: RowItem[]): EntrySection[] {
@@ -328,10 +324,6 @@ export default function EntriesScreen() {
       id: string;
       ref: SwipeableMethods;
    } | null>(null);
-   const [undoSlots, setUndoSlots] = useState<Entry[]>([]);
-   const undoTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
-      new Map()
-   );
 
    const handleNewEntryPress = useCallback(() => {
       lockNavigation(() => router.push('/new'));
@@ -388,41 +380,17 @@ export default function EntriesScreen() {
       (entry: Entry) => {
          closeMenu();
          closeActiveSwipeable();
-         setUndoSlots((prev) => [
-            ...prev.filter((e) => e.id !== entry.id),
-            entry,
-         ]);
-         const timer = setTimeout(() => {
-            setUndoSlots((prev) => prev.filter((e) => e.id !== entry.id));
-            undoTimers.current.delete(entry.id);
-         }, UNDO_TIMEOUT_MS);
-         undoTimers.current.set(entry.id, timer);
          store.deleteEntry(entry.id).catch((e) => console.error(e));
       },
       [closeActiveSwipeable, closeMenu, store]
    );
 
-   const handleUndo = useCallback(
-      async (entry: Entry) => {
-         setUndoSlots((prev) => prev.filter((e) => e.id !== entry.id));
-         const timer = undoTimers.current.get(entry.id);
-         if (timer) clearTimeout(timer);
-         undoTimers.current.delete(entry.id);
-         try {
-            await store.restoreEntry(entry);
-         } catch (e) {
-            console.error(e);
-         }
-      },
-      [store]
-   );
-
    // --- Data Prep ---
-   const rowsWithUndo = useMemo(
-      () => buildRowsWithUndo(store.rows, undoSlots),
-      [store.rows, undoSlots]
+   const rowsForSections = useMemo(
+      () => buildRows(store.rows),
+      [store.rows]
    );
-   const sections = useMemo(() => buildSections(rowsWithUndo), [rowsWithUndo]);
+   const sections = useMemo(() => buildSections(rowsForSections), [rowsForSections]);
 
    const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
       const nextHeight = Math.round(event.nativeEvent.layout.height);
@@ -614,41 +582,30 @@ export default function EntriesScreen() {
    );
 
    const renderItem = useCallback(
-      ({ item }: { item: RowItem }) => {
-         if (item.kind === 'undo')
-            return (
-               <UndoRow
-                  entry={item.entry}
-                  onUndo={() => handleUndo(item.entry)}
-                  durationMs={UNDO_TIMEOUT_MS}
-               />
-            );
-         return (
-            <EntryRow
-               entry={item.entry}
-               isMenuOpen={openMenuEntryId === item.entry.id}
-               onToggleMenu={() => toggleMenu(item.entry.id)}
-               onCloseMenu={closeMenu}
-               onMenuLayout={setOpenMenuBounds}
-               onSwipeOpen={onRowSwipeOpen}
-               onSwipeClose={onRowSwipeClose}
-               closeActiveSwipeable={closeActiveSwipeable}
-               onEdit={() =>
-                  lockNavigation(() =>
-                     router.push({
-                        pathname: '/entries/[id]',
-                        params: { id: item.entry.id, mode: 'edit' },
-                     })
-                  )
-               }
-               onDelete={() => requestDelete(item.entry)}
-            />
-         );
-      },
+      ({ item }: { item: RowItem }) => (
+         <EntryRow
+            entry={item.entry}
+            isMenuOpen={openMenuEntryId === item.entry.id}
+            onToggleMenu={() => toggleMenu(item.entry.id)}
+            onCloseMenu={closeMenu}
+            onMenuLayout={setOpenMenuBounds}
+            onSwipeOpen={onRowSwipeOpen}
+            onSwipeClose={onRowSwipeClose}
+            closeActiveSwipeable={closeActiveSwipeable}
+            onEdit={() =>
+               lockNavigation(() =>
+                  router.push({
+                     pathname: '/entries/[id]',
+                     params: { id: item.entry.id, mode: 'edit' },
+                  })
+               )
+            }
+            onDelete={() => requestDelete(item.entry)}
+         />
+      ),
       [
          closeActiveSwipeable,
          closeMenu,
-         handleUndo,
          lockNavigation,
          onRowSwipeClose,
          onRowSwipeOpen,
@@ -672,7 +629,7 @@ export default function EntriesScreen() {
          <AnimatedSectionList<RowItem, EntrySection>
             ref={listRef}
             sections={sections}
-            keyExtractor={(item) => `${item.kind}-${item.entry.id}`}
+            keyExtractor={(item) => item.entry.id}
             className="flex-1"
             stickySectionHeadersEnabled={true}
             showsVerticalScrollIndicator={false}
