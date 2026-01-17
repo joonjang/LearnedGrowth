@@ -14,7 +14,14 @@ import {
    TriangleAlert,
 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+   Pressable,
+   Text,
+   View,
+   type DimensionValue,
+   type StyleProp,
+   type ViewStyle,
+} from 'react-native';
 import Animated, {
    Easing,
    FadeIn,
@@ -134,8 +141,8 @@ function SkeletonItem({
 }: {
    className?: string;
    style?: StyleProp<ViewStyle>;
-   height?: number | string;
-   width?: number | string;
+   height?: DimensionValue;
+   width?: DimensionValue;
    borderRadius?: number;
    delay?: number;
 }) {
@@ -246,8 +253,8 @@ export function AiInsightLoadingState({
 }) {
    const hasStream = _streamLength > 0;
    const widths = useMemo(() => {
-      const randomPercent = (min: number, max: number) =>
-         `${Math.round(min + Math.random() * (max - min))}%`;
+      const randomPercent = (min: number, max: number): `${number}%` =>
+         `${Math.round(min + Math.random() * (max - min))}%` as `${number}%`;
       const randomPx = (min: number, max: number) =>
          Math.round(min + Math.random() * (max - min));
 

@@ -46,7 +46,6 @@ export default function ABCAnalysis({
    const isDark = colorScheme === 'dark';
    const shadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
    const shadowGutter = 6;
-   const stackContent = loading || !aiData;
    
    const [areAnimationsDone, setAreAnimationsDone] = useState(false);
    const buttonOpacity = useSharedValue(0);

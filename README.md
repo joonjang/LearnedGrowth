@@ -61,6 +61,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - fixed revenuecat logout error
 - aiInsight loading animation now skeleton animation based
   - improved timing and pace
+- devAiService now generates dynamic information for testing api server response
 
 ### 2026-01-15
 - Made screen scaleable for small screen by making input box based off screen size and not hardcoding

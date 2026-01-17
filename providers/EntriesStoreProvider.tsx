@@ -100,7 +100,6 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
 
       (async () => {
          try {
-            console.log('[Sync] Starting...');
             
             // Pull remote changes
             const remote = await cloud.fetchAll();
@@ -125,7 +124,6 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
             }
 
             await store.getState().hydrate();
-            console.log('[Sync] Complete.');
          } catch (e) {
             console.warn('Failed to sync entries from Supabase', e);
          }

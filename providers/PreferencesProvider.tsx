@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
-import { Appearance } from "react-native";
+import { Appearance, Platform } from "react-native";
 import {
   ReactNode,
   createContext,
@@ -45,7 +45,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     const load = async () => {
       try {
-        const available = await Haptics.isAvailableAsync();
+        const available = Platform.OS !== "web";
         if (mounted) setHapticsAvailable(available);
 
         const entries = await AsyncStorage.multiGet(Object.values(STORAGE_KEYS));
@@ -87,7 +87,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     } catch (err: any) {
       setError(err?.message ?? "Could not update haptics");
     }
-  }, []);
+  }, [hapticsAvailable]);
 
   const persistTheme = useCallback(async (next: ThemePreference) => {
     setThemeState(next);

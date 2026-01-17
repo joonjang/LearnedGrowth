@@ -30,10 +30,10 @@ export default function SendFeedback() {
    const [message, setMessage] = useState<string | null>(null);
    const [collapsed, setCollapsed] = useState(true);
 
-   const toggle = () => {
+   const toggle = useCallback(() => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setCollapsed(!collapsed);
-   };
+      setCollapsed((prev) => !prev);
+   }, []);
 
    const handleSend = useCallback(async () => {
       const text = feedback.trim();
@@ -66,7 +66,7 @@ export default function SendFeedback() {
       } finally {
         setLoading(false);
       }
-   }, [feedback, user?.email, user?.id, collapsed]);
+   }, [feedback, user?.email, user?.id, collapsed, toggle]);
 
    return (
       <View>

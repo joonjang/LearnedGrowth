@@ -153,7 +153,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
             controlsColor: '#10b981', // Your emerald color
             toolbarColor: isDark ? '#0f172a' : '#ffffff', // Matches your theme
          });
-      } catch (e) {
+      } catch {
          // Fallback to standard browser if something goes wrong
          Linking.openURL(url).catch(() => {});
       }

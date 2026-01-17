@@ -49,8 +49,6 @@ type RequestOpts = { signal?: AbortSignal; onChunk?: (partial: string) => void }
 const AI_USAGE_RPC =
   process.env.EXPO_PUBLIC_SUPABASE_AI_USAGE_RPC ?? "use_ai_call";
 const AI_USAGE_ENABLED = USING_SUPABASE && Boolean(AI_USAGE_RPC);
-const COUPON_RPC =
-  process.env.EXPO_PUBLIC_SUPABASE_COUPON_RPC ?? "redeem_coupon";
 
 export class CloudAiService implements AbcAiService {
   mode: AiSource = "cloud";
@@ -409,7 +407,7 @@ export class CloudAiService implements AbcAiService {
             }
             return;
           }
-        } catch (_err) {
+        } catch {
           // fall through to assembled buffer
         }
 
