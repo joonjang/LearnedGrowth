@@ -19,7 +19,7 @@ import {
    Text,
    View,
 } from 'react-native';
-import Animated, { FadeOutUp, Layout } from 'react-native-reanimated';
+import Animated, { FadeOutUp, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function DeleteBinScreen() {
@@ -71,7 +71,7 @@ export default function DeleteBinScreen() {
          if (!adapter || !ready) return;
          setDeletingId(entry.id);
          try {
-            if (canUseCloud) {
+            if (canUseCloud && cloud) {
                await cloud.hardDelete(entry.id);
             }
             await adapter.hardDelete(entry.id);
@@ -241,7 +241,7 @@ export default function DeleteBinScreen() {
                contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 24 }}
                renderItem={({ item }) => (
                   <Animated.View
-                     layout={Layout.duration(180)}
+                     layout={LinearTransition.duration(180)}
                      exiting={FadeOutUp.duration(180)}
                      className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 mb-4"
                      style={shadowSm.style}

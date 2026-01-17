@@ -27,11 +27,11 @@ import {
 } from 'react-native-keyboard-controller';
 import Animated, {
    Easing,
-   runOnJS,
    useAnimatedStyle,
    useSharedValue,
    withTiming,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type AuthStatus = 'idle' | 'sending' | 'verifying' | 'apple' | 'google';
@@ -97,12 +97,12 @@ export default function AuthModal() {
 
       Keyboard.dismiss();
       opacity.value = withTiming(0, { duration: 200 });
-      translateY.value = withTiming(
+         translateY.value = withTiming(
          screenHeight,
          { duration: 250 },
          (finished) => {
             if (finished) {
-               runOnJS(safeBack)();
+               scheduleOnRN(safeBack);
             }
          }
       );

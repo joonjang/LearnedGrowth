@@ -151,7 +151,7 @@ function getSectionSummary(rows: RowItem[]): WeekSummary {
 
 function buildRows(rows: Entry[]): RowItem[] {
    return rows
-      .map((entry) => ({ kind: 'entry', entry }))
+      .map((entry): RowItem => ({ kind: 'entry', entry }))
       .sort((a, b) => {
          const aTime = new Date(a.entry.createdAt).getTime();
          const bTime = new Date(b.entry.createdAt).getTime();

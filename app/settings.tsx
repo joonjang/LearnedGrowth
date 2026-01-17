@@ -6,6 +6,7 @@ import {
 } from '@/components/constants';
 import { AiInsightCreditShopSheet } from '@/components/CreditShopSheet';
 import SendFeedback from '@/components/SendFeedback';
+import { APP_VERSION } from '@/lib/appInfo';
 import { getShadow } from '@/lib/shadow';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
@@ -44,15 +45,15 @@ import {
    Modal,
    Platform,
    Pressable,
-   ScrollView,
    StyleProp,
    Switch,
    Text,
    TextInput,
    TouchableWithoutFeedback,
    View,
-   ViewStyle,
+   ViewStyle
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
    useAnimatedStyle,
    useSharedValue,
@@ -413,341 +414,334 @@ export default function SettingsScreen() {
             onConfirm={performDeleteAccount}
             isDark={isDark}
          />
-
-         <KeyboardAvoidingView behavior={'padding'} style={{ flex: 1 }} >
-            <ScrollView
-               contentContainerStyle={{
-                  paddingTop: insets.top + 16,
-                  paddingBottom: insets.bottom + 40,
-                  paddingHorizontal: 16,
-                  gap: 16,
-               }}
-               showsVerticalScrollIndicator={false}
-               keyboardShouldPersistTaps="handled"
-            >
-               {/* HEADER */}
-               <View className="flex-row items-start gap-2 mb-2">
-                  <Pressable
-                     onPress={() => router.back()}
-                     hitSlop={8}
-                     className="mt-1 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
+   
+         <KeyboardAwareScrollView
+            bottomOffset={150}
+            contentContainerStyle={{
+               paddingTop: insets.top + 16,
+               paddingBottom: insets.bottom + 40,
+               paddingHorizontal: 16,
+               gap: 16,
+            }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+         >
+            {/* HEADER */}
+            <View className="flex-row items-start gap-2 mb-2">
+               <Pressable
+                  onPress={() => router.back()}
+                  hitSlop={8}
+                  className="mt-1 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
+               >
+                  <ChevronLeft size={26} strokeWidth={2.8} color={iconColor} />
+               </Pressable>
+               <View className="flex-1">
+                  <Text className="text-3xl font-extrabold text-slate-900 dark:text-slate-50">
+                     Settings
+                  </Text>
+                  <Text
+                     numberOfLines={1}
+                     className="text-[15px] font-medium text-slate-500 dark:text-slate-400 mt-0.5"
                   >
-                     <ChevronLeft
-                        size={26}
-                        strokeWidth={2.8}
-                        color={iconColor}
-                     />
-                  </Pressable>
-                  <View className="flex-1">
-                     <Text className="text-3xl font-extrabold text-slate-900 dark:text-slate-50">
-                        Settings
-                     </Text>
-                     <Text
-                        numberOfLines={1}
-                        className="text-[15px] font-medium text-slate-500 dark:text-slate-400 mt-0.5"
-                     >
-                        {user?.email ?? 'Not signed in'}
-                     </Text>
-                  </View>
+                     {user?.email ?? 'Not signed in'}
+                  </Text>
                </View>
+            </View>
 
-               {/* OFFLINE INDICATOR */}
-               {isOffline && (
-                  <View className="bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 p-3 rounded-xl flex-row items-center gap-3">
-                     <View className="w-2 h-2 rounded-full bg-amber-500" />
-                     <Text className="text-sm font-bold text-amber-800 dark:text-amber-200">
-                        You are offline.
-                     </Text>
-                  </View>
-               )}
+            {/* OFFLINE INDICATOR */}
+            {isOffline && (
+               <View className="bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 p-3 rounded-xl flex-row items-center gap-3">
+                  <View className="w-2 h-2 rounded-full bg-amber-500" />
+                  <Text className="text-sm font-bold text-amber-800 dark:text-amber-200">
+                     You are offline.
+                  </Text>
+               </View>
+            )}
 
-               {!user && (
-                  <View
-                     className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-700"
-                     style={commonShadowStyle}
-                  >
-                     <View className="flex-row items-start gap-4 mb-4">
-                        <View className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/30 items-center justify-center">
-                           <Cloud size={24} color="#6366f1" />
-                        </View>
-                        <View className="flex-1">
-                           <Text className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                              Save your progress
-                           </Text>
-                           <Text className="text-sm text-slate-500 dark:text-slate-400 leading-5 mt-1">
-                              Sign in to back up your entries and sync across
-                              your devices.
-                           </Text>
-                        </View>
-                     </View>
-
-                     <Pressable
-                        className={`w-full h-[50px] items-center justify-center rounded-xl ${PRIMARY_CTA_CLASS}`}
-                        onPress={() => router.push(ROUTE_LOGIN)}
-                     >
-                        <Text className="text-white font-bold text-[16px]">
-                           Sign In / Create Account
-                        </Text>
-                     </Pressable>
-
-                     <View className="flex-row items-center justify-center gap-1.5 mt-3 opacity-60">
-                        <ShieldCheck
-                           size={12}
-                           color={isDark ? '#94a3b8' : '#64748b'}
-                        />
-                        <Text className="text-[11px] text-slate-500 dark:text-slate-400">
-                           Your data is private and encrypted.
-                        </Text>
-                     </View>
-                  </View>
-               )}
-
-               {/* STATS */}
-               {isSignedIn && !hasGrowth && (
-                  <View className="flex-row gap-3">
-                     <StatCard
-                        label="Cycle Credits"
-                        value={`${cycleRemaining} / ${FREE_MONTHLY_CREDITS}`}
-                        subtext={resetSubtext}
-                        isLoading={isLoading}
-                        icon={<Zap size={16} color="#fbbf24" fill="#fbbf24" />}
-                        shadowStyle={commonShadowStyle}
-                     />
-                     <StatCard
-                        label="Extra Analysis"
-                        value={String(extraCredits)}
-                        subtext="Non-expiring"
-                        isLoading={isLoading}
-                        isHighlight
-                        shadowStyle={commonShadowStyle}
-                     />
-                  </View>
-               )}
-
-               {/* SUBSCRIPTION CARD */}
-               {isSignedIn && user && (
-                  <View
-                     className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700"
-                     style={commonShadowStyle}
-                  >
-                     {/* Plan Status Header */}
-                     <View className="p-4">
-                        <View className="flex-row justify-between items-center">
-                           <View>
-                              <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                                 Current Plan
-                              </Text>
-                              <View className="flex-row items-center gap-2">
-                                 <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                                    {planLabel}
-                                 </Text>
-                                 {hasGrowth && (
-                                    <Sprout
-                                       size={20}
-                                       // Green-600 for light mode, Green-400 for dark mode
-                                       color={isDark ? '#4ade80' : '#16a34a'}
-                                    />
-                                 )}
-                              </View>
-                           </View>
-                           {!hasGrowth && (
-                              <Pressable
-                                 onPress={() => setCouponExpanded((v) => !v)}
-                                 className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700 active:opacity-80"
-                              >
-                                 <TicketPlus size={18} color={iconColor} />
-                              </Pressable>
-                           )}
-                        </View>
-                        {!hasGrowth && couponExpanded && (
-                           <View className="mt-3 flex-row items-center gap-2">
-                              <TextInput
-                                 value={couponCode}
-                                 onChangeText={setCouponCode}
-                                 placeholder="Enter coupon"
-                                 placeholderTextColor={
-                                    isDark ? '#94a3b8' : '#94a3b8'
-                                 }
-                                 className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                                 autoCapitalize="none"
-                                 autoCorrect={false}
-                              />
-                              <Pressable
-                                 onPress={() => {
-                                    Keyboard.dismiss();
-                                    handleRedeemCoupon();
-                                 }}
-                                 className="px-3 py-2 rounded-lg bg-slate-700 dark:bg-slate-600"
-                              >
-                                 {redeemingCoupon ? (
-                                    <ActivityIndicator
-                                       size="small"
-                                       color="white"
-                                    />
-                                 ) : (
-                                    <Text className="text-white font-semibold">
-                                       Apply
-                                    </Text>
-                                 )}
-                              </Pressable>
-                           </View>
-                        )}
-                        {!hasGrowth && couponExpanded && couponMessage ? (
-                           <Text className="text-xs text-slate-600 dark:text-slate-400 mt-2">
-                              {couponMessage}
-                           </Text>
-                        ) : null}
-                     </View>
-
-                     <View className="p-4 gap-4 bg-slate-50/50 dark:bg-slate-800/20">
-                        {!hasGrowth ? (
-                           <>
-                              <Pressable
-                                 onPress={openCreditShop}
-                                 className={`rounded-xl p-4 items-center ${DISPUTE_CTA_CLASS}`}
-                                 style={greenShadowStyle}
-                              >
-                                 <View className="w-full items-center">
-                                    <Text className="text-white font-bold text-[16px] text-center">
-                                       Get More Analysis
-                                    </Text>
-                                 </View>
-                              </Pressable>
-                           </>
-                        ) : (
-                           <Pressable
-                              onPress={handleManageSubscription}
-                              disabled={billingAction === 'manage'}
-                              className="items-center justify-center bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700"
-                           >
-                              <Text className="font-semibold text-slate-700 dark:text-slate-200">
-                                 Manage Subscription
-                              </Text>
-                           </Pressable>
-                        )}
-
-                        <Pressable
-                           onPress={handleRestore}
-                           disabled={billingAction === 'restore' || isOffline}
-                           className="self-center py-1"
-                        >
-                           <Text className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                              {billingAction === 'restore'
-                                 ? 'Restoring purchases...'
-                                 : 'Restore Purchases'}
-                           </Text>
-                        </Pressable>
-                        {(billingNote || rcError) && (
-                           <Text className="text-xs text-center text-slate-600 dark:text-slate-400 mt-1">
-                              {billingNote ?? rcError}
-                           </Text>
-                        )}
-                     </View>
-                  </View>
-               )}
-
-               {/* PREFERENCES */}
+            {!user && (
                <View
-                  className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 gap-5"
+                  className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-700"
                   style={commonShadowStyle}
                >
-                  <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                     Preferences
-                  </Text>
-
-                  <SettingRow
-                     title="Dark Mode"
-                     description="Switch between light and dark theme."
-                  >
-                     <Switch
-                        value={darkMode}
-                        onValueChange={(val) =>
-                           setTheme(val ? 'dark' : 'light')
-                        }
-                        disabled={prefsLoading}
-                        thumbColor={switchThumbColor}
-                        trackColor={{ false: '#e2e8f0', true: '#16a34a' }}
-                     />
-                  </SettingRow>
-
-                  <SettingRow
-                     title="Haptic Feedback"
-                     description="Tactile vibrations on interaction."
-                  >
-                     <Switch
-                        value={hapticsEnabled}
-                        onValueChange={setHapticsEnabled}
-                        disabled={prefsLoading || !hapticsAvailable}
-                        thumbColor={switchThumbColor}
-                        trackColor={{ false: '#e2e8f0', true: '#16a34a' }}
-                     />
-                  </SettingRow>
-               </View>
-
-               {/* ACCOUNT ACTIONS */}
-               {isSignedIn && (
-                  <View
-                     className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700"
-                     style={commonShadowStyle}
-                  >
-                     <Pressable
-                        className="flex-row justify-between items-center p-4 active:bg-slate-50 dark:active:bg-slate-800"
-                        onPress={() => setActionsCollapsed(!actionsCollapsed)}
-                     >
-                        <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                           Account Actions
+                  <View className="flex-row items-start gap-4 mb-4">
+                     <View className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/30 items-center justify-center">
+                        <Cloud size={24} color="#6366f1" />
+                     </View>
+                     <View className="flex-1">
+                        <Text className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                           Save your progress
                         </Text>
-                        {actionsCollapsed ? (
-                           <ChevronDown size={20} color={iconColor} />
-                        ) : (
-                           <ChevronUp size={20} color={iconColor} />
-                        )}
-                     </Pressable>
-
-                     {!actionsCollapsed && (
-                        <View className="p-4 pt-0 gap-3">
-                           <Pressable
-                              onPress={() =>
-                                 Alert.alert('Sign out', 'Confirm?', [
-                                    { text: 'Cancel' },
-                                    { text: 'Sign Out', onPress: signOut },
-                                 ])
-                              }
-                              className="py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 items-center"
-                           >
-                              <Text className="font-bold text-slate-700 dark:text-slate-200 text-[15px]">
-                                 Sign Out
-                              </Text>
-                           </Pressable>
-
-                           <Pressable
-                              onPress={() => setShowDeleteModal(true)}
-                              className="mt-3 py-2 items-center active:opacity-60"
-                           >
-                              <Text className="font-semibold text-red-500 dark:text-red-400 text-[15px]">
-                                 Delete Account
-                              </Text>
-                           </Pressable>
-                        </View>
-                     )}
+                        <Text className="text-sm text-slate-500 dark:text-slate-400 leading-5 mt-1">
+                           Sign in to back up your entries and sync across your
+                           devices.
+                        </Text>
+                     </View>
                   </View>
-               )}
 
-               {/* FEEDBACK */}
+                  <Pressable
+                     className={`w-full h-[50px] items-center justify-center rounded-xl ${PRIMARY_CTA_CLASS}`}
+                     onPress={() => router.push(ROUTE_LOGIN)}
+                  >
+                     <Text className="text-white font-bold text-[16px]">
+                        Sign In / Create Account
+                     </Text>
+                  </Pressable>
+
+                  <View className="flex-row items-center justify-center gap-1.5 mt-3 opacity-60">
+                     <ShieldCheck
+                        size={12}
+                        color={isDark ? '#94a3b8' : '#64748b'}
+                     />
+                     <Text className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Your data is private and encrypted.
+                     </Text>
+                  </View>
+               </View>
+            )}
+
+            {/* STATS */}
+            {isSignedIn && !hasGrowth && (
+               <View className="flex-row gap-3">
+                  <StatCard
+                     label="Cycle Credits"
+                     value={`${cycleRemaining} / ${FREE_MONTHLY_CREDITS}`}
+                     subtext={resetSubtext}
+                     isLoading={isLoading}
+                     icon={<Zap size={16} color="#fbbf24" fill="#fbbf24" />}
+                     shadowStyle={commonShadowStyle}
+                  />
+                  <StatCard
+                     label="Extra Analysis"
+                     value={String(extraCredits)}
+                     subtext="Non-expiring"
+                     isLoading={isLoading}
+                     isHighlight
+                     shadowStyle={commonShadowStyle}
+                  />
+               </View>
+            )}
+
+            {/* SUBSCRIPTION CARD */}
+            {isSignedIn && user && (
                <View
                   className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700"
                   style={commonShadowStyle}
                >
+                  {/* Plan Status Header */}
                   <View className="p-4">
-                     <SendFeedback />
+                     <View className="flex-row justify-between items-center">
+                        <View>
+                           <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                              Current Plan
+                           </Text>
+                           <View className="flex-row items-center gap-2">
+                              <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                                 {planLabel}
+                              </Text>
+                              {hasGrowth && (
+                                 <Sprout
+                                    size={20}
+                                    // Green-600 for light mode, Green-400 for dark mode
+                                    color={isDark ? '#4ade80' : '#16a34a'}
+                                 />
+                              )}
+                           </View>
+                        </View>
+                        {!hasGrowth && (
+                           <Pressable
+                              onPress={() => setCouponExpanded((v) => !v)}
+                              className="p-2 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700 active:opacity-80"
+                           >
+                              <TicketPlus size={18} color={iconColor} />
+                           </Pressable>
+                        )}
+                     </View>
+                     {!hasGrowth && couponExpanded && (
+                        <View className="mt-3 flex-row items-center gap-2">
+                           <TextInput
+                              value={couponCode}
+                              onChangeText={setCouponCode}
+                              placeholder="Enter coupon"
+                              placeholderTextColor={
+                                 isDark ? '#94a3b8' : '#94a3b8'
+                              }
+                              className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                              autoCapitalize="none"
+                              autoCorrect={false}
+                           />
+                           <Pressable
+                              onPress={() => {
+                                 Keyboard.dismiss();
+                                 handleRedeemCoupon();
+                              }}
+                              className="px-3 py-2 rounded-lg bg-slate-700 dark:bg-slate-600"
+                           >
+                              {redeemingCoupon ? (
+                                 <ActivityIndicator
+                                    size="small"
+                                    color="white"
+                                 />
+                              ) : (
+                                 <Text className="text-white font-semibold">
+                                    Apply
+                                 </Text>
+                              )}
+                           </Pressable>
+                        </View>
+                     )}
+                     {!hasGrowth && couponExpanded && couponMessage ? (
+                        <Text className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+                           {couponMessage}
+                        </Text>
+                     ) : null}
+                  </View>
+
+                  <View className="p-4 gap-4 bg-slate-50/50 dark:bg-slate-800/20">
+                     {!hasGrowth ? (
+                        <>
+                           <Pressable
+                              onPress={openCreditShop}
+                              className={`rounded-xl p-4 items-center ${DISPUTE_CTA_CLASS}`}
+                              style={greenShadowStyle}
+                           >
+                              <View className="w-full items-center">
+                                 <Text className="text-white font-bold text-[16px] text-center">
+                                    Get More Analysis
+                                 </Text>
+                              </View>
+                           </Pressable>
+                        </>
+                     ) : (
+                        <Pressable
+                           onPress={handleManageSubscription}
+                           disabled={billingAction === 'manage'}
+                           className="items-center justify-center bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700"
+                        >
+                           <Text className="font-semibold text-slate-700 dark:text-slate-200">
+                              Manage Subscription
+                           </Text>
+                        </Pressable>
+                     )}
+
+                     <Pressable
+                        onPress={handleRestore}
+                        disabled={billingAction === 'restore' || isOffline}
+                        className="self-center py-1"
+                     >
+                        <Text className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+                           {billingAction === 'restore'
+                              ? 'Restoring purchases...'
+                              : 'Restore Purchases'}
+                        </Text>
+                     </Pressable>
+                     {(billingNote || rcError) && (
+                        <Text className="text-xs text-center text-slate-600 dark:text-slate-400 mt-1">
+                           {billingNote ?? rcError}
+                        </Text>
+                     )}
                   </View>
                </View>
+            )}
+
+            {/* PREFERENCES */}
+            <View
+               className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 gap-5"
+               style={commonShadowStyle}
+            >
+               <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                  Preferences
+               </Text>
+
+               <SettingRow
+                  title="Dark Mode"
+                  description="Switch between light and dark theme."
+               >
+                  <Switch
+                     value={darkMode}
+                     onValueChange={(val) => setTheme(val ? 'dark' : 'light')}
+                     disabled={prefsLoading}
+                     thumbColor={switchThumbColor}
+                     trackColor={{ false: '#e2e8f0', true: '#16a34a' }}
+                  />
+               </SettingRow>
+
+               <SettingRow
+                  title="Haptic Feedback"
+                  description="Tactile vibrations on interaction."
+               >
+                  <Switch
+                     value={hapticsEnabled}
+                     onValueChange={setHapticsEnabled}
+                     disabled={prefsLoading || !hapticsAvailable}
+                     thumbColor={switchThumbColor}
+                     trackColor={{ false: '#e2e8f0', true: '#16a34a' }}
+                  />
+               </SettingRow>
+            </View>
+
+            {/* ACCOUNT ACTIONS */}
+            {isSignedIn && (
+               <View
+                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700"
+                  style={commonShadowStyle}
+               >
+                  <Pressable
+                     className="flex-row justify-between items-center p-4 active:bg-slate-50 dark:active:bg-slate-800"
+                     onPress={() => setActionsCollapsed(!actionsCollapsed)}
+                  >
+                     <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                        Account Actions
+                     </Text>
+                     {actionsCollapsed ? (
+                        <ChevronDown size={20} color={iconColor} />
+                     ) : (
+                        <ChevronUp size={20} color={iconColor} />
+                     )}
+                  </Pressable>
+
+                  {!actionsCollapsed && (
+                     <View className="p-4 pt-0 gap-3">
+                        <Pressable
+                           onPress={() =>
+                              Alert.alert('Sign out', 'Confirm?', [
+                                 { text: 'Cancel' },
+                                 { text: 'Sign Out', onPress: signOut },
+                              ])
+                           }
+                           className="py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 items-center"
+                        >
+                           <Text className="font-bold text-slate-700 dark:text-slate-200 text-[15px]">
+                              Sign Out
+                           </Text>
+                        </Pressable>
+
+                        <Pressable
+                           onPress={() => setShowDeleteModal(true)}
+                           className="mt-3 py-2 items-center active:opacity-60"
+                        >
+                           <Text className="font-semibold text-red-500 dark:text-red-400 text-[15px]">
+                              Delete Account
+                           </Text>
+                        </Pressable>
+                     </View>
+                  )}
+               </View>
+            )}
+
+            {/* FEEDBACK */}
+            <View
+               className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700"
+               style={commonShadowStyle}
+            >
+               <View className="p-4">
+                  <SendFeedback />
+               </View>
+            </View>
 
                <Text className="text-center text-xs text-slate-400 dark:text-slate-600 pb-4">
-                  Version 1.0.0
+                  Version {APP_VERSION}
                </Text>
-            </ScrollView>
-         </KeyboardAvoidingView>
+         </KeyboardAwareScrollView>
 
          <AiInsightCreditShopSheet
             sheetRef={creditShopSheetRef}

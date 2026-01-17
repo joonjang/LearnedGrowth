@@ -8,7 +8,6 @@ import Animated, {
    Extrapolation,
    interpolate,
    interpolateColor,
-   runOnJS,
    useAnimatedReaction,
    useAnimatedStyle,
    useSharedValue,
@@ -16,6 +15,7 @@ import Animated, {
    withSequence,
    withTiming,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { AI_INSIGHT_ANIMATION } from './animation';
 
@@ -24,9 +24,12 @@ function triggerHaptic(type: 'selection' | 'final') {
    'worklet';
    if (type === 'final') {
       // "Success" is a distinct double-tap pattern that feels very "Done"
-      runOnJS(Haptics.notificationAsync)(Haptics.NotificationFeedbackType.Success);
+      scheduleOnRN(
+         Haptics.notificationAsync,
+         Haptics.NotificationFeedbackType.Success
+      );
    } else {
-      runOnJS(Haptics.selectionAsync)();
+      scheduleOnRN(Haptics.selectionAsync);
    }
 }
 

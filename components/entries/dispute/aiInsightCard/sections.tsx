@@ -22,11 +22,11 @@ import {
    type StyleProp,
    type ViewStyle,
 } from 'react-native';
+import { scheduleOnRN } from 'react-native-worklets';
 import Animated, {
    Easing,
    FadeIn,
    FadeOut,
-   runOnJS,
    useAnimatedStyle,
    useSharedValue,
    withDelay,
@@ -50,7 +50,7 @@ function useDelayedAppearance(delay: number, onComplete?: () => void) {
 
          (finished) => {
             if (finished && onComplete) {
-               runOnJS(onComplete)();
+               scheduleOnRN(onComplete);
             }
          }
        ));
