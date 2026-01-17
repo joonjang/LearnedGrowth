@@ -11,7 +11,7 @@ import {
    Quote,
    RefreshCw,
    Sparkles,
-   TriangleAlert,
+   TriangleAlert
 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -22,7 +22,6 @@ import {
    type StyleProp,
    type ViewStyle,
 } from 'react-native';
-import { scheduleOnRN } from 'react-native-worklets';
 import Animated, {
    Easing,
    FadeIn,
@@ -33,21 +32,19 @@ import Animated, {
    withRepeat,
    withTiming,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { AnimatedSpectrumRow } from './AnimatedSpectrumRow';
 import type { AnimationTimeline } from './animation';
 import { InsightDimensions, InsightSafety } from './types';
 
 // --- HELPER HOOK ---
-// This replaces the 'entering' prop. It creates a simple fade-in style
-// that runs on the UI thread without triggering layout changes.
 function useDelayedAppearance(delay: number, onComplete?: () => void) {
    const opacity = useSharedValue(0);
-   const translateY = useSharedValue(10); // Slight slide up
+   const translateY = useSharedValue(10); 
 
    useEffect(() => {
       opacity.value = withDelay(delay, withTiming(1, { duration: 600 }, 
-
          (finished) => {
             if (finished && onComplete) {
                scheduleOnRN(onComplete);
@@ -66,7 +63,69 @@ function useDelayedAppearance(delay: number, onComplete?: () => void) {
    }));
 }
 
-// --- HEADER ---
+// --- MINIMIZED STATE (The Replacement) ---
+export function AiInsightMinimizedState({
+   previewText,
+   isDark,
+}: {
+   previewText?: string | null;
+   isDark: boolean;
+}) {
+   const chevronColor = isDark ? '#94a3b8' : '#64748b'; // Slate 400/500
+   const iconColor = isDark ? '#818cf8' : '#4f46e5'; // Indigo
+
+   return (
+      <View className="relative">
+         {/* 1. Technical Header Row */}
+         <View className="flex-row items-center justify-between mb-2">
+            <View className="flex-1 flex-row items-center mr-3 overflow-hidden">
+               
+               {/* Label */}
+               <Text className="text-[10px] font-bold uppercase tracking-[1.5px] text-slate-400 dark:text-slate-500">
+                  AI Analysis
+               </Text>
+
+               {/* Divider */}
+               <Text className="text-[10px] text-slate-300 dark:text-slate-600 mx-2">
+                  |
+               </Text>
+
+               {/* Description */}
+               <Text 
+                  className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 flex-1"
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+               >
+                  Alternative perspective
+               </Text>
+            </View>
+
+            {/* Icon */}
+            <View className="rounded-full pl-2">
+               <Quote size={16} color={iconColor} />
+            </View>
+         </View>
+
+         {/* 2. Preview Text (The Quote) */}
+         {previewText && (
+            <Text 
+               className="text-sm italic leading-6 text-slate-600 dark:text-slate-400 opacity-90 mb-1"
+               numberOfLines={3}
+               ellipsizeMode="tail"
+            >
+               &quot;{previewText}&quot;
+            </Text>
+         )}
+         
+         {/* 3. Chevron Down - Pinned to Bottom Edge */}
+         <View className="items-center justify-center -mb-2 mt-1">
+            <ChevronDown size={20} color={chevronColor} />
+         </View>
+      </View>
+   );
+}
+
+// --- HEADER (Expanded Only) ---
 export type AiInsightHeaderProps = {
    allowMinimize: boolean;
    isMinimized: boolean;
@@ -86,37 +145,29 @@ export function AiInsightHeader({
    iconColor,
    isDark,
 }: AiInsightHeaderProps) {
-   return (
-      <>
-         <View className="flex-row items-center justify-between mb-1">
-            <View className="flex-row items-center gap-2">
-               <Text className={`text-base font-bold ${textColor}`}>
-                  AI Analysis
-               </Text>
-               {isStale && isMinimized && (
-                  <Clock3
-                     size={14}
-                     color={isDark ? '#94a3b8' : '#64748b'}
-                     style={{ opacity: 0.8 }}
-                  />
-               )}
-            </View>
+   if (isMinimized) return null;
 
-            {allowMinimize && (
-               <View className="rounded-full px-2 py-1">
-                  <Quote size={14} color={iconColor} />
-               </View>
+   return (
+      <View className="flex-row items-center justify-between mb-1">
+         <View className="flex-row items-center gap-2">
+            <Text className={`text-base font-bold ${textColor}`}>
+               AI Analysis
+            </Text>
+            {isStale && (
+               <Clock3
+                  size={14}
+                  color={isDark ? '#94a3b8' : '#64748b'}
+                  style={{ opacity: 0.8 }}
+               />
             )}
          </View>
 
-         {allowMinimize && isMinimized && (
-            <Text
-               className={`text-sm font-medium mb-3 opacity-80 ${descColor}`}
-            >
-               Observed thinking patterns.
-            </Text>
+         {allowMinimize && (
+            <View className="rounded-full px-2 py-1">
+               <Quote size={14} color={iconColor} />
+            </View>
          )}
-      </>
+      </View>
    );
 }
 
@@ -323,28 +374,6 @@ export function AiInsightLoadingState({
    );
 }
 
-export function AiInsightMinimizedState({
-   previewText,
-   isDark,
-}: {
-   previewText?: string | null;
-   isDark: boolean;
-}) {
-   return (
-      <View>
-         <Text className="text-[10px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">
-            Alternative perspective
-         </Text>
-         <Text className="text-sm italic leading-6 text-slate-600 dark:text-slate-400 opacity-90">
-            &quot;{previewText}&quot;
-         </Text>
-         <View className="mt-2 items-center opacity-50">
-            <ChevronDown size={16} color={isDark ? '#94a3b8' : '#64748b'} />
-         </View>
-      </View>
-   );
-}
-
 // --- STALE BANNER ---
 export type AiInsightStaleBannerProps = {
    isStale: boolean;
@@ -480,7 +509,6 @@ export function AiInsightEmotionalValidation({
    emotionalLogic?: string | null;
    animationTimeline: AnimationTimeline;
 }) {
-   // Replaced entering prop with custom hook
    const animStyle = useDelayedAppearance(animationTimeline.emotionAppear);
 
    if (!emotionalLogic) return null;
@@ -512,7 +540,6 @@ export function AiInsightThinkingPatterns({
    isFreshAnalysis,
    isDark,
 }: AiInsightThinkingPatternsProps) {
-   // Replaced entering prop
    const headerStyle = useDelayedAppearance(animationTimeline.headerAppear);
 
    if (!dims) return null;
@@ -612,7 +639,6 @@ export function AiInsightSuggestion({
    animationTimeline: AnimationTimeline;
    
 }) {
-   // Replaced entering prop
    const animStyle = useDelayedAppearance(animationTimeline.suggestionStart);
 
 
@@ -652,7 +678,6 @@ export function AiInsightDisclaimer({
    isDark,
    onAnimationComplete,
 }: AiInsightDisclaimerProps) {
-   // Replaced entering prop
    const animStyle = useDelayedAppearance(animationTimeline.disclaimerStart, onAnimationComplete);
 
    return (

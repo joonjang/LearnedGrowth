@@ -596,7 +596,7 @@ export default function SettingsScreen() {
                      ) : null}
                   </View>
 
-                  <View className="p-4 gap-4 bg-slate-50/50 dark:bg-slate-800/20">
+                  <View className="p-4 gap-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-b-2xl overflow-hidden">
                      {!hasGrowth ? (
                         <>
                            <Pressable

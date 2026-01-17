@@ -11,18 +11,12 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
   - Set `EXPO_PUBLIC_REVENUECAT_API_KEY` in `.env` / EAS secrets.
   - Configure your Offering + Paywall + Customer Center in the RevenueCat dashboard (`Growth Plus` entitlement, `monthly` package, optional `consumable` product).
 
-## Dev + Preivew
-- dev `
-  - npx expo run:ios --device
-- preview 
-  - run on xcode
-  - npx expo run:ios --configuration Release --device
-
 ---
 
 ## Next Steps
 
-- send feedback needs to go up when keyboard displays
+
+
 - card items in home dashboard should tap to something
 - entry detail screen should show belief
 
@@ -48,6 +42,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ---
 
+Prod checklist:
+
 npx -y eas-cli@latest build -p android --profile playstore --local
 env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile production --local
 
@@ -63,6 +59,15 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
   - improved timing and pace
 - devAiService now generates dynamic information for testing api server response
 - fixed setting sendFeedback not pushing view up 
+- made app versioning come from a global source
+- fixed settings screen with a card having mismatched shadow
+- implemented shadow for ai insight context view card
+  - what a wild goose chase figuring that was!
+- refactored the timeline items 
+  - timeline view has description below the label
+  - wide view has description on the same line
+  - ai insight minimized view matches accordingly to new timeline item view
+- added AGENTS.md
 
 ### 2026-01-15
 - Made screen scaleable for small screen by making input box based off screen size and not hardcoding

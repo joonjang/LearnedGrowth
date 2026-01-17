@@ -91,12 +91,12 @@ export default function ABCAnalysis({
             {onExit && <RoundedCloseButton onPress={onExit} />}
          </View>
 
-         <View
-            className="flex-1"
-            style={[shadow.ios, shadow.android]}
-         >
+         <View className="flex-1">
             {/* Context Box */}
-            <View className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 gap-2.5">
+            <View
+               className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 gap-2.5"
+               style={[shadow.ios, shadow.android]}
+            >
                <View className="gap-1">
                   <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
                      Adversity

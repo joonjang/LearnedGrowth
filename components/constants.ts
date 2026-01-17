@@ -68,7 +68,7 @@ export const ABCDE_FIELD = [
    {
       key: 'energy',
       label: 'Energy',
-      hint: 'How you feel after thinking through it all.',
+      hint: 'The emotional shift.',
       placeholder: 'Note any shift in mood or energy',
    },
 ] as const;

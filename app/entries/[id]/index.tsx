@@ -17,15 +17,13 @@ import {
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
-import { FieldTone, getFieldStyles } from '@/lib/theme';
+import { FieldTone } from '@/lib/theme';
 import type { Entry } from '@/models/entry';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
    ArrowRight,
-   ChevronDown,
    ChevronLeft,
-   ChevronUp,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -75,7 +73,6 @@ const getCharCountMeta = (value: string, limit: number) => {
 
 export default function EntryDetailScreen() {
    const { id, mode } = useLocalSearchParams();
-   // Ensure Android uses adjustResize so the keyboard doesn't cover inputs.
    useResizeMode();
    const entryId = Array.isArray(id) ? id[0] : id;
    const modeParam = Array.isArray(mode) ? mode[0] : mode;
@@ -99,9 +96,7 @@ export default function EntryDetailScreen() {
    const [justSaved, setJustSaved] = useState(false);
    const [hasScrolled, setHasScrolled] = useState(false);
    const [isEditing, setIsEditing] = useState(false);
-   const [isHistoryExpanded, setIsHistoryExpanded] = useState<boolean>(
-      () => !entry?.dispute
-   );
+   
    const [editSnapshot, setEditSnapshot] = useState<Record<
       FieldKey,
       string
@@ -110,7 +105,6 @@ export default function EntryDetailScreen() {
    const startEditing = useCallback(() => {
       setEditSnapshot(form);
       setIsEditing(true);
-      setIsHistoryExpanded(true);
       setJustSaved(false);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
    }, [form]);
@@ -122,7 +116,6 @@ export default function EntryDetailScreen() {
       setHasScrolled(false);
       setIsEditing(false);
       setEditSnapshot(null);
-      setIsHistoryExpanded(!entry.dispute);
    }, [entry]);
 
    useEffect(() => {
@@ -147,13 +140,11 @@ export default function EntryDetailScreen() {
    const aiDisplayData = entry?.aiResponse ?? null;
    const hasDispute = Boolean(entry?.dispute);
    const showDispute = Boolean(baseline.dispute || trimmed.dispute);
-   const shouldHideHistory = !isHistoryExpanded && !isEditing && hasDispute;
    const hasChanges = useMemo(
       () => FIELD_KEYS.some((key) => trimmed[key] !== baseline[key]),
       [baseline, trimmed]
    );
 
-   // Create timeline data structure
    const timelineSteps = useMemo(() => {
       return ABCDE_FIELD.map(
          (f, idx) =>
@@ -167,15 +158,9 @@ export default function EntryDetailScreen() {
       ).filter((step) => {
          if (step.key === 'dispute' || step.key === 'energy')
             return showDispute;
-         if (
-            shouldHideHistory &&
-            (step.key === 'belief' || step.key === 'consequence')
-         ) {
-            return false;
-         }
          return true;
       });
-   }, [shouldHideHistory, showDispute]);
+   }, [showDispute]);
 
    const setField = useCallback(
       (key: FieldKey) => (value: string) => {
@@ -186,7 +171,6 @@ export default function EntryDetailScreen() {
    );
 
    const navigateToEntries = useCallback(() => {
-      // Prefer a back/pop transition (slide from left). Fallback to replace if there's no history.
       if (router.canGoBack()) {
          router.back();
          return;
@@ -197,26 +181,20 @@ export default function EntryDetailScreen() {
    const handleSave = useCallback(async () => {
       if (!entry) return;
 
-      const nextExpandedState = !Boolean(trimmed.dispute || entry.dispute);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
       if (!hasChanges) {
          setIsEditing(false);
          setEditSnapshot(null);
-         setIsHistoryExpanded(nextExpandedState);
          return;
       }
 
       const patch = FIELD_KEYS.reduce((acc, key) => {
          let newValue = trimmed[key];
          const previousValue = baseline[key];
-
-         // If we had a dispute before, and the user clears it, force it to "Empty"
-         // This ensures the field never becomes falsy for Layout logic
          if (key === 'dispute' && newValue === '' && !!previousValue) {
             newValue = 'Empty';
          }
-
          if (newValue !== previousValue) {
             acc[key] = newValue;
          }
@@ -235,7 +213,6 @@ export default function EntryDetailScreen() {
       setJustSaved(true);
       setIsEditing(false);
       setEditSnapshot(null);
-      setIsHistoryExpanded(nextExpandedState);
       KeyboardController.dismiss();
    }, [
       baseline,
@@ -255,9 +232,8 @@ export default function EntryDetailScreen() {
       setIsEditing(false);
       setJustSaved(false);
       setEditSnapshot(null);
-      setIsHistoryExpanded(!hasDispute);
       KeyboardController.dismiss();
-   }, [editSnapshot, hasDispute, isEditing]);
+   }, [editSnapshot, isEditing]);
 
    const handleOpenDisputeAndUpdate = useCallback(() => {
       if (!entry) return;
@@ -389,11 +365,9 @@ export default function EntryDetailScreen() {
             showsVerticalScrollIndicator={false}
          >
             {timelineSteps.map((step) => {
-               const fieldStyles = getFieldStyles(step.tone, isEditing);
 
                // Background logic
-               const isNeutral =
-                  step.tone === 'default' || step.tone === 'neutral';
+               const isNeutral = step.tone === 'default' || step.tone === 'neutral';
                const readOnlyBg = isNeutral
                   ? 'bg-slate-50 dark:bg-slate-800'
                   : 'bg-white/60 dark:bg-black/10';
@@ -403,15 +377,11 @@ export default function EntryDetailScreen() {
                   : readOnlyBg;
 
                // --- MASKING LOGIC ---
-               // Get raw value from form
                const rawValue = form[step.key as FieldKey];
-               // If it's the specific "Empty" string, treat it as actual empty string
                const effectiveValue = rawValue === 'Empty' ? '' : rawValue;
-               const charLimit =
-                  ENTRY_CHAR_LIMITS[step.key as keyof typeof ENTRY_CHAR_LIMITS];
+               const charLimit = ENTRY_CHAR_LIMITS[step.key as keyof typeof ENTRY_CHAR_LIMITS];
                const charMeta = getCharCountMeta(effectiveValue, charLimit);
-               const counterClassName =
-                  charMeta.remaining <= 0
+               const counterClassName = charMeta.remaining <= 0
                      ? 'text-rose-600 dark:text-rose-400'
                      : 'text-amber-600 dark:text-amber-400';
 
@@ -422,13 +392,11 @@ export default function EntryDetailScreen() {
                            <View>
                               <TextInput
                                  multiline
-                                 value={effectiveValue} // Masked value for Input
+                                 value={effectiveValue} 
                                  onChangeText={setField(step.key as FieldKey)}
                                  placeholder={`Write your ${step.label.toLowerCase()} here...`}
-                                 placeholderTextColor={
-                                    isDark ? '#94a3b8' : '#64748b'
-                                 }
-                                 className={`min-h-[48px] rounded-lg px-3 py-2 text-sm leading-6 ${finalBg} ${fieldStyles.text}`}
+                                 placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
+                                 className={`min-h-[48px] rounded-lg px-3 py-2 text-sm leading-6 ${finalBg} text-slate-900 dark:text-slate-100`}
                                  scrollEnabled={false}
                                  textAlignVertical="top"
                                  autoCorrect
@@ -436,55 +404,22 @@ export default function EntryDetailScreen() {
                               />
                               {charMeta.show && (
                                  <View className="mt-1 flex-row justify-end">
-                                    <Text
-                                       className={`text-[11px] font-medium ${counterClassName}`}
-                                    >
+                                    <Text className={`text-[11px] font-medium ${counterClassName}`}>
                                        {effectiveValue.length}/{charLimit}
                                     </Text>
                                  </View>
                               )}
                            </View>
                         ) : (
-                           <View
-                              className={`min-h-[48px] rounded-lg px-3 py-2 ${finalBg}`}
-                           >
-                              <Text
-                                 className={`text-sm leading-6 ${fieldStyles.text}`}
-                              >
-                                 {/* Masked value for Display */}
+                           <View className={`min-h-[48px] rounded-lg px-3 py-2 ${finalBg}`}>
+                              <Text className={`text-sm leading-6 text-slate-900 dark:text-slate-100`}>
                                  {effectiveValue || (
-                                    <Text className="italic opacity-50">
-                                       Empty
-                                    </Text>
+                                    <Text className="italic opacity-50">Empty</Text>
                                  )}
                               </Text>
                            </View>
                         )}
                      </TimelineItem>
-
-                     {step.key === 'adversity' && hasDispute && !isEditing && (
-                        <Pressable
-                           onPress={() => {
-                              LayoutAnimation.configureNext(
-                                 LayoutAnimation.Presets.easeInEaseOut
-                              );
-                              setIsHistoryExpanded((prev) => !prev);
-                           }}
-                           className="mb-4 self-start flex-row items-center gap-2 rounded-full bg-slate-100 px-3 py-2 dark:bg-slate-800"
-                        >
-                           {isHistoryExpanded ? (
-                              <ChevronUp size={16} color={iconColor} />
-                           ) : (
-                              <ChevronDown size={16} color={iconColor} />
-                           )}
-                           <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                              {isHistoryExpanded
-                                 ? 'Hide Belief & Consequence'
-                                 : 'Show Belief & Consequence'}
-                           </Text>
-                        </Pressable>
-                     )}
-
 
                      {/* PIVOT POINT */}
                      {step.key === 'consequence' && (
@@ -492,7 +427,6 @@ export default function EntryDetailScreen() {
                            {/* AI Pivot */}
                            {aiDisplayData && (
                               <TimelinePivot variant="full">
-                                 {/* HEADER REMOVED: AiInsightCard now handles it internally */}
                                  <AiInsightCard
                                     entryId={entry.id}
                                     data={aiDisplayData}
@@ -526,7 +460,6 @@ export default function EntryDetailScreen() {
                            )}
                         </View>
                      )}
-
                   </View>
                );
             })}
