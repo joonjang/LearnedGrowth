@@ -4,7 +4,7 @@ export const AI_INSIGHT_ANIMATION = {
       startDelay: 300,        // Start the whole sequence sooner
       headerGap: 300,         // Gap between Emotion and Section Header
       rowGap: 300,            // Gap between Section Header and First Row
-      rowDuration: 5400,      // Time for one row to finish scanning
+      rowDuration: 3900,      // Time for one row to finish scanning
       suggestionGap: 0,     // Gap after last row finishes before Suggestion appears
       disclaimerGap: 200,     // Gap between Suggestion and Disclaimer
    },

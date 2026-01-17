@@ -10,16 +10,20 @@ import {
    Leaf,
    Quote,
    RefreshCw,
+   Sparkles,
    TriangleAlert,
 } from 'lucide-react-native';
-import { useEffect } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
    Easing,
+   FadeIn,
+   FadeOut,
    runOnJS,
    useAnimatedStyle,
    useSharedValue,
    withDelay,
+   withRepeat,
    withTiming,
 } from 'react-native-reanimated';
 
@@ -120,18 +124,193 @@ export function AiInsightErrorState({ error }: { error: string }) {
    );
 }
 
-export function AiInsightLoadingState({
-   renderStreamingText,
+function SkeletonItem({
+   className = '',
+   style,
+   height = 16,
+   width = '100%',
+   borderRadius = 4,
+   delay = 0,
 }: {
-   renderStreamingText?: string;
+   className?: string;
+   style?: StyleProp<ViewStyle>;
+   height?: number | string;
+   width?: number | string;
+   borderRadius?: number;
+   delay?: number;
 }) {
+   const pulse = useSharedValue(0);
+
+   useEffect(() => {
+      pulse.value = withDelay(
+         delay,
+         withRepeat(
+            withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
+            -1,
+            true
+         )
+      );
+   }, [delay, pulse]);
+
+   const animatedStyle = useAnimatedStyle(() => ({
+      opacity: 0.2 + pulse.value * 0.6,
+      transform: [{ scale: 0.985 + pulse.value * 0.015 }],
+   }));
+
    return (
-      <View className="py-2 opacity-70">
-         <View className="flex-row items-center gap-3">
-            <ActivityIndicator size="small" color="#6366f1" />
-            <Text className="font-mono text-xs leading-5 text-indigo-900/70 dark:text-indigo-200/70 shrink">
-               {renderStreamingText || 'Connecting to insight engine...'}
-            </Text>
+      <Animated.View
+         className={`bg-slate-200 dark:bg-slate-700 ${className}`}
+         style={[{ height, width, borderRadius }, animatedStyle, style]}
+      />
+   );
+}
+
+const INSIGHT_STATUS_BASE = [
+   'Reading your entry...',
+   'Identifying patterns...',
+   'Drafting insights...',
+   'Refining tone...',
+   'Finalizing response...',
+];
+
+const INSIGHT_STATUS_STREAMING = [
+   'Receiving response...',
+   'Interpreting signals...',
+   'Mapping patterns...',
+   'Drafting insights...',
+   'Finalizing response...',
+];
+
+function AiInsightStatus({ hasStream }: { hasStream: boolean }) {
+   const messages = useMemo(
+      () => (hasStream ? INSIGHT_STATUS_STREAMING : INSIGHT_STATUS_BASE),
+      [hasStream]
+   );
+   const [index, setIndex] = useState(0);
+
+   useEffect(() => {
+      setIndex(0);
+   }, [hasStream]);
+
+   useEffect(() => {
+      const interval = setInterval(() => {
+         setIndex((prev) => (prev + 1) % messages.length);
+      }, 2400);
+      return () => clearInterval(interval);
+   }, [messages.length]);
+
+   return (
+      <View className="flex-row items-center gap-3">
+         <AiInsightStatusPulse />
+         <View className="h-5 justify-center">
+            <Animated.Text
+               key={`${hasStream ? 'stream' : 'base'}-${index}`}
+               entering={FadeIn.duration(250)}
+               exiting={FadeOut.duration(250)}
+               className="text-xs font-semibold text-indigo-600 dark:text-indigo-300"
+            >
+               {messages[index]}
+            </Animated.Text>
+         </View>
+      </View>
+   );
+}
+
+function AiInsightStatusPulse() {
+   const pulse = useSharedValue(0);
+
+   useEffect(() => {
+      pulse.value = withRepeat(
+         withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
+         -1,
+         true
+      );
+   }, [pulse]);
+
+   const iconStyle = useAnimatedStyle(() => ({
+      opacity: 0.65 + pulse.value * 0.35,
+      transform: [{ scale: 0.92 + pulse.value * 0.12 }],
+   }));
+
+   return (
+      <Animated.View style={iconStyle}>
+         <Sparkles size={18} color="#6366f1" />
+      </Animated.View>
+   );
+}
+
+export function AiInsightLoadingState({
+   streamLength: _streamLength = 0,
+}: {
+   streamLength?: number;
+}) {
+   const hasStream = _streamLength > 0;
+   const widths = useMemo(() => {
+      const randomPercent = (min: number, max: number) =>
+         `${Math.round(min + Math.random() * (max - min))}%`;
+      const randomPx = (min: number, max: number) =>
+         Math.round(min + Math.random() * (max - min));
+
+      return {
+         paragraph: [
+            randomPercent(90, 100),
+            randomPercent(80, 95),
+            randomPercent(86, 98),
+         ],
+         rows: Array.from({ length: 3 }, () => ({
+            left: randomPx(54, 86),
+            right: randomPx(24, 40),
+            subtext: randomPercent(45, 70),
+         })),
+         suggestion: [randomPercent(78, 100), randomPercent(62, 88)],
+      };
+   }, []);
+
+   return (
+      <View className="py-3 gap-6">
+         <AiInsightStatus hasStream={hasStream} />
+
+         <View className="gap-2.5">
+            <SkeletonItem width={widths.paragraph[0]} height={12} delay={150} />
+            <SkeletonItem width={widths.paragraph[1]} height={12} delay={200} />
+            <SkeletonItem width={widths.paragraph[2]} height={12} delay={250} />
+         </View>
+
+         <View className="gap-6">
+            <View className="flex-row items-center gap-2 mb-[-8px]">
+               <SkeletonItem width={14} height={14} delay={300} />
+               <SkeletonItem width={110} height={10} delay={350} />
+            </View>
+            {[0, 1, 2].map((row, index) => {
+               const baseDelay = 400 + index * 150;
+               const rowWidths = widths.rows[index];
+               return (
+               <View key={row} className="gap-2">
+                  <View className="flex-row items-center justify-between">
+                     <SkeletonItem width={rowWidths.left} height={10} delay={baseDelay} />
+                     <SkeletonItem width={rowWidths.right} height={10} delay={baseDelay + 50} />
+                  </View>
+                  <View className="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                     <SkeletonItem
+                        width="100%"
+                        height="100%"
+                        className="bg-slate-200 dark:bg-slate-700"
+                        delay={baseDelay + 100}
+                     />
+                  </View>
+                  <SkeletonItem width={rowWidths.subtext} height={9} delay={baseDelay + 150} />
+               </View>
+               );
+            })}
+         </View>
+
+         <View className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 gap-3 mt-2">
+            <View className="flex-row items-center gap-2">
+               <SkeletonItem width={14} height={14} borderRadius={7} delay={900} />
+               <SkeletonItem width={120} height={10} delay={950} />
+            </View>
+            <SkeletonItem width={widths.suggestion[0]} height={12} delay={1000} />
+            <SkeletonItem width={widths.suggestion[1]} height={12} delay={1050} />
          </View>
       </View>
    );

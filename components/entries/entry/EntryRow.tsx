@@ -13,7 +13,7 @@ import {
 import Swipeable, {
    type SwipeableMethods,
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Animated, { Layout, SlideInUp } from 'react-native-reanimated';
+import Animated, { Layout } from 'react-native-reanimated';
 import EntryCard, { type MenuBounds } from './EntryCard';
 
 type EntryRowProps = {
@@ -64,7 +64,6 @@ function EntryRow({
    return (
       <Animated.View
          layout={Layout.duration(180)}
-         entering={SlideInUp.duration(200)}
          className="pt-4 pb-10"
          style={[style]}
       >

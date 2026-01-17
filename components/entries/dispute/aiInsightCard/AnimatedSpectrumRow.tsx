@@ -14,7 +14,6 @@ import Animated, {
    useSharedValue,
    withDelay,
    withSequence,
-   withSpring,
    withTiming,
 } from 'react-native-reanimated';
 
@@ -86,10 +85,18 @@ export function AnimatedSpectrumRow({
 
    const rowVisibility = useSharedValue(skipAnimation ? 1 : 0);
    const revealState = useSharedValue(0);
-   const scannerProgress = useSharedValue(skipAnimation ? targetPosition : -0.5); 
+   const textOpacity = useSharedValue(skipAnimation ? 1 : 0);
+   const scannerProgress = useSharedValue(skipAnimation ? targetPosition : -0.2); 
    const impactScale = useSharedValue(1);
 
    useEffect(() => {
+      if (!skipAnimation) {
+         revealState.value = 0;
+         textOpacity.value = 0;
+         scannerProgress.value = -0.2;
+         rowVisibility.value = 0;
+      }
+
       if (!skipAnimation) {
          rowVisibility.value = withDelay(
             startDelay, 
@@ -100,33 +107,35 @@ export function AnimatedSpectrumRow({
       if (skipAnimation) {
          scannerProgress.value = targetPosition;
          revealState.value = withTiming(1, { duration: spectrum.revealSkipDuration });
+         textOpacity.value = withTiming(1, { duration: spectrum.revealSkipDuration });
          return;
       }
 
       const DELAY_UNTIL_SCAN = startDelay + spectrum.scanDelayOffset;
-      const SCAN_SPEED = 1400; 
+      const SWEEP_DURATION = 1400; 
 
       const onFinish = (finished: boolean | undefined) => {
          'worklet';
          if (finished) {
             triggerHaptic('final'); // Stronger "Success" haptic
             impactScale.value = withSequence(
-               withTiming(0.95, { duration: 100 }),
-               withSpring(1.0, { damping: 12, stiffness: 200 })
+               withTiming(0.96, { duration: 100 }),
+               withTiming(1, { duration: 200 })
             );
-            revealState.value = withDelay(
-               100,
-               withTiming(1, { duration: 500 })
-            );
+            revealState.value = withTiming(1, { duration: 300 });
+            textOpacity.value = withDelay(400, withTiming(1, { duration: 600 }));
          }
       };
 
       scannerProgress.value = withDelay(
          DELAY_UNTIL_SCAN,
          withSequence(
-            withTiming(1.5, { duration: SCAN_SPEED, easing: Easing.inOut(Easing.quad) }),
-            withTiming(-0.5, { duration: SCAN_SPEED, easing: Easing.inOut(Easing.quad) }),
-            withTiming(targetPosition, { duration: SCAN_SPEED * 0.8, easing: Easing.out(Easing.quad) }, onFinish)
+            withTiming(1.05, { duration: SWEEP_DURATION, easing: Easing.inOut(Easing.sin) }),
+            withTiming(
+               targetPosition,
+               { duration: 700, easing: Easing.out(Easing.cubic) },
+               onFinish
+            )
          )
       );
 
@@ -135,8 +144,9 @@ export function AnimatedSpectrumRow({
          cancelAnimation(revealState);
          cancelAnimation(impactScale);
          cancelAnimation(rowVisibility);
+         cancelAnimation(textOpacity);
       };
-   }, [targetPosition, startDelay, skipAnimation, spectrum, scannerProgress, rowVisibility, revealState, impactScale]);
+   }, [targetPosition, startDelay, skipAnimation, spectrum, scannerProgress, rowVisibility, revealState, impactScale, textOpacity]);
 
    // --- ANTICIPATORY HAPTICS ---
    useAnimatedReaction(
@@ -147,16 +157,16 @@ export function AnimatedSpectrumRow({
          const PILL_CENTERS = [0.0, 0.5, 1.0];
          
          // ANTICIPATION FACTOR:
-         // We fire the haptic 0.08 units *before* the beam hits the center.
+         // We fire the haptic 0.04 units *before* the beam hits the center.
          // This accounts for bridge latency (~16ms) and perception lag (~50ms),
          // making the "click" feel like it happens exactly when the beam is brightest.
-         const OFFSET = 0.08; 
+         const OFFSET = 0.04; 
 
          // Determine direction
          const movingRight = current > prev;
 
          // Check if we crossed the "Trigger Line" for any pill
-         const hit = PILL_CENTERS.some(center => {
+         const hit = PILL_CENTERS.find(center => {
             // If moving right, the trigger line is slightly to the left of center (center - OFFSET)
             // If moving left, the trigger line is slightly to the right of center (center + OFFSET)
             const triggerPoint = center + (movingRight ? -OFFSET : OFFSET);
@@ -165,7 +175,7 @@ export function AnimatedSpectrumRow({
                    (prev > triggerPoint && current <= triggerPoint);
          });
 
-         if (hit) {
+         if (hit !== undefined && movingRight) {
              triggerHaptic('selection');
          }
       }
@@ -181,7 +191,7 @@ export function AnimatedSpectrumRow({
       
       const highlightStyle = useAnimatedStyle(() => {
          const dist = Math.abs(scannerProgress.value - pillPosition);
-         const opacity = interpolate(dist, [0, 0.45], [1, 0], Extrapolation.CLAMP);
+         const opacity = interpolate(dist, [0, 0.5], [1, 0], Extrapolation.CLAMP);
 
          return {
             opacity: interpolate(revealState.value, [0, 1], [opacity, 0]), 
@@ -220,8 +230,8 @@ export function AnimatedSpectrumRow({
    };
 
    const insightAnimStyle = useAnimatedStyle(() => ({
-      opacity: revealState.value,
-      transform: [{ translateY: interpolate(revealState.value, [0, 1], [5, 0], Extrapolation.CLAMP) }],
+      opacity: textOpacity.value,
+      transform: [{ translateY: interpolate(textOpacity.value, [0, 1], [5, 0], Extrapolation.CLAMP) }],
    }));
 
    const left = usePillLogic(0.0, isOptimistic, 'green');

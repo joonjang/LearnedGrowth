@@ -189,11 +189,7 @@ export function AiInsightCard({
    }, [data?.createdAt]);
 
    // --- RENDER HELPERS ---
-   const MAX_VISIBLE_CHARS = 120;
-   const renderStreamingText =
-      streamingText && streamingText.length > MAX_VISIBLE_CHARS
-         ? '…' + streamingText.slice(-MAX_VISIBLE_CHARS)
-         : streamingText;
+   const streamLength = streamingText?.length ?? 0;
    const isLoading = !data && !error;
 
    const handleShopSuccess = async () => {
@@ -279,7 +275,7 @@ export function AiInsightCard({
             This allows text updates to flow without breaking the touch responder system.
          */}
          {isLoading && !error && (
-            <AiInsightLoadingState renderStreamingText={renderStreamingText} />
+            <AiInsightLoadingState streamLength={streamLength} />
          )}
 
          {/* --- MINIMIZED STATE --- */}

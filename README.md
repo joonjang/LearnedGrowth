@@ -24,10 +24,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - send feedback needs to go up when keyboard displays
 - card items in home dashboard should tap to something
-- google sign in not functional
-
-- Login keyboard input is glitchy with doubling typing
-- Make login bottomsheet modal scaleable to small screen
+- entry detail screen should show belief
 
 - Pressinging get more analysis and closing while its processing should still display credit
 
@@ -60,6 +57,10 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 ### 2026-01-16
 - fixed login ui
   - went from bottomsheet to native modal
+- implemented delete bin
+- fixed revenuecat logout error
+- aiInsight loading animation now skeleton animation based
+  - improved timing and pace
 
 ### 2026-01-15
 - Made screen scaleable for small screen by making input box based off screen size and not hardcoding

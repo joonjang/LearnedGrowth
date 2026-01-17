@@ -46,6 +46,7 @@ export default function ABCAnalysis({
    const isDark = colorScheme === 'dark';
    const shadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
    const shadowGutter = 6;
+   const stackContent = loading || !aiData;
    
    const [areAnimationsDone, setAreAnimationsDone] = useState(false);
    const buttonOpacity = useSharedValue(0);
@@ -75,7 +76,7 @@ export default function ABCAnalysis({
             paddingTop: contentTopPadding ?? 24,
             paddingBottom: 48,
             flexGrow: 1,
-            justifyContent: 'space-between',
+            justifyContent: 'flex-start',
             gap: 16,
             paddingHorizontal: shadowGutter,
          }}
