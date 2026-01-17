@@ -15,14 +15,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-
-
 - card items in home dashboard should tap to something
-- entry detail screen should show belief
 
 - Pressinging get more analysis and closing while its processing should still display credit
-
-- when calling api, make the loading display progress
 
 - consumable purchase not registering 
 
@@ -32,12 +27,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - Add app icon and splash screen
 
 - add a report problem button to send a snapshot of the issue
+
 - enable user to get extra analysis if someone signs up using their referal code
 
-- Biometric lock disables the app from all screens until unlocked
-
 - Entry categorization upon subscription
-- Animate minimize and show for EntryDetail Screen
 
 
 ---

@@ -120,7 +120,7 @@ export default function StreakCard({
           style={badgeStyle}
         >
            <Flame size={14} color={streakCount > 0 ? "#f97316" : "#94a3b8"} fill={streakCount > 0 ? "#f97316" : "transparent"} />
-           <Text className="text-xs font-bold" style={badgeTextStyle}>
+           <Text className="text-xs font-bold" numberOfLines={1} style={badgeTextStyle}>
               {streakCount} Day Streak
            </Text>
         </View>
