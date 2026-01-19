@@ -2,9 +2,9 @@
   "expo": {
     "name": "LearnedGrowth",
     "slug": "LearnedGrowth",
-    "version": "0.0.1",
+    "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon2.png",
     "scheme": "learnedgrowth",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -19,9 +19,9 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/android-icon-foreground2.png",
+        "backgroundImage": "./assets/images/android-icon-background2.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome2.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,

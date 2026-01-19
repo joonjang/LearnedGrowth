@@ -40,7 +40,17 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 Prod checklist:
 
+rm -rf node_modules
+npm ci
+
+rm -rf .expo .expo-shared
+npx expo start -c --offline
+
 npx expo prebuild --clean
+
+cd ios
+pod install
+cd ..
 
 npx -y eas-cli@latest build -p android --profile playstore --local
 env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile production --local
