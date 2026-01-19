@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "954502195698-2b1asvvkgoft2hk572u40a0qbc09e5q5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.joonjang.LearnedGrowth",
+            "certificate_hash": "7490d9363e7d6c37ba926ee532f6ff29177c2e90"
+          }
+        },
+        {
           "client_id": "954502195698-4jbfjbb2spe1ii8ib2lopbs0ovm945ep.apps.googleusercontent.com",
           "client_type": 3
         }
