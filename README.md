@@ -55,6 +55,8 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - updated google cloud console to enable oauth with google for android
 - fixed prod product id not registering on 
 - fixed delete button spacing issue for small screen
+- text change for bin to have button be less cramped Delete permanently --> Delete
+- AI counter belief for entryDetailScreen now not bounded by numberOfLines
 
 ### 2026-01-16
 - fixed login ui

@@ -302,7 +302,7 @@ export default function DeleteBinScreen() {
                               <Trash2 size={16} color={deleteColor} />
                            )}
                            <Text className="text-sm font-semibold text-rose-600 dark:text-rose-300">
-                              Delete permanently
+                              Delete
                            </Text>
                         </Pressable>
                      </View>

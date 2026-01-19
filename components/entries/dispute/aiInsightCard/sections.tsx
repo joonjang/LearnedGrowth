@@ -110,8 +110,6 @@ export function AiInsightMinimizedState({
          {previewText && (
             <Text 
                className="text-sm italic leading-6 text-slate-600 dark:text-slate-400 opacity-90 mb-1"
-               numberOfLines={3}
-               ellipsizeMode="tail"
             >
                &quot;{previewText}&quot;
             </Text>
