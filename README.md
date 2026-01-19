@@ -18,8 +18,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - submit feedback still does not push the view up
   - neither for entry detail screen
 
-- remove ai analytsis word count cut off during minimized mode
-
 - card items in home dashboard should tap to something
 
 - Pressinging get more analysis and closing while its processing should still display credit

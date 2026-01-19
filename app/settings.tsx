@@ -39,8 +39,6 @@ import {
    ActivityIndicator,
    Alert,
    AppState,
-   Keyboard,
-   KeyboardAvoidingView,
    Linking,
    Modal,
    Platform,
@@ -53,7 +51,10 @@ import {
    View,
    ViewStyle
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import {
+   KeyboardAwareScrollView,
+   KeyboardController,
+} from 'react-native-keyboard-controller';
 import Animated, {
    useAnimatedStyle,
    useSharedValue,
@@ -571,7 +572,7 @@ export default function SettingsScreen() {
                            />
                            <Pressable
                               onPress={() => {
-                                 Keyboard.dismiss();
+                                 KeyboardController.dismiss();
                                  handleRedeemCoupon();
                               }}
                               className="px-3 py-2 rounded-lg bg-slate-700 dark:bg-slate-600"
@@ -793,11 +794,20 @@ function DeleteConfirmationModal({
          animationType="fade"
          onRequestClose={onClose}
       >
-         <KeyboardAvoidingView
-            behavior={'padding'}
-            className="flex-1 justify-center items-center bg-black/60 px-6"
+         <KeyboardAwareScrollView
+            className="flex-1 bg-black/60"
+            contentContainerStyle={{
+               flexGrow: 1,
+               justifyContent: 'center',
+               alignItems: 'center',
+               paddingHorizontal: 24,
+            }}
+            keyboardShouldPersistTaps="handled"
+            bottomOffset={24}
          >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <TouchableWithoutFeedback
+               onPress={() => KeyboardController.dismiss()}
+            >
                <View className="w-full bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 gap-4">
                   <View className="items-center gap-2">
                      <View className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 items-center justify-center">
@@ -854,7 +864,7 @@ function DeleteConfirmationModal({
                   </View>
                </View>
             </TouchableWithoutFeedback>
-         </KeyboardAvoidingView>
+         </KeyboardAwareScrollView>
       </Modal>
    );
 }
