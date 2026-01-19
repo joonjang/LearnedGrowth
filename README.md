@@ -15,9 +15,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- consumable purchase doesnt work past the subscription
-- the additon of the delete button pushes it past the screen
-
 - submit feedback still does not push the view up
   - neither for entry detail screen
 
@@ -45,11 +42,19 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 Prod checklist:
 
+npx expo prebuild --clean
+
 npx -y eas-cli@latest build -p android --profile playstore --local
 env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile production --local
 
 
 ## Development Journal
+
+
+### 2026-01-19
+- updated google cloud console to enable oauth with google for android
+- fixed prod product id not registering on 
+- fixed delete button spacing issue for small screen
 
 ### 2026-01-16
 - fixed login ui

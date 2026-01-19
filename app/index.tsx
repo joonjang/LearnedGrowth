@@ -44,6 +44,7 @@ import {
    Pressable,
    SectionList,
    Text,
+   useWindowDimensions,
    View,
 } from 'react-native';
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
@@ -253,6 +254,8 @@ export default function EntriesScreen() {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const iconColor = isDark ? '#cbd5e1' : '#475569';
+   const { width } = useWindowDimensions();
+   const isCompactHeader = width < 380;
    const { lock: lockNavigation } = useNavigationLock();
    const [showHelpModal, setShowHelpModal] = useState(false);
    const [listHeaderHeight, setListHeaderHeight] = useState(0);
@@ -661,12 +664,12 @@ export default function EntriesScreen() {
                         {/* 👇 Right Side Icons Container */}
                         <View className="flex-row items-center gap-3">
                            {/* Delete Bin Button */}
-                           {deletedCount > 0 && (
+                           {deletedCount > 0 && !isCompactHeader && (
                               <Link href="/bin" asChild>
                                  <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
                                     <Trash2
                                        size={20}
-                                       color={iconColor}
+                                       color="#ef4444"
                                        strokeWidth={2.5}
                                     />
                                  </Pressable>
@@ -674,16 +677,28 @@ export default function EntriesScreen() {
                            )}
 
                            {/* Help Button */}
-                           <Pressable
-                              onPress={() => setShowHelpModal(true)}
-                              className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80"
-                           >
-                              <Info
-                                 size={20}
-                                 color={iconColor}
-                                 strokeWidth={2.5}
-                              />
-                           </Pressable>
+                           {isCompactHeader && deletedCount > 0 ? (
+                              <Link href="/bin" asChild>
+                                 <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
+                                    <Trash2
+                                       size={20}
+                                       color="#ef4444"
+                                       strokeWidth={2.5}
+                                    />
+                                 </Pressable>
+                              </Link>
+                           ) : (
+                              <Pressable
+                                 onPress={() => setShowHelpModal(true)}
+                                 className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80"
+                              >
+                                 <Info
+                                    size={20}
+                                    color={iconColor}
+                                    strokeWidth={2.5}
+                                 />
+                              </Pressable>
+                           )}
 
 
                            {/* Settings Button */}
