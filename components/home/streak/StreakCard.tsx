@@ -220,6 +220,7 @@ export default function StreakCard({
           monthRows={monthRows}
           weekRowIndex={weekRowIndex}
           weekDays={days}
+          dayBuckets={dayBuckets}
           dateNum={dateNum}
           todayKey={todayKey}
           monthIndex={monthIndex}

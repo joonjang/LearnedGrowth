@@ -4,7 +4,7 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
-import { AlertCircle, Check, ChevronDown, ChevronUp, Dog, Flame } from 'lucide-react-native';
+import { AlertCircle, ChevronDown, ChevronUp, Dog, Flame } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   Text,
@@ -32,8 +32,10 @@ import {
   COLORS,
   WEEKDAY_LABELS,
   isFutureDate,
+  toDateKey,
   type CalendarDay,
   type Day,
+  type DayBucket,
 } from '@/components/home/streak/streakCardUtils';
 import type { Entry } from '@/models/entry';
 
@@ -69,6 +71,7 @@ type StreakCardMonthGridProps = {
   monthRows: CalendarDay[][];
   weekRowIndex: number;
   weekDays: Day[];
+  dayBuckets: Map<string, DayBucket>;
   dateNum: number;
   todayKey: string;
   monthIndex: number;
@@ -105,6 +108,14 @@ const getDisputeFillColor = (disputeCount: number) => {
   if (disputeCount >= 3) return COLORS.indigo700;
   if (disputeCount === 2) return COLORS.indigo500;
   return COLORS.indigo400;
+};
+
+const seedDotBaseStyle: ViewStyle = {
+  position: 'absolute',
+  bottom: 2, // Adjusted slightly up for optical centering
+  width: 4,
+  height: 4,
+  borderRadius: 2,
 };
 
 export function StreakCardHeader({
@@ -216,27 +227,24 @@ export function StreakCardWeekStrip({
                     day.filled && !isDark ? filledShadowStyle : null,
                   ]}
                 >
-                  {day.filled && !isFuture && (
-                    <Check size={14} color="white" strokeWidth={3} />
-                  )}
-                  {!day.filled && (
-                    <Text
-                      className="text-[11px] font-bold"
-                      style={{
-                        color: isToday
-                          ? isDark
-                              ? COLORS.indigo300
-                              : COLORS.indigo700
-                            : isDark
-                            ? COLORS.slate600
-                            : COLORS.slate400,
-                          opacity: isFuture ? 0.5 : 1,
-                        }}
-                      >
-                        {dayNum}
-                      </Text>
-                    )}
-                  </View>
+                  <Text
+                    className="text-[11px] font-bold"
+                    style={{
+                      color: day.filled
+                        ? COLORS.white
+                        : isToday
+                        ? isDark
+                          ? COLORS.indigo300
+                          : COLORS.indigo700
+                        : isDark
+                        ? COLORS.slate600
+                        : COLORS.slate400,
+                      opacity: isFuture ? 0.5 : 1,
+                    }}
+                  >
+                    {dayNum}
+                  </Text>
+                </View>
               </View>
             );
           })}
@@ -250,6 +258,7 @@ export function StreakCardMonthGrid({
   monthRows,
   weekRowIndex,
   weekDays,
+  dayBuckets,
   dateNum,
   todayKey,
   monthIndex,
@@ -261,6 +270,17 @@ export function StreakCardMonthGrid({
   todayRing,
   onDatePress,
 }: StreakCardMonthGridProps) {
+  
+  // FIXED: Logic to ensure dot is visible against purple
+  const getSeedDotColor = (isFilled: boolean) => {
+    if (isFilled) {
+      // On Purple/Indigo background -> Light Orange
+      return COLORS.orange300; 
+    }
+    // On White/Slate background -> Dark Orange (Light Mode) / Normal Orange (Dark Mode)
+    return isDark ? COLORS.orange400 : COLORS.orange600;
+  };
+
   return (
     <View className="px-5 pb-4">
       <View className="flex-row justify-between mb-2">
@@ -284,6 +304,10 @@ export function StreakCardMonthGrid({
                   const isCurrentMonth = day.date.getMonth() === monthIndex;
                   const isFuture = isFutureDate(day.date);
 
+                  const dayKey = toDateKey(day.date);
+                  const bucket = dayBuckets.get(dayKey);
+                  const hasIncomplete = (bucket?.incomplete.length ?? 0) > 0;
+
                   return (
                     <View key={`${day.label}-${idx}`} className="flex-1 items-center mb-2">
                       <Pressable
@@ -301,7 +325,9 @@ export function StreakCardMonthGrid({
                                   borderWidth: 0,
                                 }
                               : day.filled
-                              ? { backgroundColor: COLORS.indigo600 }
+                              ? {
+                                  backgroundColor: COLORS.indigo600,
+                                }
                               : isToday
                               ? {
                                   backgroundColor: isDark ? COLORS.slate800 : COLORS.white,
@@ -317,14 +343,14 @@ export function StreakCardMonthGrid({
                             !isCurrentMonth && { backgroundColor: 'transparent', borderWidth: 0 },
                           ]}
                         >
-                          {isCurrentMonth &&
-                            (day.filled && !isFuture ? (
-                              <Check size={14} color="white" strokeWidth={3} />
-                            ) : (
+                          {isCurrentMonth && (
+                            <>
                               <Text
                                 className="text-[11px] font-bold"
                                 style={{
-                                  color: isToday
+                                  color: day.filled
+                                    ? COLORS.white
+                                    : isToday
                                     ? isDark
                                       ? COLORS.indigo300
                                       : COLORS.indigo700
@@ -336,7 +362,16 @@ export function StreakCardMonthGrid({
                               >
                                 {dayNum}
                               </Text>
-                            ))}
+                              {hasIncomplete && !isFuture && (
+                                <View
+                                  style={[
+                                    seedDotBaseStyle,
+                                    { backgroundColor: getSeedDotColor(day.filled) },
+                                  ]}
+                                />
+                              )}
+                            </>
+                          )}
                         </View>
                       </Pressable>
                     </View>
@@ -351,7 +386,8 @@ export function StreakCardMonthGrid({
               {row.map((day) => {
                 const dayNum = day.date.getDate();
                 const isToday = day.key === todayKey;
-                const isIncompleteOnly = day.hasEntries && !day.hasDisputes;
+                const bucket = dayBuckets.get(day.key);
+                const hasIncomplete = (bucket?.incomplete.length ?? 0) > 0;
                 const isFuture = isFutureDate(day.date);
 
                 let circleStyle: ViewStyle = {
@@ -368,17 +404,12 @@ export function StreakCardMonthGrid({
                     borderWidth: 1,
                   };
                   textColor = COLORS.white;
-                } else if (isIncompleteOnly) {
-                  circleStyle = {
-                    backgroundColor: 'transparent',
-                    borderColor: incompleteRing,
-                    borderWidth: 2,
-                  };
-                  textColor = isDark ? COLORS.orange400 : COLORS.orange700;
                 }
-
                 if (isToday && !day.hasDisputes) {
-                  circleStyle = { ...circleStyle, borderColor: todayRing };
+                  circleStyle = {
+                    ...circleStyle,
+                    borderColor: todayRing,
+                  };
                 }
 
                 if (isFuture) {
@@ -410,12 +441,25 @@ export function StreakCardMonthGrid({
                         ]}
                       >
                         {day.isCurrentMonth && (
-                          <Text
-                            className="text-[11px] font-bold"
-                            style={{ color: textColor, opacity: isFuture ? 0.5 : 1 }}
-                          >
-                            {dayNum}
-                          </Text>
+                          <>
+                            <Text
+                              className="text-[11px] font-bold"
+                              style={{
+                                color: textColor,
+                                opacity: isFuture ? 0.5 : 1,
+                              }}
+                            >
+                              {dayNum}
+                            </Text>
+                            {hasIncomplete && !isFuture && (
+                              <View
+                                style={[
+                                  seedDotBaseStyle,
+                                  { backgroundColor: getSeedDotColor(day.hasDisputes) },
+                                ]}
+                              />
+                            )}
+                          </>
                         )}
                       </View>
                     </Pressable>

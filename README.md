@@ -50,6 +50,8 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-01-20
+- streakcard month day incomplete badge display
 
 ### 2026-01-19
 - updated google cloud console to enable oauth with google for android
