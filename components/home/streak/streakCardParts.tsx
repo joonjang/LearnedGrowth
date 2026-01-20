@@ -14,6 +14,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { Pressable } from 'react-native-gesture-handler';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -564,7 +565,7 @@ export function DayDetailSheet({
 
               <View className="gap-3">
                 {incompleteEntries.map((entry) => (
-                  <View key={entry.id}>
+                  <Animated.View key={entry.id} layout={LinearTransition.duration(180)}>
                     <EntryCard
                       entry={entry}
                       isMenuOpen={openMenuEntryId === entry.id}
@@ -573,7 +574,7 @@ export function DayDetailSheet({
                       onDelete={handleDelete}
                       onNavigate={handleNavigate}
                     />
-                  </View>
+                  </Animated.View>
                 ))}
               </View>
             </View>
@@ -586,15 +587,16 @@ export function DayDetailSheet({
               </Text>
               <View className="gap-3">
                 {completedEntries.map((entry) => (
-                  <EntryCard
-                    key={entry.id}
-                    entry={entry}
-                    isMenuOpen={openMenuEntryId === entry.id}
-                    onToggleMenu={() => handleToggleMenu(entry.id)}
-                    onCloseMenu={handleCloseMenu}
-                    onDelete={handleDelete}
-                    onNavigate={handleNavigate}
-                  />
+                  <Animated.View key={entry.id} layout={LinearTransition.duration(180)}>
+                    <EntryCard
+                      entry={entry}
+                      isMenuOpen={openMenuEntryId === entry.id}
+                      onToggleMenu={() => handleToggleMenu(entry.id)}
+                      onCloseMenu={handleCloseMenu}
+                      onDelete={handleDelete}
+                      onNavigate={handleNavigate}
+                    />
+                  </Animated.View>
                 ))}
               </View>
             </View>
