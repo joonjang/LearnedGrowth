@@ -8,7 +8,7 @@ import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow from '@/components/entries/entry/EntryRow';
 import GlobalDashboard from '@/components/home/GlobalDashboard';
 import SectionHeader from '@/components/home/SectionHeader';
-import StreakCard from '@/components/home/StreakCard';
+import StreakCard from '@/components/home/streak/StreakCard';
 import { CategorySegment, WeekSummary } from '@/components/home/types';
 import { isOptimistic } from '@/components/home/utils';
 import TopFade from '@/components/TopFade';
@@ -81,7 +81,7 @@ type EntrySection = {
 
 const SCROLL_THRESHOLD_FOR_FAB = 320;
 
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const UNCATEGORIZED_LABEL = 'Not categorized';
 
 const CATEGORY_COLOR_MAP: Record<string, string> = {
@@ -219,8 +219,8 @@ function getWeekInfo(createdAt: string, now: Date) {
 function getWeekStart(date: Date) {
    const start = new Date(date);
    start.setHours(0, 0, 0, 0);
-   const diffToMonday = (start.getDay() + 6) % 7;
-   start.setDate(start.getDate() - diffToMonday);
+   const diffToSunday = start.getDay();
+   start.setDate(start.getDate() - diffToSunday);
    return start;
 }
 function safeParseDate(value: string) {
@@ -416,7 +416,7 @@ export default function EntriesScreen() {
       });
    }, [insets.top, listHeaderHeight, listRef, sections.length]);
 
-   // --- Global Dashboard Data (Current Week: Mon-Sun) ---
+   // --- Global Dashboard Data (Current Week: Sun-Sat) ---
    const dashboardData = useMemo(() => {
       const allEntries = store.rows;
 
@@ -729,6 +729,7 @@ export default function EntriesScreen() {
                            days={streakData.days}
                            icon={streakIcon}
                            shadowSm={shadowSm}
+                           entries={store.rows}
                         />
                      </View>
 
