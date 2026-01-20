@@ -437,7 +437,7 @@ export function StreakCardFooter({
   onPressOut,
 }: StreakCardFooterProps) {
   return (
-    <>
+    <Pressable onPress={onToggle} onPressIn={onPressIn} onPressOut={onPressOut}>
       <View className="mx-5 mb-3 flex-row items-center justify-center gap-2 opacity-80 pt-3 border-t border-slate-100 dark:border-slate-800/50">
         <View className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
         <Text className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
@@ -447,16 +447,14 @@ export function StreakCardFooter({
           </Text>
         </Text>
       </View>
-      <Pressable onPress={onToggle} onPressIn={onPressIn} onPressOut={onPressOut}>
-        <View className="items-center pb-3 -mt-1 w-full">
-          {isExpanded ? (
-            <ChevronUp size={16} color={isDark ? '#94a3b8' : '#cbd5e1'} />
-          ) : (
-            <ChevronDown size={16} color={isDark ? '#94a3b8' : '#cbd5e1'} />
-          )}
-        </View>
-      </Pressable>
-    </>
+      <View className="items-center pb-3 -mt-1 w-full">
+        {isExpanded ? (
+          <ChevronUp size={16} color={isDark ? '#94a3b8' : '#cbd5e1'} />
+        ) : (
+          <ChevronDown size={16} color={isDark ? '#94a3b8' : '#cbd5e1'} />
+        )}
+      </View>
+    </Pressable>
   );
 }
 
