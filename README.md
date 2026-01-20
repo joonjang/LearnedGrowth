@@ -64,6 +64,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - fixed delete button spacing issue for small screen
 - text change for bin to have button be less cramped Delete permanently --> Delete
 - AI counter belief for entryDetailScreen now not bounded by numberOfLines
+- moved home dashboard item directory to root component
 
 ### 2026-01-16
 - fixed login ui

@@ -1,7 +1,4 @@
 import { PInsightCard } from '@/components/appInfo/PDefinitions';
-import GradientSpectrumBar from '@/components/entries/home/GradientSpectrumBar';
-import { DashboardData } from '@/components/entries/home/types';
-import { getMoodConfig } from '@/components/entries/home/utils';
 import {
   Activity,
   BookOpen,
@@ -11,6 +8,9 @@ import {
 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { LayoutAnimation, Pressable, Text, View } from 'react-native';
+import GradientSpectrumBar from './GradientSpectrumBar';
+import { DashboardData } from './types';
+import { getMoodConfig } from './utils';
 
 type Props = {
   data: DashboardData;

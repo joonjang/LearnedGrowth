@@ -6,11 +6,11 @@ import {
 } from '@/components/constants';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow from '@/components/entries/entry/EntryRow';
-import GlobalDashboard from '@/components/entries/home/GlobalDashboard';
-import SectionHeader from '@/components/entries/home/SectionHeader';
-import StreakCard from '@/components/entries/home/StreakCard';
-import { CategorySegment, WeekSummary } from '@/components/entries/home/types';
-import { isOptimistic } from '@/components/entries/home/utils';
+import GlobalDashboard from '@/components/home/GlobalDashboard';
+import SectionHeader from '@/components/home/SectionHeader';
+import StreakCard from '@/components/home/StreakCard';
+import { CategorySegment, WeekSummary } from '@/components/home/types';
+import { isOptimistic } from '@/components/home/utils';
 import TopFade from '@/components/TopFade';
 import { useDeletedEntries } from '@/hooks/useDeletedEntries';
 import { useEntries } from '@/hooks/useEntries';
