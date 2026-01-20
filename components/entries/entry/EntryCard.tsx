@@ -43,6 +43,7 @@ type Prop = {
    onToggleMenu: () => void;
    onCloseMenu: () => void;
    onDelete: (entry: Entry) => void;
+   onNavigate?: (entry: Entry) => void;
    onMenuLayout?: (bounds: MenuBounds) => void;
    closeActiveSwipeable?: () => string | null;
 };
@@ -158,6 +159,7 @@ export default function EntryCard({
    onToggleMenu,
    onCloseMenu,
    onDelete,
+   onNavigate,
    onMenuLayout,
    closeActiveSwipeable,
 }: Prop) {
@@ -278,19 +280,29 @@ export default function EntryCard({
          onCloseMenu();
       }
       lockNavigation(() => {
+         onNavigate?.(entry);
          router.push({ pathname: '/entries/[id]', params: { id: entry.id } });
       });
-   }, [closeActiveSwipeable, entry.id, isMenuOpen, lockNavigation, onCloseMenu]);
+   }, [
+      closeActiveSwipeable,
+      entry,
+      entry.id,
+      isMenuOpen,
+      lockNavigation,
+      onCloseMenu,
+      onNavigate,
+   ]);
 
    const handleEditFromMenu = useCallback(() => {
       lockNavigation(() => {
          onCloseMenu();
+         onNavigate?.(entry);
          router.push({
             pathname: '/entries/[id]',
             params: { id: entry.id, mode: 'edit' },
          });
       });
-   }, [entry.id, lockNavigation, onCloseMenu]);
+   }, [entry, entry.id, lockNavigation, onCloseMenu, onNavigate]);
 
    const toggleViewMode = (e: any) => {
       e.stopPropagation();

@@ -15,19 +15,12 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- submit feedback still does not push the view up
-  - neither for entry detail screen
 
 - card items in home dashboard should tap to something
 
 - Pressinging get more analysis and closing while its processing should still display credit
 
-- consumable purchase not registering 
-
 - for android the animation doesnt fully finish. maybe its because im using an old phone
-
-
-- Add app icon and splash screen
 
 - add a report problem button to send a snapshot of the issue
 
@@ -65,6 +58,12 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - text change for bin to have button be less cramped Delete permanently --> Delete
 - AI counter belief for entryDetailScreen now not bounded by numberOfLines
 - moved home dashboard item directory to root component
+- android confirmed to login with google login
+- made streakCard expandable and display the specific day entries
+- submit feedback pushes the view up + entry detail screen
+  - not for my phone though for some odd reason
+- consumable purchase from in app purchase registering 
+
 
 ### 2026-01-16
 - fixed login ui

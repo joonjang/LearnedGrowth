@@ -730,6 +730,7 @@ export default function EntriesScreen() {
                            icon={streakIcon}
                            shadowSm={shadowSm}
                            entries={store.rows}
+                           onDeleteEntry={requestDelete}
                         />
                      </View>
 

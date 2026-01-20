@@ -38,9 +38,13 @@ type Props = {
   icon: StreakIcon;
   shadowSm: any;
   entries: Entry[];
+  onDeleteEntry?: (entry: Entry) => void;
 };
 
 const styles = StyleSheet.create({
+  cardPressed: {
+    transform: [{ scale: 0.985 }],
+  },
   dayCircle: {
     width: 30,
     height: 30,
@@ -56,10 +60,12 @@ export default function StreakCard({
   icon: _icon,
   shadowSm,
   entries,
+  onDeleteEntry,
 }: Props) {
   const isDark = useColorScheme() === 'dark';
   const [monthAnchor] = useState(() => new Date());
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
   const sheetRef = useRef<BottomSheetModal>(null as any);
   const { height: windowHeight } = useWindowDimensions();
@@ -113,6 +119,14 @@ export default function StreakCard({
   const toggleExpanded = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsExpanded((prev) => !prev);
+  }, []);
+
+  const handlePressIn = useCallback(() => {
+    setIsPressed(true);
+  }, []);
+
+  const handlePressOut = useCallback(() => {
+    setIsPressed(false);
   }, []);
 
   const handleDatePress = useCallback((date: Date, isCurrentMonth: boolean) => {
@@ -177,10 +191,12 @@ export default function StreakCard({
   return (
     <View
       className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
-      style={[shadowSm.ios, shadowSm.android]}
+      style={[shadowSm.ios, shadowSm.android, isPressed && styles.cardPressed]}
     >
       <StreakCardHeader
         onPress={toggleExpanded}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         isDark={isDark}
         streakCount={streakCount}
         badgeStyle={badgeStyle}
@@ -193,6 +209,8 @@ export default function StreakCard({
       {!isExpanded ? (
         <StreakCardWeekStrip
           onPress={toggleExpanded}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
           days={days}
           dateNum={dateNum}
           isDark={isDark}
@@ -217,7 +235,13 @@ export default function StreakCard({
         />
       )}
 
-      <StreakCardFooter isExpanded={isExpanded} isDark={isDark} onToggle={toggleExpanded} />
+      <StreakCardFooter
+        isExpanded={isExpanded}
+        isDark={isDark}
+        onToggle={toggleExpanded}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+      />
 
       <DayDetailSheet
         sheetRef={sheetRef}
@@ -228,6 +252,7 @@ export default function StreakCard({
         summaryText={summaryText}
         incompleteEntries={incompleteEntries}
         completedEntries={completedEntries}
+        onDeleteEntry={onDeleteEntry}
       />
     </View>
   );

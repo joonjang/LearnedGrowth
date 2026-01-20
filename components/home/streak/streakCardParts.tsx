@@ -5,7 +5,7 @@ import {
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import { AlertCircle, Check, ChevronDown, ChevronUp, Dog, Flame } from 'lucide-react-native';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Text,
   View,
@@ -36,12 +36,14 @@ import {
 } from '@/components/home/streak/streakCardUtils';
 import type { Entry } from '@/models/entry';
 
-const pressedOpacityStyle = ({ pressed }: { pressed: boolean }) => ({
-  opacity: pressed ? 0.7 : 1,
+const dateCellPressStyle = ({ pressed }: { pressed: boolean }) => ({
+  opacity: pressed ? 0.6 : 1,
 });
 
 type StreakCardHeaderProps = {
   onPress: () => void;
+  onPressIn?: () => void;
+  onPressOut?: () => void;
   isDark: boolean;
   streakCount: number;
   badgeStyle: StyleProp<ViewStyle>;
@@ -53,6 +55,8 @@ type StreakCardHeaderProps = {
 
 type StreakCardWeekStripProps = {
   onPress: () => void;
+  onPressIn?: () => void;
+  onPressOut?: () => void;
   days: Day[];
   dateNum: number;
   isDark: boolean;
@@ -80,6 +84,8 @@ type StreakCardFooterProps = {
   isExpanded: boolean;
   isDark: boolean;
   onToggle: () => void;
+  onPressIn?: () => void;
+  onPressOut?: () => void;
 };
 
 type DayDetailSheetProps = {
@@ -91,6 +97,7 @@ type DayDetailSheetProps = {
   summaryText: string;
   incompleteEntries: Entry[];
   completedEntries: Entry[];
+  onDeleteEntry?: (entry: Entry) => void;
 };
 
 const getDisputeFillColor = (disputeCount: number) => {
@@ -101,6 +108,8 @@ const getDisputeFillColor = (disputeCount: number) => {
 
 export function StreakCardHeader({
   onPress,
+  onPressIn,
+  onPressOut,
   isDark,
   streakCount,
   badgeStyle,
@@ -110,7 +119,7 @@ export function StreakCardHeader({
   encouragement,
 }: StreakCardHeaderProps) {
   return (
-    <Pressable onPress={onPress} style={pressedOpacityStyle}>
+    <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
       <View className="px-5 pt-4 pb-2">
         <View className="flex-row items-center justify-between mb-3">
           <View className="flex-row items-center gap-2">
@@ -149,6 +158,8 @@ export function StreakCardHeader({
 
 export function StreakCardWeekStrip({
   onPress,
+  onPressIn,
+  onPressOut,
   days,
   dateNum,
   isDark,
@@ -156,7 +167,7 @@ export function StreakCardWeekStrip({
   dayCircleStyle,
 }: StreakCardWeekStripProps) {
   return (
-    <Pressable onPress={onPress} style={pressedOpacityStyle}>
+    <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
       <View className="px-5 pb-4">
         <View className="flex-row justify-between mb-3">
           {days.map((day, idx) => {
@@ -277,7 +288,7 @@ export function StreakCardMonthGrid({
                       <Pressable
                         onPress={() => onDatePress(day.date, isCurrentMonth)}
                         disabled={!isCurrentMonth || isFuture}
-                        style={pressedOpacityStyle}
+                        style={dateCellPressStyle}
                       >
                         <View
                           style={[
@@ -383,7 +394,7 @@ export function StreakCardMonthGrid({
                     <Pressable
                       onPress={() => onDatePress(day.date, day.isCurrentMonth)}
                       disabled={!day.isCurrentMonth || isFuture}
-                      style={pressedOpacityStyle}
+                      style={dateCellPressStyle}
                     >
                       <View
                         style={[
@@ -422,6 +433,8 @@ export function StreakCardFooter({
   isExpanded,
   isDark,
   onToggle,
+  onPressIn,
+  onPressOut,
 }: StreakCardFooterProps) {
   return (
     <>
@@ -434,7 +447,7 @@ export function StreakCardFooter({
           </Text>
         </Text>
       </View>
-      <Pressable onPress={onToggle} style={pressedOpacityStyle}>
+      <Pressable onPress={onToggle} onPressIn={onPressIn} onPressOut={onPressOut}>
         <View className="items-center pb-3 -mt-1 w-full">
           {isExpanded ? (
             <ChevronUp size={16} color={isDark ? '#94a3b8' : '#cbd5e1'} />
@@ -456,9 +469,11 @@ export function DayDetailSheet({
   summaryText,
   incompleteEntries,
   completedEntries,
+  onDeleteEntry,
 }: DayDetailSheetProps) {
   const insets = useSafeAreaInsets();
   const snapPoints = useMemo(() => ['75%'], []);
+  const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -473,14 +488,39 @@ export function DayDetailSheet({
     []
   );
 
-  const noopToggleMenu = useCallback(() => {}, []);
-  const noopCloseMenu = useCallback(() => {}, []);
-  const noopDelete = useCallback((_entry: Entry) => {}, []);
+  const handleToggleMenu = useCallback((entryId: string) => {
+    setOpenMenuEntryId((current) => (current === entryId ? null : entryId));
+  }, []);
+
+  const handleCloseMenu = useCallback(() => {
+    setOpenMenuEntryId(null);
+  }, []);
+
+  const handleDelete = useCallback(
+    (entry: Entry) => {
+      handleCloseMenu();
+      onDeleteEntry?.(entry);
+    },
+    [handleCloseMenu, onDeleteEntry]
+  );
+
+  const handleNavigate = useCallback(
+    (_entry: Entry) => {
+      setOpenMenuEntryId(null);
+      sheetRef.current?.dismiss();
+    },
+    [sheetRef]
+  );
+
+  const handleSheetDismiss = useCallback(() => {
+    setOpenMenuEntryId(null);
+    onDismiss();
+  }, [onDismiss]);
 
   return (
     <BottomSheetModal
       ref={sheetRef}
-      onDismiss={onDismiss}
+      onDismiss={handleSheetDismiss}
       index={0}
       snapPoints={snapPoints}
       enableDynamicSizing
@@ -529,10 +569,11 @@ export function DayDetailSheet({
                   <View key={entry.id}>
                     <EntryCard
                       entry={entry}
-                      isMenuOpen={false}
-                      onToggleMenu={noopToggleMenu}
-                      onCloseMenu={noopCloseMenu}
-                      onDelete={noopDelete}
+                      isMenuOpen={openMenuEntryId === entry.id}
+                      onToggleMenu={() => handleToggleMenu(entry.id)}
+                      onCloseMenu={handleCloseMenu}
+                      onDelete={handleDelete}
+                      onNavigate={handleNavigate}
                     />
                   </View>
                 ))}
@@ -550,10 +591,11 @@ export function DayDetailSheet({
                   <EntryCard
                     key={entry.id}
                     entry={entry}
-                    isMenuOpen={false}
-                    onToggleMenu={noopToggleMenu}
-                    onCloseMenu={noopCloseMenu}
-                    onDelete={noopDelete}
+                    isMenuOpen={openMenuEntryId === entry.id}
+                    onToggleMenu={() => handleToggleMenu(entry.id)}
+                    onCloseMenu={handleCloseMenu}
+                    onDelete={handleDelete}
+                    onNavigate={handleNavigate}
                   />
                 ))}
               </View>
