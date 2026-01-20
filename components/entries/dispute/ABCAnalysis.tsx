@@ -1,6 +1,6 @@
 import { getShadow } from '@/lib/shadow';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LayoutChangeEvent, ScrollView, Text, View } from 'react-native';
 
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import WideButton from '@/components/buttons/WideButton';
@@ -46,12 +46,21 @@ export default function ABCAnalysis({
    const isDark = colorScheme === 'dark';
    const shadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
    const shadowGutter = 6;
+   const topPadding = contentTopPadding ?? 24;
    
    const [areAnimationsDone, setAreAnimationsDone] = useState(false);
    const buttonOpacity = useSharedValue(0);
+   const scrollRef = useRef<ScrollView | null>(null);
+   const [aiCardOffsetY, setAiCardOffsetY] = useState<number | null>(null);
+   const pendingAutoScrollRef = useRef(false);
+   const lastAnalysisKeyRef = useRef<string | null>(null);
    const buttonFadeStyle = useAnimatedStyle(() => ({
       opacity: buttonOpacity.value,
    }));
+   const analysisKey = useMemo(() => {
+      if (!aiData) return null;
+      return aiData.createdAt ?? String(retryCount);
+   }, [aiData, retryCount]);
 
    const handleAnimationComplete = useCallback(() => {
       setAreAnimationsDone(true);
@@ -67,12 +76,57 @@ export default function ABCAnalysis({
       }
    }, [areAnimationsDone, buttonOpacity]);
 
+   const handleAiCardLayout = useCallback(
+      (event: LayoutChangeEvent) => {
+         const nextY = event.nativeEvent.layout.y;
+         setAiCardOffsetY((prev) => (prev === nextY ? prev : nextY));
+      },
+      []
+   );
+
+   const scrollToAnalysisTop = useCallback(
+      (animated = true) => {
+         if (aiCardOffsetY === null) return;
+         const targetY = Math.max(aiCardOffsetY - topPadding, 0);
+         scrollRef.current?.scrollTo({ y: targetY, animated });
+      },
+      [aiCardOffsetY, topPadding]
+   );
+
+   const handleContentSizeChange = useCallback(() => {
+      if (!pendingAutoScrollRef.current) return;
+      if (aiCardOffsetY === null) return;
+      pendingAutoScrollRef.current = false;
+      requestAnimationFrame(() => scrollToAnalysisTop(true));
+   }, [aiCardOffsetY, scrollToAnalysisTop]);
+
+   useEffect(() => {
+      if (!analysisKey) return;
+      if (analysisKey === lastAnalysisKeyRef.current) return;
+      lastAnalysisKeyRef.current = analysisKey;
+      pendingAutoScrollRef.current = true;
+      requestAnimationFrame(() => {
+         if (!pendingAutoScrollRef.current) return;
+         if (aiCardOffsetY === null) return;
+         pendingAutoScrollRef.current = false;
+         scrollToAnalysisTop(true);
+      });
+   }, [analysisKey, aiCardOffsetY, scrollToAnalysisTop]);
+
+   useEffect(() => {
+      if (!pendingAutoScrollRef.current) return;
+      if (aiCardOffsetY === null) return;
+      pendingAutoScrollRef.current = false;
+      requestAnimationFrame(() => scrollToAnalysisTop(true));
+   }, [aiCardOffsetY, scrollToAnalysisTop]);
+
    return (
       <ScrollView
          className="flex-1"
+         ref={scrollRef}
          style={{ marginHorizontal: -shadowGutter }}
          contentContainerStyle={{
-            paddingTop: contentTopPadding ?? 24,
+            paddingTop: topPadding,
             paddingBottom: 48,
             flexGrow: 1,
             justifyContent: 'flex-start',
@@ -81,6 +135,7 @@ export default function ABCAnalysis({
          }}
          keyboardShouldPersistTaps="always"
          showsVerticalScrollIndicator={false}
+         onContentSizeChange={handleContentSizeChange}
       >
          {/* Header */}
          <View className="flex-row items-center justify-between py-2">
@@ -136,6 +191,7 @@ export default function ABCAnalysis({
          <View
             className="flex-1"
             style={[shadow.ios, shadow.android]}
+            onLayout={handleAiCardLayout}
          >
             <AiInsightCard
                entryId={entry.id}
