@@ -135,9 +135,7 @@ export default function StreakCard({
     sheetRef.current?.present();
   }, []);
 
-  const handleSheetDismiss = useCallback(() => {
-    setSelectedDayKey(null);
-  }, []);
+  const handleSheetDismiss = useCallback(() => {}, []);
 
   const badgeStyle = useMemo(
     () => ({

@@ -735,7 +735,7 @@ export default function EntriesScreen() {
                      </View>
 
                      {/* MAIN NEW ENTRY BUTTON */}
-                     <View className="mt-3">
+                     <View className="mt-1">
 
                            <Pressable
                               onPress={handleNewEntryPress}
@@ -752,7 +752,7 @@ export default function EntriesScreen() {
                      </View>
 
                      <Animated.View
-                        className="items-center mt-4"
+                        className="items-center mt-2"
                         style={scrollIndicatorStyle}
                      >
                         <Pressable

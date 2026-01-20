@@ -540,7 +540,7 @@ export default function EntryCard({
                </View>
                
                <View className="mt-1 px-1">
-                  <CardNextButton id={entry.id} />
+                  <CardNextButton id={entry.id} onNavigate={() => onNavigate?.(entry)} />
                </View>
             </>
          )}

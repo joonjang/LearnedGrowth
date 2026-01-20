@@ -23,9 +23,10 @@ type ButtonConfig = {
 
 type Prop = {
    id: string;
+   onNavigate?: () => void;
 };
 
-export default function CardNextButton({ id }: Prop) {
+export default function CardNextButton({ id, onNavigate }: Prop) {
    const { status, user } = useAuth();
    const { isGrowthPlusActive } = useRevenueCat();
    const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
@@ -44,8 +45,9 @@ export default function CardNextButton({ id }: Prop) {
    const [hasConsent, setHasConsent] = useState<boolean>(hasAccountConsent);
 
    const navigateToAnalysis = useCallback(() => {
+      onNavigate?.();
       router.push(`/dispute/${id}?view=analysis&refresh=true`);
-   }, [id]);
+   }, [id, onNavigate]);
 
    const checkConsentAndNavigate = useCallback(() => {
       if (hasConsent) {
@@ -114,6 +116,7 @@ export default function CardNextButton({ id }: Prop) {
    const handlePress = useCallback(() => {
       lockNavigation(() => {
          if (hasCachedAnalysis) {
+            onNavigate?.();
             router.push(`/dispute/${id}?view=analysis`);
             return;
          }
@@ -123,12 +126,20 @@ export default function CardNextButton({ id }: Prop) {
          }
 
          setPendingAnalysis(true);
+         onNavigate?.();
          router.push({
             pathname: '/(modal)/free-user',
             params: { id },
          } as any);
       });
-   }, [checkConsentAndNavigate, hasCachedAnalysis, id, isSubscribed, lockNavigation]);
+   }, [
+      checkConsentAndNavigate,
+      hasCachedAnalysis,
+      id,
+      isSubscribed,
+      lockNavigation,
+      onNavigate,
+   ]);
 
    return (
       <>
