@@ -229,7 +229,7 @@ export default function PatternDecoderSheet({
                   Thinking Patterns
                </Text>
                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  Trends
+                  Phrase Impact
                </Text>
             </View>
 

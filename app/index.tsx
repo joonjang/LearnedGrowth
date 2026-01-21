@@ -68,7 +68,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // --- FIXED: Create Animated Component ---
 const AnimatedSectionList = Animated.createAnimatedComponent(
-   SectionList
+   SectionList,
 ) as typeof SectionList;
 
 // --- Types ---
@@ -140,7 +140,11 @@ function getNumericScore(val: any): number | null {
 function getPatternImpact(score: string | null | undefined): PatternImpact {
    if (!score) return 'mixed';
    const lower = score.toLowerCase();
-   if (lower.includes('mixed') || lower.includes('balanced') || lower.includes('neutral')) {
+   if (
+      lower.includes('mixed') ||
+      lower.includes('balanced') ||
+      lower.includes('neutral')
+   ) {
       return 'mixed';
    }
    return isOptimistic(score) ? 'optimistic' : 'pessimistic';
@@ -182,7 +186,8 @@ function getSectionSummary(rows: RowItem[]): WeekSummary {
    let optCount = 0;
    entries.forEach((e) => {
       const score = getNumericScore(
-         e.aiResponse?.meta?.optimismScore ?? e.aiResponse?.meta?.sentimentScore
+         e.aiResponse?.meta?.optimismScore ??
+            e.aiResponse?.meta?.sentimentScore,
       );
       if (score !== null) {
          optSum += score;
@@ -217,7 +222,7 @@ function buildSections(rows: RowItem[]): EntrySection[] {
    for (const entry of rows) {
       const { key, label, rangeLabel } = getWeekInfo(
          entry.entry.createdAt,
-         now
+         now,
       );
       if (!groups.has(key))
          groups.set(key, { title: label, rangeLabel, rows: [] });
@@ -244,12 +249,12 @@ function getWeekInfo(createdAt: string, now: Date) {
    end.setDate(start.getDate() + 6);
    const currentStart = getWeekStart(now);
    const lastStart = getWeekStart(
-      new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
+      new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7),
    );
    const key = `${formatIsoDate(start)}_${formatIsoDate(end)}`;
    const weekMs = 7 * 24 * 60 * 60 * 1000;
    const diffWeeks = Math.round(
-      (currentStart.getTime() - start.getTime()) / weekMs
+      (currentStart.getTime() - start.getTime()) / weekMs,
    );
    const label =
       start.getTime() === currentStart.getTime()
@@ -308,7 +313,7 @@ export default function EntriesScreen() {
 
    const shadowSm = useMemo(
       () => getShadow({ isDark, preset: 'sm' }),
-      [isDark]
+      [isDark],
    );
    const ctaShadow = useMemo(
       () =>
@@ -318,11 +323,11 @@ export default function EntriesScreen() {
             androidElevation: 3,
             colorLight: '#000000',
          }),
-      [isDark]
+      [isDark],
    );
    const fabShadow = useMemo(
       () => getShadow({ isDark, preset: 'button', colorLight: '#4f46e5' }),
-      [isDark]
+      [isDark],
    );
 
    // --- Animation State (FAB) ---
@@ -349,7 +354,7 @@ export default function EntriesScreen() {
             scrollY.value,
             [0, 60], // Range: 0px to 60px of scroll
             [0.4, 0], // Opacity: starts at 0.4, fades to 0
-            Extrapolation.CLAMP
+            Extrapolation.CLAMP,
          ),
          transform: [
             // Optional: Move it up slightly as it fades for a "floating away" feel
@@ -358,7 +363,7 @@ export default function EntriesScreen() {
                   scrollY.value,
                   [0, 60],
                   [0, -10],
-                  Extrapolation.CLAMP
+                  Extrapolation.CLAMP,
                ),
             },
          ],
@@ -380,7 +385,7 @@ export default function EntriesScreen() {
    useFocusEffect(
       useCallback(() => {
          refreshDeletedEntries();
-      }, [refreshDeletedEntries])
+      }, [refreshDeletedEntries]),
    );
 
    useEffect(() => {
@@ -430,15 +435,15 @@ export default function EntriesScreen() {
          closeActiveSwipeable();
          store.deleteEntry(entry.id).catch((e) => console.error(e));
       },
-      [closeActiveSwipeable, closeMenu, store]
+      [closeActiveSwipeable, closeMenu, store],
    );
 
    // --- Data Prep ---
-   const rowsForSections = useMemo(
-      () => buildRows(store.rows),
-      [store.rows]
+   const rowsForSections = useMemo(() => buildRows(store.rows), [store.rows]);
+   const sections = useMemo(
+      () => buildSections(rowsForSections),
+      [rowsForSections],
    );
-   const sections = useMemo(() => buildSections(rowsForSections), [rowsForSections]);
 
    const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
       const nextHeight = Math.round(event.nativeEvent.layout.height);
@@ -477,7 +482,7 @@ export default function EntriesScreen() {
       });
 
       const weekWithDispute = weekEntries.filter(
-         (e) => (e.dispute ?? '').trim().length > 0
+         (e) => (e.dispute ?? '').trim().length > 0,
       );
 
       const weeklyCount = weekWithDispute.length;
@@ -495,7 +500,7 @@ export default function EntriesScreen() {
       weekEntries.forEach((e) => {
          const score = getNumericScore(
             e.aiResponse?.meta?.optimismScore ??
-               e.aiResponse?.meta?.sentimentScore
+               e.aiResponse?.meta?.sentimentScore,
          );
          if (score !== null) {
             optSum += score;
@@ -540,32 +545,43 @@ export default function EntriesScreen() {
             if (!created) return null;
             return { entry, created };
          })
-         .filter((item): item is { entry: Entry; created: Date } => Boolean(item));
+         .filter((item): item is { entry: Entry; created: Date } =>
+            Boolean(item),
+         );
 
       const entriesByDateAsc = [...entriesWithDates].sort(
-         (a, b) => a.created.getTime() - b.created.getTime()
+         (a, b) => a.created.getTime() - b.created.getTime(),
       );
       const entriesByDateDesc = [...entriesWithDates].sort(
-         (a, b) => b.created.getTime() - a.created.getTime()
+         (a, b) => b.created.getTime() - a.created.getTime(),
       );
 
-      const buildTabData = (config: (typeof PATTERN_TAB_CONFIG)[keyof typeof PATTERN_TAB_CONFIG]) => {
+      const buildTabData = (
+         config: (typeof PATTERN_TAB_CONFIG)[keyof typeof PATTERN_TAB_CONFIG],
+      ) => {
          const chartData = entriesByDateAsc
             .map((item) => {
                const dim =
-                  item.entry.aiResponse?.analysis?.dimensions?.[config.dimension];
+                  item.entry.aiResponse?.analysis?.dimensions?.[
+                     config.dimension
+                  ];
                if (!dim?.score) return null;
-               return { value: getTrendValue(dim.score), entryId: item.entry.id };
+               return {
+                  value: getTrendValue(dim.score),
+                  entryId: item.entry.id,
+               };
             })
-            .filter(
-               (point): point is { value: number; entryId: string } => Boolean(point)
+            .filter((point): point is { value: number; entryId: string } =>
+               Boolean(point),
             )
             .slice(-MAX_TREND_POINTS);
 
          const patterns = entriesByDateDesc
             .map((item) => {
                const dim =
-                  item.entry.aiResponse?.analysis?.dimensions?.[config.dimension];
+                  item.entry.aiResponse?.analysis?.dimensions?.[
+                     config.dimension
+                  ];
                const phrase = dim?.detectedPhrase?.trim();
                if (!phrase) return null;
                return {
@@ -577,8 +593,8 @@ export default function EntriesScreen() {
                   insight: dim?.insight ?? null,
                };
             })
-            .filter(
-               (pattern): pattern is PatternDecoderPattern => Boolean(pattern)
+            .filter((pattern): pattern is PatternDecoderPattern =>
+               Boolean(pattern),
             );
 
          return {
@@ -665,9 +681,9 @@ export default function EntriesScreen() {
                     6,
                     Math.floor(
                        (today.getTime() - weekStart.getTime()) /
-                          (24 * 60 * 60 * 1000)
-                    )
-                 )
+                          (24 * 60 * 60 * 1000),
+                    ),
+                 ),
               );
 
       let streakCount = 0;
@@ -694,7 +710,7 @@ export default function EntriesScreen() {
             paddingTop={insets.top}
          />
       ),
-      [insets.top, isDark]
+      [insets.top, isDark],
    );
 
    const renderItem = useCallback(
@@ -713,7 +729,7 @@ export default function EntriesScreen() {
                   router.push({
                      pathname: '/entries/[id]',
                      params: { id: item.entry.id, mode: 'edit' },
-                  })
+                  }),
                )
             }
             onDelete={() => requestDelete(item.entry)}
@@ -728,7 +744,7 @@ export default function EntriesScreen() {
          openMenuEntryId,
          requestDelete,
          toggleMenu,
-      ]
+      ],
    );
 
    return (
@@ -813,7 +829,6 @@ export default function EntriesScreen() {
                               </Pressable>
                            )}
 
-
                            {/* Settings Button */}
                            <Link href="/settings" asChild>
                               <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
@@ -829,14 +844,6 @@ export default function EntriesScreen() {
 
                      {/* GLOBAL DASHBOARD */}
                      {hasEntries && (
-                        <GlobalDashboard
-                           data={dashboardData}
-                           shadowSm={shadowSm}
-                           isDark={isDark}
-                        />
-                     )}
-
-                     <View className="mt-4 mb-6">
                         <StreakCard
                            streakCount={streakData.streakCount}
                            days={streakData.days}
@@ -845,23 +852,29 @@ export default function EntriesScreen() {
                            entries={store.rows}
                            onDeleteEntry={requestDelete}
                         />
+                     )}
+
+                     <View className="mt-4 mb-6">
+                        <GlobalDashboard
+                           data={dashboardData}
+                           shadowSm={shadowSm}
+                           isDark={isDark}
+                        />
                      </View>
 
                      {/* MAIN NEW ENTRY BUTTON */}
                      <View className="mt-1">
-
-                           <Pressable
-                              onPress={handleNewEntryPress}
-                              className={`relative flex-row items-center justify-center rounded-2xl px-6 py-4 ${PRIMARY_CTA_CLASS}`}
-                              style={[ctaShadow.ios, ctaShadow.android]} // ✅ iOS shadow on the actual button is fine
+                        <Pressable
+                           onPress={handleNewEntryPress}
+                           className={`relative flex-row items-center justify-center rounded-2xl px-6 py-4 ${PRIMARY_CTA_CLASS}`}
+                           style={[ctaShadow.ios, ctaShadow.android]} // ✅ iOS shadow on the actual button is fine
+                        >
+                           <Text
+                              className={`text-lg font-bold text-center ${PRIMARY_CTA_TEXT_CLASS}`}
                            >
-                              <Text
-                                 className={`text-lg font-bold text-center ${PRIMARY_CTA_TEXT_CLASS}`}
-                              >
-                                 What&apos;s on your mind?
-                              </Text>
-                           </Pressable>
-
+                              What&apos;s on your mind?
+                           </Text>
+                        </Pressable>
                      </View>
 
                      <Animated.View
