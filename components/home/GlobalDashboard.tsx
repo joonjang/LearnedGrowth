@@ -34,6 +34,7 @@ const GlobalDashboard = React.memo(({ data, shadowSm, isDark }: Props) => {
   const handleOpenPatternSheet = useCallback(() => {
     patternSheetRef.current?.present();
   }, []);
+
   const handlePatternPressIn = useCallback(() => {
     setIsPatternPressed(true);
   }, []);

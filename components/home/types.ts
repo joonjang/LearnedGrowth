@@ -18,8 +18,7 @@ export type PatternImpact = 'optimistic' | 'pessimistic' | 'mixed';
 export type PatternDecoderPattern = {
   id: string;
   entryId: string;
-  date: string;
-  fullDate: string;
+  createdAt: string;
   phrase: string;
   impact: PatternImpact;
   insight: string | null;

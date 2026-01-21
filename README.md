@@ -16,6 +16,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- need to limit the amount of entries viewed from entire entry to per week
+
+- make ai insight respond with how the explanation style is helpful/unhelpful
+
 - card items in home dashboard should tap to something
 
 - Pressinging get more analysis and closing while its processing should still display credit

@@ -290,10 +290,6 @@ function formatDate(date: Date) {
    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function formatWeekday(date: Date) {
-   return DAY_LABELS[date.getDay()] ?? '';
-}
-
 // --- Main Component ---
 
 export default function EntriesScreen() {
@@ -575,8 +571,7 @@ export default function EntriesScreen() {
                return {
                   id: `${item.entry.id}-${config.dimension}`,
                   entryId: item.entry.id,
-                  date: formatWeekday(item.created),
-                  fullDate: formatDate(item.created),
+                  createdAt: item.entry.createdAt,
                   phrase,
                   impact: getPatternImpact(dim?.score),
                   insight: dim?.insight ?? null,
