@@ -1,15 +1,8 @@
 import QuickStart from '@/components/appInfo/QuickStart';
 import {
-   CATEGORY_COLOR_MAP,
-   DEFAULT_CATEGORY_COLOR,
-   MAX_TREND_POINTS,
-   PATTERN_TAB_CONFIG,
    PRIMARY_CTA_CLASS,
    PRIMARY_CTA_ICON_COLOR,
    PRIMARY_CTA_TEXT_CLASS,
-   SCROLL_THRESHOLD_FOR_FAB,
-   UNCATEGORIZED_LABEL,
-   WEEK_MS,
    WEEKDAY_LABELS,
 } from '@/components/constants';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
@@ -105,7 +98,46 @@ type WeekOption = {
 };
 
 // --- Config ---
+const SCROLL_THRESHOLD_FOR_FAB = 320;
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
+const UNCATEGORIZED_LABEL = 'Not categorized';
+
+const CATEGORY_COLOR_MAP: Record<string, string> = {
+   Work: '#3b82f6',
+   Education: '#8b5cf6',
+   Relationships: '#e11d48',
+   Health: '#10b981',
+   Finance: '#eab308',
+   'Self-Image': '#06b6d4',
+   'Daily Hassles': '#64748b',
+   Other: '#9ca3af',
+   [UNCATEGORIZED_LABEL]: '#e2e8f0',
+};
+const DEFAULT_CATEGORY_COLOR = '#cbd5e1';
+
+const PATTERN_TAB_CONFIG = {
+   Time: {
+      dimension: 'permanence',
+      highLabel: 'Temporary',
+      lowLabel: 'Permanent',
+      description: 'Are setbacks permanent or temporary?',
+   },
+   Scope: {
+      dimension: 'pervasiveness',
+      highLabel: 'Specific',
+      lowLabel: 'Pervasive',
+      description: 'Does the setback affect one area or everything?',
+   },
+   Blame: {
+      dimension: 'personalization',
+      highLabel: 'External',
+      lowLabel: 'Internal',
+      description: 'Are outcomes tied to you or to outside factors?',
+   },
+} as const;
+
+const MAX_TREND_POINTS = 7;
 // --- Logic Helpers ---
 
 function getNumericScore(val: any): number | null {
