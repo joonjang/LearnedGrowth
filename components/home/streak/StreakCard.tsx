@@ -183,6 +183,7 @@ export default function StreakCard({
                   monthName={monthName}
                   currentYear={currentYear}
                   encouragement={encouragement}
+                  isDark={isDark}
                />
 
                {!isExpanded ? (

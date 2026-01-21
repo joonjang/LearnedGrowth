@@ -1,3 +1,4 @@
+import { HOME_ICON_DARK, HOME_ICON_LIGHT } from '@/components/constants';
 import { CalendarCheck, CalendarDays, Dog, Flame } from 'lucide-react-native';
 import { Text, View } from 'react-native';
 import { cx } from '../../utils';
@@ -9,6 +10,7 @@ type StreakCardHeaderProps = {
    monthName: string;
    currentYear: number;
    encouragement?: string | null;
+   isDark: boolean;
 };
 
 export function StreakCardHeader({
@@ -18,6 +20,7 @@ export function StreakCardHeader({
    monthName,
    currentYear,
    encouragement,
+   isDark,
 }: StreakCardHeaderProps) {
    const hasStreak = streakCount > 0;
 
@@ -40,46 +43,19 @@ export function StreakCardHeader({
          : 'text-indigo-600 dark:text-indigo-300',
    );
 
-   // Icon colors (lucide props)
-   const leftIconColor = isCurrentWeek
-      ? // Dog icon: light slate in dark, slate-500-ish in light (matches your previous hexes)
-        '#64748b' // slate-500
-      : '#64748b'; // slate-500
-
-   const leftIconDarkColor = isCurrentWeek
-      ? '#cbd5e1' // slate-300
-      : '#94a3b8'; // slate-400
+   const iconColor = isDark ? HOME_ICON_DARK : HOME_ICON_LIGHT;
 
    return (
       <View className="px-5 pt-4 pb-2">
          <View className="flex-row items-center justify-between mb-3">
             <View className="flex-row items-center gap-2">
                {isCurrentWeek ? (
-                  <Dog
-                     size={16}
-                     color={leftIconColor}
-                     className="dark:hidden"
-                  />
+                  <Dog size={16} color={iconColor} className="dark:hidden" />
                ) : (
                   <CalendarDays
                      size={16}
-                     color={leftIconColor}
+                     color={iconColor}
                      className="dark:hidden"
-                  />
-               )}
-
-               {/* Dark-mode version of the icon */}
-               {isCurrentWeek ? (
-                  <Dog
-                     size={16}
-                     color={leftIconDarkColor}
-                     className="hidden dark:flex"
-                  />
-               ) : (
-                  <CalendarDays
-                     size={16}
-                     color={leftIconDarkColor}
-                     className="hidden dark:flex"
                   />
                )}
 
