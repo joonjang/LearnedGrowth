@@ -15,6 +15,7 @@ export const MAX_AI_RETRIES = 4;
 export const BOTTOM_SHEET_RADIUS = 24;
 export const BOTTOM_SHEET_BACKDROP_OPACITY = 0.75;
 export const BOTTOM_SHEET_CONTENT_PADDING = 24;
+export const BOTTOM_SHEET_MAX_SNAP = '75%';
 
 export const ROUTE_LOGIN = '/(modal)/login' as const;
 export const ROUTE_ENTRIES = '/' as const;
@@ -72,3 +73,31 @@ export const ABCDE_FIELD = [
       placeholder: 'Note any shift in mood or energy',
    },
 ] as const;
+
+export const MONTHS = [
+   'January',
+   'February',
+   'March',
+   'April',
+   'May',
+   'June',
+   'July',
+   'August',
+   'September',
+   'October',
+   'November',
+   'December',
+];
+
+export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// colors
+
+export const ALERT_COLOR_DARK = '#fb923c';
+export const ALERT_COLOR_LIGHT = '#c2410c';
+
+export const HOME_ICON_DARK = '#cbd5e1';
+export const HOME_ICON_LIGHT = '#64748b';
+
+export const CHEVRON_ICON_DARK = '#94a3b8';
+export const CHEVRON_ICON_LIGHT = '#cbd5e1';

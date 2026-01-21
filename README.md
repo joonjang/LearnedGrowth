@@ -16,16 +16,21 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- break down streakcard
+   - one for current week
+   - one for past
+   - one for all view
+
 - view display card just suddenly display
    - make them display with an animation instead of all of the sudden
 
 - abstract index.tsx
-   - streakCardUtils colors should be in constants (does the color object even need to exist?)
-   - streakcard.tsx made abstracted code is not used from streakcardparts.tsx
 
 - refactor timeline pattern expand red and green with dispute and belief colors
 
 - need to limit the amount of entries viewed from entire entry to per week
+
+- once user subscribes, enable all entries to get the ai insight
 
 - make ai insight respond with how the explanation style is helpful/unhelpful
 
@@ -40,6 +45,14 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - enable user to get extra analysis if someone signs up using their referal code
 
 - Entry categorization upon subscription
+
+- add search function
+
+- enable user to go back to entry without analysis and have it be analyzed
+
+- display a signal that the entry contains AI analysis
+
+- why does it show a loading screen after the splashscreen
 
 ---
 
@@ -60,6 +73,13 @@ npx -y eas-cli@latest build -p android --profile playstore --local
 env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile production --local
 
 ## Development Journal
+
+### 2026-01-21
+
+- cleaned up streakCard
+   - abstracted code
+   - styling consistent with tailwind
+   - removed unusefull styles
 
 ### 2026-01-20
 
