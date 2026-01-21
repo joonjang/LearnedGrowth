@@ -16,17 +16,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- break down streakcard
-   - one for current week
-   - one for past
-   - one for all view
-
 - view display card just suddenly display
    - make them display with an animation instead of all of the sudden
 
 - abstract index.tsx
-
-- refactor timeline pattern expand red and green with dispute and belief colors
 
 - need to limit the amount of entries viewed from entire entry to per week
 
@@ -45,6 +38,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - enable user to get extra analysis if someone signs up using their referal code
 
 - Entry categorization upon subscription
+
+- break down streakcard
+   - one for current week
+   - one for past
+   - one for all view
 
 - add search function
 

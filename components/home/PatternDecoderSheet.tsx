@@ -1,42 +1,42 @@
 import {
-  BOTTOM_SHEET_BG_DARK,
-  BOTTOM_SHEET_BG_LIGHT,
-  bottomSheetBackgroundStyle,
-  bottomSheetHandleIndicatorStyle,
+   BOTTOM_SHEET_BG_DARK,
+   BOTTOM_SHEET_BG_LIGHT,
+   bottomSheetBackgroundStyle,
+   bottomSheetHandleIndicatorStyle,
 } from '@/components/bottomSheetStyles';
 import {
-  BOTTOM_SHEET_BACKDROP_OPACITY,
-  BOTTOM_SHEET_CONTENT_PADDING,
+   BOTTOM_SHEET_BACKDROP_OPACITY,
+   BOTTOM_SHEET_CONTENT_PADDING,
 } from '@/components/constants';
 import type {
-  PatternDecoderData,
-  PatternDecoderTab,
+   PatternDecoderData,
+   PatternDecoderTab,
 } from '@/components/home/types';
 import { getShadow } from '@/lib/shadow';
 import {
-  BottomSheetBackdrop,
-  BottomSheetBackdropProps,
-  BottomSheetModal,
-  BottomSheetScrollView,
+   BottomSheetBackdrop,
+   BottomSheetBackdropProps,
+   BottomSheetModal,
+   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import { router } from 'expo-router';
 import {
-  ChevronDown,
-  ChevronRight,
-  FileText,
-  Minus,
-  TrendingDown,
-  TrendingUp,
+   ChevronDown,
+   ChevronRight,
+   FileText,
+   Minus,
+   TrendingDown,
+   TrendingUp,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import type { RefObject } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import {
-  LayoutAnimation,
-  Text,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
+   LayoutAnimation,
+   Text,
+   TouchableOpacity,
+   useWindowDimensions,
+   View,
 } from 'react-native';
 import { Pressable } from 'react-native-gesture-handler';
 import { LineChart } from 'react-native-gifted-charts';
@@ -346,14 +346,14 @@ export default function PatternDecoderSheet({
                         ImpactIcon = TrendingUp;
                         iconColor = isDark ? '#34d399' : '#059669';
                         bubbleClasses =
-                           'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/30';
+                           'bg-emerald-50 dark:bg-emerald-500/20 border-emerald-100 dark:border-emerald-800/30';
                         bubbleTextClasses =
                            'text-emerald-700 dark:text-emerald-300';
                      } else if (pattern.impact === 'pessimistic') {
                         ImpactIcon = TrendingDown;
                         iconColor = isDark ? '#f43f5e' : '#be123c';
                         bubbleClasses =
-                           'bg-rose-50 dark:bg-rose-900/20 border-rose-100 dark:border-rose-800/30';
+                           'bg-rose-50 dark:bg-rose-500/20 border-rose-100 dark:border-rose-800/30';
                         bubbleTextClasses = 'text-rose-700 dark:text-rose-300';
                      } else if (pattern.impact === 'mixed') {
                         ImpactIcon = Minus;
