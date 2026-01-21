@@ -44,9 +44,6 @@ const dateCellPressStyle = ({ pressed }: { pressed: boolean }) => ({
 });
 
 type StreakCardHeaderProps = {
-  onPress: () => void;
-  onPressIn?: () => void;
-  onPressOut?: () => void;
   isDark: boolean;
   streakCount: number;
   badgeStyle: StyleProp<ViewStyle>;
@@ -57,9 +54,6 @@ type StreakCardHeaderProps = {
 };
 
 type StreakCardWeekStripProps = {
-  onPress: () => void;
-  onPressIn?: () => void;
-  onPressOut?: () => void;
   days: Day[];
   dateNum: number;
   isDark: boolean;
@@ -87,9 +81,6 @@ type StreakCardMonthGridProps = {
 type StreakCardFooterProps = {
   isExpanded: boolean;
   isDark: boolean;
-  onToggle: () => void;
-  onPressIn?: () => void;
-  onPressOut?: () => void;
 };
 
 type DayDetailSheetProps = {
@@ -119,9 +110,6 @@ const seedDotBaseStyle: ViewStyle = {
 };
 
 export function StreakCardHeader({
-  onPress,
-  onPressIn,
-  onPressOut,
   isDark,
   streakCount,
   badgeStyle,
@@ -131,47 +119,42 @@ export function StreakCardHeader({
   encouragement,
 }: StreakCardHeaderProps) {
   return (
-    <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-      <View className="px-5 pt-4 pb-2">
-        <View className="flex-row items-center justify-between mb-3">
-          <View className="flex-row items-center gap-2">
-            <Dog size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
-            <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-              Days of Growth
-            </Text>
-          </View>
-          <View
-            className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full border"
-            style={badgeStyle}
-          >
-            <Flame
-              size={14}
-              color={streakCount > 0 ? '#f97316' : '#94a3b8'}
-              fill={streakCount > 0 ? '#f97316' : 'transparent'}
-            />
-            <Text className="text-xs font-bold" numberOfLines={1} style={badgeTextStyle}>
-              {streakCount} Day Streak
-            </Text>
-          </View>
-        </View>
-
-        <View className="mb-3 pl-0.5">
-          <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-            {monthName} {currentYear}
+    <View className="px-5 pt-4 pb-2">
+      <View className="flex-row items-center justify-between mb-3">
+        <View className="flex-row items-center gap-2">
+          <Dog size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
+          <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+            Days of Growth
           </Text>
-          <Text className="text-xs font-medium text-slate-600 dark:text-slate-300 italic">
-            {encouragement}
+        </View>
+        <View
+          className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full border"
+          style={badgeStyle}
+        >
+          <Flame
+            size={14}
+            color={streakCount > 0 ? '#f97316' : '#94a3b8'}
+            fill={streakCount > 0 ? '#f97316' : 'transparent'}
+          />
+          <Text className="text-xs font-bold" numberOfLines={1} style={badgeTextStyle}>
+            {streakCount} Day Streak
           </Text>
         </View>
       </View>
-    </Pressable>
+
+      <View className="mb-3 pl-0.5">
+        <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+          {monthName} {currentYear}
+        </Text>
+        <Text className="text-xs font-medium text-slate-600 dark:text-slate-300 italic">
+          {encouragement}
+        </Text>
+      </View>
+    </View>
   );
 }
 
 export function StreakCardWeekStrip({
-  onPress,
-  onPressIn,
-  onPressOut,
   days,
   dateNum,
   isDark,
@@ -179,78 +162,76 @@ export function StreakCardWeekStrip({
   dayCircleStyle,
 }: StreakCardWeekStripProps) {
   return (
-    <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-      <View className="px-5 pb-4">
-        <View className="flex-row justify-between mb-3">
-          {days.map((day, idx) => {
-            const dayNum = day.date.getDate();
-            const isToday = dayNum === dateNum;
-            const isFuture = isFutureDate(day.date);
+    <View className="px-5 pb-4">
+      <View className="flex-row justify-between mb-3">
+        {days.map((day, idx) => {
+          const dayNum = day.date.getDate();
+          const isToday = dayNum === dateNum;
+          const isFuture = isFutureDate(day.date);
 
-            return (
-              <View key={`${day.label}-${idx}`} className="flex-1 items-center gap-1.5">
+          return (
+            <View key={`${day.label}-${idx}`} className="flex-1 items-center gap-1.5">
+              <Text
+                className="text-[10px] font-bold uppercase"
+                style={{
+                  color: isToday
+                    ? isDark
+                      ? COLORS.indigo400
+                      : COLORS.indigo600
+                    : COLORS.slate400,
+                  opacity: isFuture ? 0.3 : 1,
+                }}
+              >
+                {day.label}
+              </Text>
+              <View
+                style={[
+                  dayCircleStyle,
+                  isFuture
+                    ? {
+                        backgroundColor: 'transparent',
+                        borderColor: 'transparent',
+                        borderWidth: 0,
+                      }
+                    : day.filled
+                    ? { backgroundColor: COLORS.indigo600 }
+                    : isToday
+                    ? {
+                        backgroundColor: isDark ? COLORS.slate800 : COLORS.white,
+                        borderColor: COLORS.indigo500,
+                        borderWidth: 2,
+                      }
+                    : {
+                        backgroundColor: isDark ? COLORS.slate800 : COLORS.slate50,
+                        borderColor: isDark ? COLORS.slate700 : COLORS.slate100,
+                        borderWidth: 1,
+                      },
+                  day.filled && !isDark ? filledShadowStyle : null,
+                ]}
+              >
                 <Text
-                  className="text-[10px] font-bold uppercase"
+                  className="text-[11px] font-bold"
                   style={{
-                    color: isToday
+                    color: day.filled
+                      ? COLORS.white
+                      : isToday
                       ? isDark
-                        ? COLORS.indigo400
-                        : COLORS.indigo600
+                        ? COLORS.indigo300
+                        : COLORS.indigo700
+                      : isDark
+                      ? COLORS.slate600
                       : COLORS.slate400,
-                    opacity: isFuture ? 0.3 : 1,
+                    opacity: isFuture ? 0.5 : 1,
                   }}
                 >
-                  {day.label}
+                  {dayNum}
                 </Text>
-                <View
-                  style={[
-                    dayCircleStyle,
-                    isFuture
-                      ? {
-                          backgroundColor: 'transparent',
-                          borderColor: 'transparent',
-                          borderWidth: 0,
-                        }
-                      : day.filled
-                      ? { backgroundColor: COLORS.indigo600 }
-                      : isToday
-                      ? {
-                          backgroundColor: isDark ? COLORS.slate800 : COLORS.white,
-                          borderColor: COLORS.indigo500,
-                          borderWidth: 2,
-                        }
-                      : {
-                          backgroundColor: isDark ? COLORS.slate800 : COLORS.slate50,
-                          borderColor: isDark ? COLORS.slate700 : COLORS.slate100,
-                          borderWidth: 1,
-                        },
-                    day.filled && !isDark ? filledShadowStyle : null,
-                  ]}
-                >
-                  <Text
-                    className="text-[11px] font-bold"
-                    style={{
-                      color: day.filled
-                        ? COLORS.white
-                        : isToday
-                        ? isDark
-                          ? COLORS.indigo300
-                          : COLORS.indigo700
-                        : isDark
-                        ? COLORS.slate600
-                        : COLORS.slate400,
-                      opacity: isFuture ? 0.5 : 1,
-                    }}
-                  >
-                    {dayNum}
-                  </Text>
-                </View>
               </View>
-            );
-          })}
-        </View>
+            </View>
+          );
+        })}
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -477,12 +458,9 @@ export function StreakCardMonthGrid({
 export function StreakCardFooter({
   isExpanded,
   isDark,
-  onToggle,
-  onPressIn,
-  onPressOut,
 }: StreakCardFooterProps) {
   return (
-    <Pressable onPress={onToggle} onPressIn={onPressIn} onPressOut={onPressOut}>
+    <>
       <View className="mx-5 mb-3 flex-row items-center justify-center gap-2 opacity-80 pt-3 border-t border-slate-100 dark:border-slate-800/50">
         <View className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
         <Text className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
@@ -499,7 +477,7 @@ export function StreakCardFooter({
           <ChevronDown size={16} color={isDark ? '#94a3b8' : '#cbd5e1'} />
         )}
       </View>
-    </Pressable>
+    </>
   );
 }
 

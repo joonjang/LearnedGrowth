@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { Pressable } from 'react-native-gesture-handler';
 
 import {
   DayDetailSheet,
@@ -187,60 +188,56 @@ export default function StreakCard({
   const dayCircleStyle = styles.dayCircle;
 
   return (
-    <View
-      className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
-      style={[shadowSm.ios, shadowSm.android, isPressed && styles.cardPressed]}
-    >
-      <StreakCardHeader
+    <>
+      <Pressable
         onPress={toggleExpanded}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        isDark={isDark}
-        streakCount={streakCount}
-        badgeStyle={badgeStyle}
-        badgeTextStyle={badgeTextStyle}
-        monthName={monthName}
-        currentYear={currentYear}
-        encouragement={encouragement}
-      />
+      >
+        <View
+          className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
+          style={[shadowSm.ios, shadowSm.android, isPressed && styles.cardPressed]}
+        >
+          <StreakCardHeader
+            isDark={isDark}
+            streakCount={streakCount}
+            badgeStyle={badgeStyle}
+            badgeTextStyle={badgeTextStyle}
+            monthName={monthName}
+            currentYear={currentYear}
+            encouragement={encouragement}
+          />
 
-      {!isExpanded ? (
-        <StreakCardWeekStrip
-          onPress={toggleExpanded}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          days={days}
-          dateNum={dateNum}
-          isDark={isDark}
-          filledShadowStyle={filledShadowStyle}
-          dayCircleStyle={dayCircleStyle}
-        />
-      ) : (
-        <StreakCardMonthGrid
-          monthRows={monthRows}
-          weekRowIndex={weekRowIndex}
-          weekDays={days}
-          dayBuckets={dayBuckets}
-          dateNum={dateNum}
-          todayKey={todayKey}
-          monthIndex={monthIndex}
-          isDark={isDark}
-          filledShadowStyle={filledShadowStyle}
-          dayCircleStyle={dayCircleStyle}
-          emptyRing={emptyRing}
-          incompleteRing={incompleteRing}
-          todayRing={todayRing}
-          onDatePress={handleDatePress}
-        />
-      )}
+          {!isExpanded ? (
+            <StreakCardWeekStrip
+              days={days}
+              dateNum={dateNum}
+              isDark={isDark}
+              filledShadowStyle={filledShadowStyle}
+              dayCircleStyle={dayCircleStyle}
+            />
+          ) : (
+            <StreakCardMonthGrid
+              monthRows={monthRows}
+              weekRowIndex={weekRowIndex}
+              weekDays={days}
+              dayBuckets={dayBuckets}
+              dateNum={dateNum}
+              todayKey={todayKey}
+              monthIndex={monthIndex}
+              isDark={isDark}
+              filledShadowStyle={filledShadowStyle}
+              dayCircleStyle={dayCircleStyle}
+              emptyRing={emptyRing}
+              incompleteRing={incompleteRing}
+              todayRing={todayRing}
+              onDatePress={handleDatePress}
+            />
+          )}
 
-      <StreakCardFooter
-        isExpanded={isExpanded}
-        isDark={isDark}
-        onToggle={toggleExpanded}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-      />
+          <StreakCardFooter isExpanded={isExpanded} isDark={isDark} />
+        </View>
+      </Pressable>
 
       <DayDetailSheet
         sheetRef={sheetRef}
@@ -253,6 +250,6 @@ export default function StreakCard({
         completedEntries={completedEntries}
         onDeleteEntry={onDeleteEntry}
       />
-    </View>
+    </>
   );
 }

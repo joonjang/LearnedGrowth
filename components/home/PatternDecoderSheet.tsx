@@ -429,9 +429,9 @@ export default function PatternDecoderSheet({
                                           handleViewEntry(pattern.entryId)
                                        }
                                        activeOpacity={0.7}
-                                       className="bg-indigo-100 dark:bg-indigo-900 flex-row items-center px-2 py-1.5 rounded-md"
+                                       className="bg-blue-100 dark:bg-blue-900 flex-row items-center px-2 py-1.5 rounded-md"
                                     >
-                                       <Text className="text-[10px] font-bold text-indigo-700 dark:text-indigo-200 mr-1">
+                                       <Text className="text-[10px] font-bold text-blue-700 dark:text-blue-200 mr-1">
                                           View
                                        </Text>
                                        <FileText
