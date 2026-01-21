@@ -11,7 +11,7 @@ import {
    Quote,
    RefreshCw,
    Sparkles,
-   TriangleAlert
+   TriangleAlert,
 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -41,19 +41,20 @@ import { InsightDimensions, InsightSafety } from './types';
 // --- HELPER HOOK ---
 function useDelayedAppearance(delay: number, onComplete?: () => void) {
    const opacity = useSharedValue(0);
-   const translateY = useSharedValue(10); 
+   const translateY = useSharedValue(10);
 
    useEffect(() => {
-      opacity.value = withDelay(delay, withTiming(1, { duration: 600 }, 
-         (finished) => {
+      opacity.value = withDelay(
+         delay,
+         withTiming(1, { duration: 600 }, (finished) => {
             if (finished && onComplete) {
                scheduleOnRN(onComplete);
             }
-         }
-       ));
+         }),
+      );
       translateY.value = withDelay(
          delay,
-         withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) })
+         withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) }),
       );
    }, [delay, onComplete, opacity, translateY]);
 
@@ -79,7 +80,6 @@ export function AiInsightMinimizedState({
          {/* 1. Technical Header Row */}
          <View className="flex-row items-center justify-between mb-2">
             <View className="flex-1 flex-row items-center mr-3 overflow-hidden">
-               
                {/* Label */}
                <Text className="text-[10px] font-bold uppercase tracking-[1.5px] text-slate-400 dark:text-slate-500">
                   AI Analysis
@@ -91,7 +91,7 @@ export function AiInsightMinimizedState({
                </Text>
 
                {/* Description */}
-               <Text 
+               <Text
                   className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 flex-1"
                   numberOfLines={1}
                   ellipsizeMode="tail"
@@ -108,13 +108,11 @@ export function AiInsightMinimizedState({
 
          {/* 2. Preview Text (The Quote) */}
          {previewText && (
-            <Text 
-               className="text-sm italic leading-6 text-slate-600 dark:text-slate-400 opacity-90 mb-1"
-            >
+            <Text className="text-sm italic leading-6 text-slate-600 dark:text-slate-400 opacity-90 mb-1">
                &quot;{previewText}&quot;
             </Text>
          )}
-         
+
          {/* 3. Chevron Down - Pinned to Bottom Edge */}
          <View className="items-center justify-center -mb-2 mt-1">
             <ChevronDown size={20} color={chevronColor} />
@@ -201,10 +199,13 @@ function SkeletonItem({
       pulse.value = withDelay(
          delay,
          withRepeat(
-            withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
+            withTiming(1, {
+               duration: 1500,
+               easing: Easing.inOut(Easing.quad),
+            }),
             -1,
-            true
-         )
+            true,
+         ),
       );
    }, [delay, pulse]);
 
@@ -240,7 +241,7 @@ const INSIGHT_STATUS_STREAMING = [
 function AiInsightStatus({ hasStream }: { hasStream: boolean }) {
    const messages = useMemo(
       () => (hasStream ? INSIGHT_STATUS_STREAMING : INSIGHT_STATUS_BASE),
-      [hasStream]
+      [hasStream],
    );
    const [index, setIndex] = useState(0);
 
@@ -279,7 +280,7 @@ function AiInsightStatusPulse() {
       pulse.value = withRepeat(
          withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
          -1,
-         true
+         true,
       );
    }, [pulse]);
 
@@ -341,32 +342,57 @@ export function AiInsightLoadingState({
                const baseDelay = 400 + index * 150;
                const rowWidths = widths.rows[index];
                return (
-               <View key={row} className="gap-2">
-                  <View className="flex-row items-center justify-between">
-                     <SkeletonItem width={rowWidths.left} height={10} delay={baseDelay} />
-                     <SkeletonItem width={rowWidths.right} height={10} delay={baseDelay + 50} />
-                  </View>
-                  <View className="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                  <View key={row} className="gap-2">
+                     <View className="flex-row items-center justify-between">
+                        <SkeletonItem
+                           width={rowWidths.left}
+                           height={10}
+                           delay={baseDelay}
+                        />
+                        <SkeletonItem
+                           width={rowWidths.right}
+                           height={10}
+                           delay={baseDelay + 50}
+                        />
+                     </View>
+                     <View className="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                        <SkeletonItem
+                           width="100%"
+                           height="100%"
+                           className="bg-slate-200 dark:bg-slate-700"
+                           delay={baseDelay + 100}
+                        />
+                     </View>
                      <SkeletonItem
-                        width="100%"
-                        height="100%"
-                        className="bg-slate-200 dark:bg-slate-700"
-                        delay={baseDelay + 100}
+                        width={rowWidths.subtext}
+                        height={9}
+                        delay={baseDelay + 150}
                      />
                   </View>
-                  <SkeletonItem width={rowWidths.subtext} height={9} delay={baseDelay + 150} />
-               </View>
                );
             })}
          </View>
 
          <View className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 gap-3 mt-2">
             <View className="flex-row items-center gap-2">
-               <SkeletonItem width={14} height={14} borderRadius={7} delay={900} />
+               <SkeletonItem
+                  width={14}
+                  height={14}
+                  borderRadius={7}
+                  delay={900}
+               />
                <SkeletonItem width={120} height={10} delay={950} />
             </View>
-            <SkeletonItem width={widths.suggestion[0]} height={12} delay={1000} />
-            <SkeletonItem width={widths.suggestion[1]} height={12} delay={1050} />
+            <SkeletonItem
+               width={widths.suggestion[0]}
+               height={12}
+               delay={1000}
+            />
+            <SkeletonItem
+               width={widths.suggestion[1]}
+               height={12}
+               delay={1050}
+            />
          </View>
       </View>
    );
@@ -635,10 +661,8 @@ export function AiInsightSuggestion({
 }: {
    counterBelief?: string | null;
    animationTimeline: AnimationTimeline;
-   
 }) {
    const animStyle = useDelayedAppearance(animationTimeline.suggestionStart);
-
 
    if (!counterBelief) return null;
 
@@ -676,7 +700,10 @@ export function AiInsightDisclaimer({
    isDark,
    onAnimationComplete,
 }: AiInsightDisclaimerProps) {
-   const animStyle = useDelayedAppearance(animationTimeline.disclaimerStart, onAnimationComplete);
+   const animStyle = useDelayedAppearance(
+      animationTimeline.disclaimerStart,
+      onAnimationComplete,
+   );
 
    return (
       <Animated.View

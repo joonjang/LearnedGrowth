@@ -16,6 +16,15 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- view display card just suddenly display
+   - make them display with an animation instead of all of the sudden
+
+- abstract index.tsx
+   - streakCardUtils colors should be in constants (does the color object even need to exist?)
+   - streakcard.tsx made abstracted code is not used from streakcardparts.tsx
+
+- refactor timeline pattern expand red and green with dispute and belief colors
+
 - need to limit the amount of entries viewed from entire entry to per week
 
 - make ai insight respond with how the explanation style is helpful/unhelpful
@@ -57,6 +66,11 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - streakcard month day incomplete badge display
 - ai analysis scroll down when it is received during the api call
 - thinking pattern expandable
+   - displays graph and associated detected phrase
+- streakCard changes if not current week
+- index.tsx now view based off week and not the entire data
+   - removed small screen display state since the week label button replaces the text collision problem from before with # thoughts reframed
+   - dashboard data updates accordingly
 
 ### 2026-01-19
 

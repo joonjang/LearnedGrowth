@@ -25,9 +25,11 @@ import { getShadow } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
 import { Link, router, useFocusEffect } from 'expo-router';
 import {
+   Check,
    ChevronDown,
    CircleDashed,
    Flame,
+   Infinity,
    Info,
    Plus,
    Settings,
@@ -47,7 +49,8 @@ import {
    LayoutChangeEvent,
    Modal,
    Platform,
-   Pressable,
+   Pressable, // Use standard Pressable for robust absolute positioning touches
+   ScrollView,
    SectionList,
    Text,
    useWindowDimensions,
@@ -56,6 +59,8 @@ import {
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
 import Animated, {
    Extrapolation,
+   FadeIn,
+   FadeOut,
    interpolate,
    useAnimatedRef,
    useAnimatedScrollHandler,
@@ -66,7 +71,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// --- FIXED: Create Animated Component ---
 const AnimatedSectionList = Animated.createAnimatedComponent(
    SectionList,
 ) as typeof SectionList;
@@ -83,9 +87,19 @@ type EntrySection = {
    summary: WeekSummary;
 };
 
+type WeekOption = {
+   key: string;
+   label: string;
+   rangeLabel: string;
+   start: Date;
+   end: Date;
+   count: number;
+};
+
 // --- Config ---
 
 const SCROLL_THRESHOLD_FOR_FAB = 320;
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const UNCATEGORIZED_LABEL = 'Not categorized';
@@ -200,35 +214,92 @@ function getSectionSummary(rows: RowItem[]): WeekSummary {
    return { categorySegments, entryCount: entries.length, avgOptimism };
 }
 
-function buildRows(rows: Entry[]): RowItem[] {
-   return rows
-      .map((entry): RowItem => ({ kind: 'entry', entry }))
-      .sort((a, b) => {
-         const aTime = new Date(a.entry.createdAt).getTime();
-         const bTime = new Date(b.entry.createdAt).getTime();
-         if (bTime !== aTime) return bTime - aTime;
-         return a.entry.id < b.entry.id ? -1 : a.entry.id > b.entry.id ? 1 : 0;
-      });
+function getWeekKey(start: Date) {
+   return formatIsoDate(start);
 }
 
-function buildSections(rows: RowItem[]): EntrySection[] {
-   const sections: EntrySection[] = [];
+function getWeekLabel(start: Date, now: Date) {
+   const currentStart = getWeekStart(now);
+   const lastStart = getWeekStart(
+      new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7),
+   );
+   const diffTime = currentStart.getTime() - start.getTime();
+   const diffWeeks = Math.round(diffTime / WEEK_MS);
+
+   if (start.getTime() === currentStart.getTime()) return 'This Week';
+   if (start.getTime() === lastStart.getTime()) return 'Last Week';
+   return `${Math.max(2, diffWeeks)} Weeks Ago`;
+}
+
+function getWeekRangeLabel(start: Date) {
+   const end = new Date(start);
+   end.setDate(start.getDate() + 6);
+   return `${formatDate(start)} - ${formatDate(end)}`;
+}
+
+function buildWeekOptions(entries: Entry[], now: Date): WeekOption[] {
+   const weeks = new Map<string, WeekOption>();
+
+   entries.forEach((entry) => {
+      const created = safeParseDate(entry.createdAt);
+      if (!created) return;
+      const weekStart = getWeekStart(created);
+      const key = getWeekKey(weekStart);
+
+      let week = weeks.get(key);
+      if (!week) {
+         const end = new Date(weekStart);
+         end.setDate(weekStart.getDate() + 6);
+         end.setHours(23, 59, 59, 999);
+         week = {
+            key,
+            label: getWeekLabel(weekStart, now),
+            rangeLabel: getWeekRangeLabel(weekStart),
+            start: weekStart,
+            end,
+            count: 0,
+         };
+         weeks.set(key, week);
+      }
+      week.count++;
+   });
+
+   return Array.from(weeks.values()).sort(
+      (a, b) => b.start.getTime() - a.start.getTime(),
+   );
+}
+
+function buildSections(filteredRows: Entry[]): EntrySection[] {
+   if (filteredRows.length === 0) return [];
+
    const now = new Date();
    const groups = new Map<
       string,
       { title: string; rangeLabel: string; rows: RowItem[] }
    >();
 
-   for (const entry of rows) {
-      const { key, label, rangeLabel } = getWeekInfo(
-         entry.entry.createdAt,
-         now,
-      );
-      if (!groups.has(key))
-         groups.set(key, { title: label, rangeLabel, rows: [] });
-      groups.get(key)!.rows.push(entry);
+   const sortedEntries = [...filteredRows].sort(
+      (a, b) =>
+         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+   );
+
+   for (const entry of sortedEntries) {
+      const created = safeParseDate(entry.createdAt);
+      if (!created) continue;
+      const weekStart = getWeekStart(created);
+      const key = getWeekKey(weekStart);
+
+      if (!groups.has(key)) {
+         groups.set(key, {
+            title: getWeekLabel(weekStart, now),
+            rangeLabel: getWeekRangeLabel(weekStart),
+            rows: [],
+         });
+      }
+      groups.get(key)!.rows.push({ kind: 'entry', entry });
    }
 
+   const sections: EntrySection[] = [];
    groups.forEach((group, key) => {
       const summary = getSectionSummary(group.rows);
       sections.push({
@@ -239,31 +310,8 @@ function buildSections(rows: RowItem[]): EntrySection[] {
          summary,
       });
    });
-   return sections;
-}
 
-function getWeekInfo(createdAt: string, now: Date) {
-   const date = safeParseDate(createdAt) ?? now;
-   const start = getWeekStart(date);
-   const end = new Date(start);
-   end.setDate(start.getDate() + 6);
-   const currentStart = getWeekStart(now);
-   const lastStart = getWeekStart(
-      new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7),
-   );
-   const key = `${formatIsoDate(start)}_${formatIsoDate(end)}`;
-   const weekMs = 7 * 24 * 60 * 60 * 1000;
-   const diffWeeks = Math.round(
-      (currentStart.getTime() - start.getTime()) / weekMs,
-   );
-   const label =
-      start.getTime() === currentStart.getTime()
-         ? 'This Week'
-         : start.getTime() === lastStart.getTime()
-           ? 'Last Week'
-           : `${Math.max(2, diffWeeks)} Weeks Ago`;
-   const rangeLabel = `${formatDate(start)} - ${formatDate(end)}`;
-   return { key, label, rangeLabel };
+   return sections;
 }
 
 function getWeekStart(date: Date) {
@@ -304,11 +352,23 @@ export default function EntriesScreen() {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const iconColor = isDark ? '#cbd5e1' : '#475569';
-   const { width } = useWindowDimensions();
+   const { width, height: windowHeight } = useWindowDimensions();
    const isCompactHeader = width < 380;
    const { lock: lockNavigation } = useNavigationLock();
    const [showHelpModal, setShowHelpModal] = useState(false);
    const [listHeaderHeight, setListHeaderHeight] = useState(0);
+
+   // --- Dropdown State ---
+   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+   // --- Selection State ---
+   const currentWeekKey = useMemo(
+      () => formatIsoDate(getWeekStart(new Date())),
+      [],
+   );
+   const [selectedWeekKey, setSelectedWeekKey] =
+      useState<string>(currentWeekKey);
+
    const listRef = useAnimatedRef<SectionList<RowItem, EntrySection>>();
 
    const shadowSm = useMemo(
@@ -329,8 +389,11 @@ export default function EntriesScreen() {
       () => getShadow({ isDark, preset: 'button', colorLight: '#4f46e5' }),
       [isDark],
    );
+   const dropdownShadow = useMemo(
+      () => getShadow({ isDark, preset: 'md', disableInDark: true }),
+      [isDark],
+   );
 
-   // --- Animation State (FAB) ---
    const scrollY = useSharedValue(0);
    const scrollHandler = useAnimatedScrollHandler((event) => {
       scrollY.value = event.contentOffset.y;
@@ -352,12 +415,11 @@ export default function EntriesScreen() {
       return {
          opacity: interpolate(
             scrollY.value,
-            [0, 60], // Range: 0px to 60px of scroll
-            [0.4, 0], // Opacity: starts at 0.4, fades to 0
+            [0, 60],
+            [0.4, 0],
             Extrapolation.CLAMP,
          ),
          transform: [
-            // Optional: Move it up slightly as it fades for a "floating away" feel
             {
                translateY: interpolate(
                   scrollY.value,
@@ -370,7 +432,6 @@ export default function EntriesScreen() {
       };
    });
 
-   // --- Menu & Swipe State ---
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
    const [, setOpenMenuBounds] = useState<MenuBounds | null>(null);
    const openSwipeableRef = useRef<{
@@ -392,13 +453,15 @@ export default function EntriesScreen() {
       refreshDeletedEntries();
    }, [refreshDeletedEntries, store.rows.length]);
 
-   // --- Actions ---
    const closeMenu = useCallback(() => {
       if (openMenuEntryId !== null) {
          setOpenMenuEntryId(null);
          setOpenMenuBounds(null);
       }
-   }, [openMenuEntryId]);
+      if (isDropdownOpen) {
+         setIsDropdownOpen(false);
+      }
+   }, [openMenuEntryId, isDropdownOpen]);
 
    const closeActiveSwipeable = useCallback(() => {
       if (openSwipeableRef.current) {
@@ -438,12 +501,69 @@ export default function EntriesScreen() {
       [closeActiveSwipeable, closeMenu, store],
    );
 
-   // --- Data Prep ---
-   const rowsForSections = useMemo(() => buildRows(store.rows), [store.rows]);
-   const sections = useMemo(
-      () => buildSections(rowsForSections),
-      [rowsForSections],
+   // =========================================================================
+   // WEEK SELECTION LOGIC
+   // =========================================================================
+
+   const weekOptions = useMemo(
+      () => buildWeekOptions(store.rows, new Date()),
+      [store.rows],
    );
+
+   const filteredRows = useMemo(() => {
+      if (selectedWeekKey === 'all') return store.rows;
+
+      const option = weekOptions.find((w) => w.key === selectedWeekKey);
+      let start, end;
+
+      if (option) {
+         start = option.start.getTime();
+         end = option.end.getTime();
+      } else {
+         const startDate = safeParseDate(selectedWeekKey);
+         if (!startDate) return store.rows;
+         start = startDate.getTime();
+         const endDate = new Date(startDate);
+         endDate.setDate(endDate.getDate() + 6);
+         endDate.setHours(23, 59, 59, 999);
+         end = endDate.getTime();
+      }
+
+      return store.rows.filter((entry) => {
+         const t = new Date(entry.createdAt).getTime();
+         return t >= start && t <= end;
+      });
+   }, [store.rows, selectedWeekKey, weekOptions]);
+
+   const sections = useMemo(() => buildSections(filteredRows), [filteredRows]);
+
+   const selectedWeekObj = useMemo(() => {
+      if (selectedWeekKey === 'all') return null;
+      return weekOptions.find((w) => w.key === selectedWeekKey);
+   }, [selectedWeekKey, weekOptions]);
+
+   const displayLabel = useMemo(() => {
+      if (selectedWeekKey === 'all') return 'All Time';
+      if (selectedWeekObj) return selectedWeekObj.label;
+      const date = safeParseDate(selectedWeekKey);
+      return date ? getWeekLabel(date, new Date()) : 'Select Week';
+   }, [selectedWeekKey, selectedWeekObj]);
+
+   const isCurrentWeek = selectedWeekKey === currentWeekKey;
+
+   const streakAnchorDate = useMemo(() => {
+      if (selectedWeekKey === 'all' || isCurrentWeek) return new Date();
+      if (selectedWeekObj) return new Date(selectedWeekObj.end);
+      const fallbackStart = safeParseDate(selectedWeekKey);
+      if (fallbackStart) {
+         const fallbackEnd = new Date(fallbackStart);
+         fallbackEnd.setDate(fallbackEnd.getDate() + 6);
+         return fallbackEnd;
+      }
+      return new Date();
+   }, [selectedWeekKey, isCurrentWeek, selectedWeekObj]);
+
+   // =========================================================================
 
    const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
       const nextHeight = Math.round(event.nativeEvent.layout.height);
@@ -466,28 +586,19 @@ export default function EntriesScreen() {
       });
    }, [insets.top, listHeaderHeight, listRef, sections.length]);
 
-   // --- Global Dashboard Data (Current Week: Sun-Sat) ---
+   const handleSelectWeek = useCallback((key: string) => {
+      setSelectedWeekKey(key);
+      setIsDropdownOpen(false);
+   }, []);
+
    const dashboardData = useMemo(() => {
-      const allEntries = store.rows;
-
-      const weekStart = getWeekStart(new Date());
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      weekEnd.setHours(23, 59, 59, 999);
-
-      const weekEntries = allEntries.filter((e) => {
-         const created = safeParseDate(e.createdAt);
-         if (!created) return false;
-         return created >= weekStart && created <= weekEnd;
-      });
-
-      const weekWithDispute = weekEntries.filter(
+      const activeEntries = filteredRows;
+      const weekWithDispute = activeEntries.filter(
          (e) => (e.dispute ?? '').trim().length > 0,
       );
-
       const weeklyCount = weekWithDispute.length;
 
-      if (weekEntries.length === 0)
+      if (activeEntries.length === 0)
          return {
             weeklyCount,
             weeklyScore: null,
@@ -497,7 +608,7 @@ export default function EntriesScreen() {
 
       let optSum = 0;
       let optCount = 0;
-      weekEntries.forEach((e) => {
+      activeEntries.forEach((e) => {
          const score = getNumericScore(
             e.aiResponse?.meta?.optimismScore ??
                e.aiResponse?.meta?.sentimentScore,
@@ -515,7 +626,7 @@ export default function EntriesScreen() {
          pers: { good: 0, total: 0 },
       };
 
-      weekEntries.forEach((e) => {
+      activeEntries.forEach((e) => {
          const dims = e.aiResponse?.analysis?.dimensions;
          if (dims) {
             if (dims.permanence) {
@@ -539,7 +650,7 @@ export default function EntriesScreen() {
       const getScore = (stat: { good: number; total: number }) =>
          stat.total > 0 ? (stat.good / stat.total) * 100 : 50;
 
-      const entriesWithDates = weekEntries
+      const entriesWithDates = activeEntries
          .map((entry) => {
             const created = safeParseDate(entry.createdAt);
             if (!created) return null;
@@ -622,26 +733,11 @@ export default function EntriesScreen() {
          },
          threePsDecoder,
       };
-   }, [store.rows]);
-
-   const hasEntries = store.rows.length > 0;
-   const hasHydrated = store.lastHydratedAt !== null;
-   const showQuickStart = hasHydrated && !store.isHydrating && !hasEntries;
-   const prevHasEntries = useRef(hasEntries);
-
-   useEffect(() => {
-      if (!prevHasEntries.current && hasEntries) {
-         requestAnimationFrame(() => {
-            listRef.current
-               ?.getScrollResponder()
-               ?.scrollTo({ y: 0, animated: false });
-         });
-      }
-      prevHasEntries.current = hasEntries;
-   }, [hasEntries, listRef]);
+   }, [filteredRows]);
 
    const streakData = useMemo(() => {
-      const today = new Date();
+      const entriesForCalc = store.rows;
+      const today = streakAnchorDate;
       today.setHours(0, 0, 0, 0);
       const weekStart = getWeekStart(today);
       const weekEnd = new Date(weekStart);
@@ -649,7 +745,7 @@ export default function EntriesScreen() {
       weekEnd.setHours(23, 59, 59, 999);
 
       const filledDays = new Set<string>();
-      store.rows.forEach((entry) => {
+      entriesForCalc.forEach((entry) => {
          const dispute = (entry.dispute ?? '').trim();
          if (!dispute) return;
          const created = safeParseDate(entry.createdAt);
@@ -669,22 +765,11 @@ export default function EntriesScreen() {
          };
       });
 
-      const todayKey = formatIsoDate(today);
-      const todayIndex =
-         days.findIndex((d) => formatIsoDate(d.date) === todayKey) ?? -1;
-      const startIndex =
-         todayIndex >= 0
-            ? todayIndex
-            : Math.max(
-                 0,
-                 Math.min(
-                    6,
-                    Math.floor(
-                       (today.getTime() - weekStart.getTime()) /
-                          (24 * 60 * 60 * 1000),
-                    ),
-                 ),
-              );
+      const anchorKey = formatIsoDate(today);
+      const anchorIndex = days.findIndex(
+         (d) => formatIsoDate(d.date) === anchorKey,
+      );
+      const startIndex = anchorIndex >= 0 ? anchorIndex : 6;
 
       let streakCount = 0;
       for (let i = startIndex; i >= 0; i--) {
@@ -693,13 +778,12 @@ export default function EntriesScreen() {
       }
 
       return { days, streakCount };
-   }, [store.rows]);
+   }, [store.rows, streakAnchorDate]);
 
    const thoughtLabel =
       dashboardData.weeklyCount === 1 ? 'Thought' : 'Thoughts';
    const streakIcon = getStreakIcon(streakData.streakCount, isDark);
 
-   // Stable render functions to avoid extra renders as list scrolls
    const renderSectionHeader = useCallback(
       ({ section }: { section: EntrySection }) => (
          <SectionHeader
@@ -747,6 +831,11 @@ export default function EntriesScreen() {
       ],
    );
 
+   const hasEntries = store.rows.length > 0;
+   const hasHydrated = store.lastHydratedAt !== null;
+   const showQuickStart = hasHydrated && !store.isHydrating && !hasEntries;
+   const shouldShowContent = !showQuickStart;
+
    return (
       <View
          className="flex-1 bg-slate-50 dark:bg-slate-900"
@@ -757,7 +846,6 @@ export default function EntriesScreen() {
             return false;
          }}
       >
-         {/* FIXED: Using createAnimatedComponent version with explicit generics */}
          <AnimatedSectionList<RowItem, EntrySection>
             ref={listRef}
             sections={sections}
@@ -770,30 +858,185 @@ export default function EntriesScreen() {
             contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
             scrollIndicatorInsets={{ top: insets.top, bottom: insets.bottom }}
             ListHeaderComponent={
-               hasEntries ? (
+               shouldShowContent ? (
                   <View
                      style={{ paddingTop: insets.top + 12 }}
-                     className="px-6 pb-6 bg-slate-50 dark:bg-slate-900"
+                     className="px-6 pb-6 bg-slate-50 dark:bg-slate-900 z-50" // Ensure high Z-Index for Header container
                      onLayout={handleHeaderLayout}
                   >
+                     {/* TAP OUTSIDE TO CLOSE - INVISIBLE LAYER */}
+                     {/* Fixed: Rendered BEFORE dropdown so dropdown sits on top if zIndex is handled */}
+                     {isDropdownOpen && (
+                        <Pressable
+                           style={{
+                              position: 'absolute',
+                              top: -1000,
+                              left: -1000,
+                              right: -1000,
+                              bottom: -1000,
+                              zIndex: 40, // Lower than dropdown
+                           }}
+                           onPress={() => setIsDropdownOpen(false)}
+                        />
+                     )}
+
                      {/* Header Top Bar */}
-                     <View className="flex-row items-center justify-between mb-4">
-                        <View>
-                           <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
-                              Weekly Progress
-                           </Text>
-                           <Text className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                              {dashboardData.weeklyCount} {thoughtLabel}{' '}
-                              <Text className="text-indigo-600 font-extrabold">
-                                 Reframed
-                              </Text>
-                           </Text>
+                     <View className="flex-row items-center justify-between mb-2 z-50">
+                        <View className="z-50 flex-1">
+                           {/* DROPDOWN TRIGGER */}
+                           <View className="z-50">
+                              <Pressable // Changed to standard Pressable
+                                 onPress={() =>
+                                    setIsDropdownOpen(!isDropdownOpen)
+                                 }
+                              >
+                                 <View className="flex-row items-center gap-2 bg-white dark:bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 self-start">
+                                    <Text
+                                       numberOfLines={1}
+                                       ellipsizeMode="tail"
+                                       className="text-xl font-bold text-slate-900 dark:text-white max-w-[200px]"
+                                    >
+                                       {displayLabel}
+                                    </Text>
+                                    <View
+                                       className={`transform ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
+                                    >
+                                       <ChevronDown
+                                          size={16}
+                                          color={isDark ? '#94a3b8' : '#64748b'} // Adjusted Color
+                                          strokeWidth={2.5}
+                                       />
+                                    </View>
+                                 </View>
+                              </Pressable>
+
+                              {/* FLOATING DROPDOWN */}
+                              {isDropdownOpen && (
+                                 <Animated.View
+                                    entering={FadeIn.duration(150)}
+                                    exiting={FadeOut.duration(150)}
+                                    style={[
+                                       {
+                                          position: 'absolute',
+                                          top: 54,
+                                          left: 0,
+                                          width: 240,
+                                          maxHeight: 320,
+                                          backgroundColor: isDark
+                                             ? '#1e293b'
+                                             : '#ffffff',
+                                          borderRadius: 16,
+                                          borderWidth: 1,
+                                          borderColor: isDark
+                                             ? '#334155'
+                                             : '#e2e8f0',
+                                          zIndex: 100, // Highest Z-Index
+                                       },
+                                       dropdownShadow.ios,
+                                       dropdownShadow.android,
+                                    ]}
+                                 >
+                                    <ScrollView
+                                       contentContainerStyle={{ padding: 6 }}
+                                       showsVerticalScrollIndicator={true}
+                                       nestedScrollEnabled={true}
+                                    >
+                                       {/* ALL TIME OPTION */}
+                                       <Pressable // Standard Pressable
+                                          onPress={() =>
+                                             handleSelectWeek('all')
+                                          }
+                                       >
+                                          <View
+                                             className={`flex-row items-center justify-between p-3 rounded-xl ${
+                                                selectedWeekKey === 'all'
+                                                   ? 'bg-slate-100 dark:bg-slate-700/50'
+                                                   : ''
+                                             }`}
+                                          >
+                                             <View className="flex-row items-center gap-3">
+                                                <Infinity
+                                                   size={16}
+                                                   color={
+                                                      isDark
+                                                         ? '#94a3b8'
+                                                         : '#64748b'
+                                                   }
+                                                />
+                                                <Text className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                                                   All Time
+                                                </Text>
+                                             </View>
+                                             {selectedWeekKey === 'all' && (
+                                                <Check
+                                                   size={14}
+                                                   color={
+                                                      isDark
+                                                         ? '#94a3b8'
+                                                         : '#64748b'
+                                                   }
+                                                />
+                                             )}
+                                          </View>
+                                       </Pressable>
+
+                                       <View className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1 mx-2" />
+
+                                       {/* WEEK OPTIONS */}
+                                       {weekOptions.map((week) => {
+                                          const isSelected =
+                                             selectedWeekKey === week.key;
+                                          return (
+                                             <Pressable // Standard Pressable
+                                                key={week.key}
+                                                onPress={() =>
+                                                   handleSelectWeek(week.key)
+                                                }
+                                             >
+                                                <View
+                                                   className={`flex-row items-center justify-between p-3 rounded-xl ${
+                                                      isSelected
+                                                         ? 'bg-slate-100 dark:bg-slate-700/50'
+                                                         : ''
+                                                   }`}
+                                                >
+                                                   <View>
+                                                      <Text
+                                                         className={`text-xs font-bold ${
+                                                            isSelected
+                                                               ? 'text-indigo-600 dark:text-indigo-400'
+                                                               : 'text-slate-700 dark:text-slate-200'
+                                                         }`}
+                                                      >
+                                                         {week.label}
+                                                      </Text>
+                                                      <Text className="text-[10px] text-slate-400 mt-0.5">
+                                                         {week.rangeLabel}
+                                                      </Text>
+                                                   </View>
+                                                   {isSelected && (
+                                                      <Check
+                                                         size={14}
+                                                         color={
+                                                            isDark
+                                                               ? '#818cf8'
+                                                               : '#4f46e5'
+                                                         }
+                                                      />
+                                                   )}
+                                                </View>
+                                             </Pressable>
+                                          );
+                                       })}
+                                    </ScrollView>
+                                 </Animated.View>
+                              )}
+                           </View>
                         </View>
 
-                        {/* 👇 Right Side Icons Container */}
+                        {/* Right Side Icons */}
                         <View className="flex-row items-center gap-3">
-                           {/* Delete Bin Button */}
-                           {deletedCount > 0 && !isCompactHeader && (
+                           {deletedCount > 0 && (
                               <Link href="/bin" asChild>
                                  <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
                                     <Trash2
@@ -804,32 +1047,16 @@ export default function EntriesScreen() {
                                  </Pressable>
                               </Link>
                            )}
-
-                           {/* Help Button */}
-                           {isCompactHeader && deletedCount > 0 ? (
-                              <Link href="/bin" asChild>
-                                 <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
-                                    <Trash2
-                                       size={20}
-                                       color="#ef4444"
-                                       strokeWidth={2.5}
-                                    />
-                                 </Pressable>
-                              </Link>
-                           ) : (
-                              <Pressable
-                                 onPress={() => setShowHelpModal(true)}
-                                 className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80"
-                              >
-                                 <Info
-                                    size={20}
-                                    color={iconColor}
-                                    strokeWidth={2.5}
-                                 />
-                              </Pressable>
-                           )}
-
-                           {/* Settings Button */}
+                           <Pressable
+                              onPress={() => setShowHelpModal(true)}
+                              className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80"
+                           >
+                              <Info
+                                 size={20}
+                                 color={iconColor}
+                                 strokeWidth={2.5}
+                              />
+                           </Pressable>
                            <Link href="/settings" asChild>
                               <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
                                  <Settings
@@ -842,19 +1069,31 @@ export default function EntriesScreen() {
                         </View>
                      </View>
 
-                     {/* GLOBAL DASHBOARD */}
-                     {hasEntries && (
-                        <StreakCard
-                           streakCount={streakData.streakCount}
-                           days={streakData.days}
-                           icon={streakIcon}
-                           shadowSm={shadowSm}
-                           entries={store.rows}
-                           onDeleteEntry={requestDelete}
-                        />
+                     <Text className="text-2xl font-extrabold text-slate-900 dark:text-white mb-4 z-10 ml-2">
+                        {dashboardData.weeklyCount} {thoughtLabel}{' '}
+                        <Text className="text-indigo-600 font-extrabold">
+                           Reframed
+                        </Text>
+                     </Text>
+
+                     {/* STREAK CARD */}
+                     {shouldShowContent && (
+                        <View className="z-10">
+                           <StreakCard
+                              streakCount={streakData.streakCount}
+                              days={streakData.days}
+                              icon={streakIcon}
+                              shadowSm={shadowSm}
+                              entries={store.rows} // Pass all entries for calculation
+                              anchorDate={streakAnchorDate} // Anchor visualization to selected week
+                              showEncouragement={isCurrentWeek} // Only show quotes for current week
+                              onDeleteEntry={requestDelete}
+                           />
+                        </View>
                      )}
 
-                     <View className="mt-4 mb-6">
+                     {/* GLOBAL DASHBOARD */}
+                     <View className="mt-4 mb-6 z-10">
                         <GlobalDashboard
                            data={dashboardData}
                            shadowSm={shadowSm}
@@ -863,11 +1102,11 @@ export default function EntriesScreen() {
                      </View>
 
                      {/* MAIN NEW ENTRY BUTTON */}
-                     <View className="mt-1">
+                     <View className="mt-1 z-10">
                         <Pressable
                            onPress={handleNewEntryPress}
                            className={`relative flex-row items-center justify-center rounded-2xl px-6 py-4 ${PRIMARY_CTA_CLASS}`}
-                           style={[ctaShadow.ios, ctaShadow.android]} // ✅ iOS shadow on the actual button is fine
+                           style={[ctaShadow.ios, ctaShadow.android]}
                         >
                            <Text
                               className={`text-lg font-bold text-center ${PRIMARY_CTA_TEXT_CLASS}`}
@@ -881,10 +1120,7 @@ export default function EntriesScreen() {
                         className="items-center mt-2"
                         style={scrollIndicatorStyle}
                      >
-                        <Pressable
-                           onPress={scrollToContent}
-                           hitSlop={20} // Makes it easier to tap
-                        >
+                        <Pressable onPress={scrollToContent} hitSlop={20}>
                            <ChevronDown size={24} color={iconColor} />
                         </Pressable>
                      </Animated.View>
