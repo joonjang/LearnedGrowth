@@ -9,8 +9,8 @@ import {
    BOTTOM_SHEET_CONTENT_PADDING,
 } from '@/components/constants';
 import type {
-   PatternDecoderData,
-   PatternDecoderTab,
+   ThinkingPatternData,
+   ThinkingPatternTab,
 } from '@/components/home/types';
 import { getShadow } from '@/lib/shadow';
 import {
@@ -43,7 +43,7 @@ import { LineChart } from 'react-native-gifted-charts';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const TAB_ORDER = ['Time', 'Scope', 'Blame'] as const;
-type PatternTab = keyof PatternDecoderData;
+type PatternTab = keyof ThinkingPatternData;
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -70,7 +70,7 @@ function getPatternDateParts(value: string | null | undefined) {
    };
 }
 
-const EMPTY_TAB: PatternDecoderTab = {
+const EMPTY_TAB: ThinkingPatternTab = {
    highLabel: '',
    lowLabel: '',
    description: '',
@@ -81,10 +81,10 @@ const EMPTY_TAB: PatternDecoderTab = {
 type Props = {
    sheetRef: RefObject<BottomSheetModal | null>;
    onDismiss?: () => void;
-   data: PatternDecoderData | null;
+   data: ThinkingPatternData | null;
 };
 
-export default function PatternDecoderSheet({
+export default function ThinkingPatternSheet({
    sheetRef,
    onDismiss,
    data,

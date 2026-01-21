@@ -1,55 +1,55 @@
 export type CategorySegment = {
-  category: string;
-  count: number;
-  percentage: number;
-  colorHex: string;
+   category: string;
+   count: number;
+   percentage: number;
+   colorHex: string;
 };
 
 export type WeekSummary = {
-  avgOptimism: number | null;
-  entryCount: number;
-  categorySegments: CategorySegment[];
+   avgOptimism: number | null;
+   entryCount: number;
+   categorySegments: CategorySegment[];
 };
 
 export type ThreePScore = { score: number };
 
 export type PatternImpact = 'optimistic' | 'pessimistic' | 'mixed';
 
-export type PatternDecoderPattern = {
-  id: string;
-  entryId: string;
-  createdAt: string;
-  phrase: string;
-  impact: PatternImpact;
-  insight: string | null;
+export type EntryThinkingPattern = {
+   id: string;
+   entryId: string;
+   createdAt: string;
+   phrase: string;
+   impact: PatternImpact;
+   insight: string | null;
 };
 
-export type PatternDecoderChartPoint = {
-  value: number;
-  entryId: string;
+export type ThinkingPatternChartPoint = {
+   value: number;
+   entryId: string;
 };
 
-export type PatternDecoderTab = {
-  highLabel: string;
-  lowLabel: string;
-  description: string;
-  chartData: PatternDecoderChartPoint[];
-  patterns: PatternDecoderPattern[];
+export type ThinkingPatternTab = {
+   highLabel: string;
+   lowLabel: string;
+   description: string;
+   chartData: ThinkingPatternChartPoint[];
+   patterns: EntryThinkingPattern[];
 };
 
-export type PatternDecoderData = {
-  Time: PatternDecoderTab;
-  Scope: PatternDecoderTab;
-  Blame: PatternDecoderTab;
+export type ThinkingPatternData = {
+   Time: ThinkingPatternTab;
+   Scope: ThinkingPatternTab;
+   Blame: ThinkingPatternTab;
 };
 
 export type DashboardData = {
-  weeklyCount: number;
-  weeklyScore: number | null;
-  threePs: {
-    permanence: ThreePScore;
-    pervasiveness: ThreePScore;
-    personalization: ThreePScore;
-  } | null;
-  threePsDecoder: PatternDecoderData | null;
+   weeklyCount: number;
+   weeklyScore: number | null;
+   threePs: {
+      permanence: ThreePScore;
+      pervasiveness: ThreePScore;
+      personalization: ThreePScore;
+   } | null;
+   threePsDecoder: ThinkingPatternData | null;
 };

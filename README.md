@@ -16,28 +16,19 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- view display card just suddenly display
-   - make them display with an animation instead of all of the sudden
+- card items in home dashboard should tap to something
 
 - abstract index.tsx
 
-- need to limit the amount of entries viewed from entire entry to per week
-
-- once user subscribes, enable all entries to get the ai insight
-
-- make ai insight respond with how the explanation style is helpful/unhelpful
-
-- card items in home dashboard should tap to something
-
-- Pressinging get more analysis and closing while its processing should still display credit
+- view display card just suddenly display
+   - make them display with an animation instead of all of the sudden
 
 - for android the animation doesnt fully finish. maybe its because im using an old phone
 
-- add a report problem button to send a snapshot of the issue
-
-- enable user to get extra analysis if someone signs up using their referal code
-
+- once user subscribes, enable all entries to get the ai insight
 - Entry categorization upon subscription
+- enable user to go back to entry without analysis and have it be analyzed
+- display a signal that the entry contains AI analysis
 
 - break down streakcard
    - one for current week
@@ -46,11 +37,13 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - add search function
 
-- enable user to go back to entry without analysis and have it be analyzed
-
-- display a signal that the entry contains AI analysis
-
 - why does it show a loading screen after the splashscreen
+
+- make ai insight respond with how the explanation style is helpful/unhelpful
+
+- add a report problem button to send a snapshot of the issue
+
+- enable user to get extra analysis if someone signs up using their referal code
 
 ---
 
