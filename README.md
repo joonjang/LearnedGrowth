@@ -52,6 +52,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 - streakcard month day incomplete badge display
 - ai analysis scroll down when it is received during the api call
+- thinking pattern expandable
 
 ### 2026-01-19
 
@@ -425,9 +426,9 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - Archived some old files just in case
 - Helpful command inputs:
   `rm -rf .expo .expo-shared node_modules/.cache metro-cache
-  watchman watch-del-all # if watchman installed
-  npm install
-  npx expo start -c`
+watchman watch-del-all # if watchman installed
+npm install
+npx expo start -c`
 
 ### 2025-11-08
 

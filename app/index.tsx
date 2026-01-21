@@ -9,7 +9,13 @@ import EntryRow from '@/components/entries/entry/EntryRow';
 import GlobalDashboard from '@/components/home/GlobalDashboard';
 import SectionHeader from '@/components/home/SectionHeader';
 import StreakCard from '@/components/home/streak/StreakCard';
-import { CategorySegment, WeekSummary } from '@/components/home/types';
+import {
+   CategorySegment,
+   PatternDecoderData,
+   PatternDecoderPattern,
+   PatternImpact,
+   WeekSummary,
+} from '@/components/home/types';
 import { isOptimistic } from '@/components/home/utils';
 import TopFade from '@/components/TopFade';
 import { useDeletedEntries } from '@/hooks/useDeletedEntries';
@@ -97,6 +103,29 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
 };
 const DEFAULT_CATEGORY_COLOR = '#cbd5e1';
 
+const PATTERN_TAB_CONFIG = {
+   Time: {
+      dimension: 'permanence',
+      highLabel: 'Temporary',
+      lowLabel: 'Permanent',
+      description: 'Are setbacks permanent or temporary?',
+   },
+   Scope: {
+      dimension: 'pervasiveness',
+      highLabel: 'Specific',
+      lowLabel: 'Pervasive',
+      description: 'Does the setback affect one area or everything?',
+   },
+   Blame: {
+      dimension: 'personalization',
+      highLabel: 'External',
+      lowLabel: 'Internal',
+      description: 'Are outcomes tied to you or to outside factors?',
+   },
+} as const;
+
+const MAX_TREND_POINTS = 7;
+
 // --- Logic Helpers ---
 
 function getNumericScore(val: any): number | null {
@@ -106,6 +135,22 @@ function getNumericScore(val: any): number | null {
       if (!isNaN(n)) return n;
    }
    return null;
+}
+
+function getPatternImpact(score: string | null | undefined): PatternImpact {
+   if (!score) return 'mixed';
+   const lower = score.toLowerCase();
+   if (lower.includes('mixed') || lower.includes('balanced') || lower.includes('neutral')) {
+      return 'mixed';
+   }
+   return isOptimistic(score) ? 'optimistic' : 'pessimistic';
+}
+
+function getTrendValue(score: string | null | undefined): number {
+   if (!score) return 50;
+   const lower = score.toLowerCase();
+   if (lower.includes('mixed') || lower.includes('balanced')) return 50;
+   return isOptimistic(score) ? 80 : 20;
 }
 
 function getCategorySegments(entries: Entry[]): CategorySegment[] {
@@ -243,6 +288,10 @@ function getStreakIcon(streak: number, isDark: boolean) {
 }
 function formatDate(date: Date) {
    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatWeekday(date: Date) {
+   return DAY_LABELS[date.getDay()] ?? '';
 }
 
 // --- Main Component ---
@@ -438,7 +487,12 @@ export default function EntriesScreen() {
       const weeklyCount = weekWithDispute.length;
 
       if (weekEntries.length === 0)
-         return { weeklyCount, weeklyScore: null, threePs: null };
+         return {
+            weeklyCount,
+            weeklyScore: null,
+            threePs: null,
+            threePsDecoder: null,
+         };
 
       let optSum = 0;
       let optCount = 0;
@@ -484,6 +538,69 @@ export default function EntriesScreen() {
       const getScore = (stat: { good: number; total: number }) =>
          stat.total > 0 ? (stat.good / stat.total) * 100 : 50;
 
+      const entriesWithDates = weekEntries
+         .map((entry) => {
+            const created = safeParseDate(entry.createdAt);
+            if (!created) return null;
+            return { entry, created };
+         })
+         .filter((item): item is { entry: Entry; created: Date } => Boolean(item));
+
+      const entriesByDateAsc = [...entriesWithDates].sort(
+         (a, b) => a.created.getTime() - b.created.getTime()
+      );
+      const entriesByDateDesc = [...entriesWithDates].sort(
+         (a, b) => b.created.getTime() - a.created.getTime()
+      );
+
+      const buildTabData = (config: (typeof PATTERN_TAB_CONFIG)[keyof typeof PATTERN_TAB_CONFIG]) => {
+         const chartData = entriesByDateAsc
+            .map((item) => {
+               const dim =
+                  item.entry.aiResponse?.analysis?.dimensions?.[config.dimension];
+               if (!dim?.score) return null;
+               return { value: getTrendValue(dim.score), entryId: item.entry.id };
+            })
+            .filter(
+               (point): point is { value: number; entryId: string } => Boolean(point)
+            )
+            .slice(-MAX_TREND_POINTS);
+
+         const patterns = entriesByDateDesc
+            .map((item) => {
+               const dim =
+                  item.entry.aiResponse?.analysis?.dimensions?.[config.dimension];
+               const phrase = dim?.detectedPhrase?.trim();
+               if (!phrase) return null;
+               return {
+                  id: `${item.entry.id}-${config.dimension}`,
+                  entryId: item.entry.id,
+                  date: formatWeekday(item.created),
+                  fullDate: formatDate(item.created),
+                  phrase,
+                  impact: getPatternImpact(dim?.score),
+                  insight: dim?.insight ?? null,
+               };
+            })
+            .filter(
+               (pattern): pattern is PatternDecoderPattern => Boolean(pattern)
+            );
+
+         return {
+            highLabel: config.highLabel,
+            lowLabel: config.lowLabel,
+            description: config.description,
+            chartData,
+            patterns,
+         };
+      };
+
+      const threePsDecoder: PatternDecoderData = {
+         Time: buildTabData(PATTERN_TAB_CONFIG.Time),
+         Scope: buildTabData(PATTERN_TAB_CONFIG.Scope),
+         Blame: buildTabData(PATTERN_TAB_CONFIG.Blame),
+      };
+
       return {
          weeklyCount,
          weeklyScore: avgScore,
@@ -492,6 +609,7 @@ export default function EntriesScreen() {
             pervasiveness: { score: getScore(threePsStats.perv) },
             personalization: { score: getScore(threePsStats.pers) },
          },
+         threePsDecoder,
       };
    }, [store.rows]);
 

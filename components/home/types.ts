@@ -13,6 +13,37 @@ export type WeekSummary = {
 
 export type ThreePScore = { score: number };
 
+export type PatternImpact = 'optimistic' | 'pessimistic' | 'mixed';
+
+export type PatternDecoderPattern = {
+  id: string;
+  entryId: string;
+  date: string;
+  fullDate: string;
+  phrase: string;
+  impact: PatternImpact;
+  insight: string | null;
+};
+
+export type PatternDecoderChartPoint = {
+  value: number;
+  entryId: string;
+};
+
+export type PatternDecoderTab = {
+  highLabel: string;
+  lowLabel: string;
+  description: string;
+  chartData: PatternDecoderChartPoint[];
+  patterns: PatternDecoderPattern[];
+};
+
+export type PatternDecoderData = {
+  Time: PatternDecoderTab;
+  Scope: PatternDecoderTab;
+  Blame: PatternDecoderTab;
+};
+
 export type DashboardData = {
   weeklyCount: number;
   weeklyScore: number | null;
@@ -21,4 +52,5 @@ export type DashboardData = {
     pervasiveness: ThreePScore;
     personalization: ThreePScore;
   } | null;
+  threePsDecoder: PatternDecoderData | null;
 };
