@@ -11,17 +11,15 @@ import {
 
 import { MONTHS } from '@/components/constants';
 import type { Entry } from '@/models/entry';
+import { StreakViewModel } from '../types';
 import {
-   buildDayBuckets,
    buildMonthDays,
    buildMonthRows,
    CARD_PRESS_STYLE,
-   Day,
    findWeekRowIndex,
    getEncouragement,
    getSummaryText,
    parseDateKey,
-   StreakIcon,
    toDateKey,
 } from '../utils';
 import { DayDetailSheet } from './parts/DayDetailSheet';
@@ -40,28 +38,22 @@ const styles = StyleSheet.create({
    },
 });
 
-// --- MAIN COMPONENT ---
 type Props = {
-   streakCount: number;
-   days: Day[];
-   icon: StreakIcon;
+   data: StreakViewModel;
    shadowSm: any;
-   entries: Entry[];
    anchorDate?: Date;
    showEncouragement?: boolean;
    onDeleteEntry?: (entry: Entry) => void;
 };
 
 export default function StreakCard({
-   streakCount,
-   days,
-   icon: _icon,
+   data,
    shadowSm,
-   entries,
    anchorDate,
    showEncouragement = true,
    onDeleteEntry,
 }: Props) {
+   const { streakCount, days, dayBuckets, activeCount } = data;
    const isDark = useColorScheme() === 'dark';
    const [isExpanded, setIsExpanded] = useState(false);
    const [isPressed, setIsPressed] = useState(false);
@@ -71,10 +63,6 @@ export default function StreakCard({
    const maxSheetHeight = useMemo(() => windowHeight * 0.75, [windowHeight]);
 
    const isCurrentWeek = showEncouragement;
-   const activeCount = useMemo(
-      () => days.filter((d) => d.filled).length,
-      [days],
-   );
 
    const referenceDate = useMemo(
       () => (anchorDate ? new Date(anchorDate) : new Date()),
@@ -89,7 +77,7 @@ export default function StreakCard({
    const currentYear = referenceDate.getFullYear();
    const referenceKey = toDateKey(referenceDate);
 
-   const dayBuckets = useMemo(() => buildDayBuckets(entries), [entries]);
+   // Grid Math
    const monthDays = useMemo(
       () => buildMonthDays(currentYear, monthIndex, dayBuckets),
       [currentYear, monthIndex, dayBuckets],
@@ -133,6 +121,7 @@ export default function StreakCard({
       setIsExpanded((prev) => !prev);
    }, []);
 
+   // Press handlers for the "Push in" animation
    const handlePressIn = useCallback(() => {
       setIsPressed(true);
    }, []);
@@ -161,7 +150,13 @@ export default function StreakCard({
 
    return (
       <>
+         {/* WRAPPER:
+            - When Collapsed: Acts as one big button (onPress triggers toggle).
+            - When Expanded: Acts as a dumb container (disabled). 
+              Specific children (Header/Footer) handle closing.
+         */}
          <Pressable
+            disabled={isExpanded}
             onPress={toggleExpanded}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
@@ -171,19 +166,25 @@ export default function StreakCard({
                style={[
                   shadowSm.ios,
                   shadowSm.android,
-                  isPressed && CARD_PRESS_STYLE.cardPressed,
+                  // Only show scale animation when pressing the *card* to open it
+                  // When expanded, we don't want the whole card scaling if you tap the grid
+                  !isExpanded && isPressed && CARD_PRESS_STYLE.cardPressed,
                ]}
             >
-               <StreakCardHeader
-                  streakCount={streakCount}
-                  activeCount={activeCount}
-                  isCurrentWeek={isCurrentWeek}
-                  monthName={monthName}
-                  currentYear={currentYear}
-                  encouragement={encouragement}
-                  isDark={isDark}
-               />
+               {/* HEADER: Needs explicit press handler when expanded to allow closing */}
+               <Pressable disabled={!isExpanded} onPress={toggleExpanded}>
+                  <StreakCardHeader
+                     streakCount={streakCount}
+                     activeCount={activeCount}
+                     isCurrentWeek={isCurrentWeek}
+                     monthName={monthName}
+                     currentYear={currentYear}
+                     encouragement={encouragement}
+                     isDark={isDark}
+                  />
+               </Pressable>
 
+               {/* CONTENT BODY */}
                {!isExpanded ? (
                   <StreakCardWeekStrip
                      days={days}
@@ -191,19 +192,26 @@ export default function StreakCard({
                      dayCircleStyle={dayCircleStyle}
                   />
                ) : (
-                  <StreakCardMonthGrid
-                     monthRows={monthRows}
-                     weekRowIndex={weekRowIndex}
-                     weekDays={days}
-                     dayBuckets={dayBuckets}
-                     todayKey={realTodayKey}
-                     monthIndex={monthIndex}
-                     dayCircleStyle={dayCircleStyle}
-                     onDatePress={handleDatePress}
-                  />
+                  // Grid sits in a standard View (or Pressable with no action)
+                  // This prevents taps on empty space from bubbling up if we had an outer listener
+                  <View>
+                     <StreakCardMonthGrid
+                        monthRows={monthRows}
+                        weekRowIndex={weekRowIndex}
+                        weekDays={days}
+                        dayBuckets={dayBuckets}
+                        todayKey={realTodayKey}
+                        monthIndex={monthIndex}
+                        dayCircleStyle={dayCircleStyle}
+                        onDatePress={handleDatePress}
+                     />
+                  </View>
                )}
 
-               <StreakCardFooter isExpanded={isExpanded} isDark={isDark} />
+               {/* FOOTER: Always acts as a toggle (Show Details / Show Less) */}
+               <Pressable onPress={toggleExpanded}>
+                  <StreakCardFooter isExpanded={isExpanded} isDark={isDark} />
+               </Pressable>
             </View>
          </Pressable>
 

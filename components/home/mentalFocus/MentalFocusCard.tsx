@@ -8,7 +8,6 @@ import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_CONTENT_PADDING,
 } from '@/components/constants';
-import { Entry } from '@/models/entry';
 import {
    BottomSheetBackdrop,
    BottomSheetBackdropProps,
@@ -16,67 +15,20 @@ import {
    BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import { Activity, Hash, Tag, X } from 'lucide-react-native';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CARD_PRESS_STYLE } from '../utils';
-
-// --- Types ---
-
-type StyleConfig = { label: string; color: string; bg: string };
-
-type CategoryStat = {
-   label: string;
-   count: number;
-   percentage: number;
-   avgScore: number;
-   style: StyleConfig;
-};
-
-type TagStat = {
-   label: string;
-   count: number;
-};
+import { MentalFocusViewModel } from '../types';
+import { CARD_PRESS_STYLE } from '../utils'; // Fixed Path (one level up)
 
 type Props = {
-   entries: Entry[];
+   analysis: MentalFocusViewModel;
    shadowStyle: any;
    isDark: boolean;
 };
 
-// --- Config ---
-
-const STYLE_CONFIG = {
-   positive: { label: 'Positive', color: '#10b981', bg: '#ecfdf5' },
-   constructive: { label: 'Constructive', color: '#3b82f6', bg: '#eff6ff' },
-   balanced: { label: 'Balanced', color: '#64748b', bg: '#f8fafc' },
-   mixed: { label: 'Mixed', color: '#f59e0b', bg: '#fffbeb' },
-   critical: { label: 'Critical', color: '#ef4444', bg: '#fef2f2' },
-};
-
-// --- Helpers ---
-
-function getStyleFromScore(score: number): StyleConfig {
-   if (score >= 8) return STYLE_CONFIG.positive;
-   if (score >= 6) return STYLE_CONFIG.constructive;
-   if (score >= 4) return STYLE_CONFIG.balanced;
-   if (score >= 2.5) return STYLE_CONFIG.mixed;
-   return STYLE_CONFIG.critical;
-}
-
-function getNumericScore(val: any): number | null {
-   if (typeof val === 'number') return val;
-   if (typeof val === 'string') {
-      const n = parseFloat(val);
-      if (!isNaN(n)) return n;
-   }
-   return null;
-}
-
-// --- Main Component ---
-
-export default function MentalFcousCard({
-   entries,
+export default function MentalFocusCard({
+   analysis,
    shadowStyle,
    isDark,
 }: Props) {
@@ -84,95 +36,7 @@ export default function MentalFcousCard({
    const insets = useSafeAreaInsets();
    const [isPressed, setIsPressed] = useState(false);
 
-   // 1. The Observation Engine (Memoized Logic)
-   const analysis = useMemo(() => {
-      if (!entries || entries.length === 0) return null;
-
-      const catMap = new Map<
-         string,
-         { count: number; totalScore: number; validScores: number }
-      >();
-      const tagMap = new Map<string, number>();
-
-      // --- Aggregation Loop ---
-      entries.forEach((e) => {
-         // Category Aggregation
-         const rawCat = e.aiResponse?.meta?.category;
-         const cat = !rawCat || rawCat === 'Other' ? 'Other' : rawCat;
-
-         const score = getNumericScore(e.aiResponse?.meta?.optimismScore);
-
-         const currentCat = catMap.get(cat) || {
-            count: 0,
-            totalScore: 0,
-            validScores: 0,
-         };
-         currentCat.count += 1;
-         if (score !== null) {
-            currentCat.totalScore += score;
-            currentCat.validScores += 1;
-         }
-         catMap.set(cat, currentCat);
-
-         // Tag Aggregation
-         const tags = e.aiResponse?.meta?.tags || [];
-         tags.forEach((t) => {
-            const normalized = t.toLowerCase().trim();
-            if (normalized.length > 0) {
-               tagMap.set(normalized, (tagMap.get(normalized) || 0) + 1);
-            }
-         });
-      });
-
-      // --- Processing Categories ---
-      const totalEntries = entries.length;
-      const categoryStats: CategoryStat[] = [];
-
-      catMap.forEach((val, key) => {
-         const avg = val.validScores > 0 ? val.totalScore / val.validScores : 5;
-         categoryStats.push({
-            label: key,
-            count: val.count,
-            percentage: (val.count / totalEntries) * 100,
-            avgScore: avg,
-            style: getStyleFromScore(avg),
-         });
-      });
-
-      // Sort Descending by Count
-      categoryStats.sort((a, b) => b.count - a.count);
-
-      // --- Processing Tags ---
-      const tagStats: TagStat[] = [];
-      tagMap.forEach((count, label) => {
-         if (count > 1) {
-            tagStats.push({ label, count });
-         }
-      });
-      tagStats.sort((a, b) => b.count - a.count);
-
-      // --- Determining Narrative State ---
-      const topCat = categoryStats[0];
-
-      const isCategoryTie =
-         categoryStats.length > 1 &&
-         categoryStats[0].count === categoryStats[1].count;
-
-      const topTag = tagStats.length > 0 ? tagStats[0] : null;
-      const isTagTie =
-         tagStats.length > 1 && tagStats[0].count === tagStats[1].count;
-
-      return {
-         categoryStats,
-         tagStats,
-         topCat,
-         isCategoryTie,
-         topTag,
-         isTagTie,
-      };
-   }, [entries]);
-
-   // 2. Interaction Handlers
+   // --- Hook Definitions (Must be unconditional) ---
    const handlePresentModal = useCallback(() => {
       sheetRef.current?.present();
    }, []);
@@ -202,16 +66,15 @@ export default function MentalFcousCard({
       [],
    );
 
+   // --- Guard Clause (After hooks) ---
    if (!analysis) return null;
 
-   const { categoryStats, tagStats, topCat, isCategoryTie, topTag, isTagTie } =
-      analysis;
+   const { categoryStats, tagStats, narrative } = analysis;
 
-   // Helper to determine what text to show for the category
    const getCategoryText = () => {
-      if (isCategoryTie) return 'multiple topics';
-      if (topCat.label === 'Other') return 'various topics';
-      return topCat.label;
+      if (narrative.isCategoryTie) return 'multiple topics';
+      if (narrative.topCatLabel === 'Other') return 'various topics';
+      return narrative.topCatLabel;
    };
 
    return (
@@ -258,29 +121,32 @@ export default function MentalFcousCard({
                   <Text className="font-bold text-slate-900 dark:text-white">
                      {getCategoryText()}
                   </Text>{' '}
-                  {isCategoryTie ? 'shared focus' : 'was the primary focus'}
-                  {/* Tag Injection */}
-                  {topTag ? (
+                  {narrative.isCategoryTie
+                     ? 'shared focus'
+                     : 'was the primary focus'}
+                  {narrative.topTagLabel ? (
                      <>
                         {', often mentioning '}
                         <Text className="italic text-slate-800 dark:text-slate-100">
-                           {isTagTie ? `'various themes'` : `'${topTag.label}'`}
+                           {narrative.isTagTie
+                              ? `'various themes'`
+                              : `'${narrative.topTagLabel}'`}
                         </Text>
                      </>
                   ) : null}
                   . The analysis suggests{' '}
-                  {isCategoryTie ? (
+                  {narrative.isCategoryTie ? (
                      <Text>a mix of patterns</Text>
                   ) : (
                      <>
                         a{' '}
                         <Text
                            style={{
-                              color: topCat.style.color,
+                              color: narrative.styleColor,
                               fontWeight: 'bold',
                            }}
                         >
-                           {topCat.style.label}
+                           {narrative.styleLabel}
                         </Text>{' '}
                         explanation style
                      </>

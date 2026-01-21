@@ -1,3 +1,8 @@
+import { Entry } from '@/models/entry';
+import { Day } from './utils';
+
+// --- Base Definitions ---
+
 export type CategorySegment = {
    category: string;
    count: number;
@@ -10,8 +15,6 @@ export type WeekSummary = {
    entryCount: number;
    categorySegments: CategorySegment[];
 };
-
-export type ThreePScore = { score: number };
 
 export type PatternImpact = 'optimistic' | 'pessimistic' | 'mixed';
 
@@ -43,13 +46,65 @@ export type ThinkingPatternData = {
    Blame: ThinkingPatternTab;
 };
 
+// Match the shape expected by StreakCard utils
+export type DayBucket = {
+   entries: Entry[];
+   completed: Entry[];
+   incomplete: Entry[];
+   disputeCount: number;
+};
+
 export type DashboardData = {
    weeklyCount: number;
    weeklyScore: number | null;
    threePs: {
-      permanence: ThreePScore;
-      pervasiveness: ThreePScore;
-      personalization: ThreePScore;
+      permanence: { score: number };
+      pervasiveness: { score: number };
+      personalization: { score: number };
    } | null;
    threePsDecoder: ThinkingPatternData | null;
+};
+
+// --- VIEW MODELS ---
+
+export type MentalFocusStat = {
+   label: string;
+   count: number;
+   percentage: number;
+   avgScore: number;
+   style: { label: string; color: string; bg: string };
+};
+
+export type MentalFocusTagStat = {
+   label: string;
+   count: number;
+};
+
+export type MentalFocusViewModel = {
+   categoryStats: MentalFocusStat[];
+   tagStats: MentalFocusTagStat[];
+   narrative: {
+      topCatLabel: string;
+      isCategoryTie: boolean;
+      topTagLabel: string | null;
+      isTagTie: boolean;
+      styleColor: string;
+      styleLabel: string;
+   };
+} | null;
+
+export type ThinkingPatternViewModel = {
+   threePs: {
+      permanence: { score: number };
+      pervasiveness: { score: number };
+      personalization: { score: number };
+   };
+   threePsDecoder: ThinkingPatternData;
+} | null;
+
+export type StreakViewModel = {
+   streakCount: number;
+   days: Day[];
+   dayBuckets: Map<string, DayBucket>;
+   activeCount: number;
 };

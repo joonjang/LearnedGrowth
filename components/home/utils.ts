@@ -211,3 +211,11 @@ export const CARD_PRESS_STYLE = StyleSheet.create({
       transform: [{ scale: 0.985 }],
    },
 });
+
+export function getWeekStart(date: Date) {
+   const start = new Date(date);
+   start.setHours(0, 0, 0, 0);
+   const diffToSunday = start.getDay();
+   start.setDate(start.getDate() - diffToSunday);
+   return start;
+}

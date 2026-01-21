@@ -3,21 +3,12 @@ import {
    PRIMARY_CTA_CLASS,
    PRIMARY_CTA_ICON_COLOR,
    PRIMARY_CTA_TEXT_CLASS,
-   WEEKDAY_LABELS,
 } from '@/components/constants';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow from '@/components/entries/entry/EntryRow';
-import PatternDashboard from '@/components/home/PatternDashboard';
+import HomeDashboard from '@/components/home/HomeDashboard'; // <--- NEW AGGREGATOR
 import SectionHeader from '@/components/home/SectionHeader';
-import StreakCard from '@/components/home/streak/StreakCard';
-import {
-   CategorySegment,
-   EntryThinkingPattern,
-   PatternImpact,
-   ThinkingPatternData,
-   WeekSummary,
-} from '@/components/home/types';
-import { isOptimistic } from '@/components/home/utils';
+import { CategorySegment, WeekSummary } from '@/components/home/types';
 import TopFade from '@/components/TopFade';
 import { useDeletedEntries } from '@/hooks/useDeletedEntries';
 import { useEntries } from '@/hooks/useEntries';
@@ -28,15 +19,11 @@ import { Link, router, useFocusEffect } from 'expo-router';
 import {
    Check,
    ChevronDown,
-   CircleDashed,
-   Flame,
    Infinity,
    Info,
    Plus,
    Settings,
-   Sun,
-   Trash2,
-   Zap,
+   Trash2
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, {
@@ -50,12 +37,11 @@ import {
    LayoutChangeEvent,
    Modal,
    Platform,
-   Pressable, // Use standard Pressable for robust absolute positioning touches
+   Pressable,
    ScrollView,
    SectionList,
    Text,
-   useWindowDimensions,
-   View,
+   View
 } from 'react-native';
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
 import Animated, {
@@ -98,9 +84,9 @@ type WeekOption = {
 };
 
 // --- Config ---
+
 const SCROLL_THRESHOLD_FOR_FAB = 320;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
 const UNCATEGORIZED_LABEL = 'Not categorized';
 
 const CATEGORY_COLOR_MAP: Record<string, string> = {
@@ -116,28 +102,6 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
 };
 const DEFAULT_CATEGORY_COLOR = '#cbd5e1';
 
-const PATTERN_TAB_CONFIG = {
-   Time: {
-      dimension: 'permanence',
-      highLabel: 'Temporary',
-      lowLabel: 'Permanent',
-      description: 'Are setbacks permanent or temporary?',
-   },
-   Scope: {
-      dimension: 'pervasiveness',
-      highLabel: 'Specific',
-      lowLabel: 'Pervasive',
-      description: 'Does the setback affect one area or everything?',
-   },
-   Blame: {
-      dimension: 'personalization',
-      highLabel: 'External',
-      lowLabel: 'Internal',
-      description: 'Are outcomes tied to you or to outside factors?',
-   },
-} as const;
-
-const MAX_TREND_POINTS = 7;
 // --- Logic Helpers ---
 
 function getNumericScore(val: any): number | null {
@@ -147,26 +111,6 @@ function getNumericScore(val: any): number | null {
       if (!isNaN(n)) return n;
    }
    return null;
-}
-
-function getPatternImpact(score: string | null | undefined): PatternImpact {
-   if (!score) return 'mixed';
-   const lower = score.toLowerCase();
-   if (
-      lower.includes('mixed') ||
-      lower.includes('balanced') ||
-      lower.includes('neutral')
-   ) {
-      return 'mixed';
-   }
-   return isOptimistic(score) ? 'optimistic' : 'pessimistic';
-}
-
-function getTrendValue(score: string | null | undefined): number {
-   if (!score) return 50;
-   const lower = score.toLowerCase();
-   if (lower.includes('mixed') || lower.includes('balanced')) return 50;
-   return isOptimistic(score) ? 80 : 20;
 }
 
 function getCategorySegments(entries: Entry[]): CategorySegment[] {
@@ -329,14 +273,6 @@ function formatIsoDate(date: Date) {
    const day = `${date.getDate()}`.padStart(2, '0');
    return `${year}-${month}-${day}`;
 }
-
-function getStreakIcon(streak: number, isDark: boolean) {
-   const muted = isDark ? '#94a3b8' : '#64748b';
-   if (streak >= 5) return { Icon: Flame, color: '#f97316' };
-   if (streak >= 3) return { Icon: Zap, color: '#4f46e5' };
-   if (streak >= 1) return { Icon: Sun, color: '#eab308' };
-   return { Icon: CircleDashed, color: muted };
-}
 function formatDate(date: Date) {
    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -350,8 +286,6 @@ export default function EntriesScreen() {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const iconColor = isDark ? '#cbd5e1' : '#475569';
-   const { width, height: windowHeight } = useWindowDimensions();
-   const isCompactHeader = width < 380;
    const { lock: lockNavigation } = useNavigationLock();
    const [showHelpModal, setShowHelpModal] = useState(false);
    const [listHeaderHeight, setListHeaderHeight] = useState(0);
@@ -563,6 +497,15 @@ export default function EntriesScreen() {
 
    // =========================================================================
 
+   // Calculate this cheaply here for the "Title" only.
+   // HomeDashboard does the heavy lifting for the cards.
+   const reframedCount = useMemo(() => {
+      return filteredRows.filter((e) => (e.dispute ?? '').trim().length > 0)
+         .length;
+   }, [filteredRows]);
+
+   const thoughtLabel = reframedCount === 1 ? 'Thought' : 'Thoughts';
+
    const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
       const nextHeight = Math.round(event.nativeEvent.layout.height);
       setListHeaderHeight((prev) => (prev === nextHeight ? prev : nextHeight));
@@ -588,199 +531,6 @@ export default function EntriesScreen() {
       setSelectedWeekKey(key);
       setIsDropdownOpen(false);
    }, []);
-
-   const dashboardData = useMemo(() => {
-      const activeEntries = filteredRows;
-      const weekWithDispute = activeEntries.filter(
-         (e) => (e.dispute ?? '').trim().length > 0,
-      );
-      const weeklyCount = weekWithDispute.length;
-
-      if (activeEntries.length === 0)
-         return {
-            weeklyCount,
-            weeklyScore: null,
-            threePs: null,
-            threePsDecoder: null,
-         };
-
-      let optSum = 0;
-      let optCount = 0;
-      activeEntries.forEach((e) => {
-         const score = getNumericScore(
-            e.aiResponse?.meta?.optimismScore ??
-               e.aiResponse?.meta?.sentimentScore,
-         );
-         if (score !== null) {
-            optSum += score;
-            optCount++;
-         }
-      });
-      const avgScore = optCount > 0 ? optSum / optCount : null;
-
-      const threePsStats = {
-         perm: { good: 0, total: 0 },
-         perv: { good: 0, total: 0 },
-         pers: { good: 0, total: 0 },
-      };
-
-      activeEntries.forEach((e) => {
-         const dims = e.aiResponse?.analysis?.dimensions;
-         if (dims) {
-            if (dims.permanence) {
-               threePsStats.perm.total++;
-               if (isOptimistic(dims.permanence.score))
-                  threePsStats.perm.good++;
-            }
-            if (dims.pervasiveness) {
-               threePsStats.perv.total++;
-               if (isOptimistic(dims.pervasiveness.score))
-                  threePsStats.perv.good++;
-            }
-            if (dims.personalization) {
-               threePsStats.pers.total++;
-               if (isOptimistic(dims.personalization.score))
-                  threePsStats.pers.good++;
-            }
-         }
-      });
-
-      const getScore = (stat: { good: number; total: number }) =>
-         stat.total > 0 ? (stat.good / stat.total) * 100 : 50;
-
-      const entriesWithDates = activeEntries
-         .map((entry) => {
-            const created = safeParseDate(entry.createdAt);
-            if (!created) return null;
-            return { entry, created };
-         })
-         .filter((item): item is { entry: Entry; created: Date } =>
-            Boolean(item),
-         );
-
-      const entriesByDateAsc = [...entriesWithDates].sort(
-         (a, b) => a.created.getTime() - b.created.getTime(),
-      );
-      const entriesByDateDesc = [...entriesWithDates].sort(
-         (a, b) => b.created.getTime() - a.created.getTime(),
-      );
-
-      const buildTabData = (
-         config: (typeof PATTERN_TAB_CONFIG)[keyof typeof PATTERN_TAB_CONFIG],
-      ) => {
-         const chartData = entriesByDateAsc
-            .map((item) => {
-               const dim =
-                  item.entry.aiResponse?.analysis?.dimensions?.[
-                     config.dimension
-                  ];
-               if (!dim?.score) return null;
-               return {
-                  value: getTrendValue(dim.score),
-                  entryId: item.entry.id,
-               };
-            })
-            .filter((point): point is { value: number; entryId: string } =>
-               Boolean(point),
-            )
-            .slice(-MAX_TREND_POINTS);
-
-         const patterns = entriesByDateDesc
-            .map((item) => {
-               const dim =
-                  item.entry.aiResponse?.analysis?.dimensions?.[
-                     config.dimension
-                  ];
-               const phrase = dim?.detectedPhrase?.trim();
-               if (!phrase) return null;
-               return {
-                  id: `${item.entry.id}-${config.dimension}`,
-                  entryId: item.entry.id,
-                  createdAt: item.entry.createdAt,
-                  phrase,
-                  impact: getPatternImpact(dim?.score),
-                  insight: dim?.insight ?? null,
-               };
-            })
-            .filter((pattern): pattern is EntryThinkingPattern =>
-               Boolean(pattern),
-            );
-
-         return {
-            highLabel: config.highLabel,
-            lowLabel: config.lowLabel,
-            description: config.description,
-            chartData,
-            patterns,
-         };
-      };
-
-      const threePsDecoder: ThinkingPatternData = {
-         Time: buildTabData(PATTERN_TAB_CONFIG.Time),
-         Scope: buildTabData(PATTERN_TAB_CONFIG.Scope),
-         Blame: buildTabData(PATTERN_TAB_CONFIG.Blame),
-      };
-
-      return {
-         weeklyCount,
-         weeklyScore: avgScore,
-         threePs: {
-            permanence: { score: getScore(threePsStats.perm) },
-            pervasiveness: { score: getScore(threePsStats.perv) },
-            personalization: { score: getScore(threePsStats.pers) },
-         },
-         threePsDecoder,
-      };
-   }, [filteredRows]);
-
-   const streakData = useMemo(() => {
-      const entriesForCalc = store.rows;
-      const today = streakAnchorDate;
-      today.setHours(0, 0, 0, 0);
-      const weekStart = getWeekStart(today);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      weekEnd.setHours(23, 59, 59, 999);
-
-      const filledDays = new Set<string>();
-      entriesForCalc.forEach((entry) => {
-         const dispute = (entry.dispute ?? '').trim();
-         if (!dispute) return;
-         const created = safeParseDate(entry.createdAt);
-         if (!created) return;
-         if (created < weekStart || created > weekEnd) return;
-         filledDays.add(formatIsoDate(created));
-      });
-
-      const days = Array.from({ length: 7 }, (_, i) => {
-         const date = new Date(weekStart);
-         date.setDate(weekStart.getDate() + i);
-         const key = formatIsoDate(date);
-         return {
-            date,
-            label: WEEKDAY_LABELS[i],
-            filled: filledDays.has(key),
-         };
-      });
-
-      const anchorKey = formatIsoDate(today);
-      const anchorIndex = days.findIndex(
-         (d) => formatIsoDate(d.date) === anchorKey,
-      );
-      const startIndex = anchorIndex >= 0 ? anchorIndex : 6;
-
-      let streakCount = 0;
-      for (let i = startIndex; i >= 0; i--) {
-         if (days[i].filled) streakCount++;
-         else break;
-      }
-
-      return { days, streakCount };
-   }, [store.rows, streakAnchorDate]);
-
-   const thoughtLabel =
-      dashboardData.weeklyCount === 1 ? 'Thought' : 'Thoughts';
-   const streakIcon = getStreakIcon(streakData.streakCount, isDark);
 
    const renderSectionHeader = useCallback(
       ({ section }: { section: EntrySection }) => (
@@ -859,11 +609,10 @@ export default function EntriesScreen() {
                shouldShowContent ? (
                   <View
                      style={{ paddingTop: insets.top + 12 }}
-                     className="px-6 pb-6 bg-slate-50 dark:bg-slate-900 z-50" // Ensure high Z-Index for Header container
+                     className="px-6 pb-6 bg-slate-50 dark:bg-slate-900 z-50"
                      onLayout={handleHeaderLayout}
                   >
                      {/* TAP OUTSIDE TO CLOSE - INVISIBLE LAYER */}
-                     {/* Fixed: Rendered BEFORE dropdown so dropdown sits on top if zIndex is handled */}
                      {isDropdownOpen && (
                         <Pressable
                            style={{
@@ -872,7 +621,7 @@ export default function EntriesScreen() {
                               left: -1000,
                               right: -1000,
                               bottom: -1000,
-                              zIndex: 40, // Lower than dropdown
+                              zIndex: 40,
                            }}
                            onPress={() => setIsDropdownOpen(false)}
                         />
@@ -883,7 +632,7 @@ export default function EntriesScreen() {
                         <View className="z-50 flex-1">
                            {/* DROPDOWN TRIGGER */}
                            <View className="z-50">
-                              <Pressable // Changed to standard Pressable
+                              <Pressable
                                  onPress={() =>
                                     setIsDropdownOpen(!isDropdownOpen)
                                  }
@@ -901,7 +650,7 @@ export default function EntriesScreen() {
                                     >
                                        <ChevronDown
                                           size={16}
-                                          color={isDark ? '#94a3b8' : '#64748b'} // Adjusted Color
+                                          color={isDark ? '#94a3b8' : '#64748b'}
                                           strokeWidth={2.5}
                                        />
                                     </View>
@@ -928,7 +677,7 @@ export default function EntriesScreen() {
                                           borderColor: isDark
                                              ? '#334155'
                                              : '#e2e8f0',
-                                          zIndex: 100, // Highest Z-Index
+                                          zIndex: 100,
                                        },
                                        dropdownShadow.ios,
                                        dropdownShadow.android,
@@ -940,7 +689,7 @@ export default function EntriesScreen() {
                                        nestedScrollEnabled={true}
                                     >
                                        {/* ALL TIME OPTION */}
-                                       <Pressable // Standard Pressable
+                                       <Pressable
                                           onPress={() =>
                                              handleSelectWeek('all')
                                           }
@@ -985,7 +734,7 @@ export default function EntriesScreen() {
                                           const isSelected =
                                              selectedWeekKey === week.key;
                                           return (
-                                             <Pressable // Standard Pressable
+                                             <Pressable
                                                 key={week.key}
                                                 onPress={() =>
                                                    handleSelectWeek(week.key)
@@ -1068,37 +817,25 @@ export default function EntriesScreen() {
                      </View>
 
                      <Text className="text-2xl font-extrabold text-slate-900 dark:text-white mb-4 z-10 ml-2">
-                        {dashboardData.weeklyCount} {thoughtLabel}{' '}
+                        {reframedCount} {thoughtLabel}{' '}
                         <Text className="text-indigo-600 font-extrabold">
                            Reframed
                         </Text>
                      </Text>
 
-                     {/* STREAK CARD */}
+                     {/* DASHBOARD AGGREGATOR */}
                      {shouldShowContent && (
-                        <View className="z-10">
-                           <StreakCard
-                              streakCount={streakData.streakCount}
-                              days={streakData.days}
-                              icon={streakIcon}
+                        <View className="z-10 mb-6">
+                           <HomeDashboard
+                              entries={filteredRows}
+                              anchorDate={streakAnchorDate}
                               shadowSm={shadowSm}
-                              entries={store.rows} // Pass all entries for calculation
-                              anchorDate={streakAnchorDate} // Anchor visualization to selected week
-                              showEncouragement={isCurrentWeek} // Only show quotes for current week
+                              isDark={isDark}
+                              showEncouragement={isCurrentWeek}
                               onDeleteEntry={requestDelete}
                            />
                         </View>
                      )}
-
-                     {/* GLOBAL DASHBOARD */}
-                     <View className="mt-4 mb-6 z-10">
-                        <PatternDashboard
-                           data={dashboardData}
-                           entries={filteredRows}
-                           shadowSm={shadowSm}
-                           isDark={isDark}
-                        />
-                     </View>
 
                      {/* MAIN NEW ENTRY BUTTON */}
                      <View className="mt-1 z-10">

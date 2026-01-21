@@ -2,19 +2,14 @@ import { PInsightCard } from '@/components/appInfo/PDefinitions';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BookOpen, ChevronDown, ChevronUp, Layers } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
-import {
-    LayoutAnimation,
-    Pressable,
-    Text,
-    View
-} from 'react-native';
-import { DashboardData } from '../types';
+import { LayoutAnimation, Pressable, Text, View } from 'react-native';
+import { ThinkingPatternViewModel } from '../types';
 import { CARD_PRESS_STYLE } from '../utils';
 import GradientSpectrumBar from './GradientSpectrumBar';
 import ThinkingPatternSheet from './ThinkingPatternSheet';
 
 type Props = {
-   data: DashboardData;
+   data: ThinkingPatternViewModel;
    shadowStyle: any;
    isDark: boolean;
 };
@@ -45,8 +40,8 @@ export default function ThinkingPatternCard({
       setIsPressed(false);
    }, []);
 
-   // Guard clause: if data isn't ready, don't render
-   if (!data.threePs || !data.threePsDecoder) return null;
+   // Data is pre-calculated now
+   if (!data) return null;
 
    return (
       <>
@@ -72,7 +67,7 @@ export default function ThinkingPatternCard({
                      </Text>
                   </View>
 
-                  {/* Guide Toggle Button */}
+                  {/* Guide Toggle */}
                   <Pressable onPress={handleToggleHelp} hitSlop={10}>
                      <View
                         className={`flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-full border ${
@@ -103,14 +98,14 @@ export default function ThinkingPatternCard({
                   </Pressable>
                </View>
 
-               {/* Expanded Educational Content */}
+               {/* Expanded Content */}
                {showHelp && (
                   <View className="mb-4">
                      <PInsightCard context="week" />
                   </View>
                )}
 
-               {/* Gradient Visuals */}
+               {/* Visuals */}
                <View className="gap-6">
                   <GradientSpectrumBar
                      label="Time"
@@ -140,7 +135,6 @@ export default function ThinkingPatternCard({
             </View>
          </Pressable>
 
-         {/* Bottom Sheet */}
          <ThinkingPatternSheet sheetRef={sheetRef} data={data.threePsDecoder} />
       </>
    );
