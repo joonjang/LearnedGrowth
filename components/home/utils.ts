@@ -1,6 +1,7 @@
 import { Entry } from '@/models/entry';
 import { HelpCircle, Scale, Sprout, Wind } from 'lucide-react-native';
 import { ComponentType } from 'react';
+import { StyleSheet } from 'react-native';
 
 export function isOptimistic(score: string | null): boolean {
    if (!score) return false;
@@ -204,3 +205,9 @@ export const isFutureDate = (date: Date) => {
 
 type ClassValue = string | false | null | undefined;
 export const cx = (...xs: ClassValue[]) => xs.filter(Boolean).join(' ');
+
+export const CARD_PRESS_STYLE = StyleSheet.create({
+   cardPressed: {
+      transform: [{ scale: 0.985 }],
+   },
+});

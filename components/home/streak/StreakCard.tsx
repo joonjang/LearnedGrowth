@@ -2,12 +2,12 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
    LayoutAnimation,
+   Pressable,
    StyleSheet,
    useColorScheme,
    useWindowDimensions,
    View,
 } from 'react-native';
-import { Pressable } from 'react-native-gesture-handler';
 
 import { MONTHS } from '@/components/constants';
 import type { Entry } from '@/models/entry';
@@ -15,6 +15,7 @@ import {
    buildDayBuckets,
    buildMonthDays,
    buildMonthRows,
+   CARD_PRESS_STYLE,
    Day,
    findWeekRowIndex,
    getEncouragement,
@@ -30,9 +31,6 @@ import { StreakCardMonthGrid } from './parts/StreakCardMonthGrid';
 import { StreakCardWeekStrip } from './parts/StreakCardWeekStrip';
 
 const styles = StyleSheet.create({
-   cardPressed: {
-      transform: [{ scale: 0.985 }],
-   },
    dayCircle: {
       width: 30,
       height: 30,
@@ -173,7 +171,7 @@ export default function StreakCard({
                style={[
                   shadowSm.ios,
                   shadowSm.android,
-                  isPressed && styles.cardPressed,
+                  isPressed && CARD_PRESS_STYLE.cardPressed,
                ]}
             >
                <StreakCardHeader

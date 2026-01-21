@@ -7,7 +7,7 @@ import {
 } from '@/components/constants';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow from '@/components/entries/entry/EntryRow';
-import GlobalDashboard from '@/components/home/PatternDashboard';
+import PatternDashboard from '@/components/home/PatternDashboard';
 import SectionHeader from '@/components/home/SectionHeader';
 import StreakCard from '@/components/home/streak/StreakCard';
 import {
@@ -1092,8 +1092,9 @@ export default function EntriesScreen() {
 
                      {/* GLOBAL DASHBOARD */}
                      <View className="mt-4 mb-6 z-10">
-                        <GlobalDashboard
+                        <PatternDashboard
                            data={dashboardData}
+                           entries={filteredRows}
                            shadowSm={shadowSm}
                            isDark={isDark}
                         />

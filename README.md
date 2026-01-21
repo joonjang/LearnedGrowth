@@ -71,6 +71,9 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
    - abstracted code
    - styling consistent with tailwind
    - removed unusefull styles
+- drafting up card summary --> mental focus
+- fixed pressable touch and scroll behaviour
+   - using react-native pressable instead of gesture handler fixed it
 
 ### 2026-01-20
 
