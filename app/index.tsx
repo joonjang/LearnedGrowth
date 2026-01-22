@@ -34,22 +34,19 @@ import React, {
    useState,
 } from 'react';
 import {
-   LayoutChangeEvent,
    Modal,
    Platform,
    Pressable,
    SectionList,
    Text,
-   View
+   View,
 } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
 import Animated, {
-   Extrapolation,
    FadeIn,
    FadeInDown,
-   FadeOut, // For Button
-   interpolate,
+   FadeOut,
    useAnimatedRef,
    useAnimatedScrollHandler,
    useAnimatedStyle,
@@ -111,7 +108,7 @@ const TitleSkeleton = () => {
          -1,
          true,
       );
-   }, []);
+   }, [opacity]);
    const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
    return (
       <Animated.View
@@ -309,16 +306,10 @@ export default function EntriesScreen() {
    const iconColor = isDark ? '#cbd5e1' : '#475569';
    const { lock: lockNavigation } = useNavigationLock();
    const [showHelpModal, setShowHelpModal] = useState(false);
-   const [listHeaderHeight, setListHeaderHeight] = useState(0);
    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
    const [selectedWeekKey, setSelectedWeekKey] = useState<string>(() =>
       formatIsoDate(getWeekStart(new Date())),
-   );
-
-   const currentWeekKey = useMemo(
-      () => formatIsoDate(getWeekStart(new Date())),
-      [],
    );
 
    const listRef = useAnimatedRef<SectionList<RowItem, EntrySection>>();
@@ -359,27 +350,6 @@ export default function EntriesScreen() {
             { translateY: withTiming(showFab ? 0 : 20) },
          ],
          pointerEvents: showFab ? 'auto' : 'none',
-      };
-   });
-
-   const scrollIndicatorStyle = useAnimatedStyle(() => {
-      return {
-         opacity: interpolate(
-            scrollY.value,
-            [0, 60],
-            [0.4, 0],
-            Extrapolation.CLAMP,
-         ),
-         transform: [
-            {
-               translateY: interpolate(
-                  scrollY.value,
-                  [0, 60],
-                  [0, -10],
-                  Extrapolation.CLAMP,
-               ),
-            },
-         ],
       };
    });
 
@@ -529,27 +499,6 @@ export default function EntriesScreen() {
    }, [filteredRows]);
 
    const thoughtLabel = reframedCount === 1 ? 'Thought' : 'Thoughts';
-   const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
-      const nextHeight = Math.round(event.nativeEvent.layout.height);
-      setListHeaderHeight((prev) => (prev === nextHeight ? prev : nextHeight));
-   }, []);
-
-   const scrollToContent = useCallback(() => {
-      if (sections.length === 0 || !listRef.current) return;
-      if (listHeaderHeight > 0) {
-         listRef.current
-            .getScrollResponder()
-            ?.scrollTo({ y: listHeaderHeight, animated: true });
-         return;
-      }
-      listRef.current.scrollToLocation({
-         sectionIndex: 0,
-         itemIndex: 0,
-         animated: true,
-         viewOffset: insets.top + 40,
-      });
-   }, [insets.top, listHeaderHeight, listRef, sections.length]);
-
    const handleSelectWeek = useCallback((key: string) => {
       setSelectedWeekKey(key);
       setIsDropdownOpen(false);
@@ -631,7 +580,6 @@ export default function EntriesScreen() {
                   <View
                      style={{ paddingTop: insets.top + 12 }}
                      className="px-6 pb-6 bg-slate-50 dark:bg-slate-900 z-50"
-                     onLayout={handleHeaderLayout}
                   >
                      {isDropdownOpen && (
                         <Pressable
@@ -860,15 +808,6 @@ export default function EntriesScreen() {
                            </Pressable>
                         </Animated.View>
                      )}
-
-                     <Animated.View
-                        className="items-center mt-2"
-                        style={scrollIndicatorStyle}
-                     >
-                        <Pressable onPress={scrollToContent} hitSlop={20}>
-                           <ChevronDown size={24} color={iconColor} />
-                        </Pressable>
-                     </Animated.View>
                   </View>
                ) : null
             }
