@@ -44,6 +44,7 @@ type Props = {
    anchorDate?: Date;
    showEncouragement?: boolean;
    onDeleteEntry?: (entry: Entry) => void;
+   isLoading?: boolean; // <--- New Prop
 };
 
 export default function StreakCard({
@@ -52,6 +53,7 @@ export default function StreakCard({
    anchorDate,
    showEncouragement = true,
    onDeleteEntry,
+   isLoading = false, // <--- Default false
 }: Props) {
    const { streakCount, days, dayBuckets, activeCount } = data;
    const isDark = useColorScheme() === 'dark';
@@ -77,7 +79,6 @@ export default function StreakCard({
    const currentYear = referenceDate.getFullYear();
    const referenceKey = toDateKey(referenceDate);
 
-   // Grid Math
    const monthDays = useMemo(
       () => buildMonthDays(currentYear, monthIndex, dayBuckets),
       [currentYear, monthIndex, dayBuckets],
@@ -121,7 +122,6 @@ export default function StreakCard({
       setIsExpanded((prev) => !prev);
    }, []);
 
-   // Press handlers for the "Push in" animation
    const handlePressIn = useCallback(() => {
       setIsPressed(true);
    }, []);
@@ -150,11 +150,6 @@ export default function StreakCard({
 
    return (
       <>
-         {/* WRAPPER:
-            - When Collapsed: Acts as one big button (onPress triggers toggle).
-            - When Expanded: Acts as a dumb container (disabled). 
-              Specific children (Header/Footer) handle closing.
-         */}
          <Pressable
             disabled={isExpanded}
             onPress={toggleExpanded}
@@ -166,12 +161,9 @@ export default function StreakCard({
                style={[
                   shadowSm.ios,
                   shadowSm.android,
-                  // Only show scale animation when pressing the *card* to open it
-                  // When expanded, we don't want the whole card scaling if you tap the grid
                   !isExpanded && isPressed && CARD_PRESS_STYLE.cardPressed,
                ]}
             >
-               {/* HEADER: Needs explicit press handler when expanded to allow closing */}
                <Pressable disabled={!isExpanded} onPress={toggleExpanded}>
                   <StreakCardHeader
                      streakCount={streakCount}
@@ -181,10 +173,10 @@ export default function StreakCard({
                      currentYear={currentYear}
                      encouragement={encouragement}
                      isDark={isDark}
+                     isLoading={isLoading} // <--- Pass Loading State
                   />
                </Pressable>
 
-               {/* CONTENT BODY */}
                {!isExpanded ? (
                   <StreakCardWeekStrip
                      days={days}
@@ -192,8 +184,6 @@ export default function StreakCard({
                      dayCircleStyle={dayCircleStyle}
                   />
                ) : (
-                  // Grid sits in a standard View (or Pressable with no action)
-                  // This prevents taps on empty space from bubbling up if we had an outer listener
                   <View>
                      <StreakCardMonthGrid
                         monthRows={monthRows}
@@ -208,7 +198,6 @@ export default function StreakCard({
                   </View>
                )}
 
-               {/* FOOTER: Always acts as a toggle (Show Details / Show Less) */}
                <Pressable onPress={toggleExpanded}>
                   <StreakCardFooter isExpanded={isExpanded} isDark={isDark} />
                </Pressable>

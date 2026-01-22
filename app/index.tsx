@@ -6,7 +6,7 @@ import {
 } from '@/components/constants';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow from '@/components/entries/entry/EntryRow';
-import HomeDashboard from '@/components/home/HomeDashboard'; // <--- NEW AGGREGATOR
+import HomeDashboard from '@/components/home/HomeDashboard';
 import SectionHeader from '@/components/home/SectionHeader';
 import { CategorySegment, WeekSummary } from '@/components/home/types';
 import TopFade from '@/components/TopFade';
@@ -23,7 +23,7 @@ import {
    Info,
    Plus,
    Settings,
-   Trash2
+   Trash2,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, {
@@ -38,21 +38,24 @@ import {
    Modal,
    Platform,
    Pressable,
-   ScrollView,
    SectionList,
    Text,
    View
 } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
 import Animated, {
    Extrapolation,
    FadeIn,
-   FadeOut,
+   FadeInDown,
+   FadeOut, // For Button
    interpolate,
    useAnimatedRef,
    useAnimatedScrollHandler,
    useAnimatedStyle,
    useSharedValue,
+   withRepeat,
+   withSequence,
    withSpring,
    withTiming,
 } from 'react-native-reanimated';
@@ -62,10 +65,8 @@ const AnimatedSectionList = Animated.createAnimatedComponent(
    SectionList,
 ) as typeof SectionList;
 
-// --- Types ---
-
+// --- Types & Config ---
 type RowItem = { kind: 'entry'; entry: Entry };
-
 type EntrySection = {
    title: string;
    weekKey: string;
@@ -73,7 +74,6 @@ type EntrySection = {
    data: RowItem[];
    summary: WeekSummary;
 };
-
 type WeekOption = {
    key: string;
    label: string;
@@ -83,12 +83,9 @@ type WeekOption = {
    count: number;
 };
 
-// --- Config ---
-
 const SCROLL_THRESHOLD_FOR_FAB = 320;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const UNCATEGORIZED_LABEL = 'Not categorized';
-
 const CATEGORY_COLOR_MAP: Record<string, string> = {
    Work: '#3b82f6',
    Education: '#8b5cf6',
@@ -102,8 +99,29 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
 };
 const DEFAULT_CATEGORY_COLOR = '#cbd5e1';
 
-// --- Logic Helpers ---
+// --- Helper: Title Skeleton ---
+const TitleSkeleton = () => {
+   const opacity = useSharedValue(0.3);
+   useEffect(() => {
+      opacity.value = withRepeat(
+         withSequence(
+            withTiming(0.7, { duration: 800 }),
+            withTiming(0.3, { duration: 800 }),
+         ),
+         -1,
+         true,
+      );
+   }, []);
+   const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
+   return (
+      <Animated.View
+         style={style}
+         className="h-8 w-48 bg-slate-200 dark:bg-slate-700 rounded-lg mb-4 ml-2"
+      />
+   );
+};
 
+// --- Logic Helpers ---
 function getNumericScore(val: any): number | null {
    if (typeof val === 'number') return val;
    if (typeof val === 'string') {
@@ -115,14 +133,12 @@ function getNumericScore(val: any): number | null {
 
 function getCategorySegments(entries: Entry[]): CategorySegment[] {
    if (entries.length === 0) return [];
-
    const counts: Record<string, number> = {};
    entries.forEach((e) => {
       const cat = e.aiResponse?.meta?.category ?? UNCATEGORIZED_LABEL;
       counts[cat] = (counts[cat] || 0) + 1;
    });
    const total = entries.length;
-
    return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
       .map(([cat, count]) => ({
@@ -137,7 +153,6 @@ function getSectionSummary(rows: RowItem[]): WeekSummary {
    const entries = rows.map((r) => r.entry);
    if (entries.length === 0)
       return { categorySegments: [], entryCount: 0, avgOptimism: null };
-
    let optSum = 0;
    let optCount = 0;
    entries.forEach((e) => {
@@ -150,27 +165,33 @@ function getSectionSummary(rows: RowItem[]): WeekSummary {
          optCount++;
       }
    });
-
    const avgOptimism = optCount > 0 ? optSum / optCount : null;
    const categorySegments = getCategorySegments(entries);
    return { categorySegments, entryCount: entries.length, avgOptimism };
 }
 
-function getWeekKey(start: Date) {
-   return formatIsoDate(start);
+// DATE HELPERS
+function getWeekStart(date: Date) {
+   const start = new Date(date);
+   start.setHours(0, 0, 0, 0);
+   const diffToSunday = start.getDay();
+   start.setDate(start.getDate() - diffToSunday);
+   return start;
 }
 
-function getWeekLabel(start: Date, now: Date) {
-   const currentStart = getWeekStart(now);
-   const lastStart = getWeekStart(
-      new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7),
-   );
-   const diffTime = currentStart.getTime() - start.getTime();
-   const diffWeeks = Math.round(diffTime / WEEK_MS);
+function formatIsoDate(date: Date) {
+   const year = date.getFullYear();
+   const month = `${date.getMonth() + 1}`.padStart(2, '0');
+   const day = `${date.getDate()}`.padStart(2, '0');
+   return `${year}-${month}-${day}`;
+}
 
-   if (start.getTime() === currentStart.getTime()) return 'This Week';
-   if (start.getTime() === lastStart.getTime()) return 'Last Week';
-   return `${Math.max(2, diffWeeks)} Weeks Ago`;
+function formatDate(date: Date) {
+   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function getWeekKey(start: Date) {
+   return formatIsoDate(start);
 }
 
 function getWeekRangeLabel(start: Date) {
@@ -179,15 +200,43 @@ function getWeekRangeLabel(start: Date) {
    return `${formatDate(start)} - ${formatDate(end)}`;
 }
 
+function parseLocalIsoDate(isoDateString: string): Date | null {
+   const parts = isoDateString.split('-').map(Number);
+   if (parts.length !== 3) return null;
+   const [year, month, day] = parts;
+   return new Date(year, month - 1, day);
+}
+
+function getWeekLabel(start: Date, now: Date) {
+   const currentStart = getWeekStart(now);
+   const diffTime = currentStart.getTime() - start.getTime();
+   const diffWeeks = Math.round(diffTime / WEEK_MS);
+   if (start.getTime() === currentStart.getTime()) return 'This Week';
+   const lastStart = new Date(currentStart);
+   lastStart.setDate(lastStart.getDate() - 7);
+   if (start.getTime() === lastStart.getTime()) return 'Last Week';
+   return `${Math.max(2, diffWeeks)} Weeks Ago`;
+}
+
 function buildWeekOptions(entries: Entry[], now: Date): WeekOption[] {
    const weeks = new Map<string, WeekOption>();
-
+   const currentStart = getWeekStart(now);
+   const currentKey = getWeekKey(currentStart);
+   weeks.set(currentKey, {
+      key: currentKey,
+      label: 'This Week',
+      rangeLabel: getWeekRangeLabel(currentStart),
+      start: currentStart,
+      end: new Date(
+         currentStart.getTime() + 6 * 24 * 60 * 60 * 1000 + 86399999,
+      ),
+      count: 0,
+   });
    entries.forEach((entry) => {
-      const created = safeParseDate(entry.createdAt);
-      if (!created) return;
+      const created = new Date(entry.createdAt);
+      if (Number.isNaN(created.getTime())) return;
       const weekStart = getWeekStart(created);
       const key = getWeekKey(weekStart);
-
       let week = weeks.get(key);
       if (!week) {
          const end = new Date(weekStart);
@@ -205,7 +254,6 @@ function buildWeekOptions(entries: Entry[], now: Date): WeekOption[] {
       }
       week.count++;
    });
-
    return Array.from(weeks.values()).sort(
       (a, b) => b.start.getTime() - a.start.getTime(),
    );
@@ -213,24 +261,20 @@ function buildWeekOptions(entries: Entry[], now: Date): WeekOption[] {
 
 function buildSections(filteredRows: Entry[]): EntrySection[] {
    if (filteredRows.length === 0) return [];
-
    const now = new Date();
    const groups = new Map<
       string,
       { title: string; rangeLabel: string; rows: RowItem[] }
    >();
-
    const sortedEntries = [...filteredRows].sort(
       (a, b) =>
          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
    );
-
    for (const entry of sortedEntries) {
-      const created = safeParseDate(entry.createdAt);
-      if (!created) continue;
+      const created = new Date(entry.createdAt);
+      if (Number.isNaN(created.getTime())) continue;
       const weekStart = getWeekStart(created);
       const key = getWeekKey(weekStart);
-
       if (!groups.has(key)) {
          groups.set(key, {
             title: getWeekLabel(weekStart, now),
@@ -240,7 +284,6 @@ function buildSections(filteredRows: Entry[]): EntrySection[] {
       }
       groups.get(key)!.rows.push({ kind: 'entry', entry });
    }
-
    const sections: EntrySection[] = [];
    groups.forEach((group, key) => {
       const summary = getSectionSummary(group.rows);
@@ -252,29 +295,7 @@ function buildSections(filteredRows: Entry[]): EntrySection[] {
          summary,
       });
    });
-
    return sections;
-}
-
-function getWeekStart(date: Date) {
-   const start = new Date(date);
-   start.setHours(0, 0, 0, 0);
-   const diffToSunday = start.getDay();
-   start.setDate(start.getDate() - diffToSunday);
-   return start;
-}
-function safeParseDate(value: string) {
-   const parsed = new Date(value);
-   return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-function formatIsoDate(date: Date) {
-   const year = date.getFullYear();
-   const month = `${date.getMonth() + 1}`.padStart(2, '0');
-   const day = `${date.getDate()}`.padStart(2, '0');
-   return `${year}-${month}-${day}`;
-}
-function formatDate(date: Date) {
-   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 // --- Main Component ---
@@ -289,20 +310,18 @@ export default function EntriesScreen() {
    const { lock: lockNavigation } = useNavigationLock();
    const [showHelpModal, setShowHelpModal] = useState(false);
    const [listHeaderHeight, setListHeaderHeight] = useState(0);
-
-   // --- Dropdown State ---
    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-   // --- Selection State ---
+   const [selectedWeekKey, setSelectedWeekKey] = useState<string>(() =>
+      formatIsoDate(getWeekStart(new Date())),
+   );
+
    const currentWeekKey = useMemo(
       () => formatIsoDate(getWeekStart(new Date())),
       [],
    );
-   const [selectedWeekKey, setSelectedWeekKey] =
-      useState<string>(currentWeekKey);
 
    const listRef = useAnimatedRef<SectionList<RowItem, EntrySection>>();
-
    const shadowSm = useMemo(
       () => getShadow({ isDark, preset: 'sm' }),
       [isDark],
@@ -380,7 +399,6 @@ export default function EntriesScreen() {
          refreshDeletedEntries();
       }, [refreshDeletedEntries]),
    );
-
    useEffect(() => {
       refreshDeletedEntries();
    }, [refreshDeletedEntries, store.rows.length]);
@@ -433,10 +451,23 @@ export default function EntriesScreen() {
       [closeActiveSwipeable, closeMenu, store],
    );
 
-   // =========================================================================
-   // WEEK SELECTION LOGIC
-   // =========================================================================
+   // --- LOADING STATES ---
+   // 1. Check if store has loaded
+   const isHydrated = store.lastHydratedAt !== null && !store.isHydrating;
 
+   // 2. Visual Ready State (Delayed)
+   // We force a 500ms delay after hydration so skeletons have time to show
+   // and animations don't glitch out.
+   const [isReady, setIsReady] = useState(false);
+
+   useEffect(() => {
+      if (isHydrated) {
+         const timer = setTimeout(() => setIsReady(true), 500);
+         return () => clearTimeout(timer);
+      }
+   }, [isHydrated]);
+
+   // --- Filtering ---
    const weekOptions = useMemo(
       () => buildWeekOptions(store.rows, new Date()),
       [store.rows],
@@ -444,15 +475,13 @@ export default function EntriesScreen() {
 
    const filteredRows = useMemo(() => {
       if (selectedWeekKey === 'all') return store.rows;
-
       const option = weekOptions.find((w) => w.key === selectedWeekKey);
       let start, end;
-
       if (option) {
          start = option.start.getTime();
          end = option.end.getTime();
       } else {
-         const startDate = safeParseDate(selectedWeekKey);
+         const startDate = parseLocalIsoDate(selectedWeekKey);
          if (!startDate) return store.rows;
          start = startDate.getTime();
          const endDate = new Date(startDate);
@@ -460,7 +489,6 @@ export default function EntriesScreen() {
          endDate.setHours(23, 59, 59, 999);
          end = endDate.getTime();
       }
-
       return store.rows.filter((entry) => {
          const t = new Date(entry.createdAt).getTime();
          return t >= start && t <= end;
@@ -468,7 +496,6 @@ export default function EntriesScreen() {
    }, [store.rows, selectedWeekKey, weekOptions]);
 
    const sections = useMemo(() => buildSections(filteredRows), [filteredRows]);
-
    const selectedWeekObj = useMemo(() => {
       if (selectedWeekKey === 'all') return null;
       return weekOptions.find((w) => w.key === selectedWeekKey);
@@ -477,16 +504,17 @@ export default function EntriesScreen() {
    const displayLabel = useMemo(() => {
       if (selectedWeekKey === 'all') return 'All Time';
       if (selectedWeekObj) return selectedWeekObj.label;
-      const date = safeParseDate(selectedWeekKey);
+      const date = parseLocalIsoDate(selectedWeekKey);
       return date ? getWeekLabel(date, new Date()) : 'Select Week';
    }, [selectedWeekKey, selectedWeekObj]);
 
-   const isCurrentWeek = selectedWeekKey === currentWeekKey;
+   const isCurrentWeek =
+      selectedWeekKey === formatIsoDate(getWeekStart(new Date()));
 
    const streakAnchorDate = useMemo(() => {
       if (selectedWeekKey === 'all' || isCurrentWeek) return new Date();
       if (selectedWeekObj) return new Date(selectedWeekObj.end);
-      const fallbackStart = safeParseDate(selectedWeekKey);
+      const fallbackStart = parseLocalIsoDate(selectedWeekKey);
       if (fallbackStart) {
          const fallbackEnd = new Date(fallbackStart);
          fallbackEnd.setDate(fallbackEnd.getDate() + 6);
@@ -495,17 +523,12 @@ export default function EntriesScreen() {
       return new Date();
    }, [selectedWeekKey, isCurrentWeek, selectedWeekObj]);
 
-   // =========================================================================
-
-   // Calculate this cheaply here for the "Title" only.
-   // HomeDashboard does the heavy lifting for the cards.
    const reframedCount = useMemo(() => {
       return filteredRows.filter((e) => (e.dispute ?? '').trim().length > 0)
          .length;
    }, [filteredRows]);
 
    const thoughtLabel = reframedCount === 1 ? 'Thought' : 'Thoughts';
-
    const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
       const nextHeight = Math.round(event.nativeEvent.layout.height);
       setListHeaderHeight((prev) => (prev === nextHeight ? prev : nextHeight));
@@ -580,17 +603,15 @@ export default function EntriesScreen() {
    );
 
    const hasEntries = store.rows.length > 0;
-   const hasHydrated = store.lastHydratedAt !== null;
-   const showQuickStart = hasHydrated && !store.isHydrating && !hasEntries;
+   const showQuickStart =
+      store.lastHydratedAt !== null && !store.isHydrating && !hasEntries;
    const shouldShowContent = !showQuickStart;
 
    return (
       <View
          className="flex-1 bg-slate-50 dark:bg-slate-900"
          onStartShouldSetResponderCapture={() => {
-            if (openMenuEntryId) {
-               closeMenu();
-            }
+            if (openMenuEntryId) closeMenu();
             return false;
          }}
       >
@@ -612,7 +633,6 @@ export default function EntriesScreen() {
                      className="px-6 pb-6 bg-slate-50 dark:bg-slate-900 z-50"
                      onLayout={handleHeaderLayout}
                   >
-                     {/* TAP OUTSIDE TO CLOSE - INVISIBLE LAYER */}
                      {isDropdownOpen && (
                         <Pressable
                            style={{
@@ -627,10 +647,8 @@ export default function EntriesScreen() {
                         />
                      )}
 
-                     {/* Header Top Bar */}
                      <View className="flex-row items-center justify-between mb-2 z-50">
                         <View className="z-50 flex-1">
-                           {/* DROPDOWN TRIGGER */}
                            <View className="z-50">
                               <Pressable
                                  onPress={() =>
@@ -656,8 +674,6 @@ export default function EntriesScreen() {
                                     </View>
                                  </View>
                               </Pressable>
-
-                              {/* FLOATING DROPDOWN */}
                               {isDropdownOpen && (
                                  <Animated.View
                                     entering={FadeIn.duration(150)}
@@ -688,18 +704,13 @@ export default function EntriesScreen() {
                                        showsVerticalScrollIndicator={true}
                                        nestedScrollEnabled={true}
                                     >
-                                       {/* ALL TIME OPTION */}
                                        <Pressable
                                           onPress={() =>
                                              handleSelectWeek('all')
                                           }
                                        >
                                           <View
-                                             className={`flex-row items-center justify-between p-3 rounded-xl ${
-                                                selectedWeekKey === 'all'
-                                                   ? 'bg-slate-100 dark:bg-slate-700/50'
-                                                   : ''
-                                             }`}
+                                             className={`flex-row items-center justify-between p-3 rounded-xl ${selectedWeekKey === 'all' ? 'bg-slate-100 dark:bg-slate-700/50' : ''}`}
                                           >
                                              <View className="flex-row items-center gap-3">
                                                 <Infinity
@@ -726,10 +737,7 @@ export default function EntriesScreen() {
                                              )}
                                           </View>
                                        </Pressable>
-
                                        <View className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1 mx-2" />
-
-                                       {/* WEEK OPTIONS */}
                                        {weekOptions.map((week) => {
                                           const isSelected =
                                              selectedWeekKey === week.key;
@@ -741,19 +749,11 @@ export default function EntriesScreen() {
                                                 }
                                              >
                                                 <View
-                                                   className={`flex-row items-center justify-between p-3 rounded-xl ${
-                                                      isSelected
-                                                         ? 'bg-slate-100 dark:bg-slate-700/50'
-                                                         : ''
-                                                   }`}
+                                                   className={`flex-row items-center justify-between p-3 rounded-xl ${isSelected ? 'bg-slate-100 dark:bg-slate-700/50' : ''}`}
                                                 >
                                                    <View>
                                                       <Text
-                                                         className={`text-xs font-bold ${
-                                                            isSelected
-                                                               ? 'text-indigo-600 dark:text-indigo-400'
-                                                               : 'text-slate-700 dark:text-slate-200'
-                                                         }`}
+                                                         className={`text-xs font-bold ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-200'}`}
                                                       >
                                                          {week.label}
                                                       </Text>
@@ -780,8 +780,6 @@ export default function EntriesScreen() {
                               )}
                            </View>
                         </View>
-
-                        {/* Right Side Icons */}
                         <View className="flex-row items-center gap-3">
                            {deletedCount > 0 && (
                               <Link href="/bin" asChild>
@@ -816,41 +814,52 @@ export default function EntriesScreen() {
                         </View>
                      </View>
 
-                     <Text className="text-2xl font-extrabold text-slate-900 dark:text-white mb-4 z-10 ml-2">
-                        {reframedCount} {thoughtLabel}{' '}
-                        <Text className="text-indigo-600 font-extrabold">
-                           Reframed
-                        </Text>
-                     </Text>
-
-                     {/* DASHBOARD AGGREGATOR */}
-                     {shouldShowContent && (
-                        <View className="z-10 mb-6">
-                           <HomeDashboard
-                              entries={filteredRows}
-                              anchorDate={streakAnchorDate}
-                              shadowSm={shadowSm}
-                              isDark={isDark}
-                              showEncouragement={isCurrentWeek}
-                              onDeleteEntry={requestDelete}
-                           />
-                        </View>
+                     {/* TITLE SKELETON */}
+                     {isReady ? (
+                        <Animated.View entering={FadeIn.duration(500)}>
+                           <Text className="text-2xl font-extrabold text-slate-900 dark:text-white mb-4 z-10 ml-2">
+                              {reframedCount} {thoughtLabel}{' '}
+                              <Text className="text-indigo-600 font-extrabold">
+                                 Reframed
+                              </Text>
+                           </Text>
+                        </Animated.View>
+                     ) : (
+                        <TitleSkeleton />
                      )}
 
-                     {/* MAIN NEW ENTRY BUTTON */}
-                     <View className="mt-1 z-10">
-                        <Pressable
-                           onPress={handleNewEntryPress}
-                           className={`relative flex-row items-center justify-center rounded-2xl px-6 py-4 ${PRIMARY_CTA_CLASS}`}
-                           style={[ctaShadow.ios, ctaShadow.android]}
-                        >
-                           <Text
-                              className={`text-lg font-bold text-center ${PRIMARY_CTA_TEXT_CLASS}`}
-                           >
-                              What&apos;s on your mind?
-                           </Text>
-                        </Pressable>
+                     {/* DASHBOARD */}
+                     <View className="z-10 mb-6">
+                        <HomeDashboard
+                           entries={filteredRows}
+                           anchorDate={streakAnchorDate}
+                           shadowSm={shadowSm}
+                           isDark={isDark}
+                           showEncouragement={isCurrentWeek}
+                           onDeleteEntry={requestDelete}
+                           isLoading={!isReady} // <--- Pass Loading State
+                        />
                      </View>
+
+                     {/* BUTTON - Only render when ready */}
+                     {isReady && (
+                        <Animated.View
+                           entering={FadeInDown.duration(600).springify()}
+                           className="mt-1 z-10"
+                        >
+                           <Pressable
+                              onPress={handleNewEntryPress}
+                              className={`relative flex-row items-center justify-center rounded-2xl px-6 py-4 ${PRIMARY_CTA_CLASS}`}
+                              style={[ctaShadow.ios, ctaShadow.android]}
+                           >
+                              <Text
+                                 className={`text-lg font-bold text-center ${PRIMARY_CTA_TEXT_CLASS}`}
+                              >
+                                 What&apos;s on your mind?
+                              </Text>
+                           </Pressable>
+                        </Animated.View>
+                     )}
 
                      <Animated.View
                         className="items-center mt-2"
@@ -871,8 +880,6 @@ export default function EntriesScreen() {
             renderSectionHeader={renderSectionHeader}
             renderItem={renderItem}
          />
-
-         {/* FLOATING ACTION BUTTON (FAB) */}
          {!showQuickStart && (
             <Animated.View
                style={[

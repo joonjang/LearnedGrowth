@@ -1,16 +1,21 @@
 import { Entry } from '@/models/entry';
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
+import Animated, {
+   FadeInDown,
+   FadeOutUp,
+   Layout,
+} from 'react-native-reanimated'; // <--- NEW IMPORTS
 import { WEEKDAY_LABELS } from '../constants';
 import MentalFocusCard from './mentalFocus/MentalFocusCard';
 import StreakCard from './streak/StreakCard';
 import ThinkingPatternCard from './thinkingPattern/ThinkingPatternCard';
 import {
-    DayBucket,
-    MentalFocusViewModel,
-    StreakViewModel,
-    ThinkingPatternData,
-    ThinkingPatternViewModel,
+   DayBucket,
+   MentalFocusViewModel,
+   StreakViewModel,
+   ThinkingPatternData,
+   ThinkingPatternViewModel,
 } from './types';
 import { getWeekStart, isOptimistic, toDateKey } from './utils';
 
@@ -84,6 +89,7 @@ type Props = {
    isDark: boolean;
    showEncouragement: boolean;
    onDeleteEntry: (entry: Entry) => void;
+   isLoading?: boolean;
 };
 
 const HomeDashboard = React.memo(
@@ -94,7 +100,9 @@ const HomeDashboard = React.memo(
       isDark,
       showEncouragement,
       onDeleteEntry,
+      isLoading = false,
    }: Props) => {
+      // --- THE SINGLE PASS AGGREGATOR ---
       const { streakView, focusView, patternView } = useMemo(() => {
          // 1. Init Containers
          const dayBuckets = new Map<string, DayBucket>();
@@ -122,7 +130,7 @@ const HomeDashboard = React.memo(
             const meta = entry.aiResponse?.meta;
             const analysis = entry.aiResponse?.analysis;
 
-            // --- STREAK AGGREGATION ---
+            // Streak Aggregation
             if (!dayBuckets.has(dateKey)) {
                dayBuckets.set(dateKey, {
                   entries: [],
@@ -132,7 +140,7 @@ const HomeDashboard = React.memo(
                });
             }
             const bucket = dayBuckets.get(dateKey)!;
-            bucket.entries.push(entry); // Track all entries for the bucket
+            bucket.entries.push(entry);
 
             if ((entry.dispute || '').trim().length > 0) {
                bucket.completed.push(entry);
@@ -142,7 +150,7 @@ const HomeDashboard = React.memo(
                bucket.incomplete.push(entry);
             }
 
-            // --- MENTAL FOCUS AGGREGATION ---
+            // Mental Focus Aggregation
             const rawCat = meta?.category;
             const cat = !rawCat || rawCat === 'Other' ? 'Other' : rawCat;
             const optScore = getNumericScore(meta?.optimismScore);
@@ -164,7 +172,7 @@ const HomeDashboard = React.memo(
                if (norm) tagMap.set(norm, (tagMap.get(norm) || 0) + 1);
             });
 
-            // --- PATTERN AGGREGATION ---
+            // Pattern Aggregation
             const dims = analysis?.dimensions;
             if (dims) {
                if (dims.permanence) {
@@ -186,7 +194,7 @@ const HomeDashboard = React.memo(
             entriesWithMeta.push({ entry, created });
          }
 
-         // --- 3. Post-Process: Streak ---
+         // 3. Post-Process: Streak
          const today = new Date(anchorDate);
          today.setHours(0, 0, 0, 0);
          const weekStart = getWeekStart(today);
@@ -218,9 +226,8 @@ const HomeDashboard = React.memo(
             activeCount: filledDaysSet.size,
          };
 
-         // --- 4. Post-Process: Mental Focus ---
+         // 4. Post-Process: Mental Focus
          let focusView: MentalFocusViewModel | null = null;
-
          if (catMap.size > 0) {
             const categoryStats = Array.from(catMap.entries())
                .map(([label, val]) => {
@@ -260,13 +267,11 @@ const HomeDashboard = React.memo(
             };
          }
 
-         // --- 5. Post-Process: Thinking Patterns ---
+         // 5. Post-Process: Thinking Patterns
          let patternView: ThinkingPatternViewModel | null = null;
-
          if (entriesWithMeta.length > 0) {
             const getScore = (s: { g: number; t: number }) =>
                s.t > 0 ? (s.g / s.t) * 100 : 50;
-
             const sortedAsc = [...entriesWithMeta].sort(
                (a, b) => a.created.getTime() - b.created.getTime(),
             );
@@ -274,27 +279,19 @@ const HomeDashboard = React.memo(
                (a, b) => b.created.getTime() - a.created.getTime(),
             );
 
+            // Safe Accessors
             const getDimScore = (
-               entry: Entry,
-               key: 'permanence' | 'pervasiveness' | 'personalization',
-            ) => {
-               return entry.aiResponse?.analysis?.dimensions?.[key]?.score;
-            };
-
+               e: Entry,
+               k: 'permanence' | 'pervasiveness' | 'personalization',
+            ) => e.aiResponse?.analysis?.dimensions?.[k]?.score;
             const getDimPhrase = (
-               entry: Entry,
-               key: 'permanence' | 'pervasiveness' | 'personalization',
-            ) => {
-               return entry.aiResponse?.analysis?.dimensions?.[key]
-                  ?.detectedPhrase;
-            };
-
+               e: Entry,
+               k: 'permanence' | 'pervasiveness' | 'personalization',
+            ) => e.aiResponse?.analysis?.dimensions?.[k]?.detectedPhrase;
             const getDimInsight = (
-               entry: Entry,
-               key: 'permanence' | 'pervasiveness' | 'personalization',
-            ) => {
-               return entry.aiResponse?.analysis?.dimensions?.[key]?.insight;
-            };
+               e: Entry,
+               k: 'permanence' | 'pervasiveness' | 'personalization',
+            ) => e.aiResponse?.analysis?.dimensions?.[k]?.insight;
 
             const buildTabData = (
                configKey: keyof typeof PATTERN_TAB_CONFIG,
@@ -325,7 +322,6 @@ const HomeDashboard = React.memo(
                      const score = getDimScore(item.entry, dimKey);
                      const phrase = getDimPhrase(item.entry, dimKey)?.trim();
                      const insight = getDimInsight(item.entry, dimKey);
-
                      if (!phrase) return null;
                      return {
                         id: `${item.entry.id}-${dimKey}`,
@@ -364,30 +360,63 @@ const HomeDashboard = React.memo(
          return { streakView, focusView, patternView };
       }, [entries, anchorDate]);
 
+      // --- RENDER WITH ANIMATIONS ---
+      // We use Reanimated Entry/Exit animations to smooth out the initial appearance
+      // and subsequent layout changes.
+
       return (
          <View className="gap-4">
-            <StreakCard
-               data={streakView}
-               shadowSm={shadowSm}
-               anchorDate={anchorDate}
-               showEncouragement={showEncouragement}
-               onDeleteEntry={onDeleteEntry}
-            />
-
-            {focusView && (
-               <MentalFocusCard
-                  analysis={focusView}
-                  shadowStyle={shadowSm}
-                  isDark={isDark}
+            {/* STREAK CARD
+           Always render, but animate its first appearance so it doesn't just "pop" in 
+           when data calculation finishes.
+        */}
+            <Animated.View
+               entering={FadeInDown.duration(600).springify()}
+               layout={Layout.springify()}
+            >
+               <StreakCard
+                  data={streakView}
+                  shadowSm={shadowSm}
+                  anchorDate={anchorDate}
+                  showEncouragement={showEncouragement}
+                  onDeleteEntry={onDeleteEntry}
+                  isLoading={isLoading} // <--- Pass it down
                />
+            </Animated.View>
+
+            {/* MENTAL FOCUS 
+           Only appears if we have data. The animation makes it slide down nicely 
+           instead of snapping the layout.
+        */}
+            {focusView && (
+               <Animated.View
+                  entering={FadeInDown.duration(600).delay(100).springify()}
+                  exiting={FadeOutUp.duration(400)}
+                  layout={Layout.springify()}
+               >
+                  <MentalFocusCard
+                     analysis={focusView}
+                     shadowStyle={shadowSm}
+                     isDark={isDark}
+                  />
+               </Animated.View>
             )}
 
+            {/* THINKING PATTERNS 
+           Staggered delay (200ms) for a cascading effect.
+        */}
             {patternView && (
-               <ThinkingPatternCard
-                  data={patternView}
-                  shadowStyle={shadowSm}
-                  isDark={isDark}
-               />
+               <Animated.View
+                  entering={FadeInDown.duration(600).delay(200).springify()}
+                  exiting={FadeOutUp.duration(400)}
+                  layout={Layout.springify()}
+               >
+                  <ThinkingPatternCard
+                     data={patternView}
+                     shadowStyle={shadowSm}
+                     isDark={isDark}
+                  />
+               </Animated.View>
             )}
          </View>
       );

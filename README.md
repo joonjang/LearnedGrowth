@@ -76,6 +76,9 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
    - using react-native pressable instead of gesture handler fixed it
 - abstracted home card items
    - data processing done in one location instead of each component O(3n) --> O(n)
+- card display added animation
+- streak card ui loading animation added
+- skeleton animation introduced
 
 ### 2026-01-20
 

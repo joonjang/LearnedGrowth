@@ -1,4 +1,5 @@
 import { StyleProp, Text, View, ViewStyle } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { cx, Day, isFutureDate, toDateKey } from '../../utils';
 
 type StreakCardWeekStripProps = {
@@ -29,21 +30,20 @@ export function StreakCardWeekStrip({
                      : 'text-slate-400',
                );
 
-               const circleClass = cx(
+               const containerClass = cx(
+                  'items-center justify-center overflow-hidden', // Clips the fill
                   isFuture
                      ? 'bg-transparent border-transparent'
-                     : day.filled
-                       ? 'bg-indigo-600 border-transparent'
-                       : isToday
-                         ? 'bg-white dark:bg-slate-800 border-2 border-indigo-500'
-                         : 'bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700',
+                     : isToday
+                       ? 'bg-white dark:bg-slate-800 border-2 border-indigo-500'
+                       : 'bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700',
                );
 
                const dayNumClass = cx(
                   'text-[11px] font-bold',
                   isFuture ? 'opacity-50' : 'opacity-100',
                   day.filled
-                     ? 'text-white'
+                     ? 'text-white' // White text when filled
                      : isToday
                        ? 'text-indigo-700 dark:text-indigo-300'
                        : 'text-slate-400 dark:text-slate-600',
@@ -57,13 +57,25 @@ export function StreakCardWeekStrip({
                      <Text className={labelClass}>{day.label}</Text>
 
                      <View
-                        className={circleClass}
+                        className={containerClass}
                         style={[
                            dayCircleStyle,
-                           // preserve: future dates have no border width at all
                            isFuture ? { borderWidth: 0 } : null,
+                           // Remove border when filled so the color looks seamless
+                           day.filled ? { borderWidth: 0 } : null,
                         ]}
                      >
+                        {/* ANIMATED BACKGROUND FILL (Grows from center) */}
+                        {day.filled && (
+                           <Animated.View
+                              entering={FadeIn.duration(400)
+                                 .delay(idx * 50)
+                                 .springify()}
+                              className="absolute w-full h-full bg-indigo-600 rounded-full"
+                           />
+                        )}
+
+                        {/* TEXT LAYER (Sits on top, does not grow) */}
                         <Text className={dayNumClass}>{dayNum}</Text>
                      </View>
                   </View>
