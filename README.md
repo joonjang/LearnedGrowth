@@ -16,12 +16,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- card items in home dashboard should tap to something
-
 - abstract index.tsx
-
-- view display card just suddenly display
-   - make them display with an animation instead of all of the sudden
 
 - for android the animation doesnt fully finish. maybe its because im using an old phone
 

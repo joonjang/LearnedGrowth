@@ -47,7 +47,7 @@ type Props = {
    entries: Entry[];
    shadowStyle: any;
    isDark: boolean;
-   onDeleteEntry: (entry: Entry) => void; // <--- Added Handler
+   onDeleteEntry: (entry: Entry) => void;
 };
 
 export default function MentalFocusCard({
@@ -55,7 +55,7 @@ export default function MentalFocusCard({
    entries,
    shadowStyle,
    isDark,
-   onDeleteEntry, // <--- Destructured Handler
+   onDeleteEntry,
 }: Props) {
    const sheetRef = useRef<BottomSheetModal>(null);
    const [isPressed, setIsPressed] = useState(false);
@@ -85,56 +85,73 @@ export default function MentalFocusCard({
                   isPressed && CARD_PRESS_STYLE.cardPressed,
                ]}
             >
-               <View className="flex-row items-center gap-2 mb-5">
-                  <Activity size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
-                  <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                     Mental Focus
-                  </Text>
+               {/* Header Section */}
+               <View className="flex-row items-center justify-between mb-5">
+                  <View className="flex-row items-center gap-2">
+                     <Activity
+                        size={16}
+                        color={isDark ? '#cbd5e1' : '#64748b'}
+                     />
+                     <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                        Mental Focus
+                     </Text>
+                  </View>
                </View>
 
-               <View className="flex-row justify-between items-center mb-6">
-                  <View className="flex-row items-center gap-3 flex-1">
-                     <View className="h-12 w-12 items-center justify-center bg-slate-100 dark:bg-slate-700/60 rounded-2xl">
-                        <TopIcon
-                           size={24}
-                           color={isDark ? '#e2e8f0' : '#334155'}
-                        />
-                     </View>
-                     <View>
-                        <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">
+               {/* Main Observation Section (Option 1) */}
+               <View className="flex-row items-start gap-4 mb-6">
+                  <View className="h-14 w-14 items-center justify-center bg-slate-50 dark:bg-slate-700/40 rounded-2xl border border-slate-100 dark:border-slate-700">
+                     <TopIcon
+                        size={28}
+                        color={isDark ? '#e2e8f0' : '#334155'}
+                        strokeWidth={2}
+                     />
+                  </View>
+
+                  <View className="flex-1 gap-y-1.5">
+                     {/* Bullet 1: Recurring Theme */}
+                     <View className="flex-row items-center gap-2">
+                        <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight w-32">
                            Recurring Theme
                         </Text>
-                        <Text className="text-xl font-extrabold text-slate-900 dark:text-white leading-6">
+                        <Text className="text-sm font-bold text-slate-900 dark:text-white flex-1">
                            {narrative.topCatLabel}
                         </Text>
                      </View>
-                  </View>
 
-                  <View className="items-end pl-2">
-                     <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">
-                        Sentiment
-                     </Text>
-                     <View
-                        className="px-2.5 py-1 rounded-lg border"
-                        style={{
-                           borderColor: narrative.styleColor,
-                           backgroundColor: isDark
-                              ? 'transparent'
-                              : `${narrative.styleColor}10`,
-                        }}
-                     >
+                     {/* Bullet 2: Describing Style */}
+                     <View className="flex-row items-center gap-2">
+                        <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight w-32">
+                           Describing Style
+                        </Text>
+
                         <Text
-                           className="text-xs font-bold"
+                           className="text-sm font-semibold text-slate-600 dark:text-slate-300"
                            style={{ color: narrative.styleColor }}
                         >
                            {narrative.styleLabel}
                         </Text>
                      </View>
+
+                     {/* Bullet 3: Detected Tone */}
+                     <View className="flex-row items-center gap-2">
+                        <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight w-32">
+                           Detected Tone
+                        </Text>
+                        <Text className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                           {/* Based on the sentiment color, we can derive a tone word */}
+                           {narrative.styleLabel === 'Positive' ||
+                           narrative.styleLabel === 'Constructive'
+                              ? 'Optimistic'
+                              : 'Pessimistic'}
+                        </Text>
+                     </View>
                   </View>
                </View>
 
-               <View className="mb-3">
-                  <View className="flex-row h-2.5 rounded-full overflow-hidden w-full bg-slate-100 dark:bg-slate-700">
+               {/* Distribution Bar */}
+               <View className="mb-4">
+                  <View className="flex-row h-1.5 rounded-full overflow-hidden w-full bg-slate-100 dark:bg-slate-700">
                      {categoryStats.map(
                         (stat: MentalFocusStat, idx: number) => (
                            <View
@@ -151,6 +168,7 @@ export default function MentalFocusCard({
                   </View>
                </View>
 
+               {/* Legend Tags */}
                <View className="flex-row flex-wrap gap-x-4 gap-y-2">
                   {categoryStats.slice(0, 4).map((stat: MentalFocusStat) => (
                      <View
@@ -158,12 +176,12 @@ export default function MentalFocusCard({
                         className="flex-row items-center gap-1.5"
                      >
                         <View
-                           className="w-2 h-2 rounded-full"
+                           className="w-1.5 h-1.5 rounded-full"
                            style={{ backgroundColor: stat.style.color }}
                         />
-                        <Text className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <Text className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
                            {stat.label}{' '}
-                           <Text className="text-slate-400">
+                           <Text className="font-bold text-slate-400 dark:text-slate-500">
                               {Math.round(stat.percentage)}%
                            </Text>
                         </Text>
@@ -178,7 +196,7 @@ export default function MentalFocusCard({
             analysis={analysis}
             entries={entries}
             isDark={isDark}
-            onDeleteEntry={onDeleteEntry} // <--- Passed Handler
+            onDeleteEntry={onDeleteEntry}
          />
       </>
    );
