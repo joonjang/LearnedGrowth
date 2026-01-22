@@ -79,6 +79,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - card display added animation
 - streak card ui loading animation added
 - skeleton animation introduced
+- mental focus prototype established
 
 ### 2026-01-20
 

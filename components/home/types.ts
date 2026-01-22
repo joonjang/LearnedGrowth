@@ -68,6 +68,7 @@ export type DashboardData = {
 // --- VIEW MODELS ---
 
 export type MentalFocusStat = {
+   // Export this
    label: string;
    count: number;
    percentage: number;
@@ -76,6 +77,7 @@ export type MentalFocusStat = {
 };
 
 export type MentalFocusTagStat = {
+   // Export this
    label: string;
    count: number;
 };

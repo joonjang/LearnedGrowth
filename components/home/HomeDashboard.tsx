@@ -396,6 +396,7 @@ const HomeDashboard = React.memo(
                >
                   <MentalFocusCard
                      analysis={focusView}
+                     entries={entries}
                      shadowStyle={shadowSm}
                      isDark={isDark}
                   />
