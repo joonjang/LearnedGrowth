@@ -50,17 +50,20 @@ rm -rf node_modules
 npm ci
 
 rm -rf .expo .expo-shared
-
 npx expo prebuild --clean
-
-cd ios
-pod install
-cd ..
 
 npx -y eas-cli@latest build -p android --profile playstore --local
 env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile production --local
 
 ## Development Journal
+
+### 2026-01-22
+
+- approaching prod status
+- updated mental focus card to display more accurate tone and update sheet for better filtering
+- updated dev ai service for more dynamic mock input
+- added indicator to tap card for mental and pattern cards at footer
+- fixed index.tsx mounting causing sheets to close
 
 ### 2026-01-21
 

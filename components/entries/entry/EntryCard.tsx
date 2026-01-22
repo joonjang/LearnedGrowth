@@ -12,11 +12,18 @@ import {
    MoreHorizontal,
    Pencil,
    Sprout, // Used for the Reframed Badge icon
-   Trash2
+   Trash2,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, type TextLayoutEvent, TouchableOpacity, View } from 'react-native';
+import {
+   Pressable,
+   StyleSheet,
+   Text,
+   type TextLayoutEvent,
+   TouchableOpacity,
+   View,
+} from 'react-native';
 import Animated, {
    Easing,
    FadeIn,
@@ -46,14 +53,16 @@ type Prop = {
    onNavigate?: (entry: Entry) => void;
    onMenuLayout?: (bounds: MenuBounds) => void;
    closeActiveSwipeable?: () => string | null;
+   // We keep the prop optional, but now we'll default it to 'reframed' below
+   initialViewMode?: 'reframed' | 'original';
 };
 
 // --- Truncation Constants ---
 const TRUNCATION_LIMITS = {
-   adversity: 3, 
+   adversity: 3,
    belief: 4,
    consequence: 4,
-   dispute: 8, 
+   dispute: 8,
    energy: 3,
 } as const;
 
@@ -62,28 +71,39 @@ type TruncationState = Record<TruncationKey, boolean>;
 
 // --- Helper Components ---
 
-const FlowBreadcrumb = ({ 
-   steps, 
-   isResolved, 
-   activeMode 
-}: { 
-   steps: string[], 
-   isResolved?: boolean, 
-   activeMode?: 'reframed' | 'original' 
+const FlowBreadcrumb = ({
+   steps,
+   isResolved,
+   activeMode,
+}: {
+   steps: string[];
+   isResolved?: boolean;
+   activeMode?: 'reframed' | 'original';
 }) => (
    <View className="flex-row items-center justify-between mb-3 px-1">
       <View className="flex-row items-center gap-1.5">
          {steps.map((step, index) => (
             <View key={step} className="flex-row items-center gap-1.5">
-               <Text className={`text-[11px] font-bold uppercase tracking-wider ${
-                  isResolved && activeMode === 'reframed' && step !== 'Adversity' 
-                     ? 'text-dispute-text dark:text-dispute-textDark opacity-80' 
-                     : 'text-slate-400 dark:text-slate-500'
-               }`}>
+               <Text
+                  className={`text-[11px] font-bold uppercase tracking-wider ${
+                     isResolved &&
+                     activeMode === 'reframed' &&
+                     step !== 'Adversity'
+                        ? 'text-dispute-text dark:text-dispute-textDark opacity-80'
+                        : 'text-slate-400 dark:text-slate-500'
+                  }`}
+               >
                   {step}
                </Text>
                {index < steps.length - 1 && (
-                  <ChevronRight size={12} color={isResolved && activeMode === 'reframed' ? "#0ea5e9" : "#475569"} />
+                  <ChevronRight
+                     size={12}
+                     color={
+                        isResolved && activeMode === 'reframed'
+                           ? '#0ea5e9'
+                           : '#475569'
+                     }
+                  />
                )}
             </View>
          ))}
@@ -99,57 +119,62 @@ const FlowConnector = ({ isResolved }: { isResolved?: boolean }) => {
          ? '#d1fae5'
          : '#065f46'
       : isDark
-         ? '#94a3b8'
-         : '#94a3b8';
+        ? '#94a3b8'
+        : '#94a3b8';
 
    return (
       <View className="items-center -my-1.5 z-10 relative">
-         <View className={`${isResolved ? 'bg-dispute-bg dark:bg-dispute-bgDark' : 'bg-slate-50 dark:bg-slate-800/80'} rounded-full p-1`}>
+         <View
+            className={`${isResolved ? 'bg-dispute-bg dark:bg-dispute-bgDark' : 'bg-slate-50 dark:bg-slate-800/80'} rounded-full p-1`}
+         >
             <ArrowDown size={14} color={iconColor} />
          </View>
       </View>
    );
 };
 
-const FlowBlock = memo(({
-   text,
-   type,
-   textKey,
-   isTruncated,
-   onLayout,
-   isLast = false,
-   isResolved = false
-}: {
-   text: string,
-   type: FieldTone,
-   textKey: TruncationKey,
-   isTruncated: boolean,
-   onLayout: (e: TextLayoutEvent) => void,
-   isLast?: boolean,
-   isResolved?: boolean
-}) => {
-   const styles = getFieldStyles(type, false);
-   const beliefGlassBg =
-      type === 'belief' ? 'dark:bg-rose-500/10' : '';
+const FlowBlock = memo(
+   ({
+      text,
+      type,
+      textKey,
+      isTruncated,
+      onLayout,
+      isLast = false,
+      isResolved = false,
+   }: {
+      text: string;
+      type: FieldTone;
+      textKey: TruncationKey;
+      isTruncated: boolean;
+      onLayout: (e: TextLayoutEvent) => void;
+      isLast?: boolean;
+      isResolved?: boolean;
+   }) => {
+      const styles = getFieldStyles(type, false);
+      const beliefGlassBg = type === 'belief' ? 'dark:bg-rose-500/10' : '';
 
-   return (
-      <View>
-         <View
-            className={`px-3.5 py-3 rounded-xl border ${styles.container} bg-white dark:bg-slate-900/50 ${beliefGlassBg}`}
-         >
-            <Text
-               className={`text-[15px] leading-[22px] ${styles.text}`}
-               onTextLayout={onLayout}
-               numberOfLines={isTruncated ? TRUNCATION_LIMITS[textKey] : undefined}
-               ellipsizeMode="tail"
+      return (
+         <View>
+            <View
+               className={`px-3.5 py-3 rounded-xl border ${styles.container} bg-white dark:bg-slate-900/50 ${beliefGlassBg}`}
             >
-               {text}
-            </Text>
+               <Text
+                  className={`text-[15px] leading-[22px] ${styles.text}`}
+                  onTextLayout={onLayout}
+                  numberOfLines={
+                     isTruncated ? TRUNCATION_LIMITS[textKey] : undefined
+                  }
+                  ellipsizeMode="tail"
+               >
+                  {text}
+               </Text>
+            </View>
+            {!isLast && <FlowConnector isResolved={isResolved} />}
          </View>
-         {!isLast && <FlowConnector isResolved={isResolved} />}
-      </View>
-   );
-});
+      );
+   },
+);
 FlowBlock.displayName = 'FlowBlock';
 
 // --- Main Component ---
@@ -162,21 +187,32 @@ export default function EntryCard({
    onNavigate,
    onMenuLayout,
    closeActiveSwipeable,
+   initialViewMode = 'reframed', // <--- CHANGED: Back to 'reframed' as default
 }: Prop) {
    const menuRef = useRef<View | null>(null);
    const swipeClosedRecently = useRef(false);
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const { lock: lockNavigation, locked: navigationLocked } = useNavigationLock();
+   const { lock: lockNavigation, locked: navigationLocked } =
+      useNavigationLock();
 
-   const isReframed = !!entry.dispute; 
-   const [viewMode, setViewMode] = useState<'reframed' | 'original'>('reframed');
+   const isReframed = !!entry.dispute;
+   // Initialize state with the prop (which defaults to 'reframed')
+   const [viewMode, setViewMode] = useState<'reframed' | 'original'>(
+      initialViewMode,
+   );
 
    const createdLabel = useMemo(() => {
       try {
          const d = new Date(entry.createdAt);
-         const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-         const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+         const date = d.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+         });
+         const time = d.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+         });
          return `${date} • ${time}`;
       } catch {
          return '';
@@ -186,33 +222,42 @@ export default function EntryCard({
    const colors = {
       hint: isDark ? '#94a3b8' : '#64748b',
       delete: isDark ? '#fb7185' : '#b91c1c',
-      elevatedBorder: isDark ? 'rgba(148, 163, 184, 0.45)' : 'rgba(15, 23, 42, 0.06)',
+      elevatedBorder: isDark
+         ? 'rgba(148, 163, 184, 0.45)'
+         : 'rgba(15, 23, 42, 0.06)',
    };
 
    // --- State ---
    const [truncateState, setTruncateState] = useState<TruncationState>(() =>
       Object.keys(TRUNCATION_LIMITS).reduce(
          (acc, key) => ({ ...acc, [key]: false }),
-         {} as TruncationState
-      )
+         {} as TruncationState,
+      ),
    );
 
-   const handleTextLayout = useCallback((key: TruncationKey) => (e: TextLayoutEvent) => {
-      const lines = e.nativeEvent.lines.length;
-      if (lines > TRUNCATION_LIMITS[key]) {
-         setTruncateState(prev => prev[key] ? prev : { ...prev, [key]: true });
-      }
-   }, []);
+   const handleTextLayout = useCallback(
+      (key: TruncationKey) => (e: TextLayoutEvent) => {
+         const lines = e.nativeEvent.lines.length;
+         if (lines > TRUNCATION_LIMITS[key]) {
+            setTruncateState((prev) =>
+               prev[key] ? prev : { ...prev, [key]: true },
+            );
+         }
+      },
+      [],
+   );
 
    useEffect(() => {
       setTruncateState(
          Object.keys(TRUNCATION_LIMITS).reduce(
             (acc, key) => ({ ...acc, [key]: false }),
-            {} as TruncationState
-         )
+            {} as TruncationState,
+         ),
       );
-      setViewMode('reframed');
-   }, [entry.id]);
+      // Reset viewMode when entry or prop changes.
+      // This ensures that if you pass 'original', it forces 'original'.
+      setViewMode(initialViewMode);
+   }, [entry.id, initialViewMode]);
 
    // --- Animations ---
    const menuOpacity = useSharedValue(0);
@@ -226,8 +271,14 @@ export default function EntryCard({
       borderColor: colors.elevatedBorder,
    }));
 
-   const cardShadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
-   const menuShadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
+   const cardShadow = useMemo(
+      () => getShadow({ isDark, preset: 'sm' }),
+      [isDark],
+   );
+   const menuShadow = useMemo(
+      () => getShadow({ isDark, preset: 'sm' }),
+      [isDark],
+   );
 
    const menuStyle = useAnimatedStyle(() => ({
       opacity: menuOpacity.value,
@@ -242,9 +293,18 @@ export default function EntryCard({
    useEffect(() => {
       if (isMenuOpen) {
          menuOpacity.value = withTiming(1, { duration: 200 });
-         menuScale.value = withTiming(1, { duration: 250, easing: Easing.out(Easing.back(1.2)) });
-         menuTranslateX.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) });
-         menuTranslateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) });
+         menuScale.value = withTiming(1, {
+            duration: 250,
+            easing: Easing.out(Easing.back(1.2)),
+         });
+         menuTranslateX.value = withTiming(0, {
+            duration: 250,
+            easing: Easing.out(Easing.cubic),
+         });
+         menuTranslateY.value = withTiming(0, {
+            duration: 250,
+            easing: Easing.out(Easing.cubic),
+         });
       } else {
          menuOpacity.value = withTiming(0, { duration: 150 });
          menuScale.value = withTiming(0.5, { duration: 150 });
@@ -286,7 +346,6 @@ export default function EntryCard({
    }, [
       closeActiveSwipeable,
       entry,
-      entry.id,
       isMenuOpen,
       lockNavigation,
       onCloseMenu,
@@ -302,11 +361,11 @@ export default function EntryCard({
             params: { id: entry.id, mode: 'edit' },
          });
       });
-   }, [entry, entry.id, lockNavigation, onCloseMenu, onNavigate]);
+   }, [entry, lockNavigation, onCloseMenu, onNavigate]);
 
    const toggleViewMode = (e: any) => {
       e.stopPropagation();
-      setViewMode(prev => prev === 'reframed' ? 'original' : 'reframed');
+      setViewMode((prev) => (prev === 'reframed' ? 'original' : 'reframed'));
    };
 
    return (
@@ -315,8 +374,12 @@ export default function EntryCard({
          style={[cardAnimatedStyle, cardShadow.ios, cardShadow.android]}
          disabled={navigationLocked}
          onPress={handleOpenEntry}
-         onPressIn={() => (pressProgress.value = withTiming(1, { duration: 120 }))}
-         onPressOut={() => (pressProgress.value = withTiming(0, { duration: 140 }))}
+         onPressIn={() =>
+            (pressProgress.value = withTiming(1, { duration: 120 }))
+         }
+         onPressOut={() =>
+            (pressProgress.value = withTiming(0, { duration: 140 }))
+         }
       >
          {isMenuOpen && (
             <Pressable
@@ -346,11 +409,13 @@ export default function EntryCard({
 
             {/* Right Side: Badge + Menu */}
             <View className="flex-row items-center">
-               
                {/* 1. REFRAMED BADGE (Visible in White Area) */}
                {isReframed && (
                   <View className="mr-3 bg-dispute-bg dark:bg-dispute-bgDark px-2 py-0.5 rounded-md border border-dispute-border dark:border-dispute-borderDark flex-row items-center gap-1">
-                     <CheckCircle2 size={12} color={isDark ? '#d1fae5' : '#065f46'} />
+                     <CheckCircle2
+                        size={12}
+                        color={isDark ? '#d1fae5' : '#065f46'}
+                     />
                      <Text className="text-[9px] font-bold text-dispute-text dark:text-dispute-textDark uppercase tracking-wide">
                         Reframed
                      </Text>
@@ -388,16 +453,26 @@ export default function EntryCard({
                         onPress={handleEditFromMenu}
                         disabled={navigationLocked}
                      >
-                        <Pencil size={18} color={isDark ? '#f8fafc' : '#334155'} />
-                        <Text className="text-[15px] font-medium text-slate-700 dark:text-slate-200">Edit Entry</Text>
+                        <Pencil
+                           size={18}
+                           color={isDark ? '#f8fafc' : '#334155'}
+                        />
+                        <Text className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                           Edit Entry
+                        </Text>
                      </Pressable>
                      <View className="h-[1px] bg-slate-100 dark:bg-slate-700 mx-2" />
                      <Pressable
                         className="flex-row items-center gap-3 py-3 px-4 active:bg-rose-50 dark:active:bg-rose-900/20"
-                        onPress={() => { onCloseMenu(); onDelete(entry); }}
+                        onPress={() => {
+                           onCloseMenu();
+                           onDelete(entry);
+                        }}
                      >
                         <Trash2 size={18} color={colors.delete} />
-                        <Text className="text-[15px] font-medium text-rose-600 dark:text-rose-400">Delete</Text>
+                        <Text className="text-[15px] font-medium text-rose-600 dark:text-rose-400">
+                           Delete
+                        </Text>
                      </Pressable>
                   </Animated.View>
                </View>
@@ -406,23 +481,24 @@ export default function EntryCard({
 
          {isReframed ? (
             // === VIEW 1: COMPLETE (TOGGLEABLE) ===
-            <Animated.View 
-               layout={LinearTransition.springify()} 
+            <Animated.View
+               layout={LinearTransition.springify()}
                className={`p-3 pb-4 rounded-2xl relative border ${
-                  viewMode === 'reframed' 
-                     ? 'bg-dispute-bg dark:bg-dispute-bgDark border-dispute-border dark:border-dispute-borderDark' 
+                  viewMode === 'reframed'
+                     ? 'bg-dispute-bg dark:bg-dispute-bgDark border-dispute-border dark:border-dispute-borderDark'
                      : 'bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-700'
                }`}
             >
-               <FlowBreadcrumb 
-                  steps={viewMode === 'reframed' 
-                     ? ['Adversity', 'Dispute', 'Energy'] 
-                     : ['Adversity', 'Belief', 'Consequence']
-                  } 
+               <FlowBreadcrumb
+                  steps={
+                     viewMode === 'reframed'
+                        ? ['Adversity', 'Dispute', 'Energy']
+                        : ['Adversity', 'Belief', 'Consequence']
+                  }
                   isResolved={true}
                   activeMode={viewMode}
                />
-               
+
                <View className="gap-0.5">
                   <FlowBlock
                      text={entry.adversity}
@@ -434,7 +510,10 @@ export default function EntryCard({
                   />
 
                   {viewMode === 'reframed' ? (
-                     <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
+                     <Animated.View
+                        entering={FadeIn.duration(200)}
+                        exiting={FadeOut.duration(150)}
+                     >
                         <FlowBlock
                            text={entry.dispute || ''}
                            type="dispute"
@@ -454,7 +533,10 @@ export default function EntryCard({
                         />
                      </Animated.View>
                   ) : (
-                     <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
+                     <Animated.View
+                        entering={FadeIn.duration(200)}
+                        exiting={FadeOut.duration(150)}
+                     >
                         <FlowBlock
                            text={entry.belief}
                            type="belief"
@@ -476,28 +558,34 @@ export default function EntryCard({
 
                {/* --- Footer Toggle --- */}
                <View className="flex-row justify-end mt-5">
-                  <TouchableOpacity 
+                  <TouchableOpacity
                      activeOpacity={0.7}
                      onPress={toggleViewMode}
                      hitSlop={{ top: 14, bottom: 14, left: 24, right: 24 }}
                   >
                      <View
                         className={`flex-row items-center gap-1.5 px-3.5 py-2 rounded-full border ${
-                           viewMode === 'reframed' 
-                              ? 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700' 
+                           viewMode === 'reframed'
+                              ? 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700'
                               : 'bg-dispute-bg border-dispute-border dark:bg-dispute-bgDark dark:border-dispute-borderDark'
                         }`}
                      >
                         {viewMode === 'reframed' ? (
                            <>
-                              <History size={13} color={isDark ? '#94a3b8' : '#64748b'} />
+                              <History
+                                 size={13}
+                                 color={isDark ? '#94a3b8' : '#64748b'}
+                              />
                               <Text className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                                  View Original
                               </Text>
                            </>
                         ) : (
                            <>
-                              <Sprout size={13} color={isDark ? '#d1fae5' : '#065f46'} />
+                              <Sprout
+                                 size={13}
+                                 color={isDark ? '#d1fae5' : '#065f46'}
+                              />
                               <Text className="text-[11px] font-bold text-dispute-text dark:text-dispute-textDark uppercase tracking-wide">
                                  View Reframed
                               </Text>
@@ -511,8 +599,10 @@ export default function EntryCard({
             // === VIEW 2: INCOMPLETE (STANDARD) ===
             <>
                <View className="bg-slate-50/80 dark:bg-slate-800/40 p-3 pb-5 rounded-2xl mb-1">
-                  <FlowBreadcrumb steps={['Adversity', 'Belief', 'Consequence']} />
-                  
+                  <FlowBreadcrumb
+                     steps={['Adversity', 'Belief', 'Consequence']}
+                  />
+
                   <View className="gap-0.5">
                      <FlowBlock
                         text={entry.adversity}
@@ -538,9 +628,12 @@ export default function EntryCard({
                      />
                   </View>
                </View>
-               
+
                <View className="mt-1 px-1">
-                  <CardNextButton id={entry.id} onNavigate={() => onNavigate?.(entry)} />
+                  <CardNextButton
+                     id={entry.id}
+                     onNavigate={() => onNavigate?.(entry)}
+                  />
                </View>
             </>
          )}

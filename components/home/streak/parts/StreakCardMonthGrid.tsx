@@ -49,7 +49,7 @@ export function StreakCardMonthGrid({
    };
 
    return (
-      <View className="px-5 pb-4">
+      <View className="px-5 pb-2">
          <View className="flex-row justify-between mb-2">
             {WEEKDAY_LABELS.map((label, idx) => (
                <View key={`${label}-${idx}`} className="flex-1 items-center">

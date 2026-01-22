@@ -15,9 +15,25 @@ import React, { useCallback, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Entry } from '@/models/entry';
+import HelperFooter from '../HelperFooter';
 import { MentalFocusStat, MentalFocusViewModel } from '../types';
 import { CARD_PRESS_STYLE } from '../utils';
 import { MentalFocusSheet } from './MentalFocusSheet';
+
+function getDetectedTone(styleLabel: string): string {
+   switch (styleLabel) {
+      case 'Positive':
+      case 'Constructive':
+         return 'Optimistic';
+      case 'Balanced':
+      case 'Mixed':
+         return 'Mixed';
+      case 'Critical':
+         return 'Pessimistic';
+      default:
+         return 'Mixed';
+   }
+}
 
 const getCategoryIcon = (category: string) => {
    switch (category) {
@@ -70,6 +86,8 @@ export default function MentalFocusCard({
    const { categoryStats, narrative } = analysis;
    const TopIcon = getCategoryIcon(narrative.topCatLabel);
 
+   const detectedTone = getDetectedTone(narrative.styleLabel);
+
    return (
       <>
          <Pressable
@@ -78,7 +96,7 @@ export default function MentalFocusCard({
             onPressOut={() => setIsPressed(false)}
          >
             <View
-               className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
+               className="p-5 pb-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
                style={[
                   shadowStyle.ios,
                   shadowStyle.android,
@@ -112,7 +130,7 @@ export default function MentalFocusCard({
                      {/* Bullet 1: Recurring Theme */}
                      <View className="flex-row items-center gap-2">
                         <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight w-32">
-                           Recurring Theme
+                           Observed Topic
                         </Text>
                         <Text className="text-sm font-bold text-slate-900 dark:text-white flex-1">
                            {narrative.topCatLabel}
@@ -122,7 +140,7 @@ export default function MentalFocusCard({
                      {/* Bullet 2: Describing Style */}
                      <View className="flex-row items-center gap-2">
                         <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight w-32">
-                           Describing Style
+                           Explanatory Style
                         </Text>
 
                         <Text
@@ -139,11 +157,7 @@ export default function MentalFocusCard({
                            Detected Tone
                         </Text>
                         <Text className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-                           {/* Based on the sentiment color, we can derive a tone word */}
-                           {narrative.styleLabel === 'Positive' ||
-                           narrative.styleLabel === 'Constructive'
-                              ? 'Optimistic'
-                              : 'Pessimistic'}
+                           {detectedTone}
                         </Text>
                      </View>
                   </View>
@@ -188,6 +202,7 @@ export default function MentalFocusCard({
                      </View>
                   ))}
                </View>
+               <HelperFooter isDark={isDark} />
             </View>
          </Pressable>
 

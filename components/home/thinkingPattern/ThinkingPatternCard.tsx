@@ -3,6 +3,7 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BookOpen, ChevronDown, ChevronUp, Layers } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
 import { LayoutAnimation, Pressable, Text, View } from 'react-native';
+import HelperFooter from '../HelperFooter';
 import { ThinkingPatternViewModel } from '../types';
 import { CARD_PRESS_STYLE } from '../utils';
 import GradientSpectrumBar from './GradientSpectrumBar';
@@ -51,7 +52,7 @@ export default function ThinkingPatternCard({
             onPressOut={handlePressOut}
          >
             <View
-               className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
+               className="p-5 pb-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
                style={[
                   shadowStyle.ios,
                   shadowStyle.android,
@@ -132,6 +133,7 @@ export default function ThinkingPatternCard({
                      isDark={isDark}
                   />
                </View>
+               <HelperFooter isDark={isDark} />
             </View>
          </Pressable>
 

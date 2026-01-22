@@ -1,9 +1,10 @@
 import {
-  AbcAiService,
-  AbcInput,
-  AiSource,
-  LearnedGrowthResult,
-  normalizeLearnedGrowthResponse,
+   AbcAiService,
+   AbcInput,
+   AiSource,
+   LEARNED_GROWTH_CATEGORIES, // Ensure this is exported from your model file
+   LearnedGrowthResult,
+   normalizeLearnedGrowthResponse,
 } from '@/models/aiService';
 
 // Simple fixture-backed service that generates dynamic responses for local dev/testing.
@@ -16,58 +17,80 @@ export class DevAiService implements AbcAiService {
 
    /**
     * Generates a fresh response on the fly.
-    * - Shuffles "optimistic", "mixed", "pessimistic" across the 3 dimensions.
+    * - Randomizes Category.
+    * - Generates a score (0-10) and ensures dimension scores match that "mood".
     * - Injects current timestamp for debugging.
     */
    private generateDynamicResponse(input: AbcInput) {
       const timestamp = new Date().toLocaleTimeString();
 
-      // 1. Shuffle the scores so we get one of each distributed randomly
-      const scores = ['optimistic', 'mixed', 'pessimistic'].sort(
-         () => Math.random() - 0.5,
+      // 1. Randomize Category
+      const randomCatIndex = Math.floor(
+         Math.random() * LEARNED_GROWTH_CATEGORIES.length,
       );
+      const category = LEARNED_GROWTH_CATEGORIES[randomCatIndex];
 
-      // 2. Build the JSON structure
+      // 2. Randomize Score (0-10)
+      const optimismScore = Math.floor(Math.random() * 11); // 0 to 10 inclusive
+
+      // 3. Derive Consistent Dimension Scores based on the Optimism Score
+      // This ensures your UI "Detected Tone" matches the "Thinking Pattern" data
+      let dimensionPool = ['mixed', 'mixed', 'mixed'];
+
+      if (optimismScore >= 8) {
+         // Highly Optimistic: mostly optimistic
+         dimensionPool = ['optimistic', 'optimistic', 'mixed'];
+      } else if (optimismScore >= 6) {
+         // Moderately Optimistic
+         dimensionPool = ['optimistic', 'mixed', 'mixed'];
+      } else if (optimismScore <= 2) {
+         // Highly Pessimistic
+         dimensionPool = ['pessimistic', 'pessimistic', 'mixed'];
+      } else if (optimismScore <= 4) {
+         // Moderately Pessimistic
+         dimensionPool = ['pessimistic', 'mixed', 'mixed'];
+      }
+
+      // Shuffle the derived pool so the dimensions aren't always in the same order
+      const scores = dimensionPool.sort(() => Math.random() - 0.5);
+
+      // 4. Build the JSON structure
       const rawResponse = {
          safety: {
             isCrisis: false,
             crisisMessage: null,
          },
          meta: {
-            category: 'Work',
-            tags: ['dev-test', 'randomized'],
-            sentimentScore: 5,
-            optimismScore: Math.floor(Math.random() * 10), // Random score 0-10
+            category: category, // Random category
+            tags: ['dev-test', 'randomized', category.toLowerCase()],
+            sentimentScore: Math.floor(Math.random() * 10),
+            optimismScore: optimismScore, // Consistent score
          },
          analysis: {
             dimensions: {
                permanence: {
                   score: scores[0],
                   detectedPhrase: 'dev_test_phrase_permanence',
-                  insight: `(Permanence was ${scores[0]}). This insight was generated at ${timestamp}.`,
+                  insight: `(Permanence was ${scores[0]}). Random Cat: ${category}. Score: ${optimismScore}.`,
                },
                pervasiveness: {
                   score: scores[1],
                   detectedPhrase: 'dev_test_phrase_pervasiveness',
-                  insight: `(Pervasiveness was ${scores[1]}). The user input was: "${input.adversity.substring(0, 15)}..."`,
+                  insight: `(Pervasiveness was ${scores[1]}). Input: "${input.adversity.substring(0, 10)}..."`,
                },
                personalization: {
                   score: scores[2],
                   detectedPhrase: 'dev_test_phrase_personalization',
-                  insight: `(Personalization was ${scores[2]}). Random variety ensures UI testing covers all pill colors.`,
+                  insight: `(Personalization was ${scores[2]}). Generated at ${timestamp}.`,
                },
             },
-            // 3. Inject Time here for visibility
-            emotionalLogic: `[DEBUG: ${timestamp}] It makes sense to feel frustrated. This response is fresh.`,
+            emotionalLogic: `[DEBUG: ${timestamp}] Score ${optimismScore} matches dimensions ${scores.join('/')}.`,
          },
          suggestions: {
-            evidenceQuestion:
-               'Can you see the timestamp updated in the emotional logic section?',
-            alternativesQuestion:
-               'What happens if you refresh the AI insight again?',
-            usefulnessQuestion:
-               'How does this layout handle mixed vs optimistic colors?',
-            counterBelief: `I can verify my dev changes because the time is currently ${timestamp}.`,
+            evidenceQuestion: `Evidence question for ${category}?`,
+            alternativesQuestion: `Alternatives for score ${optimismScore}?`,
+            usefulnessQuestion: `Usefulness check at ${timestamp}?`,
+            counterBelief: `Counter belief for ${category} scenario.`,
          },
       };
 
@@ -80,7 +103,7 @@ export class DevAiService implements AbcAiService {
    ): Promise<LearnedGrowthResult> {
       const started = Date.now();
 
-      // 1. Generate dynamic data instead of loading a file
+      // 1. Generate dynamic data
       const rawResponse = this.generateDynamicResponse(input);
       const data = normalizeLearnedGrowthResponse(rawResponse);
 

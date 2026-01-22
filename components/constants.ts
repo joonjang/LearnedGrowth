@@ -101,3 +101,17 @@ export const HOME_ICON_LIGHT = '#64748b';
 
 export const CHEVRON_ICON_DARK = '#94a3b8';
 export const CHEVRON_ICON_LIGHT = '#cbd5e1';
+
+export const UNCATEGORIZED_LABEL = 'Not categorized';
+export const CATEGORY_COLOR_MAP: Record<string, string> = {
+   Work: '#3b82f6',
+   Education: '#8b5cf6',
+   Relationships: '#e11d48',
+   Health: '#10b981',
+   Finance: '#eab308',
+   'Self-Image': '#06b6d4',
+   'Daily Hassles': '#64748b',
+   Other: '#9ca3af',
+   [UNCATEGORIZED_LABEL]: '#e2e8f0',
+};
+export const DEFAULT_CATEGORY_COLOR = '#cbd5e1';

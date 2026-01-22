@@ -5,8 +5,13 @@ import Animated, {
    FadeInDown,
    FadeOutUp,
    Layout,
-} from 'react-native-reanimated'; // <--- NEW IMPORTS
-import { WEEKDAY_LABELS } from '../constants';
+   LinearTransition,
+} from 'react-native-reanimated';
+import {
+   CATEGORY_COLOR_MAP,
+   DEFAULT_CATEGORY_COLOR,
+   WEEKDAY_LABELS,
+} from '../constants';
 import MentalFocusCard from './mentalFocus/MentalFocusCard';
 import StreakCard from './streak/StreakCard';
 import ThinkingPatternCard from './thinkingPattern/ThinkingPatternCard';
@@ -119,7 +124,9 @@ const HomeDashboard = React.memo(
             perv: { g: 0, t: 0 },
             pers: { g: 0, t: 0 },
          };
+         // Only store entries here if they actually have dimensions data
          const entriesWithMeta: { entry: Entry; created: Date }[] = [];
+         let totalAnalyzedCount = 0;
 
          // 2. The Loop
          for (const entry of entries) {
@@ -130,7 +137,7 @@ const HomeDashboard = React.memo(
             const meta = entry.aiResponse?.meta;
             const analysis = entry.aiResponse?.analysis;
 
-            // Streak Aggregation
+            // --- STREAK AGGREGATION (Always Runs) ---
             if (!dayBuckets.has(dateKey)) {
                dayBuckets.set(dateKey, {
                   entries: [],
@@ -150,48 +157,56 @@ const HomeDashboard = React.memo(
                bucket.incomplete.push(entry);
             }
 
-            // Mental Focus Aggregation
-            const rawCat = meta?.category;
-            const cat = !rawCat || rawCat === 'Other' ? 'Other' : rawCat;
-            const optScore = getNumericScore(meta?.optimismScore);
+            // --- AI DEPENDENT AGGREGATION (Guarded) ---
+            if (entry.aiResponse) {
+               // 1. Mental Focus (Requires Meta)
+               if (meta) {
+                  totalAnalyzedCount++;
+                  const rawCat = meta.category;
+                  const cat = !rawCat || rawCat === 'Other' ? 'Other' : rawCat;
+                  const optScore = getNumericScore(meta.optimismScore);
 
-            const catData = catMap.get(cat) || {
-               count: 0,
-               totalScore: 0,
-               validScores: 0,
-            };
-            catData.count++;
-            if (optScore !== null) {
-               catData.totalScore += optScore;
-               catData.validScores++;
+                  const catData = catMap.get(cat) || {
+                     count: 0,
+                     totalScore: 0,
+                     validScores: 0,
+                  };
+                  catData.count++;
+                  if (optScore !== null) {
+                     catData.totalScore += optScore;
+                     catData.validScores++;
+                  }
+                  catMap.set(cat, catData);
+
+                  (meta.tags || []).forEach((t) => {
+                     const norm = t.toLowerCase().trim();
+                     if (norm) tagMap.set(norm, (tagMap.get(norm) || 0) + 1);
+                  });
+               }
+
+               // 2. Thinking Patterns (Requires Analysis Dimensions)
+               const dims = analysis?.dimensions;
+               if (dims) {
+                  if (dims.permanence) {
+                     threePsStats.perm.t++;
+                     if (isOptimistic(dims.permanence.score))
+                        threePsStats.perm.g++;
+                  }
+                  if (dims.pervasiveness) {
+                     threePsStats.perv.t++;
+                     if (isOptimistic(dims.pervasiveness.score))
+                        threePsStats.perv.g++;
+                  }
+                  if (dims.personalization) {
+                     threePsStats.pers.t++;
+                     if (isOptimistic(dims.personalization.score))
+                        threePsStats.pers.g++;
+                  }
+
+                  // Only push to array if dimensions actually exist
+                  entriesWithMeta.push({ entry, created });
+               }
             }
-            catMap.set(cat, catData);
-
-            (meta?.tags || []).forEach((t) => {
-               const norm = t.toLowerCase().trim();
-               if (norm) tagMap.set(norm, (tagMap.get(norm) || 0) + 1);
-            });
-
-            // Pattern Aggregation
-            const dims = analysis?.dimensions;
-            if (dims) {
-               if (dims.permanence) {
-                  threePsStats.perm.t++;
-                  if (isOptimistic(dims.permanence.score))
-                     threePsStats.perm.g++;
-               }
-               if (dims.pervasiveness) {
-                  threePsStats.perv.t++;
-                  if (isOptimistic(dims.pervasiveness.score))
-                     threePsStats.perv.g++;
-               }
-               if (dims.personalization) {
-                  threePsStats.pers.t++;
-                  if (isOptimistic(dims.personalization.score))
-                     threePsStats.pers.g++;
-               }
-            }
-            entriesWithMeta.push({ entry, created });
          }
 
          // 3. Post-Process: Streak
@@ -227,18 +242,25 @@ const HomeDashboard = React.memo(
          };
 
          // 4. Post-Process: Mental Focus
+         // Because we now guard the loop, catMap will be empty if no AI entries exist.
+         // This ensures focusView remains null in that case.
          let focusView: MentalFocusViewModel | null = null;
          if (catMap.size > 0) {
             const categoryStats = Array.from(catMap.entries())
                .map(([label, val]) => {
                   const avg =
                      val.validScores > 0 ? val.totalScore / val.validScores : 5;
+                  // 1. Get the base style (label + original color)
+                  const baseStyle = getStyleFromScore(avg);
+                  // 2. Override the color with your constant map
+                  const categoryColor =
+                     CATEGORY_COLOR_MAP[label] || DEFAULT_CATEGORY_COLOR;
                   return {
                      label,
                      count: val.count,
-                     percentage: (val.count / entries.length) * 100,
+                     percentage: (val.count / totalAnalyzedCount) * 100,
                      avgScore: avg,
-                     style: getStyleFromScore(avg),
+                     style: { ...baseStyle, color: categoryColor },
                   };
                })
                .sort((a, b) => b.count - a.count);
@@ -268,6 +290,7 @@ const HomeDashboard = React.memo(
          }
 
          // 5. Post-Process: Thinking Patterns
+         // Because we guarded entriesWithMeta.push, this array will be empty if no AI entries exist.
          let patternView: ThinkingPatternViewModel | null = null;
          if (entriesWithMeta.length > 0) {
             const getScore = (s: { g: number; t: number }) =>
@@ -361,33 +384,27 @@ const HomeDashboard = React.memo(
       }, [entries, anchorDate]);
 
       // --- RENDER WITH ANIMATIONS ---
-      // We use Reanimated Entry/Exit animations to smooth out the initial appearance
-      // and subsequent layout changes.
+      const dateKey = anchorDate.toISOString();
 
       return (
          <View className="gap-4">
-            {/* STREAK CARD
-           Always render, but animate its first appearance so it doesn't just "pop" in 
-           when data calculation finishes.
-        */}
+            {/* STREAK CARD - Always Render */}
             <Animated.View
                entering={FadeInDown.duration(600).springify()}
                layout={Layout.springify()}
             >
                <StreakCard
+                  key={`streak-${dateKey}`}
                   data={streakView}
                   shadowSm={shadowSm}
                   anchorDate={anchorDate}
                   showEncouragement={showEncouragement}
                   onDeleteEntry={onDeleteEntry}
-                  isLoading={isLoading} // <--- Pass it down
+                  isLoading={isLoading}
                />
             </Animated.View>
 
-            {/* MENTAL FOCUS 
-           Only appears if we have data. The animation makes it slide down nicely 
-           instead of snapping the layout.
-        */}
+            {/* MENTAL FOCUS - Only if focusView has valid AI data */}
             {focusView && (
                <Animated.View
                   entering={FadeInDown.duration(600).delay(100).springify()}
@@ -395,6 +412,7 @@ const HomeDashboard = React.memo(
                   layout={Layout.springify()}
                >
                   <MentalFocusCard
+                     key={`focus-${dateKey}`}
                      analysis={focusView}
                      entries={entries}
                      shadowStyle={shadowSm}
@@ -404,16 +422,15 @@ const HomeDashboard = React.memo(
                </Animated.View>
             )}
 
-            {/* THINKING PATTERNS 
-           Staggered delay (200ms) for a cascading effect.
-        */}
+            {/* THINKING PATTERNS - Only if patternView has valid AI data */}
             {patternView && (
                <Animated.View
                   entering={FadeInDown.duration(600).delay(200).springify()}
                   exiting={FadeOutUp.duration(400)}
-                  layout={Layout.springify()}
+                  layout={LinearTransition.springify()}
                >
                   <ThinkingPatternCard
+                     key={`pattern-${dateKey}`}
                      data={patternView}
                      shadowStyle={shadowSm}
                      isDark={isDark}

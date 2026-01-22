@@ -1,8 +1,11 @@
 import QuickStart from '@/components/appInfo/QuickStart';
 import {
+   CATEGORY_COLOR_MAP,
+   DEFAULT_CATEGORY_COLOR,
    PRIMARY_CTA_CLASS,
    PRIMARY_CTA_ICON_COLOR,
    PRIMARY_CTA_TEXT_CLASS,
+   UNCATEGORIZED_LABEL,
 } from '@/components/constants';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow from '@/components/entries/entry/EntryRow';
@@ -82,19 +85,6 @@ type WeekOption = {
 
 const SCROLL_THRESHOLD_FOR_FAB = 320;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const UNCATEGORIZED_LABEL = 'Not categorized';
-const CATEGORY_COLOR_MAP: Record<string, string> = {
-   Work: '#3b82f6',
-   Education: '#8b5cf6',
-   Relationships: '#e11d48',
-   Health: '#10b981',
-   Finance: '#eab308',
-   'Self-Image': '#06b6d4',
-   'Daily Hassles': '#64748b',
-   Other: '#9ca3af',
-   [UNCATEGORIZED_LABEL]: '#e2e8f0',
-};
-const DEFAULT_CATEGORY_COLOR = '#cbd5e1';
 
 // --- Helper: Title Skeleton ---
 const TitleSkeleton = () => {
@@ -422,12 +412,7 @@ export default function EntriesScreen() {
    );
 
    // --- LOADING STATES ---
-   // 1. Check if store has loaded
    const isHydrated = store.lastHydratedAt !== null && !store.isHydrating;
-
-   // 2. Visual Ready State (Delayed)
-   // We force a 500ms delay after hydration so skeletons have time to show
-   // and animations don't glitch out.
    const [isReady, setIsReady] = useState(false);
 
    useEffect(() => {
@@ -481,16 +466,28 @@ export default function EntriesScreen() {
    const isCurrentWeek =
       selectedWeekKey === formatIsoDate(getWeekStart(new Date()));
 
+   // FIX: Ensure stable anchor date (no milliseconds) to prevent re-mount of HomeDashboard on deletes
    const streakAnchorDate = useMemo(() => {
-      if (selectedWeekKey === 'all' || isCurrentWeek) return new Date();
-      if (selectedWeekObj) return new Date(selectedWeekObj.end);
+      if (selectedWeekKey === 'all' || isCurrentWeek) {
+         const now = new Date();
+         now.setHours(0, 0, 0, 0); // Stabilize time
+         return now;
+      }
+      if (selectedWeekObj) {
+         const end = new Date(selectedWeekObj.end);
+         end.setHours(0, 0, 0, 0); // Stabilize
+         return end;
+      }
       const fallbackStart = parseLocalIsoDate(selectedWeekKey);
       if (fallbackStart) {
          const fallbackEnd = new Date(fallbackStart);
          fallbackEnd.setDate(fallbackEnd.getDate() + 6);
+         fallbackEnd.setHours(0, 0, 0, 0); // Stabilize
          return fallbackEnd;
       }
-      return new Date();
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      return now;
    }, [selectedWeekKey, isCurrentWeek, selectedWeekObj]);
 
    const reframedCount = useMemo(() => {
@@ -785,7 +782,7 @@ export default function EntriesScreen() {
                            isDark={isDark}
                            showEncouragement={isCurrentWeek}
                            onDeleteEntry={requestDelete}
-                           isLoading={!isReady} // <--- Pass Loading State
+                           isLoading={!isReady}
                         />
                      </View>
 

@@ -88,3 +88,9 @@ This is the authoritative guide for all AI coding work in this repo. Follow it s
 - Use `@/` alias for internal imports (configured in `tsconfig.json`).
 - Keep side effects in services, hooks, and providers; keep UI components declarative.
 - Avoid new global singletons; use the existing providers (`AppProviders`).
+
+## DEPRECATED
+
+(alias) const Layout: typeof LinearTransition
+import Layout
+@deprecated — Please use LinearTransition instead.
