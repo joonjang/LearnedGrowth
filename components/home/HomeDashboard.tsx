@@ -399,6 +399,7 @@ const HomeDashboard = React.memo(
                      entries={entries}
                      shadowStyle={shadowSm}
                      isDark={isDark}
+                     onDeleteEntry={onDeleteEntry}
                   />
                </Animated.View>
             )}
