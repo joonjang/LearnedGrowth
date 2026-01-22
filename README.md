@@ -16,6 +16,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- fix icon glow
+
 - abstract index.tsx
 
 - for android the animation doesnt fully finish. maybe its because im using an old phone
