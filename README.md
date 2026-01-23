@@ -16,11 +16,16 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- fix icon glow
+- remove seed logic
 
-- abstract index.tsx
+- make entry card display that it has AI
+   - enable ai analysis for entry that already has dispute
+- make entry detail screen show category and tags
 
-- for android the animation doesnt fully finish. maybe its because im using an old phone
+- enable user to analyze old entries already with dispute
+   - when the analysis button shows, make it says: New Dispute
+   - create a disputeHistory column with timestamp
+   - pushes old dispute to history and save new dispute
 
 - once user subscribes, enable all entries to get the ai insight
 - Entry categorization upon subscription
@@ -35,6 +40,7 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - add search function
 
 - why does it show a loading screen after the splashscreen
+   - checking session
 
 - make ai insight respond with how the explanation style is helpful/unhelpful
 
@@ -64,6 +70,9 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - updated dev ai service for more dynamic mock input
 - added indicator to tap card for mental and pattern cards at footer
 - fixed index.tsx mounting causing sheets to close
+- entry card reflects ai data and enables user to do ai analysis if entry with dispute is missing analysis
+- adjusted mental focus sheet view and color source to constants.ts
+   - filter view and logic adjusted
 
 ### 2026-01-21
 

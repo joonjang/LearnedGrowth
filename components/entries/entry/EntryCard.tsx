@@ -1,18 +1,34 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
+import {
+   CATEGORY_COLOR_MAP,
+   DEFAULT_CATEGORY_COLOR,
+} from '@/components/constants';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getShadow } from '@/lib/shadow';
 import { FieldTone, getFieldStyles } from '@/lib/theme';
 import { Entry } from '@/models/entry';
+import { useAuth } from '@/providers/AuthProvider';
+import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
 import {
    ArrowDown,
+   Asterisk,
+   BookOpen,
+   Briefcase,
    CheckCircle2,
    ChevronRight,
+   CircleDollarSign,
+   Dumbbell,
+   Heart,
+   HelpCircle,
    History,
    MoreHorizontal,
    Pencil,
-   Sprout, // Used for the Reframed Badge icon
+   Sparkles,
+   Sprout,
    Trash2,
+   User,
+   Zap,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -53,7 +69,6 @@ type Prop = {
    onNavigate?: (entry: Entry) => void;
    onMenuLayout?: (bounds: MenuBounds) => void;
    closeActiveSwipeable?: () => string | null;
-   // We keep the prop optional, but now we'll default it to 'reframed' below
    initialViewMode?: 'reframed' | 'original';
 };
 
@@ -68,6 +83,30 @@ const TRUNCATION_LIMITS = {
 
 type TruncationKey = keyof typeof TRUNCATION_LIMITS;
 type TruncationState = Record<TruncationKey, boolean>;
+
+// --- Helper: Icon Mapper ---
+const getCategoryIcon = (category: string) => {
+   switch (category) {
+      case 'Work':
+         return Briefcase;
+      case 'Education':
+         return BookOpen;
+      case 'Relationships':
+         return Heart;
+      case 'Health':
+         return Dumbbell;
+      case 'Finance':
+         return CircleDollarSign;
+      case 'Self-Image':
+         return User;
+      case 'Daily Hassles':
+         return Zap;
+      case 'Other':
+         return Asterisk;
+      default:
+         return HelpCircle;
+   }
+};
 
 // --- Helper Components ---
 
@@ -187,8 +226,13 @@ export default function EntryCard({
    onNavigate,
    onMenuLayout,
    closeActiveSwipeable,
-   initialViewMode = 'reframed', // <--- CHANGED: Back to 'reframed' as default
+   initialViewMode = 'reframed',
 }: Prop) {
+   // --- Auth & Subscription ---
+   const { status } = useAuth();
+   const { isGrowthPlusActive } = useRevenueCat();
+   const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
+
    const menuRef = useRef<View | null>(null);
    const swipeClosedRecently = useRef(false);
    const { colorScheme } = useColorScheme();
@@ -197,10 +241,16 @@ export default function EntryCard({
       useNavigationLock();
 
    const isReframed = !!entry.dispute;
-   // Initialize state with the prop (which defaults to 'reframed')
+   const isAnalyzed = !!entry.aiResponse;
    const [viewMode, setViewMode] = useState<'reframed' | 'original'>(
       initialViewMode,
    );
+
+   // --- AI Visuals Setup ---
+   const category = entry.aiResponse?.meta?.category || 'Uncategorized';
+   const CategoryIcon = getCategoryIcon(category);
+   const catColor = CATEGORY_COLOR_MAP[category] || DEFAULT_CATEGORY_COLOR;
+   const tags = entry.aiResponse?.meta?.tags || [];
 
    const createdLabel = useMemo(() => {
       try {
@@ -254,8 +304,6 @@ export default function EntryCard({
             {} as TruncationState,
          ),
       );
-      // Reset viewMode when entry or prop changes.
-      // This ensures that if you pass 'original', it forces 'original'.
       setViewMode(initialViewMode);
    }, [entry.id, initialViewMode]);
 
@@ -363,6 +411,26 @@ export default function EntryCard({
       });
    }, [entry, lockNavigation, onCloseMenu, onNavigate]);
 
+   const handleAnalyze = useCallback(() => {
+      lockNavigation(() => {
+         if (isSubscribed) {
+            router.push({
+               pathname: '/dispute/[id]',
+               params: {
+                  id: entry.id,
+                  view: 'analysis',
+                  refresh: 'true',
+               },
+            });
+            return;
+         }
+         router.push({
+            pathname: '/(modal)/free-user',
+            params: { id: entry.id, isReframed: 'true' },
+         });
+      });
+   }, [isSubscribed, entry.id, lockNavigation]);
+
    const toggleViewMode = (e: any) => {
       e.stopPropagation();
       setViewMode((prev) => (prev === 'reframed' ? 'original' : 'reframed'));
@@ -402,14 +470,13 @@ export default function EntryCard({
          )}
 
          {/* --- Header with Date + Badge + Menu --- */}
-         <View className="flex-row items-center justify-between px-3 pt-1 pb-2 relative">
+         <View className="flex-row items-center justify-between px-3 pt-1 pb-1 relative">
             <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                {createdLabel}
             </Text>
 
             {/* Right Side: Badge + Menu */}
             <View className="flex-row items-center">
-               {/* 1. REFRAMED BADGE (Visible in White Area) */}
                {isReframed && (
                   <View className="mr-3 bg-dispute-bg dark:bg-dispute-bgDark px-2 py-0.5 rounded-md border border-dispute-border dark:border-dispute-borderDark flex-row items-center gap-1">
                      <CheckCircle2
@@ -478,6 +545,39 @@ export default function EntryCard({
                </View>
             </View>
          </View>
+
+         {/* 1. INSIGHT STRIP (Category & Tags OR Analyze Trigger) */}
+         {isAnalyzed && (
+            // STATE A: Analyzed -> Show Category Chip + Text Tags
+            // Added flex-wrap to allow tags to stack to next line if needed
+            <View className="flex-row flex-wrap items-center px-1 mt-1 mb-3">
+               {/* Category Chip (Fixed) */}
+               <View
+                  className="flex-row items-center gap-1.5 px-2 py-1 rounded-md border mr-2 mb-1"
+                  style={{
+                     backgroundColor: isDark
+                        ? `${catColor}20`
+                        : `${catColor}15`,
+                     borderColor: isDark ? `${catColor}50` : `${catColor}30`,
+                  }}
+               >
+                  <CategoryIcon size={11} color={catColor} strokeWidth={2.5} />
+                  <Text
+                     className="text-[10px] font-bold uppercase tracking-wide"
+                     style={{ color: catColor }}
+                  >
+                     {category}
+                  </Text>
+               </View>
+
+               {/* Tags (Text-only, dot separated, allowed to wrap) */}
+               {tags.length > 0 && (
+                  <Text className="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex-1 mb-1">
+                     {tags.join(' • ')}
+                  </Text>
+               )}
+            </View>
+         )}
 
          {isReframed ? (
             // === VIEW 1: COMPLETE (TOGGLEABLE) ===
@@ -557,7 +657,30 @@ export default function EntryCard({
                </View>
 
                {/* --- Footer Toggle --- */}
-               <View className="flex-row justify-end mt-5">
+               <View className="flex-row items-center justify-between mt-5">
+                  {/* Left: Analyze with AI (Conditional) */}
+                  <View>
+                     {!isAnalyzed && viewMode == 'original' && (
+                        <Pressable
+                           onPress={(e) => {
+                              e.stopPropagation();
+                              handleAnalyze();
+                           }}
+                           // Shadow removed, Border darkened for definition
+                           className="flex-row items-center gap-1.5 px-3.5 py-2 rounded-full border bg-amber-50 border-amber-300 dark:bg-amber-900/20 dark:border-amber-700"
+                        >
+                           <Sparkles
+                              size={12}
+                              color={isDark ? '#fbbf24' : '#b45309'}
+                           />
+                           <Text className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+                              Analyze with AI
+                           </Text>
+                        </Pressable>
+                     )}
+                  </View>
+
+                  {/* Right: View Mode Toggle */}
                   <TouchableOpacity
                      activeOpacity={0.7}
                      onPress={toggleViewMode}

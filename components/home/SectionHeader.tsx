@@ -26,7 +26,7 @@ export default function SectionHeader({
          style={{ paddingTop }}
       >
          <View className="flex-row items-center justify-between px-5 py-3">
-            {/* Left Side: Title & Date */}
+            {/* Left Side: Title & Range */}
             <View className="flex-1 pr-4 gap-0.5">
                <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
                   {title}
@@ -36,13 +36,13 @@ export default function SectionHeader({
                </Text>
             </View>
 
-            {/* Right Side: Read-Only Text Stats (No Pill) */}
+            {/* Right Side: Big Stat Layout */}
             {count > 0 && (
                <View className="flex-row items-baseline">
-                  <Text className="text-sm font-bold text-slate-600 dark:text-slate-300 mr-1">
+                  <Text className="text-2xl font-bold text-slate-700 dark:text-slate-200 mr-1.5">
                      {count}
                   </Text>
-                  <Text className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                  <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                      {countLabel}
                   </Text>
                </View>

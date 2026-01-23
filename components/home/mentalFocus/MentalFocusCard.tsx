@@ -130,7 +130,7 @@ export default function MentalFocusCard({
                      {/* Bullet 1: Recurring Theme */}
                      <View className="flex-row items-center gap-2">
                         <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight w-32">
-                           Observed Topic
+                           Primary Topic
                         </Text>
                         <Text className="text-sm font-bold text-slate-900 dark:text-white flex-1">
                            {narrative.topCatLabel}
@@ -140,7 +140,7 @@ export default function MentalFocusCard({
                      {/* Bullet 2: Describing Style */}
                      <View className="flex-row items-center gap-2">
                         <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight w-32">
-                           Explanatory Style
+                           Self-talk Style
                         </Text>
 
                         <Text
