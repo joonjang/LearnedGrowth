@@ -9,11 +9,11 @@ import {
 } from '@/components/constants';
 import { EntryField } from '@/components/entries/details/EntryField';
 import { InsightStrip } from '@/components/entries/details/InsightStrip';
-import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
 import {
    TimelinePivot,
    TimelineStepDef,
-} from '@/components/entries/entry/Timeline';
+} from '@/components/entries/details/Timeline';
+import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
@@ -439,14 +439,15 @@ export default function EntryDetailScreen() {
                            {!aiDisplayData && entry?.dispute && (
                               <TimelinePivot
                                  variant="full"
-                                 // Pass the Amber theme here so the DASHED BOX becomes Amber
-                                 bgClassName="bg-amber-50 dark:bg-amber-900/10"
-                                 borderClassName="border-amber-300/60 dark:border-amber-700/50"
+                                 // 1. Dim the container background/border when disabled
+                                 bgClassName={`bg-amber-50 dark:bg-amber-900/10 ${isEditing ? 'opacity-50' : ''}`}
+                                 borderClassName={`border-amber-300/60 dark:border-amber-700/50 ${isEditing ? 'opacity-50' : ''}`}
                               >
                                  <Pressable
                                     onPress={handleAnalyze}
-                                    // Remove the background/border from here since the parent has it
-                                    className="flex-row items-center justify-center gap-2 py-1 active:opacity-50"
+                                    disabled={isEditing}
+                                    // 2. Dim the content and disable active opacity when editing
+                                    className={`flex-row items-center justify-center gap-2 py-1 ${isEditing ? 'opacity-40' : 'active:opacity-50'}`}
                                  >
                                     <Sparkles
                                        size={18}
@@ -454,7 +455,9 @@ export default function EntryDetailScreen() {
                                        strokeWidth={2.5}
                                     />
                                     <Text className="text-[12px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest">
-                                       Analyze with AI
+                                       {isEditing
+                                          ? 'Save to Analyze'
+                                          : 'Analyze with AI'}
                                     </Text>
                                  </Pressable>
                               </TimelinePivot>

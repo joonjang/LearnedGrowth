@@ -65,6 +65,12 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-01-23
+
+- shadow removed for entry detail screen to remove signal of interactivity
+   - ai analysis pressable disable on edit
+   - ai analysis refresh present even when dispute exists
+
 ### 2026-01-22
 
 - approaching prod status

@@ -463,20 +463,18 @@ export function AiInsightStaleBanner({
             </View>
 
             <Text className="text-[11px] text-slate-600 dark:text-slate-400 leading-4 mt-1">
-               {!onRefresh
-                  ? 'This insight is based on an older version of your entry.'
-                  : isCoolingDown
-                    ? 'Updates paused to enable deeper thinking.'
-                    : isNudgeStep
-                      ? "You've refined this quite a bit. Consider moving on to the next phase after refreshing."
-                      : 'Entry has changed. Update analysis?'}
+               {isCoolingDown
+                  ? 'Updates paused to enable deeper thinking.'
+                  : isNudgeStep
+                    ? "You've refined this quite a bit. Consider moving on to the next phase after refreshing."
+                    : 'Entry has changed. Update analysis?'}
             </Text>
          </View>
 
          <View
             className={`justify-end pl-1 ${!isCoolingDown && refreshCostNote ? 'pt-5' : ''}`}
          >
-            {onRefresh && !isCoolingDown ? (
+            {!isCoolingDown ? (
                <Pressable
                   onPress={onRefreshPress}
                   className="p-2 mb-0.5 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"

@@ -80,7 +80,7 @@ export function TimelineItem({
          <View className="mb-4">
             <View
                className={`rounded-2xl border px-5 py-4 ${cardBgClass}`}
-               style={[shadow.ios, shadow.android]}
+               // style={[shadow.ios, shadow.android]}
             >
                <View className="flex-row items-center justify-between mb-3">
                   <View className="flex-1 flex-row items-center mr-3 overflow-hidden">

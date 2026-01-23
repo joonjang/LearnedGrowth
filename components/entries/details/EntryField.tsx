@@ -8,7 +8,7 @@ import {
 import {
    TimelineItem,
    TimelineStepDef,
-} from '@/components/entries/entry/Timeline';
+} from '@/components/entries/details/Timeline';
 import React, { memo } from 'react';
 import { Text, TextInput, View } from 'react-native';
 
