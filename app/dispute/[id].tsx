@@ -1,5 +1,9 @@
 import rawAbcde from '@/assets/data/abcde.json';
-import { MAX_AI_RETRIES, ROUTE_ENTRIES } from '@/components/constants';
+import {
+   MAX_AI_RETRIES,
+   ROUTE_ENTRIES,
+   ROUTE_ENTRY_DETAIL,
+} from '@/components/constants';
 import ABCAnalysis from '@/components/entries/dispute/ABCAnalysis';
 import DisputeSteps from '@/components/entries/dispute/DisputeSteps';
 import { useAbcAi } from '@/hooks/useAbcAi';
@@ -265,7 +269,7 @@ export default function DisputeScreen() {
       if (hapticsEnabled && hapticsAvailable) triggerHaptic();
 
       const targetRoute = {
-         pathname: '/entries/[id]',
+         pathname: ROUTE_ENTRY_DETAIL,
          params: { id: String(entry.id), animateInstant: '1' },
       } as const;
 

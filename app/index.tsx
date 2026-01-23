@@ -5,6 +5,7 @@ import {
    PRIMARY_CTA_CLASS,
    PRIMARY_CTA_ICON_COLOR,
    PRIMARY_CTA_TEXT_CLASS,
+   ROUTE_ENTRY_DETAIL,
    UNCATEGORIZED_LABEL,
 } from '@/components/constants';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
@@ -528,7 +529,7 @@ export default function EntriesScreen() {
             onEdit={() =>
                lockNavigation(() =>
                   router.push({
-                     pathname: '/entries/[id]',
+                     pathname: ROUTE_ENTRY_DETAIL,
                      params: { id: item.entry.id, mode: 'edit' },
                   }),
                )

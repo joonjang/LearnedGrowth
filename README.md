@@ -18,9 +18,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - remove seed logic
 
-- make entry card display that it has AI
-   - enable ai analysis for entry that already has dispute
-- make entry detail screen show category and tags
+- migrate the ai response supabase data to be populated from the backend
+   - keep the format from how its set for frontend for continuity
+   - the frontend receiving of json is for sqlite but doesnt need to update the supabase table
+   - enables data persistence
+- add profile credit check from the webhook
 
 - enable user to analyze old entries already with dispute
    - when the analysis button shows, make it says: New Dispute
@@ -73,6 +75,10 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - entry card reflects ai data and enables user to do ai analysis if entry with dispute is missing analysis
 - adjusted mental focus sheet view and color source to constants.ts
    - filter view and logic adjusted
+- entryDetailScreen directory name refactor
+   - added ai meta data visuals
+   - abstracted components and improved efficiency with memoization
+- timeline pivot style refactored to enable background and border color changes
 
 ### 2026-01-21
 

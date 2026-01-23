@@ -7,6 +7,7 @@ import {
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_CONTENT_PADDING,
+   ROUTE_ENTRY_DETAIL,
 } from '@/components/constants';
 import type {
    ThinkingPatternData,
@@ -195,7 +196,7 @@ export default function ThinkingPatternSheet({
    const handleViewEntry = useCallback(
       (entryId: string) => {
          sheetRef.current?.dismiss();
-         router.push({ pathname: '/entries/[id]', params: { id: entryId } });
+         router.push({ pathname: ROUTE_ENTRY_DETAIL, params: { id: entryId } });
       },
       [sheetRef],
    );

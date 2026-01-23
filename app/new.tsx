@@ -1,7 +1,7 @@
 import rawAbcde from '@/assets/data/abcde.json';
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import StepperButton from '@/components/buttons/StepperButton';
-import { ENTRY_CHAR_LIMITS } from '@/components/constants';
+import { ENTRY_CHAR_LIMITS, ROUTE_ENTRY_DETAIL } from '@/components/constants';
 import InputBox from '@/components/newEntry/InputBox';
 import PromptDisplay, { PromptDisplayHandle } from '@/components/newEntry/PromptDisplay';
 import StepperHeader from '@/components/newEntry/StepperHeader';
@@ -48,9 +48,7 @@ const routeTreeHasEntryDetail = (state: any, entryId: string | number) => {
    for (const route of state.routes as any[]) {
       const name = route?.name as string | undefined;
       const paramsId = route?.params?.id;
-      const isEntryDetailRoute =
-         !!name &&
-         (name.includes('entries/[id]') || name === '[id]/index');
+      const isEntryDetailRoute = !!name && name.includes('entryDetail/[id]');
 
       if (
          isEntryDetailRoute &&
@@ -190,7 +188,7 @@ export default function NewEntryModal() {
       try {
          const newEntry = await store.createEntry(adversity, belief, consequence);
          const targetRoute = {
-            pathname: '/entries/[id]',
+            pathname: ROUTE_ENTRY_DETAIL,
             params: { id: newEntry.id, animateInstant: '1' },
          } as const;
 

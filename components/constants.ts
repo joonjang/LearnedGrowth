@@ -19,6 +19,7 @@ export const BOTTOM_SHEET_MAX_SNAP = '75%';
 
 export const ROUTE_LOGIN = '/(modal)/login' as const;
 export const ROUTE_ENTRIES = '/' as const;
+export const ROUTE_ENTRY_DETAIL = '/entryDetail/[id]' as const;
 
 export const ENTRY_CHAR_LIMITS = {
    adversity: 300,

@@ -2,6 +2,7 @@ import CardNextButton from '@/components/buttons/CardNextButton';
 import {
    CATEGORY_COLOR_MAP,
    DEFAULT_CATEGORY_COLOR,
+   ROUTE_ENTRY_DETAIL,
 } from '@/components/constants';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getShadow } from '@/lib/shadow';
@@ -15,7 +16,6 @@ import {
    Asterisk,
    BookOpen,
    Briefcase,
-   CheckCircle2,
    ChevronRight,
    CircleDollarSign,
    Dumbbell,
@@ -389,7 +389,10 @@ export default function EntryCard({
       }
       lockNavigation(() => {
          onNavigate?.(entry);
-         router.push({ pathname: '/entries/[id]', params: { id: entry.id } });
+         router.push({
+            pathname: ROUTE_ENTRY_DETAIL,
+            params: { id: entry.id },
+         });
       });
    }, [
       closeActiveSwipeable,
@@ -405,7 +408,7 @@ export default function EntryCard({
          onCloseMenu();
          onNavigate?.(entry);
          router.push({
-            pathname: '/entries/[id]',
+            pathname: ROUTE_ENTRY_DETAIL,
             params: { id: entry.id, mode: 'edit' },
          });
       });
@@ -479,10 +482,7 @@ export default function EntryCard({
             <View className="flex-row items-center">
                {isReframed && (
                   <View className="mr-3 bg-dispute-bg dark:bg-dispute-bgDark px-2 py-0.5 rounded-md border border-dispute-border dark:border-dispute-borderDark flex-row items-center gap-1">
-                     <CheckCircle2
-                        size={12}
-                        color={isDark ? '#d1fae5' : '#065f46'}
-                     />
+                     <Sprout size={12} color={isDark ? '#d1fae5' : '#065f46'} />
                      <Text className="text-[9px] font-bold text-dispute-text dark:text-dispute-textDark uppercase tracking-wide">
                         Reframed
                      </Text>
@@ -660,7 +660,7 @@ export default function EntryCard({
                <View className="flex-row items-center justify-between mt-5">
                   {/* Left: Analyze with AI (Conditional) */}
                   <View>
-                     {!isAnalyzed && viewMode == 'original' && (
+                     {!isAnalyzed && viewMode === 'original' && (
                         <Pressable
                            onPress={(e) => {
                               e.stopPropagation();

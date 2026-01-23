@@ -1,12 +1,12 @@
 import { getShadow } from '@/lib/shadow';
 import { FieldTone, getFieldStyles } from '@/lib/theme';
 import {
-  Camera,
-  MessageSquareText,
-  SearchCheck,
-  Sun,
-  TriangleAlert,
-  Zap,
+   Camera,
+   MessageSquareText,
+   SearchCheck,
+   Sun,
+   TriangleAlert,
+   Zap,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, { useMemo } from 'react';
@@ -35,10 +35,14 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 const getIconColor = (tone: FieldTone, isDark: boolean) => {
    switch (tone) {
-    case 'belief': return isDark ? '#fdba74' : '#9a3412'; // orange-300 / orange-800
-    case 'dispute': return isDark ? '#6ee7b7' : '#3730a3'; // emerald-300 / indigo-800
-    case 'energy': return isDark ? '#7dd3fc' : '#065f46'; // sky-300 / emerald-800
-    default: return isDark ? '#cbd5e1' : '#64748b'; // slate-300 / slate-500
+      case 'belief':
+         return isDark ? '#fdba74' : '#9a3412'; // orange-300 / orange-800
+      case 'dispute':
+         return isDark ? '#6ee7b7' : '#3730a3'; // emerald-300 / indigo-800
+      case 'energy':
+         return isDark ? '#7dd3fc' : '#065f46'; // sky-300 / emerald-800
+      default:
+         return isDark ? '#cbd5e1' : '#64748b'; // slate-300 / slate-500
    }
 };
 
@@ -169,20 +173,33 @@ export function TimelineItem({
    );
 }
 
-// ... Pivot and Line components remain the same ...
 export function TimelinePivot({
    children,
    variant = 'default',
+   bgClassName, // New: Override background color
+   borderClassName, // New: Override border color
 }: {
    children: React.ReactNode;
    variant?: TimelineVariant;
+   bgClassName?: string;
+   borderClassName?: string;
 }) {
    const isFull = variant === 'full';
+
+   // Defaults (Gray Slate)
+   const defaultBg = 'bg-slate-50/50 dark:bg-slate-900/50';
+   const defaultBorder = 'border-slate-300 dark:border-slate-500';
+
+   // Final Classes (Merge provided props or use defaults)
+   const finalBg = bgClassName || defaultBg;
+   const finalBorder = borderClassName || defaultBorder;
 
    if (isFull) {
       return (
          <View className="mb-6 mt-2">
-            <View className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+            <View
+               className={`rounded-2xl border-2 border-dashed p-4 ${finalBorder} ${finalBg}`}
+            >
                {children}
             </View>
          </View>
@@ -198,7 +215,9 @@ export function TimelinePivot({
          </View>
 
          <View className="ml-4 flex-1 pt-1">
-            <View className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
+            <View
+               className={`rounded-2xl border-2 border-dashed p-4 ${finalBorder} ${finalBg}`}
+            >
                {children}
             </View>
          </View>

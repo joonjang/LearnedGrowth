@@ -2,15 +2,15 @@ import CardNextButton from '@/components/buttons/CardNextButton';
 import WideButton from '@/components/buttons/WideButton';
 import {
    ABCDE_FIELD,
-   ENTRY_CHAR_LIMITS,
-   ENTRY_CHAR_WARN_MIN_REMAINING,
-   ENTRY_CHAR_WARN_RATIO,
+   CATEGORY_COLOR_MAP,
+   DEFAULT_CATEGORY_COLOR,
    MAX_AI_RETRIES,
    ROUTE_ENTRIES,
 } from '@/components/constants';
+import { EntryField } from '@/components/entries/details/EntryField';
+import { InsightStrip } from '@/components/entries/details/InsightStrip';
 import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
 import {
-   TimelineItem,
    TimelinePivot,
    TimelineStepDef,
 } from '@/components/entries/entry/Timeline';
@@ -19,21 +19,14 @@ import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
 import { FieldTone } from '@/lib/theme';
 import type { Entry } from '@/models/entry';
+import { useAuth } from '@/providers/AuthProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
+import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router, useLocalSearchParams } from 'expo-router';
-import {
-   ArrowRight,
-   ChevronLeft,
-} from 'lucide-react-native';
+import { ArrowRight, ChevronLeft, Sparkles } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-   LayoutAnimation,
-   Pressable,
-   Text,
-   TextInput,
-   View,
-} from 'react-native';
+import { LayoutAnimation, Pressable, Text, View } from 'react-native';
 import {
    KeyboardAwareScrollView,
    KeyboardController,
@@ -45,13 +38,14 @@ type FieldKey = (typeof ABCDE_FIELD)[number]['key'];
 const FIELD_KEYS: FieldKey[] = ABCDE_FIELD.map((f) => f.key);
 const LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
 
+// --- Helpers for Form Logic ---
 function buildFieldRecord(getValue: (key: FieldKey) => string) {
    return FIELD_KEYS.reduce(
       (acc, key) => {
          acc[key] = getValue(key);
          return acc;
       },
-      {} as Record<FieldKey, string>
+      {} as Record<FieldKey, string>,
    );
 }
 
@@ -62,15 +56,6 @@ const getToneForKey = (key: FieldKey): FieldTone => {
    return 'default';
 };
 
-const getCharCountMeta = (value: string, limit: number) => {
-   const remaining = limit - value.length;
-   const warnThreshold = Math.max(
-      ENTRY_CHAR_WARN_MIN_REMAINING,
-      Math.round(limit * ENTRY_CHAR_WARN_RATIO)
-   );
-   return { remaining, show: remaining <= warnThreshold };
-};
-
 export default function EntryDetailScreen() {
    const { id, mode } = useLocalSearchParams();
    useResizeMode();
@@ -78,10 +63,17 @@ export default function EntryDetailScreen() {
    const modeParam = Array.isArray(mode) ? mode[0] : mode;
    const startInEdit = modeParam === 'edit';
    const initialEditApplied = useRef(false);
+
    const store = useEntries();
    const entry = entryId ? store.getEntryById(entryId) : undefined;
+
    const { lock: lockNavigation } = useNavigationLock();
    const { hapticsEnabled, hapticsAvailable, triggerHaptic } = usePreferences();
+
+   // --- Auth & Subscription ---
+   const { status } = useAuth();
+   const { isGrowthPlusActive } = useRevenueCat();
+   const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
 
    const insets = useSafeAreaInsets();
    const keyboardOffset = insets.bottom + 32;
@@ -90,59 +82,44 @@ export default function EntryDetailScreen() {
    const isDark = colorScheme === 'dark';
    const iconColor = isDark ? '#f8fafc' : '#0f172a';
 
+   // --- Form State ---
    const [form, setForm] = useState<Record<FieldKey, string>>(() =>
-      buildFieldRecord((key) => entry?.[key] ?? '')
+      buildFieldRecord((key) => entry?.[key] ?? ''),
    );
    const [justSaved, setJustSaved] = useState(false);
    const [hasScrolled, setHasScrolled] = useState(false);
    const [isEditing, setIsEditing] = useState(false);
-   
    const [editSnapshot, setEditSnapshot] = useState<Record<
       FieldKey,
       string
    > | null>(null);
 
-   const startEditing = useCallback(() => {
-      setEditSnapshot(form);
-      setIsEditing(true);
-      setJustSaved(false);
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-   }, [form]);
+   // --- AI Visuals Data ---
+   const isAnalyzed = !!entry?.aiResponse;
+   const category = entry?.aiResponse?.meta?.category || 'Uncategorized';
+   const catColor = CATEGORY_COLOR_MAP[category] || DEFAULT_CATEGORY_COLOR;
+   const tags = entry?.aiResponse?.meta?.tags || [];
 
-   useEffect(() => {
-      if (!entry) return;
-      setForm(buildFieldRecord((key) => entry[key] ?? ''));
-      setJustSaved(false);
-      setHasScrolled(false);
-      setIsEditing(false);
-      setEditSnapshot(null);
-   }, [entry]);
-
-   useEffect(() => {
-      initialEditApplied.current = false;
-   }, [entryId]);
-
-   useEffect(() => {
-      if (!entry) return;
-      if (!startInEdit || initialEditApplied.current) return;
-      initialEditApplied.current = true;
-      startEditing();
-   }, [entry, startEditing, startInEdit]);
+   // --- Derived Memoized Values ---
+   const formattedTimestamp = useMemo(
+      () => (entry ? formatDateTimeWithWeekday(entry.createdAt) : ''),
+      [entry],
+   );
 
    const trimmed = useMemo(
       () => buildFieldRecord((key) => form[key].trim()),
-      [form]
+      [form],
    );
    const baseline = useMemo(
       () => buildFieldRecord((key) => (entry?.[key] ?? '').trim()),
-      [entry]
+      [entry],
    );
    const aiDisplayData = entry?.aiResponse ?? null;
-   const hasDispute = Boolean(entry?.dispute);
    const showDispute = Boolean(baseline.dispute || trimmed.dispute);
+
    const hasChanges = useMemo(
       () => FIELD_KEYS.some((key) => trimmed[key] !== baseline[key]),
-      [baseline, trimmed]
+      [baseline, trimmed],
    );
 
    const timelineSteps = useMemo(() => {
@@ -154,7 +131,7 @@ export default function EntryDetailScreen() {
                label: f.label,
                desc: f.hint,
                tone: getToneForKey(f.key),
-            }) as TimelineStepDef
+            }) as TimelineStepDef,
       ).filter((step) => {
          if (step.key === 'dispute' || step.key === 'energy')
             return showDispute;
@@ -162,21 +139,41 @@ export default function EntryDetailScreen() {
       });
    }, [showDispute]);
 
-   const setField = useCallback(
-      (key: FieldKey) => (value: string) => {
-         setForm((prev) => ({ ...prev, [key]: value }));
-         setJustSaved(false);
-      },
-      []
-   );
+   // --- Callbacks ---
 
-   const navigateToEntries = useCallback(() => {
-      if (router.canGoBack()) {
-         router.back();
-         return;
-      }
-      router.replace(ROUTE_ENTRIES);
+   const handleAnalyze = useCallback(() => {
+      if (!entry) return;
+      lockNavigation(() => {
+         if (isSubscribed) {
+            router.push({
+               pathname: '/dispute/[id]',
+               params: {
+                  id: entry.id,
+                  view: 'analysis',
+                  refresh: 'true',
+               },
+            });
+            return;
+         }
+         router.push({
+            pathname: '/(modal)/free-user',
+            params: { id: entry.id, isReframed: 'true' },
+         });
+      });
+   }, [isSubscribed, entry, lockNavigation]);
+
+   // OPTIMIZATION: Memoized field updater to prevent full re-renders on typing
+   const handleFieldChange = useCallback((key: string, value: string) => {
+      setForm((prev) => ({ ...prev, [key]: value }));
+      setJustSaved(false);
    }, []);
+
+   const startEditing = useCallback(() => {
+      setEditSnapshot(form);
+      setIsEditing(true);
+      setJustSaved(false);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+   }, [form]);
 
    const handleSave = useCallback(async () => {
       if (!entry) return;
@@ -235,6 +232,14 @@ export default function EntryDetailScreen() {
       KeyboardController.dismiss();
    }, [editSnapshot, isEditing]);
 
+   const navigateToEntries = useCallback(() => {
+      if (router.canGoBack()) {
+         router.back();
+         return;
+      }
+      router.replace(ROUTE_ENTRIES);
+   }, []);
+
    const handleOpenDisputeAndUpdate = useCallback(() => {
       if (!entry) return;
       lockNavigation(() => {
@@ -255,15 +260,36 @@ export default function EntryDetailScreen() {
       });
    }, [entryId, lockNavigation]);
 
-   const formattedTimestamp = entry
-      ? formatDateTimeWithWeekday(entry.createdAt)
-      : '';
-   const statusMessage = justSaved
-      ? 'Saved'
-      : hasChanges
-        ? 'Unsaved changes'
-        : '';
-   const statusDisplay = statusMessage || 'Saved';
+   const handleScroll = useCallback(
+      (e: any) => {
+         const y = e?.nativeEvent?.contentOffset?.y ?? 0;
+         if (y <= 0 && hasScrolled) setHasScrolled(false);
+         else if (y > 0 && !hasScrolled) setHasScrolled(true);
+      },
+      [hasScrolled],
+   );
+
+   // --- Effects ---
+
+   useEffect(() => {
+      if (!entry) return;
+      setForm(buildFieldRecord((key) => entry[key] ?? ''));
+      setJustSaved(false);
+      setHasScrolled(false);
+      setIsEditing(false);
+      setEditSnapshot(null);
+   }, [entry]);
+
+   useEffect(() => {
+      initialEditApplied.current = false;
+   }, [entryId]);
+
+   useEffect(() => {
+      if (!entry) return;
+      if (!startInEdit || initialEditApplied.current) return;
+      initialEditApplied.current = true;
+      startEditing();
+   }, [entry, startEditing, startInEdit]);
 
    useEffect(() => {
       if (!justSaved) return;
@@ -271,14 +297,7 @@ export default function EntryDetailScreen() {
       return () => clearTimeout(timer);
    }, [justSaved]);
 
-   const handleScroll = useCallback(
-      (e: any) => {
-         const y = e?.nativeEvent?.contentOffset?.y ?? 0;
-         if (y <= 0 && hasScrolled) setHasScrolled(false);
-         else if (y > 0 && !hasScrolled) setHasScrolled(true);
-      },
-      [hasScrolled]
-   );
+   // --- Render ---
 
    if (!entry) {
       return (
@@ -289,6 +308,13 @@ export default function EntryDetailScreen() {
          </View>
       );
    }
+
+   const statusMessage = justSaved
+      ? 'Saved'
+      : hasChanges
+        ? 'Unsaved changes'
+        : '';
+   const statusDisplay = statusMessage || 'Saved';
 
    return (
       <View className="flex-1 bg-white dark:bg-slate-900">
@@ -364,67 +390,32 @@ export default function EntryDetailScreen() {
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
          >
+            {/* 1. Insight Strip */}
+            {isAnalyzed && (
+               <InsightStrip
+                  category={category}
+                  tags={tags}
+                  catColor={catColor}
+                  isDark={isDark}
+               />
+            )}
+
+            {/* 2. Entry Fields */}
             {timelineSteps.map((step) => {
-
-               // Background logic
-               const isNeutral = step.tone === 'default' || step.tone === 'neutral';
-               const readOnlyBg = isNeutral
-                  ? 'bg-slate-50 dark:bg-slate-800'
-                  : 'bg-white/60 dark:bg-black/10';
-
-               const finalBg = isEditing
-                  ? 'bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800'
-                  : readOnlyBg;
-
-               // --- MASKING LOGIC ---
                const rawValue = form[step.key as FieldKey];
-               const effectiveValue = rawValue === 'Empty' ? '' : rawValue;
-               const charLimit = ENTRY_CHAR_LIMITS[step.key as keyof typeof ENTRY_CHAR_LIMITS];
-               const charMeta = getCharCountMeta(effectiveValue, charLimit);
-               const counterClassName = charMeta.remaining <= 0
-                     ? 'text-rose-600 dark:text-rose-400'
-                     : 'text-amber-600 dark:text-amber-400';
 
                return (
-                  <View key={step.key}>
-                     <TimelineItem step={step} variant="full">
-                        {isEditing ? (
-                           <View>
-                              <TextInput
-                                 multiline
-                                 value={effectiveValue} 
-                                 onChangeText={setField(step.key as FieldKey)}
-                                 placeholder={`Write your ${step.label.toLowerCase()} here...`}
-                                 placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                                 className={`min-h-[48px] rounded-lg px-3 py-2 text-sm leading-6 ${finalBg} text-slate-900 dark:text-slate-100`}
-                                 scrollEnabled={false}
-                                 textAlignVertical="top"
-                                 autoCorrect
-                                 maxLength={charLimit}
-                              />
-                              {charMeta.show && (
-                                 <View className="mt-1 flex-row justify-end">
-                                    <Text className={`text-[11px] font-medium ${counterClassName}`}>
-                                       {effectiveValue.length}/{charLimit}
-                                    </Text>
-                                 </View>
-                              )}
-                           </View>
-                        ) : (
-                           <View className={`min-h-[48px] rounded-lg px-3 py-2 ${finalBg}`}>
-                              <Text className={`text-sm leading-6 text-slate-900 dark:text-slate-100`}>
-                                 {effectiveValue || (
-                                    <Text className="italic opacity-50">Empty</Text>
-                                 )}
-                              </Text>
-                           </View>
-                        )}
-                     </TimelineItem>
-
-                     {/* PIVOT POINT */}
+                  <EntryField
+                     key={step.key}
+                     step={step}
+                     value={rawValue}
+                     isEditing={isEditing}
+                     isDark={isDark}
+                     onChangeText={handleFieldChange}
+                  >
                      {step.key === 'consequence' && (
                         <View>
-                           {/* AI Pivot */}
+                           {/* A. If we have Analysis, show the Insight Card */}
                            {aiDisplayData && (
                               <TimelinePivot variant="full">
                                  <AiInsightCard
@@ -444,7 +435,32 @@ export default function EntryDetailScreen() {
                               </TimelinePivot>
                            )}
 
-                           {/* Continue Button Logic */}
+                           {/* B. If NO Analysis, show "Analyze with AI" text inside the Pivot Box */}
+                           {!aiDisplayData && entry?.dispute && (
+                              <TimelinePivot
+                                 variant="full"
+                                 // Pass the Amber theme here so the DASHED BOX becomes Amber
+                                 bgClassName="bg-amber-50 dark:bg-amber-900/10"
+                                 borderClassName="border-amber-300/60 dark:border-amber-700/50"
+                              >
+                                 <Pressable
+                                    onPress={handleAnalyze}
+                                    // Remove the background/border from here since the parent has it
+                                    className="flex-row items-center justify-center gap-2 py-1 active:opacity-50"
+                                 >
+                                    <Sparkles
+                                       size={18}
+                                       color={isDark ? '#fbbf24' : '#d97706'}
+                                       strokeWidth={2.5}
+                                    />
+                                    <Text className="text-[12px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest">
+                                       Analyze with AI
+                                    </Text>
+                                 </Pressable>
+                              </TimelinePivot>
+                           )}
+
+                           {/* C. Continue Button (Only if incomplete) */}
                            {!entry.dispute && !isEditing && (
                               <View className="mt-4 mb-2">
                                  {aiDisplayData ? (
@@ -460,7 +476,7 @@ export default function EntryDetailScreen() {
                            )}
                         </View>
                      )}
-                  </View>
+                  </EntryField>
                );
             })}
          </KeyboardAwareScrollView>
