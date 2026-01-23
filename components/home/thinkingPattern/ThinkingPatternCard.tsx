@@ -1,11 +1,11 @@
 import { PInsightCard } from '@/components/appInfo/PDefinitions';
+import { CARD_PRESS_STYLE } from '@/lib/utils';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BookOpen, ChevronDown, ChevronUp, Layers } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
 import { LayoutAnimation, Pressable, Text, View } from 'react-native';
 import HelperFooter from '../HelperFooter';
 import { ThinkingPatternViewModel } from '../types';
-import { CARD_PRESS_STYLE } from '../utils';
 import GradientSpectrumBar from './GradientSpectrumBar';
 import ThinkingPatternSheet from './ThinkingPatternSheet';
 

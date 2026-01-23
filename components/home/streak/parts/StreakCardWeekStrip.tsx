@@ -1,6 +1,6 @@
+import { cx, Day, isFutureDate, toDateKey } from '@/lib/utils';
 import { StyleProp, Text, View, ViewStyle } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { cx, Day, isFutureDate, toDateKey } from '../../utils';
 
 type StreakCardWeekStripProps = {
    days: Day[];

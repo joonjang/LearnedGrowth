@@ -1,5 +1,5 @@
+import { Day } from '@/lib/utils';
 import { Entry } from '@/models/entry';
-import { Day } from './utils';
 
 // --- Base Definitions ---
 

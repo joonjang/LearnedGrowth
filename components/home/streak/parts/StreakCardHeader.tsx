@@ -1,4 +1,5 @@
 import { HOME_ICON_DARK, HOME_ICON_LIGHT } from '@/components/constants';
+import { cx } from '@/lib/utils';
 import { CalendarCheck, CalendarDays, Dog, Flame } from 'lucide-react-native';
 import React, { useEffect } from 'react';
 import { Text, View } from 'react-native';
@@ -10,7 +11,6 @@ import Animated, {
    withSequence,
    withTiming,
 } from 'react-native-reanimated';
-import { cx } from '../../utils';
 
 type StreakCardHeaderProps = {
    streakCount: number;
@@ -43,7 +43,7 @@ const SkeletonItem = ({
          -1,
          true,
       );
-   }, []);
+   }, [opacity]);
    const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
    return (
       <Animated.View

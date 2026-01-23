@@ -1,6 +1,4 @@
 import { WEEKDAY_LABELS } from '@/components/constants';
-import { StyleProp, Text, View, ViewStyle } from 'react-native';
-import { Pressable } from 'react-native-gesture-handler';
 import {
    CalendarDay,
    cx,
@@ -8,7 +6,9 @@ import {
    DayBucket,
    isFutureDate,
    toDateKey,
-} from '../../utils';
+} from '@/lib/utils';
+import { StyleProp, Text, View, ViewStyle } from 'react-native';
+import { Pressable } from 'react-native-gesture-handler';
 
 const dateCellPressStyle = ({ pressed }: { pressed: boolean }) => ({
    opacity: pressed ? 0.6 : 1,

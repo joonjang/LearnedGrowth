@@ -1,3 +1,17 @@
+import { StyleSheet } from 'react-native';
+import {
+   Asterisk,
+   BookOpen,
+   Briefcase,
+   CircleDollarSign,
+   Dumbbell,
+   Heart,
+   HelpCircle,
+   LucideIcon,
+   User,
+   Zap,
+} from 'lucide-react-native';
+
 export const BTN_HEIGHT = 'h-14 justify-center';
 export const PRIMARY_CTA_CLASS =
    'bg-indigo-500 active:bg-indigo-600 dark:bg-indigo-800 dark:active:bg-indigo-900';
@@ -16,6 +30,12 @@ export const BOTTOM_SHEET_RADIUS = 24;
 export const BOTTOM_SHEET_BACKDROP_OPACITY = 0.75;
 export const BOTTOM_SHEET_CONTENT_PADDING = 24;
 export const BOTTOM_SHEET_MAX_SNAP = '75%';
+
+export const CARD_PRESS_STYLE = StyleSheet.create({
+   cardPressed: {
+      transform: [{ scale: 0.985 }],
+   },
+});
 
 export const ROUTE_LOGIN = '/(modal)/login' as const;
 export const ROUTE_ENTRIES = '/' as const;
@@ -92,6 +112,7 @@ export const MONTHS = [
 
 export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+
 // colors
 
 export const ALERT_COLOR_DARK = '#fb923c';
@@ -104,6 +125,8 @@ export const CHEVRON_ICON_DARK = '#94a3b8';
 export const CHEVRON_ICON_LIGHT = '#cbd5e1';
 
 export const UNCATEGORIZED_LABEL = 'Not categorized';
+
+// 1. Existing Color Map
 export const CATEGORY_COLOR_MAP: Record<string, string> = {
    Work: '#3b82f6',
    Education: '#8b5cf6',
@@ -115,4 +138,34 @@ export const CATEGORY_COLOR_MAP: Record<string, string> = {
    Other: '#9ca3af',
    [UNCATEGORIZED_LABEL]: '#e2e8f0',
 };
+
+// 2. NEW: Icon Map (Source of Truth)
+export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
+   Work: Briefcase,
+   Education: BookOpen,
+   Relationships: Heart,
+   Health: Dumbbell,
+   Finance: CircleDollarSign,
+   'Self-Image': User,
+   'Daily Hassles': Zap,
+   Other: Asterisk,
+   [UNCATEGORIZED_LABEL]: HelpCircle,
+};
+
+export const TONE_COLOR_MAP: Record<string, string> = {
+   Optimistic: '#10b981', // Emerald 500 (Matches Health)
+   Pessimistic: '#ef4444', // Red 500 (Standard Alert)
+   Mixed: '#8b5cf6', // Violet 500 (Matches Education)
+   Neutral: '#64748b', // Slate 500 (Matches Daily Hassles)
+};
+
+export const STYLE_TO_TONE_MAP: Record<string, string> = {
+   Positive: 'Optimistic',
+   Constructive: 'Optimistic',
+   Balanced: 'Mixed',
+   Mixed: 'Mixed',
+   Critical: 'Pessimistic',
+};
+
 export const DEFAULT_CATEGORY_COLOR = '#cbd5e1';
+export const DEFAULT_CATEGORY_ICON = HelpCircle;

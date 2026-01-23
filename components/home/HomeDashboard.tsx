@@ -1,10 +1,10 @@
+import { getWeekStart, isOptimistic, toDateKey } from '@/lib/utils';
 import { Entry } from '@/models/entry';
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import Animated, {
    FadeInDown,
    FadeOutUp,
-   Layout,
    LinearTransition,
 } from 'react-native-reanimated';
 import {
@@ -22,7 +22,6 @@ import {
    ThinkingPatternData,
    ThinkingPatternViewModel,
 } from './types';
-import { getWeekStart, isOptimistic, toDateKey } from './utils';
 
 // --- CONFIG ---
 const PATTERN_TAB_CONFIG = {
@@ -391,7 +390,7 @@ const HomeDashboard = React.memo(
             {/* STREAK CARD - Always Render */}
             <Animated.View
                entering={FadeInDown.duration(600).springify()}
-               layout={Layout.springify()}
+               layout={LinearTransition.springify()}
             >
                <StreakCard
                   key={`streak-${dateKey}`}
@@ -409,7 +408,7 @@ const HomeDashboard = React.memo(
                <Animated.View
                   entering={FadeInDown.duration(600).delay(100).springify()}
                   exiting={FadeOutUp.duration(400)}
-                  layout={Layout.springify()}
+                  layout={LinearTransition.springify()}
                >
                   <MentalFocusCard
                      key={`focus-${dateKey}`}

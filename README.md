@@ -41,9 +41,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - add search function
 
-- why does it show a loading screen after the splashscreen
-   - checking session
-
 - make ai insight respond with how the explanation style is helpful/unhelpful
 
 - add a report problem button to send a snapshot of the issue
@@ -70,6 +67,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - shadow removed for entry detail screen to remove signal of interactivity
    - ai analysis pressable disable on edit
    - ai analysis refresh present even when dispute exists
+- splash screen displays instead of loading indicator
 
 ### 2026-01-22
 

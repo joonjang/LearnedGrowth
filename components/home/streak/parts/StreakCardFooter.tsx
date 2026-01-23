@@ -20,7 +20,7 @@ export function StreakCardFooter({
             <View className="mx-5 mb-2 flex-row items-center justify-center gap-2 opacity-80">
                <Pointer size={14} color={chevronColor} />
                <Text className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
-                  Tap on day for details
+                  Tap a day for details
                </Text>
             </View>
          )}

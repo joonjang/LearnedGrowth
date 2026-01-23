@@ -1,62 +1,18 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import {
-   Activity,
-   Asterisk,
-   BookOpen,
-   Briefcase,
-   CircleDollarSign,
-   Dumbbell,
-   Heart,
-   HelpCircle,
-   User,
-   Zap,
-} from 'lucide-react-native';
+import { Activity } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import {
+   CATEGORY_ICON_MAP,
+   DEFAULT_CATEGORY_ICON,
+   STYLE_TO_TONE_MAP,
+} from '@/components/constants';
+import { CARD_PRESS_STYLE } from '@/lib/utils';
 import { Entry } from '@/models/entry';
 import HelperFooter from '../HelperFooter';
 import { MentalFocusStat, MentalFocusViewModel } from '../types';
-import { CARD_PRESS_STYLE } from '../utils';
 import { MentalFocusSheet } from './MentalFocusSheet';
-
-function getDetectedTone(styleLabel: string): string {
-   switch (styleLabel) {
-      case 'Positive':
-      case 'Constructive':
-         return 'Optimistic';
-      case 'Balanced':
-      case 'Mixed':
-         return 'Mixed';
-      case 'Critical':
-         return 'Pessimistic';
-      default:
-         return 'Mixed';
-   }
-}
-
-const getCategoryIcon = (category: string) => {
-   switch (category) {
-      case 'Work':
-         return Briefcase;
-      case 'Education':
-         return BookOpen;
-      case 'Relationships':
-         return Heart;
-      case 'Health':
-         return Dumbbell;
-      case 'Finance':
-         return CircleDollarSign;
-      case 'Self-Image':
-         return User;
-      case 'Daily Hassles':
-         return Zap;
-      case 'Other':
-         return Asterisk;
-      default:
-         return HelpCircle;
-   }
-};
 
 type Props = {
    analysis: MentalFocusViewModel;
@@ -84,9 +40,16 @@ export default function MentalFocusCard({
    if (!analysis) return null;
 
    const { categoryStats, narrative } = analysis;
-   const TopIcon = getCategoryIcon(narrative.topCatLabel);
+   const TopIcon =
+      CATEGORY_ICON_MAP[narrative.topCatLabel] || DEFAULT_CATEGORY_ICON;
+   const detectedTone = STYLE_TO_TONE_MAP[narrative.styleLabel] ?? 'Mixed';
 
-   const detectedTone = getDetectedTone(narrative.styleLabel);
+   const getToneColor = (tone: string) => {
+      if (tone === 'Optimistic') return isDark ? '#34d399' : '#059669';
+      if (tone === 'Pessimistic') return isDark ? '#f87171' : '#dc2626';
+      return isDark ? '#a78bfa' : '#7c3aed';
+   };
+   const toneColor = getToneColor(detectedTone);
 
    return (
       <>
@@ -103,68 +66,77 @@ export default function MentalFocusCard({
                   isPressed && CARD_PRESS_STYLE.cardPressed,
                ]}
             >
-               {/* Header Section */}
-               <View className="flex-row items-center justify-between mb-5">
-                  <View className="flex-row items-center gap-2">
-                     <Activity
-                        size={16}
-                        color={isDark ? '#cbd5e1' : '#64748b'}
-                     />
-                     <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                        Mental Focus
+               {/* --- HEADER --- */}
+               <View className="flex-row items-center gap-2 mb-5">
+                  <Activity size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
+                  <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                     Mental Focus
+                  </Text>
+               </View>
+
+               {/* --- PART 1: STATS CONTAINER (Background Distinction) --- */}
+               {/* Added bg-slate-50 and border to create a "Dashboard Widget" look */}
+               <View className="flex-row items-center mb-5 bg-slate-50 dark:bg-slate-900/40 rounded-xl py-4 border border-slate-100 dark:border-slate-700/50">
+                  {/* Left Column */}
+                  <View className="flex-1 items-center justify-center">
+                     <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mb-1.5">
+                        Detected Tone
                      </Text>
+                     <View className="flex-row items-center gap-2">
+                        <View
+                           className="w-2 h-2 rounded-full"
+                           style={{ backgroundColor: toneColor }}
+                        />
+                        <Text className="text-sm font-bold text-slate-900 dark:text-white">
+                           {detectedTone}
+                        </Text>
+                     </View>
+                  </View>
+
+                  {/* Vertical Divider (Matches container border) */}
+                  <View className="w-[1px] h-8 bg-slate-200 dark:bg-slate-700" />
+
+                  {/* Right Column */}
+                  <View className="flex-1 items-center justify-center">
+                     <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mb-1.5">
+                        Self-Talk Style
+                     </Text>
+                     <View className="flex-row items-center gap-2">
+                        <View
+                           className="w-2 h-2 rounded-full"
+                           style={{ backgroundColor: narrative.styleColor }}
+                        />
+                        <Text className="text-sm font-bold text-slate-900 dark:text-white">
+                           {narrative.styleLabel}
+                        </Text>
+                     </View>
                   </View>
                </View>
 
-               {/* Main Observation Section (Option 1) */}
-               <View className="flex-row items-start gap-4 mb-6">
-                  <View className="h-14 w-14 items-center justify-center bg-slate-50 dark:bg-slate-700/40 rounded-2xl border border-slate-100 dark:border-slate-700">
+               {/* --- PART 2: PRIMARY TOPIC --- */}
+               <View className="flex-row items-center gap-4 mb-3 px-1">
+                  {/* Icon Box */}
+                  <View className="h-14 w-14 items-center justify-center bg-slate-50 dark:bg-slate-700/40 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
                      <TopIcon
-                        size={28}
+                        size={26}
                         color={isDark ? '#e2e8f0' : '#334155'}
                         strokeWidth={2}
                      />
                   </View>
 
-                  <View className="flex-1 gap-y-1.5">
-                     {/* Bullet 1: Recurring Theme */}
-                     <View className="flex-row items-center gap-2">
-                        <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight w-32">
-                           Primary Topic
-                        </Text>
-                        <Text className="text-sm font-bold text-slate-900 dark:text-white flex-1">
-                           {narrative.topCatLabel}
-                        </Text>
-                     </View>
-
-                     {/* Bullet 2: Describing Style */}
-                     <View className="flex-row items-center gap-2">
-                        <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight w-32">
-                           Self-talk Style
-                        </Text>
-
-                        <Text
-                           className="text-sm font-semibold text-slate-600 dark:text-slate-300"
-                           style={{ color: narrative.styleColor }}
-                        >
-                           {narrative.styleLabel}
-                        </Text>
-                     </View>
-
-                     {/* Bullet 3: Detected Tone */}
-                     <View className="flex-row items-center gap-2">
-                        <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight w-32">
-                           Detected Tone
-                        </Text>
-                        <Text className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-                           {detectedTone}
-                        </Text>
-                     </View>
+                  {/* Topic Text */}
+                  <View>
+                     <Text className="text-xl font-extrabold text-slate-900 dark:text-white leading-6">
+                        {narrative.topCatLabel}
+                     </Text>
+                     <Text className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+                        Most discussed topic
+                     </Text>
                   </View>
                </View>
 
-               {/* Distribution Bar */}
-               <View className="mb-4">
+               {/* --- STATS FOOTER --- */}
+               <View className="mb-2">
                   <View className="flex-row h-1.5 rounded-full overflow-hidden w-full bg-slate-100 dark:bg-slate-700">
                      {categoryStats.map(
                         (stat: MentalFocusStat, idx: number) => (
@@ -182,8 +154,7 @@ export default function MentalFocusCard({
                   </View>
                </View>
 
-               {/* Legend Tags */}
-               <View className="flex-row flex-wrap gap-x-4 gap-y-2">
+               <View className="flex-row flex-wrap gap-x-4 gap-y-2 px-1">
                   {categoryStats.slice(0, 4).map((stat: MentalFocusStat) => (
                      <View
                         key={stat.label}

@@ -1,7 +1,9 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
 import {
    CATEGORY_COLOR_MAP,
+   CATEGORY_ICON_MAP,
    DEFAULT_CATEGORY_COLOR,
+   DEFAULT_CATEGORY_ICON,
    ROUTE_ENTRY_DETAIL,
 } from '@/components/constants';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
@@ -13,22 +15,13 @@ import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
 import {
    ArrowDown,
-   Asterisk,
-   BookOpen,
-   Briefcase,
    ChevronRight,
-   CircleDollarSign,
-   Dumbbell,
-   Heart,
-   HelpCircle,
    History,
    MoreHorizontal,
    Pencil,
    Sparkles,
    Sprout,
-   Trash2,
-   User,
-   Zap,
+   Trash2
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -83,30 +76,6 @@ const TRUNCATION_LIMITS = {
 
 type TruncationKey = keyof typeof TRUNCATION_LIMITS;
 type TruncationState = Record<TruncationKey, boolean>;
-
-// --- Helper: Icon Mapper ---
-const getCategoryIcon = (category: string) => {
-   switch (category) {
-      case 'Work':
-         return Briefcase;
-      case 'Education':
-         return BookOpen;
-      case 'Relationships':
-         return Heart;
-      case 'Health':
-         return Dumbbell;
-      case 'Finance':
-         return CircleDollarSign;
-      case 'Self-Image':
-         return User;
-      case 'Daily Hassles':
-         return Zap;
-      case 'Other':
-         return Asterisk;
-      default:
-         return HelpCircle;
-   }
-};
 
 // --- Helper Components ---
 
@@ -248,7 +217,7 @@ export default function EntryCard({
 
    // --- AI Visuals Setup ---
    const category = entry.aiResponse?.meta?.category || 'Uncategorized';
-   const CategoryIcon = getCategoryIcon(category);
+   const CategoryIcon = CATEGORY_ICON_MAP[category] || DEFAULT_CATEGORY_ICON;
    const catColor = CATEGORY_COLOR_MAP[category] || DEFAULT_CATEGORY_COLOR;
    const tags = entry.aiResponse?.meta?.tags || [];
 

@@ -12,6 +12,7 @@ import {
 import { MONTHS } from '@/components/constants';
 import type { Entry } from '@/models/entry';
 import { StreakViewModel } from '../types';
+
 import {
    buildMonthDays,
    buildMonthRows,
@@ -21,7 +22,7 @@ import {
    getSummaryText,
    parseDateKey,
    toDateKey,
-} from '../utils';
+} from '@/lib/utils';
 import { DayDetailSheet } from './parts/DayDetailSheet';
 import { StreakCardFooter } from './parts/StreakCardFooter';
 import { StreakCardHeader } from './parts/StreakCardHeader';
