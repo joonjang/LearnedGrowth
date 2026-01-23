@@ -149,18 +149,11 @@ export function AiInsightHeader({
             <Text className={`text-base font-bold ${textColor}`}>
                AI Analysis
             </Text>
-            {isStale && (
-               <Clock3
-                  size={14}
-                  color={isDark ? '#94a3b8' : '#64748b'}
-                  style={{ opacity: 0.8 }}
-               />
-            )}
          </View>
 
          {allowMinimize && (
             <View className="rounded-full px-2 py-1">
-               <Quote size={14} color={iconColor} />
+               <Sparkles size={14} color={iconColor} />
             </View>
          )}
       </View>
