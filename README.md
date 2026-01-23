@@ -68,6 +68,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
    - ai analysis pressable disable on edit
    - ai analysis refresh present even when dispute exists
 - splash screen displays instead of loading indicator
+- added all time streak view
 
 ### 2026-01-22
 

@@ -18,6 +18,7 @@ import ThinkingPatternCard from './thinkingPattern/ThinkingPatternCard';
 import {
    DayBucket,
    MentalFocusViewModel,
+   MonthStat,
    StreakViewModel,
    ThinkingPatternData,
    ThinkingPatternViewModel,
@@ -94,6 +95,7 @@ type Props = {
    showEncouragement: boolean;
    onDeleteEntry: (entry: Entry) => void;
    isLoading?: boolean;
+   isAllTime?: boolean;
 };
 
 const HomeDashboard = React.memo(
@@ -105,12 +107,15 @@ const HomeDashboard = React.memo(
       showEncouragement,
       onDeleteEntry,
       isLoading = false,
+      isAllTime = false,
    }: Props) => {
       // --- THE SINGLE PASS AGGREGATOR ---
       const { streakView, focusView, patternView } = useMemo(() => {
          // 1. Init Containers
          const dayBuckets = new Map<string, DayBucket>();
          const filledDaysSet = new Set<string>();
+
+         const monthMap = new Map<string, MonthStat>();
 
          const catMap = new Map<
             string,
@@ -148,12 +153,32 @@ const HomeDashboard = React.memo(
             const bucket = dayBuckets.get(dateKey)!;
             bucket.entries.push(entry);
 
-            if ((entry.dispute || '').trim().length > 0) {
+            const isReframed = (entry.dispute || '').trim().length > 0;
+
+            if (isReframed) {
                bucket.completed.push(entry);
                bucket.disputeCount += 1;
                filledDaysSet.add(dateKey);
             } else {
                bucket.incomplete.push(entry);
+            }
+
+            if (isAllTime) {
+               const year = created.getFullYear();
+               const monthIndex = created.getMonth();
+               const monthKey = `${year}-${monthIndex}`;
+
+               if (!monthMap.has(monthKey)) {
+                  monthMap.set(monthKey, {
+                     year,
+                     monthIndex,
+                     count: 0,
+                     completedCount: 0,
+                  });
+               }
+               const mStat = monthMap.get(monthKey)!;
+               mStat.count++;
+               if (isReframed) mStat.completedCount++;
             }
 
             // --- AI DEPENDENT AGGREGATION (Guarded) ---
@@ -233,11 +258,21 @@ const HomeDashboard = React.memo(
             if (days[i].filled) streakCount++;
             else break;
          }
+
+         const monthlyStats = isAllTime
+            ? Array.from(monthMap.values()).sort((a, b) => {
+                 if (a.year !== b.year) return b.year - a.year; // Descending Year
+                 return b.monthIndex - a.monthIndex; // Descending Month
+              })
+            : undefined;
+
          const streakView: StreakViewModel = {
             streakCount,
             days,
             dayBuckets,
             activeCount: filledDaysSet.size,
+            monthlyStats,
+            isAllTime,
          };
 
          // 4. Post-Process: Mental Focus
@@ -380,7 +415,7 @@ const HomeDashboard = React.memo(
          }
 
          return { streakView, focusView, patternView };
-      }, [entries, anchorDate]);
+      }, [anchorDate, isAllTime, entries]);
 
       // --- RENDER WITH ANIMATIONS ---
       const dateKey = anchorDate.toISOString();

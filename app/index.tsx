@@ -784,6 +784,7 @@ export default function EntriesScreen() {
                            showEncouragement={isCurrentWeek}
                            onDeleteEntry={requestDelete}
                            isLoading={!isReady}
+                           isAllTime={selectedWeekKey === 'all'}
                         />
                      </View>
 

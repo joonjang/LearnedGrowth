@@ -6,13 +6,10 @@ import {
    StyleSheet,
    useColorScheme,
    useWindowDimensions,
-   View,
+   View
 } from 'react-native';
 
 import { MONTHS } from '@/components/constants';
-import type { Entry } from '@/models/entry';
-import { StreakViewModel } from '../types';
-
 import {
    buildMonthDays,
    buildMonthRows,
@@ -23,6 +20,9 @@ import {
    parseDateKey,
    toDateKey,
 } from '@/lib/utils';
+import type { Entry } from '@/models/entry';
+import { StreakViewModel } from '../types';
+import { AllTimeContent } from './parts/AllTimeContent';
 import { DayDetailSheet } from './parts/DayDetailSheet';
 import { StreakCardFooter } from './parts/StreakCardFooter';
 import { StreakCardHeader } from './parts/StreakCardHeader';
@@ -39,13 +39,17 @@ const styles = StyleSheet.create({
    },
 });
 
+// --- COMPONENT: All Time Content (Journey & Streak) ---
+
+// --- MAIN COMPONENT ---
+
 type Props = {
    data: StreakViewModel;
    shadowSm: any;
    anchorDate?: Date;
    showEncouragement?: boolean;
    onDeleteEntry?: (entry: Entry) => void;
-   isLoading?: boolean; // <--- New Prop
+   isLoading?: boolean;
 };
 
 export default function StreakCard({
@@ -54,19 +58,27 @@ export default function StreakCard({
    anchorDate,
    showEncouragement = true,
    onDeleteEntry,
-   isLoading = false, // <--- Default false
+   isLoading = false,
 }: Props) {
-   const { streakCount, days, dayBuckets, activeCount } = data;
+   const {
+      streakCount,
+      days,
+      dayBuckets,
+      activeCount,
+      monthlyStats,
+      isAllTime,
+   } = data;
+
    const isDark = useColorScheme() === 'dark';
    const [isExpanded, setIsExpanded] = useState(false);
    const [isPressed, setIsPressed] = useState(false);
    const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
+
    const sheetRef = useRef<BottomSheetModal>(null as any);
    const { height: windowHeight } = useWindowDimensions();
    const maxSheetHeight = useMemo(() => windowHeight * 0.75, [windowHeight]);
 
    const isCurrentWeek = showEncouragement;
-
    const referenceDate = useMemo(
       () => (anchorDate ? new Date(anchorDate) : new Date()),
       [anchorDate],
@@ -119,13 +131,14 @@ export default function StreakCard({
    );
 
    const toggleExpanded = useCallback(() => {
+      if (isAllTime) return;
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setIsExpanded((prev) => !prev);
-   }, []);
+   }, [isAllTime]);
 
    const handlePressIn = useCallback(() => {
-      setIsPressed(true);
-   }, []);
+      if (!isAllTime) setIsPressed(true);
+   }, [isAllTime]);
 
    const handlePressOut = useCallback(() => {
       setIsPressed(false);
@@ -149,6 +162,28 @@ export default function StreakCard({
 
    const dayCircleStyle = styles.dayCircle;
 
+   // Logic to calculate consecutive Month Streak
+   const monthStreak = useMemo(() => {
+      if (!monthlyStats || monthlyStats.length === 0) return 0;
+      let streak = 0;
+      // Scans backwards to find the current active month streak
+      for (let i = monthlyStats.length - 1; i >= 0; i--) {
+         if (monthlyStats[i].count > 0) {
+            streak++;
+         } else {
+            if (streak > 0) break;
+         }
+      }
+      return streak;
+   }, [monthlyStats]);
+
+   const allTimeStats = useMemo(() => {
+      if (!monthlyStats) return { total: 0 };
+      return {
+         total: monthlyStats.reduce((acc, curr) => acc + curr.count, 0),
+      };
+   }, [monthlyStats]);
+
    return (
       <>
          <Pressable
@@ -165,43 +200,57 @@ export default function StreakCard({
                   !isExpanded && isPressed && CARD_PRESS_STYLE.cardPressed,
                ]}
             >
-               <Pressable disabled={!isExpanded} onPress={toggleExpanded}>
-                  <StreakCardHeader
-                     streakCount={streakCount}
-                     activeCount={activeCount}
-                     isCurrentWeek={isCurrentWeek}
-                     monthName={monthName}
-                     currentYear={currentYear}
-                     encouragement={encouragement}
+               {isAllTime ? (
+                  <AllTimeContent
+                     totalEntries={allTimeStats.total}
+                     monthStreak={monthStreak}
                      isDark={isDark}
-                     isLoading={isLoading} // <--- Pass Loading State
-                  />
-               </Pressable>
-
-               {!isExpanded ? (
-                  <StreakCardWeekStrip
-                     days={days}
-                     todayKey={realTodayKey}
-                     dayCircleStyle={dayCircleStyle}
+                     isLoading={isLoading}
                   />
                ) : (
-                  <View>
-                     <StreakCardMonthGrid
-                        monthRows={monthRows}
-                        weekRowIndex={weekRowIndex}
-                        weekDays={days}
-                        dayBuckets={dayBuckets}
-                        todayKey={realTodayKey}
-                        monthIndex={monthIndex}
-                        dayCircleStyle={dayCircleStyle}
-                        onDatePress={handleDatePress}
-                     />
-                  </View>
-               )}
+                  <>
+                     <Pressable disabled={!isExpanded} onPress={toggleExpanded}>
+                        <StreakCardHeader
+                           streakCount={streakCount}
+                           activeCount={activeCount}
+                           isCurrentWeek={isCurrentWeek}
+                           monthName={monthName}
+                           currentYear={currentYear}
+                           encouragement={encouragement}
+                           isDark={isDark}
+                           isLoading={isLoading}
+                        />
+                     </Pressable>
 
-               <Pressable onPress={toggleExpanded}>
-                  <StreakCardFooter isExpanded={isExpanded} isDark={isDark} />
-               </Pressable>
+                     {!isExpanded ? (
+                        <StreakCardWeekStrip
+                           days={days}
+                           todayKey={realTodayKey}
+                           dayCircleStyle={dayCircleStyle}
+                        />
+                     ) : (
+                        <View>
+                           <StreakCardMonthGrid
+                              monthRows={monthRows}
+                              weekRowIndex={weekRowIndex}
+                              weekDays={days}
+                              dayBuckets={dayBuckets}
+                              todayKey={realTodayKey}
+                              monthIndex={monthIndex}
+                              dayCircleStyle={dayCircleStyle}
+                              onDatePress={handleDatePress}
+                           />
+                        </View>
+                     )}
+
+                     <Pressable onPress={toggleExpanded}>
+                        <StreakCardFooter
+                           isExpanded={isExpanded}
+                           isDark={isDark}
+                        />
+                     </Pressable>
+                  </>
+               )}
             </View>
          </Pressable>
 

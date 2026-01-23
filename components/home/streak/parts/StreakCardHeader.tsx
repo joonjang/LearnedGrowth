@@ -1,6 +1,11 @@
 import { HOME_ICON_DARK, HOME_ICON_LIGHT } from '@/components/constants';
 import { cx } from '@/lib/utils';
-import { CalendarCheck, CalendarDays, Dog, Flame } from 'lucide-react-native';
+import {
+   CalendarCheck,
+   CalendarDays,
+   Flame,
+   Sprout
+} from 'lucide-react-native';
 import React, { useEffect } from 'react';
 import { Text, View } from 'react-native';
 import Animated, {
@@ -90,7 +95,7 @@ export function StreakCardHeader({
          <View className="flex-row items-center justify-between mb-3 h-8">
             <View className="flex-row items-center gap-2">
                {isCurrentWeek ? (
-                  <Dog size={16} color={iconColor} className="dark:hidden" />
+                  <Sprout size={16} color={iconColor} className="dark:hidden" />
                ) : (
                   <CalendarDays
                      size={16}

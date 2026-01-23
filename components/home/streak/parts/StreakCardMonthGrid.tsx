@@ -48,8 +48,69 @@ export function StreakCardMonthGrid({
       return 'bg-orange-600 dark:bg-orange-400';
    };
 
+   // Helper to generate styles based on state
+   const getDayStyles = (
+      isCurrentMonth: boolean,
+      isFuture: boolean,
+      hasEntries: boolean,
+      isFilled: boolean,
+      isToday: boolean,
+   ) => {
+      // 1. HIDDEN (Not current month)
+      if (!isCurrentMonth) {
+         return {
+            circle: 'bg-transparent border-transparent',
+            text: 'text-transparent',
+         };
+      }
+
+      // 2. FUTURE (Lighter text, No background)
+      if (isFuture) {
+         return {
+            circle: 'bg-transparent border-transparent',
+            text: 'text-slate-300 dark:text-slate-700',
+         };
+      }
+
+      // 3. FILLED (Completed) -> Solid Purple
+      if (isFilled) {
+         return {
+            circle: 'bg-indigo-600 border-transparent',
+            text: 'text-white font-bold',
+         };
+      }
+
+      // 4. TODAY (Special Handling - Purple Ring)
+      if (isToday) {
+         return {
+            circle: cx(
+               'border-2 border-indigo-500', // Reverted to Purple
+               hasEntries
+                  ? 'bg-slate-50 dark:bg-slate-800' // Grey BG if Incomplete
+                  : 'bg-transparent', // Transparent if Empty
+            ),
+            text: 'text-indigo-700 dark:text-indigo-300 font-bold',
+         };
+      }
+
+      // 5. INCOMPLETE (Past, Has Entries) -> Grey BG + Purple Ring
+      if (hasEntries) {
+         return {
+            circle: 'border-2 border-indigo-500',
+            text: 'text-slate-700 dark:text-slate-200 font-bold',
+         };
+      }
+
+      // 6. EMPTY (Past, No Entries) -> Transparent, No Ring
+      return {
+         circle: 'bg-transparent border-transparent',
+         text: 'text-slate-400 dark:text-slate-500 font-medium',
+      };
+   };
+
    return (
       <View className="px-5 pb-2">
+         {/* Weekday Header */}
          <View className="flex-row justify-between mb-2">
             {WEEKDAY_LABELS.map((label, idx) => (
                <View key={`${label}-${idx}`} className="flex-1 items-center">
@@ -60,9 +121,10 @@ export function StreakCardMonthGrid({
             ))}
          </View>
 
+         {/* Calendar Grid */}
          <View className="flex-col">
             {monthRows.map((row, rowIndex) => {
-               // RENDER ACTIVE WEEK ROW
+               // --- RENDER ACTIVE WEEK ROW (Special Data Source) ---
                if (rowIndex === weekRowIndex) {
                   return (
                      <View
@@ -80,38 +142,14 @@ export function StreakCardMonthGrid({
                            const bucket = dayBuckets.get(dayKey);
                            const hasIncomplete =
                               (bucket?.incomplete.length ?? 0) > 0;
+                           const hasEntries = (bucket?.entries.length ?? 0) > 0;
 
-                           const circleClass = cx(
-                              // future / outside month
-                              (isFuture || !isCurrentMonth) &&
-                                 'bg-transparent border-transparent',
-
-                              // filled
-                              !isFuture &&
-                                 day.filled &&
-                                 'bg-indigo-600 border-transparent',
-
-                              // today (not filled)
-                              !isFuture &&
-                                 !day.filled &&
-                                 isToday &&
-                                 'bg-white dark:bg-slate-800 border-2 border-indigo-500',
-
-                              // normal (not filled)
-                              !isFuture &&
-                                 !day.filled &&
-                                 !isToday &&
-                                 'bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700',
-                           );
-
-                           const dayNumClass = cx(
-                              'text-[11px] font-bold',
-                              isFuture ? 'opacity-50' : 'opacity-100',
-                              day.filled
-                                 ? 'text-white'
-                                 : isToday
-                                   ? 'text-indigo-700 dark:text-indigo-300'
-                                   : 'text-slate-400 dark:text-slate-600',
+                           const styles = getDayStyles(
+                              isCurrentMonth,
+                              isFuture,
+                              hasEntries,
+                              day.filled,
+                              isToday,
                            );
 
                            return (
@@ -123,25 +161,34 @@ export function StreakCardMonthGrid({
                                     onPress={() =>
                                        onDatePress(day.date, isCurrentMonth)
                                     }
-                                    disabled={!isCurrentMonth || isFuture}
+                                    // Clickable if: Has entries OR is Today
+                                    disabled={
+                                       !isCurrentMonth ||
+                                       isFuture ||
+                                       (!hasEntries && !isToday)
+                                    }
                                     style={dateCellPressStyle}
                                  >
                                     <View
-                                       className={circleClass}
+                                       className={styles.circle}
                                        style={[
                                           dayCircleStyle,
-                                          // preserve: truly no border width for future/outside-month
-                                          isFuture || !isCurrentMonth
-                                             ? { borderWidth: 0 }
-                                             : null,
+                                          // Ensure border removal for ghost/empty past states (that aren't today)
+                                          !isToday &&
+                                             (!hasEntries ||
+                                                isFuture ||
+                                                !isCurrentMonth) && {
+                                                borderWidth: 0,
+                                             },
                                        ]}
                                     >
                                        {isCurrentMonth && (
                                           <>
-                                             <Text className={dayNumClass}>
+                                             <Text
+                                                className={`text-[11px] ${styles.text}`}
+                                             >
                                                 {dayNum}
                                              </Text>
-
                                              {hasIncomplete && !isFuture && (
                                                 <View
                                                    className={getSeedDotClass(
@@ -161,7 +208,7 @@ export function StreakCardMonthGrid({
                   );
                }
 
-               // RENDER OTHER ROWS
+               // --- RENDER STANDARD ROWS ---
                return (
                   <View
                      key={`month-row-${row[0]?.key ?? rowIndex}`}
@@ -170,42 +217,19 @@ export function StreakCardMonthGrid({
                      {row.map((day) => {
                         const dayNum = day.date.getDate();
                         const isToday = day.key === todayKey;
+                        const isFuture = isFutureDate(day.date);
+
                         const bucket = dayBuckets.get(day.key);
                         const hasIncomplete =
                            (bucket?.incomplete.length ?? 0) > 0;
-                        const isFuture = isFutureDate(day.date);
+                        const hasEntries = (bucket?.entries.length ?? 0) > 0;
 
-                        const circleClass = cx(
-                           // not current month or future => blank
-                           (!day.isCurrentMonth || isFuture) &&
-                              'bg-transparent border-transparent',
-
-                           // disputes => purple filled
-                           day.isCurrentMonth &&
-                              !isFuture &&
-                              day.hasDisputes &&
-                              'bg-indigo-600 border border-indigo-600',
-
-                           // normal day => empty ring
-                           day.isCurrentMonth &&
-                              !isFuture &&
-                              !day.hasDisputes &&
-                              'bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700',
-
-                           // today ring override (only when not disputes)
-                           day.isCurrentMonth &&
-                              !isFuture &&
-                              !day.hasDisputes &&
-                              isToday &&
-                              'border-2 border-indigo-600 dark:border-indigo-400',
-                        );
-
-                        const textClass = cx(
-                           'text-[11px] font-bold',
-                           isFuture ? 'opacity-50' : 'opacity-100',
-                           day.hasDisputes
-                              ? 'text-white'
-                              : 'text-slate-400 dark:text-slate-600',
+                        const styles = getDayStyles(
+                           day.isCurrentMonth,
+                           isFuture,
+                           hasEntries,
+                           day.hasDisputes,
+                           isToday,
                         );
 
                         return (
@@ -217,25 +241,32 @@ export function StreakCardMonthGrid({
                                  onPress={() =>
                                     onDatePress(day.date, day.isCurrentMonth)
                                  }
-                                 disabled={!day.isCurrentMonth || isFuture}
+                                 disabled={
+                                    !day.isCurrentMonth ||
+                                    isFuture ||
+                                    (!hasEntries && !isToday)
+                                 }
                                  style={dateCellPressStyle}
                               >
                                  <View
-                                    className={circleClass}
+                                    className={styles.circle}
                                     style={[
                                        dayCircleStyle,
-                                       // preserve: no border width for future/outside month
-                                       !day.isCurrentMonth || isFuture
-                                          ? { borderWidth: 0 }
-                                          : null,
+                                       !isToday &&
+                                          (!hasEntries ||
+                                             isFuture ||
+                                             !day.isCurrentMonth) && {
+                                             borderWidth: 0,
+                                          },
                                     ]}
                                  >
                                     {day.isCurrentMonth && (
                                        <>
-                                          <Text className={textClass}>
+                                          <Text
+                                             className={`text-[11px] ${styles.text}`}
+                                          >
                                              {dayNum}
                                           </Text>
-
                                           {hasIncomplete && !isFuture && (
                                              <View
                                                 className={getSeedDotClass(

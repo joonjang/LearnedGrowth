@@ -76,7 +76,7 @@ export default function MentalFocusCard({
 
                {/* --- PART 1: STATS CONTAINER (Background Distinction) --- */}
                {/* Added bg-slate-50 and border to create a "Dashboard Widget" look */}
-               <View className="flex-row items-center mb-5 bg-slate-50 dark:bg-slate-900/40 rounded-xl py-4 border border-slate-100 dark:border-slate-700/50">
+               <View className="flex-row items-center mb-4 bg-slate-50 dark:bg-slate-900/40 rounded-xl py-4 border border-slate-100 dark:border-slate-700/50">
                   {/* Left Column */}
                   <View className="flex-1 items-center justify-center">
                      <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mb-1.5">
@@ -114,7 +114,7 @@ export default function MentalFocusCard({
                </View>
 
                {/* --- PART 2: PRIMARY TOPIC --- */}
-               <View className="flex-row items-center gap-4 mb-3 px-1">
+               <View className="flex-row items-center gap-4 mb-5 px-1">
                   {/* Icon Box */}
                   <View className="h-14 w-14 items-center justify-center bg-slate-50 dark:bg-slate-700/40 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
                      <TopIcon

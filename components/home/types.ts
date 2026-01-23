@@ -1,4 +1,3 @@
-import { Day } from '@/lib/utils';
 import { Entry } from '@/models/entry';
 
 // --- Base Definitions ---
@@ -104,9 +103,19 @@ export type ThinkingPatternViewModel = {
    threePsDecoder: ThinkingPatternData;
 } | null;
 
+export type MonthStat = {
+   year: number;
+   monthIndex: number; // 0-11
+   count: number;
+   completedCount: number;
+};
+
 export type StreakViewModel = {
    streakCount: number;
-   days: Day[];
+   days: { date: Date; label: string; filled: boolean }[];
    dayBuckets: Map<string, DayBucket>;
    activeCount: number;
+   // NEW PROPERTIES
+   monthlyStats?: MonthStat[];
+   isAllTime?: boolean;
 };
