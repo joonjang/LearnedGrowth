@@ -26,7 +26,7 @@ export function StreakCardFooter({
          )}
 
          {/* existing legend */}
-         <View className="mx-5 mb-3 flex-row items-center justify-center gap-2 opacity-80 pt-3 border-t border-slate-100 dark:border-slate-800/50">
+         <View className="mx-5 mb-3 flex-row items-center justify-center gap-2 opacity-80 pt-2 border-t border-slate-100 dark:border-slate-800/50">
             <View className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
             <Text className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
                Tracks days with a{' '}

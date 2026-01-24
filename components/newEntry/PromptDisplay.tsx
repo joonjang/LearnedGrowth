@@ -20,7 +20,7 @@ import {
 import Animated, { AnimatedStyle } from 'react-native-reanimated';
 import ThreeDotsLoader from '../ThreeDotLoader';
 
-const TYPING_SPEED_MS = 15;
+const TYPING_SPEED_MS = 20;
 
 type StopOptions = {
    finish?: boolean;

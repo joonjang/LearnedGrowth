@@ -18,6 +18,9 @@ const EntriesStoreContext = createContext<EntriesStore | null>(null);
 export function EntriesStoreProvider({ children }: { children: ReactNode }) {
    const { adapter, ready } = useEntriesAdapter();
    const { user } = useAuth();
+   const lastUserId = useRef<string | null>(null);
+   const pendingLoginCleanupId = useRef<string | null>(null);
+   const pendingLogoutCleanupId = useRef<string | null>(null);
    const lastLinkedAccountId = useRef<string | null>(null);
 
    const cloud = useMemo(() => {
@@ -40,6 +43,65 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
       if (!ready || store === placeholderEntriesStore) return;
       store.getState().hydrate();
    }, [ready, store]);
+
+   useEffect(() => {
+      const currentId = user?.id ?? null;
+      const prevId = lastUserId.current;
+
+      if (prevId && !currentId) {
+         pendingLogoutCleanupId.current = prevId;
+      }
+      if (currentId && currentId !== prevId) {
+         pendingLoginCleanupId.current = currentId;
+      }
+      lastUserId.current = currentId;
+   }, [user?.id]);
+
+   useEffect(() => {
+      const cleanupId = pendingLoginCleanupId.current;
+      if (!cleanupId) return;
+      if (!adapter || !ready) return;
+      if (store === placeholderEntriesStore) return;
+
+      (async () => {
+         try {
+            const rows = await adapter.getAllIncludingDeleted();
+            const toRemove = rows.filter(
+               (entry) => entry.accountId && entry.accountId !== cleanupId
+            );
+            for (const entry of toRemove) {
+               await adapter.hardDelete(entry.id);
+            }
+            pendingLoginCleanupId.current = null;
+            await store.getState().hydrate();
+         } catch (e) {
+            console.warn('Failed to clear entries after login', e);
+         }
+      })();
+   }, [adapter, ready, store, user?.id]);
+
+   useEffect(() => {
+      const cleanupId = pendingLogoutCleanupId.current;
+      if (!cleanupId) return;
+      if (!adapter || !ready) return;
+      if (store === placeholderEntriesStore) return;
+
+      (async () => {
+         try {
+            const rows = await adapter.getAllIncludingDeleted();
+            const toRemove = rows.filter(
+               (entry) => entry.accountId === cleanupId
+            );
+            for (const entry of toRemove) {
+               await adapter.hardDelete(entry.id);
+            }
+            pendingLogoutCleanupId.current = null;
+            await store.getState().hydrate();
+         } catch (e) {
+            console.warn('Failed to clear entries after logout', e);
+         }
+      })();
+   }, [adapter, ready, store, user?.id]);
 
    // --- SYNC LOGIC ---
    useEffect(() => {

@@ -183,10 +183,7 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
     planSyncing.current = true;
     (async () => {
       try {
-        const { error: planError } = await supabase
-          .from("profiles")
-          .update({ plan: "free" })
-          .eq("id", user.id);
+        const { error: planError } = await supabase.rpc("set_plan_free");
         if (planError) {
           console.warn("Failed to downgrade plan from RevenueCat", planError);
           return;

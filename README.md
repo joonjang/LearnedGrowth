@@ -42,6 +42,13 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-01-24
+
+- logout cleanup for entries leaking
+   - addded safeguard
+- made type speed slower
+- supabase user account update security changed to only enable downgrades
+
 ### 2026-01-23
 
 - shadow removed for entry detail screen to remove signal of interactivity
