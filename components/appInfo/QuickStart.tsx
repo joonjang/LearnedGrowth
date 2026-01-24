@@ -1,4 +1,8 @@
-import { ABCDE_FIELD } from '@/components/constants';
+import {
+   ABCDE_FIELD,
+   PRIMARY_CTA_CLASS,
+   ROUTE_LOGIN,
+} from '@/components/constants';
 import {
    TimelineItem,
    TimelineLine,
@@ -8,6 +12,7 @@ import {
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getShadow } from '@/lib/shadow';
 import { FieldTone } from '@/lib/theme';
+import { useAuth } from '@/providers/AuthProvider';
 import { router } from 'expo-router';
 import { ArrowRight, Briefcase, HeartCrack, Users } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
@@ -172,6 +177,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
    const isDark = colorScheme === 'dark';
    const { lock: lockNavigation, locked: navigationLocked } =
       useNavigationLock();
+   const { status } = useAuth();
    const [activeScenarioIndex, setActiveScenarioIndex] = useState(0);
    const [reduceMotion, setReduceMotion] = useState(false);
    const activeScenario = SCENARIOS[activeScenarioIndex];
@@ -183,6 +189,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
       () => getShadow({ isDark, preset: 'button', colorLight: '#4f46e5' }),
       [isDark],
    );
+   const showLogin = !isModal && status !== 'signedIn';
 
    // Generate Timeline Steps
    const steps: TimelineStepDef[] = useMemo(() => {
@@ -240,6 +247,16 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
       });
    }, [lockNavigation]);
 
+   const handleLoginPress = useCallback(() => {
+      lockNavigation(() => {
+         try {
+            router.push(ROUTE_LOGIN);
+         } catch (e) {
+            console.warn('Navigation unavailable for /login', e);
+         }
+      });
+   }, [lockNavigation]);
+
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-950">
          <ScrollView
@@ -258,11 +275,21 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                      Let&apos;s untangle your thoughts.
                   </Text>
 
-                  {isModal && (
-                     <View className="mt-1.5">
+                  <View className="mt-1.5 items-end gap-2">
+                     {showLogin && (
+                        <Pressable
+                           onPress={handleLoginPress}
+                           className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 active:opacity-70"
+                        >
+                           <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-700 dark:text-slate-200">
+                              Log in
+                           </Text>
+                        </Pressable>
+                     )}
+                     {isModal && (
                         <RoundedCloseButton onPress={() => onClose?.()} />
-                     </View>
-                  )}
+                     )}
+                  </View>
                </View>
 
                <Text className="mt-3 text-base leading-7 text-slate-600 dark:text-slate-400">
@@ -475,7 +502,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                // style={{ paddingBottom: insets.bottom + 16 }}
             >
                <Pressable
-                  className={`relative flex-row items-center justify-center rounded-2xl bg-indigo-600 dark:bg-indigo-500 px-6 py-4 active:bg-indigo-700 dark:active:bg-indigo-600 ${buttonShadow.className}`}
+                  className={`relative flex-row items-center justify-center rounded-2xl px-6 py-4 ${PRIMARY_CTA_CLASS} ${buttonShadow.className}`}
                   style={[buttonShadow.ios, buttonShadow.android]}
                   onPress={handleCtaPress}
                   disabled={navigationLocked}
