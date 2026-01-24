@@ -23,6 +23,7 @@ const makeEntry = (
       consequence: overrides.consequence,
       dispute: overrides.dispute,
       energy: overrides.energy,
+      disputeHistory: overrides.disputeHistory ?? [],
       aiResponse: overrides.aiResponse ?? null,
       aiRetryCount: overrides.aiRetryCount ?? 0,
       createdAt: created,

@@ -1,7 +1,7 @@
 import { createDb } from "@/db/entries";
 import { Clock } from "@/lib/clock";
 import { LearnedGrowthResponse } from "@/models/aiService";
-import { Entry } from "@/models/entry";
+import { DisputeHistoryItem, Entry } from "@/models/entry";
 import * as SQLite from "expo-sqlite";
 import { EntriesAdapter } from "../models/entriesAdapter";
 
@@ -14,6 +14,7 @@ interface Row {
    consequence: string | null;
    dispute: string | null;
    energy: string | null;
+   dispute_history: string | null;
    created_at: string;
    updated_at: string;
    account_id: string | null;
@@ -32,12 +33,46 @@ function serializeAiResponse(aiResponse?: LearnedGrowthResponse | null) {
    return aiResponse ? JSON.stringify(aiResponse) : null;
 }
 
+function serializeDisputeHistory(history?: DisputeHistoryItem[] | null) {
+   return JSON.stringify(normalizeDisputeHistory(history ?? []));
+}
+
 function parseAiResponse(raw: string | null): LearnedGrowthResponse | null {
    if (!raw) return null;
    try {
       return ensureAiMeta(JSON.parse(raw) as LearnedGrowthResponse);
    } catch (e: any) {
       throw new Error(`Failed to parse ai_response JSON`, { cause: e });
+   }
+}
+
+function normalizeDisputeHistory(raw: any): DisputeHistoryItem[] {
+   if (!Array.isArray(raw)) return [];
+   const fallbackTimestamp = new Date().toISOString();
+   const items: DisputeHistoryItem[] = [];
+   for (const item of raw) {
+      if (!item || typeof item !== "object") continue;
+      const dispute =
+         typeof item.dispute === "string" ? item.dispute.trim() : "";
+      if (!dispute) continue;
+      const energy = typeof item.energy === "string" ? item.energy : null;
+      const createdAt =
+         typeof item.createdAt === "string" ? item.createdAt : fallbackTimestamp;
+      items.push({ dispute, energy, createdAt });
+   }
+   return items.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+   );
+}
+
+function parseDisputeHistory(raw: string | null): DisputeHistoryItem[] {
+   if (!raw) return [];
+   try {
+      const parsed = JSON.parse(raw);
+      const normalized = normalizeDisputeHistory(parsed);
+      return normalized.length > 0 ? normalized : [];
+   } catch (e: any) {
+      throw new Error(`Failed to parse dispute_history JSON`, { cause: e });
    }
 }
 
@@ -82,6 +117,13 @@ function cloneAiResponse(
          ? { ...normalized, createdAt: fallbackCreatedAt }
          : normalized;
    return JSON.parse(JSON.stringify(withTimestamp));
+}
+
+function cloneDisputeHistory(
+   history?: DisputeHistoryItem[] | null
+): DisputeHistoryItem[] {
+   if (!history || history.length === 0) return [];
+   return normalizeDisputeHistory(JSON.parse(JSON.stringify(history)));
 }
 
 function normalizeAiRetryCount(raw: any): number {
@@ -144,6 +186,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          ...entry,
          aiRetryCount: entry.aiRetryCount ?? 0,
          aiResponse: cloneAiResponse(entry.aiResponse ?? null),
+         disputeHistory: cloneDisputeHistory(entry.disputeHistory),
       };
    }
 
@@ -157,6 +200,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          consequence: row.consequence ?? undefined,
          dispute: row.dispute ?? undefined,
          energy: row.energy ?? undefined,
+         disputeHistory: parseDisputeHistory(row.dispute_history),
          createdAt: row.created_at,
          updatedAt: row.updated_at,
          accountId: row.account_id ?? null,
@@ -176,7 +220,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          return await this.withDb(async (db) => {
             const rows = await db.getAllAsync<Row>(`
                SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
-                 created_at, updated_at, account_id, dirty_since, is_deleted
+                 dispute_history, created_at, updated_at, account_id, dirty_since, is_deleted
                FROM entries
                WHERE is_deleted = 0
                ORDER BY created_at DESC
@@ -201,7 +245,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          return await this.withDb(async (db) => {
             const rows = await db.getAllAsync<Row>(`
                SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
-                 created_at, updated_at, account_id, dirty_since, is_deleted
+                 dispute_history, created_at, updated_at, account_id, dirty_since, is_deleted
                FROM entries
                ORDER BY created_at DESC
              `);
@@ -223,7 +267,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
             const row = await db.getFirstAsync<Row>(
                `
              SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
-                 created_at, updated_at, account_id, dirty_since, is_deleted
+                 dispute_history, created_at, updated_at, account_id, dirty_since, is_deleted
                FROM entries
                WHERE id = $id
                LIMIT 1
@@ -247,6 +291,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
             this.clock.nowIso()
          : undefined;
       const aiResponse = cloneAiResponse(entry.aiResponse ?? null, aiCreatedAt);
+      const disputeHistory = cloneDisputeHistory(entry.disputeHistory);
 
       // Memory mode
       if (!this.db) {
@@ -257,6 +302,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
             ...entry,
             aiRetryCount: entry.aiRetryCount ?? 0,
             aiResponse,
+            disputeHistory,
          };
          this.entries!.push(copy);
          return this.copyEntry(copy);
@@ -267,10 +313,10 @@ export class SQLEntriesAdapter implements EntriesAdapter {
          const row = await this.withDb(async (db) => {
             await db.runAsync(
                `INSERT INTO entries
-        (id, adversity, belief, consequence, dispute, energy, ai_response, ai_retry_count,
+        (id, adversity, belief, consequence, dispute, energy, dispute_history, ai_response, ai_retry_count,
          created_at, updated_at, account_id, dirty_since, is_deleted)
         VALUES
-        ($id, $adversity, $belief, $consequence, $dispute, $energy, $ai_response, $ai_retry_count,
+        ($id, $adversity, $belief, $consequence, $dispute, $energy, $dispute_history, $ai_response, $ai_retry_count,
          $created_at, $updated_at, $account_id, $dirty_since, $is_deleted)`,
                {
                   $id: entry.id,
@@ -279,6 +325,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
                   $consequence: entry.consequence ?? null,
                   $dispute: entry.dispute ?? null,
                   $energy: entry.energy ?? null,
+                  $dispute_history: serializeDisputeHistory(disputeHistory),
                   $ai_response: serializeAiResponse(aiResponse),
                   $ai_retry_count: entry.aiRetryCount ?? 0,
                   $created_at: entry.createdAt,
@@ -291,7 +338,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
 
             const inserted = await db.getFirstAsync<Row>(
                `SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
-                 created_at, updated_at, account_id, dirty_since, is_deleted
+                 dispute_history, created_at, updated_at, account_id, dirty_since, is_deleted
           FROM entries
          WHERE id = $id
          LIMIT 1`,
@@ -333,10 +380,17 @@ export class SQLEntriesAdapter implements EntriesAdapter {
                   : undefined
             )
             : cloneAiResponse(current.aiResponse ?? null);
+         const nextDisputeHistory = Object.prototype.hasOwnProperty.call(
+            patch,
+            "disputeHistory"
+         )
+            ? cloneDisputeHistory(patch.disputeHistory)
+            : cloneDisputeHistory(current.disputeHistory);
          const merged: Entry = {
             ...current,
             ...patch,
             aiResponse: nextAiResponse,
+            disputeHistory: nextDisputeHistory,
             dirtySince: current.dirtySince ?? now,
             updatedAt: now,
          };
@@ -361,11 +415,18 @@ export class SQLEntriesAdapter implements EntriesAdapter {
                   : undefined
             )
             : cloneAiResponse(current.aiResponse ?? null);
+         const nextDisputeHistory = Object.prototype.hasOwnProperty.call(
+            patch,
+            "disputeHistory"
+         )
+            ? cloneDisputeHistory(patch.disputeHistory)
+            : cloneDisputeHistory(current.disputeHistory);
 
          const merged: Entry = {
             ...current,
             ...patch, // patch fields; createdAt/id stay from current
             aiResponse: nextAiResponse,
+            disputeHistory: nextDisputeHistory,
             dirtySince: current.dirtySince ?? now,
             updatedAt: now,
          };
@@ -376,6 +437,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
             SET adversity   = $adversity,
                  belief      = $belief,
                  ai_response = $ai_response,
+                 dispute_history = $dispute_history,
                  ai_retry_count = $ai_retry_count,
                  consequence = $consequence,
                  dispute     = $dispute,
@@ -390,6 +452,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
                   $adversity: merged.adversity,
                   $belief: merged.belief,
                   $ai_response: serializeAiResponse(merged.aiResponse ?? null),
+                  $dispute_history: serializeDisputeHistory(merged.disputeHistory),
                   $ai_retry_count: merged.aiRetryCount ?? 0,
                   $consequence: merged.consequence ?? null,
                   $dispute: merged.dispute ?? null,
@@ -404,7 +467,7 @@ export class SQLEntriesAdapter implements EntriesAdapter {
 
             const row = await db.getFirstAsync<Row>(
                `SELECT id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy,
-                 created_at, updated_at, account_id, dirty_since, is_deleted
+                 dispute_history, created_at, updated_at, account_id, dirty_since, is_deleted
           FROM entries
          WHERE id = $id
          LIMIT 1`,

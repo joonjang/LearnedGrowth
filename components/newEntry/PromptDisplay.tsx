@@ -15,12 +15,12 @@ import {
    StyleSheet,
    TextStyle,
    View,
-   ViewStyle
+   ViewStyle,
 } from 'react-native';
 import Animated, { AnimatedStyle } from 'react-native-reanimated';
 import ThreeDotsLoader from '../ThreeDotLoader';
 
-const TYPING_SPEED_MS = 25;
+const TYPING_SPEED_MS = 15;
 
 type StopOptions = {
    finish?: boolean;
@@ -63,7 +63,7 @@ function PromptDisplay(
       scrollEnabled = false,
       delay = 0,
    }: Props,
-   ref: Ref<PromptDisplayHandle>
+   ref: Ref<PromptDisplayHandle>,
 ) {
    const readyToAnimate = useDeferredReady(delay);
    const [revealIndex, setRevealIndex] = useState(0);
@@ -96,7 +96,7 @@ function PromptDisplay(
             triggerFinished();
          }
       },
-      [text.length, triggerFinished]
+      [text.length, triggerFinished],
    );
 
    useImperativeHandle(
@@ -105,7 +105,7 @@ function PromptDisplay(
          stop: (options?: StopOptions) => stopReveal(options?.finish ?? false),
          finish: () => stopReveal(true),
       }),
-      [stopReveal]
+      [stopReveal],
    );
 
    useEffect(() => {
@@ -134,27 +134,32 @@ function PromptDisplay(
 
    const mergedStyle = useMemo(
       () => [{ flexWrap: 'wrap' as const }, textStyle],
-      [textStyle]
+      [textStyle],
    );
-   
+
    // FIX 1: FLASH FIX
    // Changed 'justify-center' to 'flex-1' on the container.
    // We will handle centering inside the ScrollView contentContainerStyle.
    const containerClasses = 'flex-1 min-h-0 px-4 self-stretch w-full pb-4';
-   
+
    // We use flexGrow: 1 and justifyContent: 'center' to keep text vertically centered
    // while the ScrollView itself stays full height (flex: 1).
-   const scrollContentStyle = useMemo(() => ({ 
-      flexGrow: 1, 
-      paddingVertical: 12,
-      justifyContent: 'center' 
-   } as const), []);
-   
-   const textClasses = `font-bold text-slate-900 dark:text-slate-200 shrink ${textClassName ?? ''}`.trim();
+   const scrollContentStyle = useMemo(
+      () =>
+         ({
+            flexGrow: 1,
+            paddingVertical: 12,
+            justifyContent: 'center',
+         }) as const,
+      [],
+   );
+
+   const textClasses =
+      `font-bold text-slate-900 dark:text-slate-200 shrink ${textClassName ?? ''}`.trim();
    const showLoader = !visited && !readyToAnimate;
 
-   const stabilityStyle: TextStyle = { 
-      includeFontPadding: false, 
+   const stabilityStyle: TextStyle = {
+      includeFontPadding: false,
    };
 
    const content = (
@@ -162,7 +167,12 @@ function PromptDisplay(
          {/* LAYER 1: Layout Driver (Invisible full text) */}
          <Animated.Text
             className={textClasses}
-            style={[mergedStyle, textAnimatedStyle, stabilityStyle, { opacity: 0 }]}
+            style={[
+               mergedStyle,
+               textAnimatedStyle,
+               stabilityStyle,
+               { opacity: 0 },
+            ]}
             numberOfLines={scrollEnabled ? undefined : numberOfLines}
             textBreakStrategy="simple"
             android_hyphenationFrequency="none"
@@ -171,8 +181,8 @@ function PromptDisplay(
          </Animated.Text>
 
          {/* LAYER 2: Visible Overlay (Animated partial text) */}
-         <View 
-            style={[StyleSheet.absoluteFill, { justifyContent: 'center' }]} 
+         <View
+            style={[StyleSheet.absoluteFill, { justifyContent: 'center' }]}
             pointerEvents="none"
          >
             <Animated.Text
@@ -222,7 +232,7 @@ function PromptDisplay(
       >
          {/* FIX 1 Continued: ScrollView takes flex-1 to stop shrinking/flashing */}
          <ScrollView
-            className="flex-1" 
+            className="flex-1"
             contentContainerStyle={scrollContentStyle}
             scrollEnabled
             showsVerticalScrollIndicator={false}

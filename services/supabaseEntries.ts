@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { Entry } from "@/models/entry";
+import { DisputeHistoryItem, Entry } from "@/models/entry";
 
 type DbEntry = {
   id: string;
@@ -10,6 +10,7 @@ type DbEntry = {
   consequence: string | null;
   dispute: string | null;
   energy: string | null;
+  dispute_history?: unknown;
   created_at: string;
   updated_at: string;
   account_id: string;
@@ -18,6 +19,26 @@ type DbEntry = {
 };
 
 type DbEntryWrite = Omit<DbEntry, "ai_response"> & { ai_response?: any };
+
+function normalizeDisputeHistory(raw: unknown): DisputeHistoryItem[] {
+  if (!Array.isArray(raw)) return [];
+  const fallbackTimestamp = new Date().toISOString();
+  const items: DisputeHistoryItem[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const dispute =
+      typeof (item as any).dispute === "string" ? (item as any).dispute.trim() : "";
+    if (!dispute) continue;
+    const energy =
+      typeof (item as any).energy === "string" ? (item as any).energy : null;
+    const createdAt =
+      typeof (item as any).createdAt === "string" ? (item as any).createdAt : fallbackTimestamp;
+    items.push({ dispute, energy, createdAt });
+  }
+  return items.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+}
 
 export interface SupabaseEntriesClient {
   upsert(entry: Entry): Promise<void>;
@@ -39,6 +60,7 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
     consequence: entry.consequence ?? null,
     dispute: entry.dispute ?? null,
     energy: entry.energy ?? null,
+    dispute_history: entry.disputeHistory,
     created_at: entry.createdAt,
     updated_at: entry.updatedAt,
     account_id: userId,
@@ -51,6 +73,7 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
     adversity: row.adversity,
     belief: row.belief,
     aiResponse: row.ai_response ?? null,
+    disputeHistory: normalizeDisputeHistory(row.dispute_history),
     aiRetryCount:
       typeof row.ai_retry_count === "number" && Number.isFinite(row.ai_retry_count)
         ? row.ai_retry_count
@@ -72,13 +95,16 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
     if (!error) return;
 
     const message = String((error as any)?.message ?? "");
-    if (!message.includes("ai_retry_count")) {
+    const missingRetryCount = message.includes("ai_retry_count");
+    const missingDisputeHistory = message.includes("dispute_history");
+    if (!missingRetryCount && !missingDisputeHistory) {
       console.warn("Supabase upsert failed", error);
       return;
     }
 
-    // Backwards compatibility: older schemas may not have ai_retry_count yet.
-    const { ai_retry_count: _omit, ...legacyRow } = dbRow;
+    // Backwards compatibility: older schemas may not have ai_retry_count or dispute_history yet.
+    const { ai_retry_count: _omitRetry, dispute_history: _omitHistory, ...legacyRow } =
+      dbRow;
     const retry = await db
       .from("entries")
       .upsert(legacyRow, { onConflict: "id" });
@@ -113,7 +139,7 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
 
   async function fetchAll(): Promise<Entry[]> {
     const columns =
-      "id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy, created_at, updated_at, account_id, dirty_since, is_deleted";
+      "id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy, dispute_history, created_at, updated_at, account_id, dirty_since, is_deleted";
 
     const initial = await db
       .from("entries")
@@ -126,17 +152,33 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
     }
 
     const message = String((initial.error as any)?.message ?? "");
-    if (!message.includes("ai_retry_count")) {
+    const missingRetryCount = message.includes("ai_retry_count");
+    const missingDisputeHistory = message.includes("dispute_history");
+    if (!missingRetryCount && !missingDisputeHistory) {
       console.warn("Supabase fetch entries failed", initial.error);
       return [];
     }
 
-    // Backwards compatibility: retry without the new column.
+    // Backwards compatibility: retry without missing columns.
+    const fallbackColumns = [
+      "id",
+      "adversity",
+      "belief",
+      "ai_response",
+      ...(missingRetryCount ? [] : ["ai_retry_count"]),
+      "consequence",
+      "dispute",
+      "energy",
+      ...(missingDisputeHistory ? [] : ["dispute_history"]),
+      "created_at",
+      "updated_at",
+      "account_id",
+      "dirty_since",
+      "is_deleted",
+    ];
     const fallback = await db
       .from("entries")
-      .select(
-        "id, adversity, belief, ai_response, consequence, dispute, energy, created_at, updated_at, account_id, dirty_since, is_deleted"
-      )
+      .select(fallbackColumns.join(", "))
       .eq("account_id", userId);
 
     if (fallback.error) {

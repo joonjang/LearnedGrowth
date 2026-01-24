@@ -19,6 +19,7 @@ export function createEntry(
         ...data,
         aiResponse: null,
         aiRetryCount: 0,
+        disputeHistory: [],
         id: Crypto.randomUUID(),
         createdAt: now,
         updatedAt: now,

@@ -14,6 +14,7 @@ import {
    TimelineStepDef,
 } from '@/components/entries/details/Timeline';
 import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
+import NewDisputeLink from '@/components/entries/dispute/NewDisputeLink';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
@@ -23,7 +24,12 @@ import { useAuth } from '@/providers/AuthProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowRight, ChevronLeft, Sparkles } from 'lucide-react-native';
+import {
+   ArrowRight,
+   ChevronDown, // <--- Added this
+   ChevronLeft,
+   Sparkles,
+} from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutAnimation, Pressable, Text, View } from 'react-native';
@@ -94,6 +100,10 @@ export default function EntryDetailScreen() {
       string
    > | null>(null);
 
+   // --- Collapse State for Disputes ---
+   // 1. New state for collapse logic
+   const [historyExpanded, setHistoryExpanded] = useState(false);
+
    // --- AI Visuals Data ---
    const isAnalyzed = !!entry?.aiResponse;
    const category = entry?.aiResponse?.meta?.category || 'Uncategorized';
@@ -140,6 +150,12 @@ export default function EntryDetailScreen() {
    }, [showDispute]);
 
    // --- Callbacks ---
+
+   // 2. Toggle handler
+   const toggleHistory = useCallback(() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setHistoryExpanded((prev) => !prev);
+   }, []);
 
    const handleAnalyze = useCallback(() => {
       if (!entry) return;
@@ -260,6 +276,16 @@ export default function EntryDetailScreen() {
       });
    }, [entryId, lockNavigation]);
 
+   const handleStartNewDispute = useCallback(() => {
+      if (!entryId) return;
+      lockNavigation(() => {
+         router.push({
+            pathname: '/dispute/[id]',
+            params: { id: entryId, newDispute: 'true' },
+         });
+      });
+   }, [entryId, lockNavigation]);
+
    const handleScroll = useCallback(
       (e: any) => {
          const y = e?.nativeEvent?.contentOffset?.y ?? 0;
@@ -278,6 +304,7 @@ export default function EntryDetailScreen() {
       setHasScrolled(false);
       setIsEditing(false);
       setEditSnapshot(null);
+      setHistoryExpanded(false); // Reset history collapse on entry change
    }, [entry]);
 
    useEffect(() => {
@@ -315,6 +342,9 @@ export default function EntryDetailScreen() {
         ? 'Unsaved changes'
         : '';
    const statusDisplay = statusMessage || 'Saved';
+   const disputeHistory = entry.disputeHistory;
+   const hasDisputeHistory = disputeHistory.length > 0;
+   const hasDispute = (entry.dispute ?? '').trim().length > 0;
 
    return (
       <View className="flex-1 bg-white dark:bg-slate-900">
@@ -422,7 +452,7 @@ export default function EntryDetailScreen() {
                                     entryId={entry.id}
                                     data={aiDisplayData}
                                     onRefresh={
-                                       entry.dispute || isEditing
+                                       isEditing
                                           ? undefined
                                           : handleOpenDisputeAndUpdate
                                     }
@@ -479,9 +509,77 @@ export default function EntryDetailScreen() {
                            )}
                         </View>
                      )}
+
+                     {step.key === 'energy' && hasDisputeHistory && (
+                        // 3. REPLACED: TimelinePivot removed to remove dashed border.
+                        // Added new UI container with solid border and collapse logic.
+                        <View className="mb-2">
+                           <View className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
+                              <Pressable
+                                 onPress={toggleHistory}
+                                 className="flex-row items-center justify-between px-4 py-3 active:bg-slate-100 dark:active:bg-slate-800/80"
+                              >
+                                 <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                    Previous Disputes ({disputeHistory.length})
+                                 </Text>
+                                 <View
+                                    style={{
+                                       transform: [
+                                          {
+                                             rotate: historyExpanded
+                                                ? '180deg'
+                                                : '0deg',
+                                          },
+                                       ],
+                                    }}
+                                 >
+                                    <ChevronDown
+                                       size={16}
+                                       color={isDark ? '#94a3b8' : '#64748b'}
+                                    />
+                                 </View>
+                              </Pressable>
+
+                              {historyExpanded && (
+                                 <View className="gap-3 px-4 pb-4 pt-1">
+                                    {disputeHistory.map((item, index) => {
+                                       const energyText = (
+                                          item.energy ?? ''
+                                       ).trim();
+                                       return (
+                                          <View
+                                             key={`${item.createdAt}-${index}`}
+                                             className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+                                          >
+                                             <Text className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                                                {formatDateTimeWithWeekday(
+                                                   item.createdAt,
+                                                )}
+                                             </Text>
+                                             <Text className="text-sm leading-5 text-slate-700 dark:text-slate-200">
+                                                {item.dispute}
+                                             </Text>
+                                             {energyText ? (
+                                                <Text className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                                   Energy: {energyText}
+                                                </Text>
+                                             ) : null}
+                                          </View>
+                                       );
+                                    })}
+                                 </View>
+                              )}
+                           </View>
+                        </View>
+                     )}
                   </EntryField>
                );
             })}
+            {hasDispute && !isEditing && (
+               <View className="pt-8">
+                  <NewDisputeLink onPress={handleStartNewDispute} />
+               </View>
+            )}
          </KeyboardAwareScrollView>
       </View>
    );

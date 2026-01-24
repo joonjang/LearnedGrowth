@@ -1,10 +1,22 @@
 import { getShadow } from '@/lib/shadow';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LayoutChangeEvent, ScrollView, Text, View } from 'react-native';
+import React, {
+   useCallback,
+   useEffect,
+   useMemo,
+   useRef,
+   useState,
+} from 'react';
+import {
+   LayoutChangeEvent,
+   ScrollView,
+   Text,
+   View,
+} from 'react-native';
 
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import WideButton from '@/components/buttons/WideButton';
 import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
+import NewDisputeLink from '@/components/entries/dispute/NewDisputeLink';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { ArrowRight } from 'lucide-react-native';
@@ -12,7 +24,7 @@ import { useColorScheme } from 'nativewind';
 import Animated, {
    useAnimatedStyle,
    useSharedValue,
-   withTiming
+   withTiming,
 } from 'react-native-reanimated';
 
 type Props = {
@@ -47,7 +59,7 @@ export default function ABCAnalysis({
    const shadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
    const shadowGutter = 6;
    const topPadding = contentTopPadding ?? 24;
-   
+
    const [areAnimationsDone, setAreAnimationsDone] = useState(false);
    const buttonOpacity = useSharedValue(0);
    const scrollRef = useRef<ScrollView | null>(null);
@@ -61,6 +73,7 @@ export default function ABCAnalysis({
       if (!aiData) return null;
       return aiData.createdAt ?? String(retryCount);
    }, [aiData, retryCount]);
+   const hasPriorDispute = (entry.dispute ?? '').trim().length > 0;
 
    const handleAnimationComplete = useCallback(() => {
       setAreAnimationsDone(true);
@@ -68,7 +81,7 @@ export default function ABCAnalysis({
 
    useEffect(() => {
       if (areAnimationsDone) {
-         // Fade in smoothly over 
+         // Fade in smoothly over
          buttonOpacity.value = withTiming(1, { duration: 300 });
       } else {
          // Hide instantly (useful if refreshing data)
@@ -76,13 +89,10 @@ export default function ABCAnalysis({
       }
    }, [areAnimationsDone, buttonOpacity]);
 
-   const handleAiCardLayout = useCallback(
-      (event: LayoutChangeEvent) => {
-         const nextY = event.nativeEvent.layout.y;
-         setAiCardOffsetY((prev) => (prev === nextY ? prev : nextY));
-      },
-      []
-   );
+   const handleAiCardLayout = useCallback((event: LayoutChangeEvent) => {
+      const nextY = event.nativeEvent.layout.y;
+      setAiCardOffsetY((prev) => (prev === nextY ? prev : nextY));
+   }, []);
 
    const scrollToAnalysisTop = useCallback(
       (animated = true) => {
@@ -90,7 +100,7 @@ export default function ABCAnalysis({
          const targetY = Math.max(aiCardOffsetY - topPadding, 0);
          scrollRef.current?.scrollTo({ y: targetY, animated });
       },
-      [aiCardOffsetY, topPadding]
+      [aiCardOffsetY, topPadding],
    );
 
    const handleContentSizeChange = useCallback(() => {
@@ -190,7 +200,6 @@ export default function ABCAnalysis({
 
          <View
             className="flex-1"
-            style={[shadow.ios, shadow.android]}
             onLayout={handleAiCardLayout}
          >
             <AiInsightCard
@@ -211,14 +220,22 @@ export default function ABCAnalysis({
             {onGoToSteps && aiData ? (
                <Animated.View
                   className="p-1 mt-6 mb-3"
-                  style={[shadow.ios, shadow.android, buttonFadeStyle]}
+                  style={[
+                     !hasPriorDispute ? shadow.ios : null,
+                     !hasPriorDispute ? shadow.android : null,
+                     buttonFadeStyle,
+                  ]}
                >
-                  <WideButton
-                     label={'Continue'}
-                     icon={ArrowRight}
-                     onPress={onGoToSteps}
-                     variant={'primary'}
-                  />
+                  {hasPriorDispute ? (
+                     <NewDisputeLink onPress={onGoToSteps} />
+                  ) : (
+                     <WideButton
+                        label="Continue"
+                        icon={ArrowRight}
+                        onPress={onGoToSteps}
+                        variant={'primary'}
+                     />
+                  )}
                </Animated.View>
             ) : null}
          </View>

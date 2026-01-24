@@ -16,17 +16,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- remove seed logic
-
-- migrate the ai response supabase data to be populated from the backend
-   - keep the format from how its set for frontend for continuity
-   - the frontend receiving of json is for sqlite but doesnt need to update the supabase table
-   - enables data persistence
-
-- when the analysis button shows, make it says: New Dispute
-- create a disputeHistory column with timestamp
-- pushes old dispute to history and save new dispute
-
 - add search function
 
 - make ai insight respond with how the explanation style is helpful/unhelpful
@@ -69,7 +58,12 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
       - still decrements credit
    - sends ai_response data to supabase table instead of from app
       - one source of truth
-- updates profile to free if revenuecat does not have isGrowthPlusActive
+- updates profile to plan:free if revenuecat does not have isGrowthPlusActive
+- when the analysis button shows for entry with exisitng dispute, it says: New Dispute
+   - abstracted to NewDisputeLink.tsx
+- can display disputeHistory in EntryDetailScreen
+- can enter new dispute from EntryDetailScreen
+- removed seed logic
 
 ### 2026-01-22
 

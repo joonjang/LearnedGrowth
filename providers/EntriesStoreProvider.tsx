@@ -10,7 +10,6 @@ import {
    useMemo,
    useRef,
 } from 'react';
-import { Platform } from 'react-native';
 import { useEntriesAdapter } from './AdapterProvider';
 import { useAuth } from './AuthProvider';
 
@@ -19,7 +18,6 @@ const EntriesStoreContext = createContext<EntriesStore | null>(null);
 export function EntriesStoreProvider({ children }: { children: ReactNode }) {
    const { adapter, ready } = useEntriesAdapter();
    const { user } = useAuth();
-   const devSeeded = useRef(false);
    const lastLinkedAccountId = useRef<string | null>(null);
 
    const cloud = useMemo(() => {
@@ -42,56 +40,6 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
       if (!ready || store === placeholderEntriesStore) return;
       store.getState().hydrate();
    }, [ready, store]);
-
-   // Seed simulator/dev with fixture data when explicitly enabled.
-   useEffect(() => {
-      if (!__DEV__) return;
-      if (Platform.OS === 'android') return;
-      if (devSeeded.current) return;
-      if (!adapter || !ready) return;
-      if (store === placeholderEntriesStore) return;
-      const envFlag =
-         process.env.EXPO_PUBLIC_SEED_ENTRIES === 'true' ||
-         process.env.EXPO_PUBLIC_SEED_ENTRIES === '1';
-
-      devSeeded.current = true;
-      (async () => {
-         try {
-            // Seed only when explicitly requested via env flag.
-            if (!envFlag) return;
-
-            const { weekEntries } = await import('../__test__/test-utils/weekEntries');
-            let inserted = 0;
-            let updated = 0;
-            for (const entry of weekEntries) {
-               const exists = await adapter.getById(entry.id);
-               if (exists) {
-                  const { createdAt: _omitCreated, ...rest } = entry;
-                  await adapter.update(entry.id, {
-                     ...rest,
-                     aiResponse: entry.aiResponse ?? null,
-                     aiRetryCount: entry.aiRetryCount ?? 0,
-                     isDeleted: false,
-                  });
-                  updated += 1;
-               } else {
-                  await adapter.add(entry);
-                  inserted += 1;
-               }
-            }
-            if (inserted > 0 || updated > 0) {
-               await store.getState().hydrate();
-               console.log(
-                  `[Dev Seed] Applied weekEntries fixture: ${inserted} inserted, ${updated} updated.`
-               );
-            } else {
-               console.log('[Dev Seed] weekEntries already present, no inserts performed.');
-            }
-         } catch (e) {
-            console.warn('[Dev Seed] Failed to insert weekEntries fixture', e);
-         }
-      })();
-   }, [adapter, ready, store]);
 
    // --- SYNC LOGIC ---
    useEffect(() => {

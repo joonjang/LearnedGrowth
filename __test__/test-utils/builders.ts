@@ -8,6 +8,7 @@ export const baseEntry: Omit<Entry, 'id' | 'createdAt' | 'updatedAt'> = {
    consequence: undefined,
    dispute: undefined,
    energy: undefined,
+   disputeHistory: [],
    dirtySince: null,
    isDeleted: false,
    accountId: null,

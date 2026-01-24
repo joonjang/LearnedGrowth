@@ -82,6 +82,7 @@ export default function DisputeScreen() {
       id?: string | string[];
       view?: string | string[];
       refresh?: string | string[];
+      newDispute?: string | string[];
    }>();
 
    const { colorScheme } = useColorScheme();
@@ -92,7 +93,12 @@ export default function DisputeScreen() {
    const refreshQuery = Array.isArray(params.refresh)
       ? params.refresh[0]
       : params.refresh;
+   const newDisputeQuery = Array.isArray(params.newDispute)
+      ? params.newDispute[0]
+      : params.newDispute;
    const shouldRegenerate = refreshQuery === 'true';
+   const shouldStartFresh =
+      newDisputeQuery === 'true' || newDisputeQuery === '1';
    const { hapticsEnabled, hapticsAvailable, triggerHaptic } = usePreferences();
 
    const { getEntryById, updateEntry } = useEntries();
@@ -109,6 +115,17 @@ export default function DisputeScreen() {
       usefulness: '',
       energy: entry?.energy ?? '',
    });
+   const [isNewDisputeFlow, setIsNewDisputeFlow] = useState(false);
+   const resetForm = useCallback(() => {
+      setForm({
+         evidence: '',
+         alternatives: '',
+         usefulness: '',
+         energy: '',
+      });
+      setIdx(0);
+      setIsNewDisputeFlow(true);
+   }, []);
 
    const [analysisTriggered, setAnalysisTriggered] = useState(false);
    const [isRegenerating, setIsRegenerating] = useState(shouldRegenerate);
@@ -130,6 +147,7 @@ export default function DisputeScreen() {
 
    const isMountedRef = useRef(true);
    const isClosingRef = useRef(false);
+   const newDisputeAppliedRef = useRef(false);
 
    useEffect(() => {
       isMountedRef.current = true;
@@ -137,6 +155,12 @@ export default function DisputeScreen() {
          isMountedRef.current = false;
       };
    }, []);
+
+   useEffect(() => {
+      if (!shouldStartFresh || newDisputeAppliedRef.current) return;
+      newDisputeAppliedRef.current = true;
+      resetForm();
+   }, [resetForm, shouldStartFresh]);
 
    // ... (AI Trigger Effect - unchanged) ...
    useEffect(() => {
@@ -204,15 +228,28 @@ export default function DisputeScreen() {
       }),
       [form]
    );
+   const isBlankNewDispute = useMemo(
+      () => Object.values(trimmedForm).every((value) => !value),
+      [trimmedForm]
+   );
 
    const hasUnsavedChanges = useMemo(() => {
+      if (isNewDisputeFlow) {
+         return !isBlankNewDispute;
+      }
       const composedDispute = buildDisputeText(trimmedForm);
       const entryDispute = (entry?.dispute ?? '').trim();
       const entryEnergy = (entry?.energy ?? '').trim();
       return (
          composedDispute !== entryDispute || trimmedForm.energy !== entryEnergy
       );
-   }, [entry?.dispute, entry?.energy, trimmedForm]);
+   }, [
+      entry?.dispute,
+      entry?.energy,
+      isBlankNewDispute,
+      isNewDisputeFlow,
+      trimmedForm,
+   ]);
 
    const suggestionPrompts = useMemo(() => {
       const pick = (val?: string | null, fallback?: string) =>
@@ -255,10 +292,25 @@ export default function DisputeScreen() {
 
       const dispute = buildDisputeText(trimmedForm);
       const nextEnergy = trimmedForm.energy;
+      const hasExistingDispute = (entry.dispute ?? '').trim().length > 0;
+      const disputeChanged = dispute !== (entry.dispute ?? '');
+      const energyChanged = nextEnergy !== (entry.energy ?? '');
 
       const patch: Partial<Entry> = {};
       if (dispute !== (entry.dispute ?? '')) patch.dispute = dispute;
       if (nextEnergy !== (entry.energy ?? '')) patch.energy = nextEnergy;
+      if (hasExistingDispute && (disputeChanged || energyChanged)) {
+         const history = entry.disputeHistory;
+         const historyTimestamp = new Date().toISOString();
+         patch.disputeHistory = [
+            ...history,
+            {
+               dispute: entry.dispute ?? '',
+               energy: entry.energy ?? null,
+               createdAt: historyTimestamp,
+            },
+         ];
+      }
 
       const hasChanges = Object.keys(patch).length > 0;
       if (hasChanges) {
@@ -374,6 +426,13 @@ export default function DisputeScreen() {
    }, [analysisProgress, stepsProgress, viewMode]);
 
    const showAnalysis = viewMode === 'analysis';
+   const handleGoToSteps = useCallback(() => {
+      if (entry && (entry.dispute ?? '').trim().length > 0) {
+         resetForm();
+      }
+      setViewMode('steps');
+   }, [entry, resetForm]);
+
    useEffect(() => {
       if (showAnalysis) {
          activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => {});
@@ -494,7 +553,7 @@ export default function DisputeScreen() {
                   streamingText={streamText}
                   contentTopPadding={topPadding}
                   onExit={handleClose}
-                  onGoToSteps={() => setViewMode('steps')}
+                  onGoToSteps={handleGoToSteps}
                   onRefresh={handleRefreshAnalysis}
                   retryCount={entry?.aiRetryCount ?? 0}
                   maxRetries={MAX_AI_RETRIES}

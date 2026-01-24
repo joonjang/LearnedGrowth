@@ -1,6 +1,6 @@
 import * as SQLite from "expo-sqlite";
 
-const LATEST = 6; // bump this when schema changes
+const LATEST = 7; // bump this when schema changes
 
 async function getColumns(
    db: SQLite.SQLiteDatabase,
@@ -115,6 +115,7 @@ async function rebuildWithoutLegacyColumns(
 ) {
    const cols = columns ?? (await getColumns(db, "entries"));
    const hasAiRetryCount = cols.includes("ai_retry_count");
+   const hasDisputeHistory = cols.includes("dispute_history");
 
    await db.execAsync(`
       DROP TABLE IF EXISTS entries_new;
@@ -125,6 +126,7 @@ async function rebuildWithoutLegacyColumns(
          consequence TEXT,
          dispute TEXT,
          energy TEXT,
+         dispute_history TEXT,
          ai_response TEXT,
          ai_retry_count INTEGER NOT NULL DEFAULT 0,
          created_at TEXT NOT NULL,
@@ -134,11 +136,11 @@ async function rebuildWithoutLegacyColumns(
          is_deleted INTEGER NOT NULL DEFAULT 0 CHECK (is_deleted IN (0,1))
       );
       INSERT INTO entries_new
-         (id, adversity, belief, consequence, dispute, energy, ai_response, ai_retry_count, created_at, updated_at, account_id, dirty_since, is_deleted)
+         (id, adversity, belief, consequence, dispute, energy, dispute_history, ai_response, ai_retry_count, created_at, updated_at, account_id, dirty_since, is_deleted)
       SELECT
-         id, adversity, belief, consequence, dispute, energy, ai_response, ${
-            hasAiRetryCount ? "ai_retry_count" : "0"
-         }, created_at, updated_at, account_id, dirty_since, is_deleted
+         id, adversity, belief, consequence, dispute, energy, ${
+            hasDisputeHistory ? "dispute_history" : "null"
+         }, ai_response, ${hasAiRetryCount ? "ai_retry_count" : "0"}, created_at, updated_at, account_id, dirty_since, is_deleted
       FROM entries;
       DROP TABLE entries;
       ALTER TABLE entries_new RENAME TO entries;
@@ -177,6 +179,28 @@ async function migrateToV6(db: SQLite.SQLiteDatabase) {
    }
 }
 
+async function migrateToV7(db: SQLite.SQLiteDatabase) {
+   const columns = await getColumns(db, "entries");
+   if (!columns.includes("dispute_history")) {
+      await db.execAsync(`ALTER TABLE entries ADD COLUMN dispute_history TEXT;`);
+   }
+}
+
+async function ensureRequiredColumns(db: SQLite.SQLiteDatabase) {
+   const columns = await getColumns(db, "entries");
+   if (!columns.includes("ai_response")) {
+      await db.execAsync(`ALTER TABLE entries ADD COLUMN ai_response TEXT;`);
+   }
+   if (!columns.includes("ai_retry_count")) {
+      await db.execAsync(
+         `ALTER TABLE entries ADD COLUMN ai_retry_count INTEGER NOT NULL DEFAULT 0;`
+      );
+   }
+   if (!columns.includes("dispute_history")) {
+      await db.execAsync(`ALTER TABLE entries ADD COLUMN dispute_history TEXT;`);
+   }
+}
+
 export async function createDb(dbName = "entries.db"): Promise<SQLite.SQLiteDatabase> {
    const db = await SQLite.openDatabaseAsync(dbName);
 
@@ -202,6 +226,7 @@ export async function createDb(dbName = "entries.db"): Promise<SQLite.SQLiteData
           consequence TEXT,
           dispute TEXT,
           energy TEXT,
+          dispute_history TEXT,
           ai_response TEXT,
           ai_retry_count INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
@@ -226,6 +251,12 @@ export async function createDb(dbName = "entries.db"): Promise<SQLite.SQLiteData
       if (current < 6) {
          await migrateToV6(db);
       }
+
+      if (current < 7) {
+         await migrateToV7(db);
+      }
+
+      await ensureRequiredColumns(db);
 
       // finally, set to latest
       if (current < LATEST) {

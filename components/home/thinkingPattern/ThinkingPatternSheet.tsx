@@ -23,11 +23,11 @@ import {
 import { router } from 'expo-router';
 import {
    ChevronDown,
-   ChevronRight,
+   ChevronUp,
    FileText,
    Minus,
    TrendingDown,
-   TrendingUp,
+   TrendingUp
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import type { RefObject } from 'react';
@@ -407,12 +407,12 @@ export default function ThinkingPatternSheet({
                                     </View>
 
                                     {isExpanded ? (
-                                       <ChevronDown
+                                       <ChevronUp
                                           size={18}
                                           color={isDark ? '#cbd5e1' : '#64748b'}
                                        />
                                     ) : (
-                                       <ChevronRight
+                                       <ChevronDown
                                           size={18}
                                           color={isDark ? '#cbd5e1' : '#64748b'}
                                        />

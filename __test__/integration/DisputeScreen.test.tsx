@@ -104,6 +104,7 @@ describe('DisputeScreen', () => {
          consequence: 'Test consequence',
          dispute: '',
          energy: '',
+         disputeHistory: [],
          aiResponse: null,
          aiRetryCount: 0,
          createdAt: new Date().toISOString(),

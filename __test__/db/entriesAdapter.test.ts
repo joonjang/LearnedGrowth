@@ -67,6 +67,7 @@ describe.each([
             adversity: 'Test adversity',
             belief: 'Test belief',
             aiResponse: null,
+            disputeHistory: [],
             createdAt: clock.nowIso(),
             updatedAt: clock.nowIso(),
             dirtySince: null,
