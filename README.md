@@ -69,6 +69,8 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
    - ai analysis refresh present even when dispute exists
 - splash screen displays instead of loading indicator
 - added all time streak view
+- mental and thinking pattern shadow added
+- mental focus distribution for sheet established
 
 ### 2026-01-22
 

@@ -102,7 +102,6 @@ export default function ThinkingPatternSheet({
    const tabData = data?.[activeTab] ?? EMPTY_TAB;
    const chartEdgePadding = 8;
 
-   // --- Chart Logic ---
    const activePattern = useMemo(
       () =>
          tabData.patterns.find((pattern) => pattern.id === expandedItemId) ??
@@ -151,6 +150,18 @@ export default function ThinkingPatternSheet({
       () => getShadow({ isDark, preset: 'sm', disableInDark: true }),
       [isDark],
    );
+
+   // Tighter preset 'sm' used here to match MentalFocusCard
+   const cardShadow = useMemo(
+      () => getShadow({ isDark, preset: 'sm', disableInDark: true }),
+      [isDark],
+   );
+
+   const buttonShadow = useMemo(
+      () => getShadow({ isDark, preset: 'button', disableInDark: true }),
+      [isDark],
+   );
+
    const chartInset = 16 * 2;
    const chartWidth = useMemo(
       () =>
@@ -204,6 +215,7 @@ export default function ThinkingPatternSheet({
    return (
       <BottomSheetModal
          ref={sheetRef}
+         stackBehavior="replace"
          onDismiss={handleDismiss}
          index={0}
          enableDynamicSizing
@@ -335,7 +347,6 @@ export default function ThinkingPatternSheet({
                      const isExpanded = expandedItemId === pattern.id;
                      const dateParts = getPatternDateParts(pattern.createdAt);
 
-                     // 1. Determine Type
                      let ImpactIcon = Minus;
                      let iconColor = isDark ? '#94a3b8' : '#64748b';
                      let bubbleClasses =
@@ -356,101 +367,95 @@ export default function ThinkingPatternSheet({
                         bubbleClasses =
                            'bg-rose-50 dark:bg-rose-500/20 border-rose-100 dark:border-rose-800/30';
                         bubbleTextClasses = 'text-rose-700 dark:text-rose-300';
-                     } else if (pattern.impact === 'mixed') {
-                        ImpactIcon = Minus;
-                        iconColor = isDark ? '#94a3b8' : '#64748b';
-                        bubbleClasses =
-                           'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700';
-                        bubbleTextClasses =
-                           'text-slate-700 dark:text-slate-300';
                      }
 
                      return (
                         <View
                            key={pattern.id}
-                           className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden"
+                           style={
+                              !isExpanded
+                                 ? [cardShadow.ios, cardShadow.android]
+                                 : null
+                           }
+                           className="mb-1"
                         >
-                           <Pressable
-                              onPress={() => handleToggleItem(pattern.id)}
-                           >
-                              <View className="flex-row items-center p-3.5">
-                                 {/* Left: Date + Time + Icon Stack */}
-                                 <View className="w-14 mr-2 items-center gap-1">
-                                    <ImpactIcon size={14} color={iconColor} />
-                                    <View className="items-center">
-                                       <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase leading-3">
-                                          {dateParts?.weekday ?? ''}
-                                       </Text>
-                                       <Text className="text-[9px] text-slate-400 dark:text-slate-500 leading-3">
-                                          {dateParts?.fullDate ?? ''}
-                                       </Text>
-                                       {!!dateParts?.time && (
-                                          <Text className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">
-                                             {dateParts.time}
-                                          </Text>
-                                       )}
-                                    </View>
-                                 </View>
-
-                                 {/* Center: Phrase */}
-                                 <View className="flex-1 mr-3">
-                                    <View
-                                       className={`self-start px-3 py-1.5 rounded-xl border ${bubbleClasses}`}
-                                    >
-                                       <Text
-                                          className={`text-xs font-semibold ${bubbleTextClasses}`}
-                                       >
-                                          {pattern.phrase}
-                                       </Text>
-                                    </View>
-                                 </View>
-
-                                 {/* Right: Chevron */}
-                                 {isExpanded ? (
-                                    <ChevronDown
-                                       size={18}
-                                       color={isDark ? '#cbd5e1' : '#64748b'}
-                                    />
-                                 ) : (
-                                    <ChevronRight
-                                       size={18}
-                                       color={isDark ? '#cbd5e1' : '#64748b'}
-                                    />
-                                 )}
-                              </View>
-                           </Pressable>
-
-                           {/* Expanded Insight Area */}
-                           {isExpanded && (
-                              <View className="bg-slate-50 dark:bg-slate-800/50 px-4 py-4 border-t border-slate-100 dark:border-slate-800 flex-row">
-                                 {/* Left Sidebar: Button Only */}
-                                 <View className="flex-col items-center mr-3">
-                                    <TouchableOpacity
-                                       onPress={() =>
-                                          handleViewEntry(pattern.entryId)
-                                       }
-                                       activeOpacity={0.7}
-                                       className="bg-blue-100 dark:bg-blue-900 flex-row items-center px-2 py-1.5 rounded-md"
-                                    >
-                                       <Text className="text-[10px] font-bold text-blue-700 dark:text-blue-200 mr-1">
-                                          View
-                                       </Text>
-                                       <FileText
-                                          size={10}
-                                          color={isDark ? '#c7d2fe' : '#4338ca'}
+                           <View className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+                              <Pressable
+                                 onPress={() => handleToggleItem(pattern.id)}
+                              >
+                                 <View className="flex-row items-center p-3.5">
+                                    <View className="w-14 mr-2 items-center gap-1">
+                                       <ImpactIcon
+                                          size={14}
+                                          color={iconColor}
                                        />
-                                    </TouchableOpacity>
-                                 </View>
+                                       <View className="items-center">
+                                          <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase leading-3">
+                                             {dateParts?.weekday ?? ''}
+                                          </Text>
+                                          <Text className="text-[9px] text-slate-400 dark:text-slate-500 leading-3">
+                                             {dateParts?.fullDate ?? ''}
+                                          </Text>
+                                       </View>
+                                    </View>
 
-                                 {/* Main Text Content */}
-                                 <View className="flex-1 pt-0.5">
-                                    <Text className="text-sm text-slate-600 dark:text-slate-300 leading-5">
-                                       {pattern.insight ||
-                                          'Reframing this pattern can help shift your perspective.'}
-                                    </Text>
+                                    <View className="flex-1 mr-3">
+                                       <View
+                                          className={`self-start px-3 py-1.5 rounded-xl border ${bubbleClasses}`}
+                                       >
+                                          <Text
+                                             className={`text-xs font-semibold ${bubbleTextClasses}`}
+                                          >
+                                             {pattern.phrase}
+                                          </Text>
+                                       </View>
+                                    </View>
+
+                                    {isExpanded ? (
+                                       <ChevronDown
+                                          size={18}
+                                          color={isDark ? '#cbd5e1' : '#64748b'}
+                                       />
+                                    ) : (
+                                       <ChevronRight
+                                          size={18}
+                                          color={isDark ? '#cbd5e1' : '#64748b'}
+                                       />
+                                    )}
                                  </View>
-                              </View>
-                           )}
+                              </Pressable>
+
+                              {isExpanded && (
+                                 <View className="bg-slate-50 dark:bg-slate-800/50 px-4 py-4 border-t border-slate-100 dark:border-slate-800 flex-row">
+                                    <View className="flex-col items-center mr-3">
+                                       <TouchableOpacity
+                                          onPress={() =>
+                                             handleViewEntry(pattern.entryId)
+                                          }
+                                          activeOpacity={0.7}
+                                          className="bg-white dark:bg-blue-900 border border-slate-200 dark:border-blue-800 flex-row items-center px-2 py-1.5 rounded-md"
+                                       >
+                                          <Text className="text-[10px] font-bold text-blue-700 dark:text-blue-200 mr-1">
+                                             View
+                                          </Text>
+                                          <FileText
+                                             size={10}
+                                             color={
+                                                isDark ? '#c7d2fe' : '#4338ca'
+                                             }
+                                          />
+                                       </TouchableOpacity>
+                                    </View>
+
+                                    <View className="flex-1 pt-0.5">
+                                       <Text className="text-sm text-slate-600 dark:text-slate-300 leading-5">
+                                          {pattern.insight ||
+                                             'Reframing this pattern can help shift your perspective.'}
+                                       </Text>
+                                    </View>
+                                 </View>
+                              )}
+                           </View>
                         </View>
                      );
                   })}

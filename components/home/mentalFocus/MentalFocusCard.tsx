@@ -1,6 +1,6 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Activity } from 'lucide-react-native';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import {
@@ -32,11 +32,20 @@ export default function MentalFocusCard({
    const sheetRef = useRef<BottomSheetModal>(null);
    const [isPressed, setIsPressed] = useState(false);
 
+   // FIX: Move hooks before any early returns
+   const sortedStats = useMemo(() => {
+      if (!analysis?.categoryStats) return [];
+      return [...analysis.categoryStats].sort(
+         (a, b) => b.percentage - a.percentage,
+      );
+   }, [analysis?.categoryStats]);
+
    const handlePresentModal = useCallback(
       () => sheetRef.current?.present(),
       [],
    );
 
+   // Early return can only happen AFTER hooks
    if (!analysis) return null;
 
    const { categoryStats, narrative } = analysis;
@@ -74,10 +83,8 @@ export default function MentalFocusCard({
                   </Text>
                </View>
 
-               {/* --- PART 1: STATS CONTAINER (Background Distinction) --- */}
-               {/* Added bg-slate-50 and border to create a "Dashboard Widget" look */}
+               {/* --- PART 1: STATS CONTAINER --- */}
                <View className="flex-row items-center mb-4 bg-slate-50 dark:bg-slate-900/40 rounded-xl py-4 border border-slate-100 dark:border-slate-700/50">
-                  {/* Left Column */}
                   <View className="flex-1 items-center justify-center">
                      <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mb-1.5">
                         Detected Tone
@@ -93,10 +100,8 @@ export default function MentalFocusCard({
                      </View>
                   </View>
 
-                  {/* Vertical Divider (Matches container border) */}
                   <View className="w-[1px] h-8 bg-slate-200 dark:bg-slate-700" />
 
-                  {/* Right Column */}
                   <View className="flex-1 items-center justify-center">
                      <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mb-1.5">
                         Self-Talk Style
@@ -113,9 +118,8 @@ export default function MentalFocusCard({
                   </View>
                </View>
 
-               {/* --- PART 2: PRIMARY TOPIC --- */}
+               {/* --- PART 2: PRIMARY TOPIC (Centrally Aligned) --- */}
                <View className="flex-row items-center gap-4 mb-5 px-1">
-                  {/* Icon Box */}
                   <View className="h-14 w-14 items-center justify-center bg-slate-50 dark:bg-slate-700/40 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
                      <TopIcon
                         size={26}
@@ -124,19 +128,18 @@ export default function MentalFocusCard({
                      />
                   </View>
 
-                  {/* Topic Text */}
-                  <View>
+                  <View className="justify-center">
                      <Text className="text-xl font-extrabold text-slate-900 dark:text-white leading-6">
                         {narrative.topCatLabel}
                      </Text>
-                     <Text className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+                     <Text className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
                         Most discussed topic
                      </Text>
                   </View>
                </View>
 
-               {/* --- STATS FOOTER --- */}
-               <View className="mb-2">
+               {/* --- STATS FOOTER (Bar Design) --- */}
+               <View className="mb-4">
                   <View className="flex-row h-1.5 rounded-full overflow-hidden w-full bg-slate-100 dark:bg-slate-700">
                      {categoryStats.map(
                         (stat: MentalFocusStat, idx: number) => (
@@ -154,25 +157,39 @@ export default function MentalFocusCard({
                   </View>
                </View>
 
-               <View className="flex-row flex-wrap gap-x-4 gap-y-2 px-1">
-                  {categoryStats.slice(0, 4).map((stat: MentalFocusStat) => (
-                     <View
-                        key={stat.label}
-                        className="flex-row items-center gap-1.5"
-                     >
-                        <View
-                           className="w-1.5 h-1.5 rounded-full"
-                           style={{ backgroundColor: stat.style.color }}
-                        />
-                        <Text className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                           {stat.label}{' '}
-                           <Text className="font-bold text-slate-400 dark:text-slate-500">
-                              {Math.round(stat.percentage)}%
+               {/* --- PART 4: COMPACT TRAILING LEGEND --- */}
+               <View className="mb-2 px-1">
+                  <Text
+                     numberOfLines={1}
+                     ellipsizeMode="tail"
+                     className="flex-row items-center"
+                  >
+                     {sortedStats.map((stat, idx) => (
+                        <React.Fragment key={stat.label}>
+                           <Text
+                              style={{ color: stat.style.color }}
+                              className="text-[10px]"
+                           >
+                              ■{' '}
                            </Text>
-                        </Text>
-                     </View>
-                  ))}
+
+                           <Text className="text-[10px] font-bold uppercase tracking-tight text-slate-500 dark:text-slate-400">
+                              {stat.label}{' '}
+                              <Text className="text-xs font-bold text-slate-900 dark:text-white">
+                                 {Math.round(stat.percentage)}%
+                              </Text>
+                           </Text>
+
+                           {idx < sortedStats.length - 1 && (
+                              <Text className="text-slate-300 dark:text-slate-600">
+                                 {'   '}
+                              </Text>
+                           )}
+                        </React.Fragment>
+                     ))}
+                  </Text>
                </View>
+
                <HelperFooter isDark={isDark} />
             </View>
          </Pressable>
