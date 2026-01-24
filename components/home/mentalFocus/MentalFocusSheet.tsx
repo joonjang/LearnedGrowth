@@ -54,10 +54,6 @@ const TopicCard = ({
       [isDark],
    );
 
-   const cardShadow = useMemo(
-      () => getShadow({ isDark, preset: 'sm', disableInDark: true }),
-      [isDark],
-   );
    return (
       <Pressable
          onPress={onPress}

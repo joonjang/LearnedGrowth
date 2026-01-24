@@ -29,6 +29,7 @@ import Purchases, {
 } from "react-native-purchases";
 
 import { useAuth } from "./AuthProvider";
+import { supabase } from "@/lib/supabase";
 
 type RevenueCatContextShape = {
   loading: boolean;
@@ -48,13 +49,14 @@ type RevenueCatContextShape = {
 const RevenueCatContext = createContext<RevenueCatContextShape | null>(null);
 
 export function RevenueCatProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const configured = useRef(false);
   const lastUserId = useRef<string | null>(null);
+  const planSyncing = useRef(false);
 
   const handleCustomerInfoUpdate = useCallback((info: CustomerInfo) => {
     setCustomerInfo(info);
@@ -170,6 +172,41 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
     },
     [customerInfo?.entitlements?.active]
   );
+
+  useEffect(() => {
+    if (!supabase || !user?.id) return;
+    if (loading || error || !customerInfo) return;
+    if (isGrowthPlusActive) return;
+    if (profile?.plan !== "growth_plus") return;
+    if (planSyncing.current) return;
+
+    planSyncing.current = true;
+    (async () => {
+      try {
+        const { error: planError } = await supabase
+          .from("profiles")
+          .update({ plan: "free" })
+          .eq("id", user.id);
+        if (planError) {
+          console.warn("Failed to downgrade plan from RevenueCat", planError);
+          return;
+        }
+        await refreshProfile();
+      } catch (err) {
+        console.warn("Failed to sync plan from RevenueCat", err);
+      } finally {
+        planSyncing.current = false;
+      }
+    })();
+  }, [
+    customerInfo,
+    error,
+    isGrowthPlusActive,
+    loading,
+    profile?.plan,
+    refreshProfile,
+    user?.id,
+  ]);
 
   const value = useMemo<RevenueCatContextShape>(
     () => ({

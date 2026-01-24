@@ -22,22 +22,10 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
    - keep the format from how its set for frontend for continuity
    - the frontend receiving of json is for sqlite but doesnt need to update the supabase table
    - enables data persistence
-- add profile credit check from the webhook
 
-- enable user to analyze old entries already with dispute
-   - when the analysis button shows, make it says: New Dispute
-   - create a disputeHistory column with timestamp
-   - pushes old dispute to history and save new dispute
-
-- once user subscribes, enable all entries to get the ai insight
-- Entry categorization upon subscription
-- enable user to go back to entry without analysis and have it be analyzed
-- display a signal that the entry contains AI analysis
-
-- break down streakcard
-   - one for current week
-   - one for past
-   - one for all view
+- when the analysis button shows, make it says: New Dispute
+- create a disputeHistory column with timestamp
+- pushes old dispute to history and save new dispute
 
 - add search function
 
@@ -46,6 +34,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - add a report problem button to send a snapshot of the issue
 
 - enable user to get extra analysis if someone signs up using their referal code
+
+- once user subscribes, enable all entries to get the ai insight
+- Entry categorization upon subscription
 
 ---
 
@@ -71,6 +62,14 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - added all time streak view
 - mental and thinking pattern shadow added
 - mental focus distribution for sheet established
+- backend update
+   - decrement user credit
+      - frontend no longer determines ai credit usage
+   - receives mock ai header to send mock json data
+      - still decrements credit
+   - sends ai_response data to supabase table instead of from app
+      - one source of truth
+- updates profile to free if revenuecat does not have isGrowthPlusActive
 
 ### 2026-01-22
 

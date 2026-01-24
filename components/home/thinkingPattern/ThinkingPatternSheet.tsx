@@ -157,11 +157,6 @@ export default function ThinkingPatternSheet({
       [isDark],
    );
 
-   const buttonShadow = useMemo(
-      () => getShadow({ isDark, preset: 'button', disableInDark: true }),
-      [isDark],
-   );
-
    const chartInset = 16 * 2;
    const chartWidth = useMemo(
       () =>

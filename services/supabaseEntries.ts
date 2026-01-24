@@ -5,7 +5,7 @@ type DbEntry = {
   id: string;
   adversity: string;
   belief: string;
-  ai_response: any;
+  ai_response?: any;
   ai_retry_count?: number | null;
   consequence: string | null;
   dispute: string | null;
@@ -17,6 +17,8 @@ type DbEntry = {
   is_deleted: boolean;
 };
 
+type DbEntryWrite = Omit<DbEntry, "ai_response"> & { ai_response?: any };
+
 export interface SupabaseEntriesClient {
   upsert(entry: Entry): Promise<void>;
   remove(id: string): Promise<void>;
@@ -25,13 +27,14 @@ export interface SupabaseEntriesClient {
 }
 
 export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClient | null {
-  if (!supabase || !userId) return null;
+  const client = supabase;
+  if (!client || !userId) return null;
+  const db = client;
 
-  const toDb = (entry: Entry): DbEntry => ({
+  const toDb = (entry: Entry): DbEntryWrite => ({
     id: entry.id,
     adversity: entry.adversity,
     belief: entry.belief,
-    ai_response: entry.aiResponse ?? null,
     ai_retry_count: entry.aiRetryCount ?? 0,
     consequence: entry.consequence ?? null,
     dispute: entry.dispute ?? null,
@@ -65,7 +68,7 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
   async function upsert(entry: Entry) {
     const dbRow = toDb(entry);
 
-    const { error } = await supabase.from("entries").upsert(dbRow, { onConflict: "id" });
+    const { error } = await db.from("entries").upsert(dbRow, { onConflict: "id" });
     if (!error) return;
 
     const message = String((error as any)?.message ?? "");
@@ -76,7 +79,7 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
 
     // Backwards compatibility: older schemas may not have ai_retry_count yet.
     const { ai_retry_count: _omit, ...legacyRow } = dbRow;
-    const retry = await supabase
+    const retry = await db
       .from("entries")
       .upsert(legacyRow, { onConflict: "id" });
     if (retry.error) {
@@ -86,7 +89,7 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
 
   async function remove(id: string) {
     const nowIso = new Date().toISOString();
-    const { error } = await supabase
+    const { error } = await db
       .from("entries")
       .update({ is_deleted: true, updated_at: nowIso })
       .eq("id", id)
@@ -97,7 +100,7 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
   }
 
   async function hardDelete(id: string) {
-    const { error } = await supabase
+    const { error } = await db
       .from("entries")
       .delete()
       .eq("id", id)
@@ -112,7 +115,7 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
     const columns =
       "id, adversity, belief, ai_response, ai_retry_count, consequence, dispute, energy, created_at, updated_at, account_id, dirty_since, is_deleted";
 
-    const initial = await supabase
+    const initial = await db
       .from("entries")
       .select(columns)
       .eq("account_id", userId);
@@ -129,7 +132,7 @@ export function createSupabaseEntriesClient(userId: string): SupabaseEntriesClie
     }
 
     // Backwards compatibility: retry without the new column.
-    const fallback = await supabase
+    const fallback = await db
       .from("entries")
       .select(
         "id, adversity, belief, ai_response, consequence, dispute, energy, created_at, updated_at, account_id, dirty_since, is_deleted"

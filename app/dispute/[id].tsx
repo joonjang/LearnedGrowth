@@ -149,6 +149,7 @@ export default function DisputeScreen() {
       (async () => {
          try {
             const result = await analyze({
+               entryId: entry.id,
                adversity: entry.adversity,
                belief: entry.belief,
                consequence: entry.consequence ?? undefined,
@@ -309,6 +310,7 @@ export default function DisputeScreen() {
       setIsRegenerating(true);
       try {
          const result = await analyze({
+            entryId: entry.id,
             adversity: entry.adversity,
             belief: entry.belief,
             consequence: entry.consequence,

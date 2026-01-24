@@ -173,7 +173,7 @@ export default function MentalFocusCard({
                               ■{' '}
                            </Text>
 
-                           <Text className="text-[10px] font-bold uppercase tracking-tight text-slate-500 dark:text-slate-400">
+                           <Text className="text-[10px] font-bold tracking-tight text-slate-500 dark:text-slate-400">
                               {stat.label}{' '}
                               <Text className="text-xs font-bold text-slate-900 dark:text-white">
                                  {Math.round(stat.percentage)}%

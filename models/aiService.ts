@@ -1,6 +1,7 @@
 // models/abcAi.ts
 
 export type AbcInput = {
+  entryId?: string;
   adversity: string;
   belief: string;
   consequence?: string;
