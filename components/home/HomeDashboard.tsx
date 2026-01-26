@@ -1,7 +1,8 @@
-import { getWeekStart, isOptimistic, toDateKey } from '@/lib/utils';
+import { getWeekStart } from '@/lib/date';
+import { isOptimistic, toDateKey } from '@/lib/utils';
 import { Entry } from '@/models/entry';
 import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 import Animated, {
    FadeInDown,
    FadeOutUp,
@@ -13,7 +14,6 @@ import {
    WEEKDAY_LABELS,
 } from '../constants';
 import MentalFocusCard from './mentalFocus/MentalFocusCard';
-import StreakCard from './streak/StreakCard';
 import ThinkingPatternCard from './thinkingPattern/ThinkingPatternCard';
 import {
    DayBucket,
@@ -427,15 +427,7 @@ const HomeDashboard = React.memo(
                entering={FadeInDown.duration(600).springify()}
                layout={LinearTransition.springify()}
             >
-               <StreakCard
-                  key={`streak-${dateKey}`}
-                  data={streakView}
-                  shadowSm={shadowSm}
-                  anchorDate={anchorDate}
-                  showEncouragement={showEncouragement}
-                  onDeleteEntry={onDeleteEntry}
-                  isLoading={isLoading}
-               />
+               <Text>INSERT INFO HERE</Text>
             </Animated.View>
 
             {/* MENTAL FOCUS - Only if focusView has valid AI data */}

@@ -21,7 +21,7 @@ import {
    Pencil,
    Sparkles,
    Sprout,
-   Trash2
+   Trash2,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';

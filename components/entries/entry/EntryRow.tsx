@@ -1,8 +1,6 @@
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { getShadow } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
 import { Pencil, Trash2 } from 'lucide-react-native';
-import { memo, useMemo, useRef } from 'react';
+import { memo, useRef } from 'react';
 import {
    Pressable,
    Text,
@@ -13,7 +11,6 @@ import {
 import Swipeable, {
    type SwipeableMethods,
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Animated, { LinearTransition } from 'react-native-reanimated';
 import EntryCard, { type MenuBounds } from './EntryCard';
 
 type EntryRowProps = {
@@ -44,12 +41,6 @@ function EntryRow({
    closeActiveSwipeable,
 }: EntryRowProps) {
    const swipeableRef = useRef<SwipeableMethods | null>(null);
-   const { isDark } = useThemeColor();
-
-   const shadow = useMemo(
-      () => getShadow({ isDark, preset: 'button' }),
-      [isDark]
-   );
 
    const handleEdit = () => {
       swipeableRef.current?.close();
@@ -62,11 +53,7 @@ function EntryRow({
    };
 
    return (
-      <Animated.View
-         layout={LinearTransition.duration(180)}
-         className="pt-4 pb-10"
-         style={[style]}
-      >
+      <View className="pt-4 pb-10" style={[style]}>
          <Swipeable
             ref={swipeableRef}
             overshootRight={false}
@@ -86,14 +73,11 @@ function EntryRow({
                if (onSwipeClose) onSwipeClose(entry.id);
             }}
             renderRightActions={() => (
-               <View
-                  className="flex-row items-center justify-center h-full gap-1 mr-7"
-               >
+               <View className="flex-row items-center justify-center h-full gap-1 mr-7">
                   {/* Edit Action */}
                   <View className="items-center gap-1.5">
                      <Pressable
                         className="w-14 h-14 rounded-full items-center justify-center bg-amber-500 active:bg-amber-600 dark:bg-amber-600 dark:active:bg-amber-700"
-                        style={[shadow.ios, shadow.android]}
                         onPress={handleEdit}
                         testID="entry-swipe-edit-btn" // <--- ADDED TEST ID
                      >
@@ -108,7 +92,6 @@ function EntryRow({
                   <View className="items-center ml-3 gap-1.5">
                      <Pressable
                         className="w-14 h-14 rounded-full items-center justify-center bg-rose-600 active:bg-rose-700 dark:bg-rose-700 dark:active:bg-rose-800"
-                        style={[shadow.ios, shadow.android]}
                         onPress={handleDelete}
                         testID="entry-swipe-delete-btn" // <--- ADDED TEST ID
                      >
@@ -133,7 +116,7 @@ function EntryRow({
                />
             </View>
          </Swipeable>
-      </Animated.View>
+      </View>
    );
 }
 
@@ -147,7 +130,8 @@ const arePropsEqual = (prev: EntryRowProps, next: EntryRowProps) => {
    if (prevEntry.isDeleted !== nextEntry.isDeleted) return false;
    if (prevEntry.adversity !== nextEntry.adversity) return false;
    if (prevEntry.belief !== nextEntry.belief) return false;
-   if ((prevEntry.consequence ?? '') !== (nextEntry.consequence ?? '')) return false;
+   if ((prevEntry.consequence ?? '') !== (nextEntry.consequence ?? ''))
+      return false;
    if ((prevEntry.dispute ?? '') !== (nextEntry.dispute ?? '')) return false;
    if ((prevEntry.energy ?? '') !== (nextEntry.energy ?? '')) return false;
    return true;

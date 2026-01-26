@@ -47,6 +47,7 @@ function RootLayoutContent() {
             <EdgeToEdge>
                <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="index" options={{ headerShown: false }} />
+                  <Stack.Screen name="entries" options={{ headerShown: false }} />
                   <Stack.Screen
                      name="settings"
                      options={{

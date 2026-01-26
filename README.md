@@ -42,6 +42,11 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-01-26
+
+- Decoupled EntriesScreen with entries section list
+- Home filters based off entry count and not week
+
 ### 2026-01-24
 
 - logout cleanup for entries leaking
