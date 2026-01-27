@@ -60,6 +60,7 @@ This is the authoritative guide for all AI coding work in this repo. Follow it s
    - If a shadowed card sits inside a `ScrollView`, use the **shadow gutter pattern**:
       - Parent: `style={{ marginHorizontal: -shadowGutter }}`
       - Content container: `paddingHorizontal: shadowGutter`
+- className property 'transition-all' causes problems iwth Reanimated, so avoid it
 
 ### Edge-to-Edge & Safe Area
 

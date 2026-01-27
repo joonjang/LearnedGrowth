@@ -427,7 +427,7 @@ const HomeDashboard = React.memo(
                >
                   <Pressable
                      onPress={handleOpenInsightCoverage}
-                     className="mx-2 px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 flex-row items-center gap-3 active:opacity-70 active:scale-[0.99] transition-all"
+                     className="mx-2 px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 flex-row items-center gap-3 active:opacity-70 active:scale-[0.99]"
                   >
                      {/* Icon: Sparkles (AI Value) */}
                      <View className="bg-white dark:bg-indigo-500/20 p-2 rounded-full border border-indigo-100 dark:border-indigo-400/30">
