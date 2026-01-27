@@ -1,6 +1,5 @@
-import { PInsightCard } from '@/components/appInfo/PDefinitions';
+import { THINKING_PATTERN_DIMENSIONS } from '@/components/constants';
 import {
-   BookOpen,
    ChevronDown,
    ChevronUp,
    Clock3,
@@ -64,7 +63,7 @@ function useDelayedAppearance(delay: number, onComplete?: () => void) {
    }));
 }
 
-// --- MINIMIZED STATE (The Replacement) ---
+// --- MINIMIZED STATE ---
 export function AiInsightMinimizedState({
    previewText,
    isDark,
@@ -135,11 +134,8 @@ export type AiInsightHeaderProps = {
 export function AiInsightHeader({
    allowMinimize,
    isMinimized,
-   isStale,
    textColor,
-   descColor,
    iconColor,
-   isDark,
 }: AiInsightHeaderProps) {
    if (isMinimized) return null;
 
@@ -397,7 +393,6 @@ export type AiInsightStaleBannerProps = {
    isCoolingDown: boolean;
    isNudgeStep: boolean;
    refreshCostNote: string | null;
-   onRefresh?: () => void;
    onRefreshPress: () => void;
    timeLabel: string;
    isDark: boolean;
@@ -408,7 +403,6 @@ export function AiInsightStaleBanner({
    isCoolingDown,
    isNudgeStep,
    refreshCostNote,
-   onRefresh,
    onRefreshPress,
    timeLabel,
    isDark,
@@ -537,11 +531,9 @@ export function AiInsightEmotionalValidation({
    );
 }
 
-// --- THINKING PATTERNS ---
+// --- THINKING PATTERNS (REFACTORED) ---
 export type AiInsightThinkingPatternsProps = {
    dims?: InsightDimensions | null;
-   showDefinitions: boolean;
-   toggleHelp: () => void;
    animationTimeline: AnimationTimeline;
    isFreshAnalysis: boolean;
    isDark: boolean;
@@ -549,8 +541,6 @@ export type AiInsightThinkingPatternsProps = {
 
 export function AiInsightThinkingPatterns({
    dims,
-   showDefinitions,
-   toggleHelp,
    animationTimeline,
    isFreshAnalysis,
    isDark,
@@ -559,87 +549,52 @@ export function AiInsightThinkingPatterns({
 
    if (!dims) return null;
 
+   // Helper to loop over keys safely
+   const dimensionKeys = Object.keys(
+      THINKING_PATTERN_DIMENSIONS,
+   ) as (keyof typeof THINKING_PATTERN_DIMENSIONS)[];
+
+   // Map dimension keys to delay timers from animationTimeline
+   const delays: Record<keyof typeof THINKING_PATTERN_DIMENSIONS, number> = {
+      Time: animationTimeline.timeStart,
+      Scope: animationTimeline.scopeStart,
+      Blame: animationTimeline.blameStart,
+   };
+
    return (
       <View>
+         {/* Simple Header */}
          <Animated.View style={headerStyle}>
-            <View className="flex-row items-center justify-between mb-4">
-               <View className="flex-row items-center gap-2">
-                  <Layers size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
-                  <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                     Thinking Patterns
-                  </Text>
-               </View>
-
-               <Pressable onPress={toggleHelp}>
-                  <View
-                     className={`flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-full border ${
-                        showDefinitions
-                           ? 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600'
-                           : 'border-transparent'
-                     }`}
-                  >
-                     <BookOpen
-                        size={12}
-                        color={isDark ? '#94a3b8' : '#64748b'}
-                     />
-                     <Text className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                        Guide
-                     </Text>
-                     {showDefinitions ? (
-                        <ChevronUp
-                           size={12}
-                           color={isDark ? '#94a3b8' : '#64748b'}
-                        />
-                     ) : (
-                        <ChevronDown
-                           size={12}
-                           color={isDark ? '#94a3b8' : '#64748b'}
-                        />
-                     )}
-                  </View>
-               </Pressable>
+            <View className="flex-row items-center gap-2 mb-4">
+               <Layers size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
+               <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                  Thinking Patterns
+               </Text>
             </View>
-            {showDefinitions && (
-               <View className="mb-4">
-                  <PInsightCard context="entry" />
-               </View>
-            )}
          </Animated.View>
 
+         {/* Loop through constants */}
          <View className="gap-6">
-            <AnimatedSpectrumRow
-               label="Time"
-               subLabel="(Permanence)"
-               leftText="Temporary"
-               rightText="Permanent"
-               score={dims.permanence.score}
-               insight={dims.permanence.insight}
-               detectedPhrase={dims.permanence.detectedPhrase}
-               startDelay={animationTimeline.timeStart}
-               skipAnimation={!isFreshAnalysis}
-            />
-            <AnimatedSpectrumRow
-               label="Scope"
-               subLabel="(Pervasiveness)"
-               leftText="Specific"
-               rightText="Pervasive"
-               score={dims.pervasiveness.score}
-               insight={dims.pervasiveness.insight}
-               detectedPhrase={dims.pervasiveness.detectedPhrase}
-               startDelay={animationTimeline.scopeStart}
-               skipAnimation={!isFreshAnalysis}
-            />
-            <AnimatedSpectrumRow
-               label="Blame"
-               subLabel="(Personalization)"
-               leftText="External"
-               rightText="Internal"
-               score={dims.personalization.score}
-               insight={dims.personalization.insight}
-               detectedPhrase={dims.personalization.detectedPhrase}
-               startDelay={animationTimeline.blameStart}
-               skipAnimation={!isFreshAnalysis}
-            />
+            {dimensionKeys.map((key) => {
+               const config = THINKING_PATTERN_DIMENSIONS[key];
+               const metricData = dims[config.dimension]; // dynamic access
+
+               return (
+                  <AnimatedSpectrumRow
+                     key={key}
+                     // Combined Label: "Time · Have you viewed setbacks as permanent?"
+                     label={key}
+                     subLabel={config.description} // Replaces the old (Permanence)
+                     leftText={config.highLabel}
+                     rightText={config.lowLabel}
+                     score={metricData.score}
+                     insight={metricData.insight}
+                     detectedPhrase={metricData.detectedPhrase}
+                     startDelay={delays[key]}
+                     skipAnimation={!isFreshAnalysis}
+                  />
+               );
+            })}
          </View>
       </View>
    );

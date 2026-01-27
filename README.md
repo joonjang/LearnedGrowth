@@ -52,6 +52,8 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - bin.tsx header matches entries.tsx
 - QuickStart.tsx view logic fixed
 - thinking pattern simplified
+   - abstracted thinking pattern labels and description to constants.tsx
+      - ai insight also gets data from one source of truth
 
 ### 2026-01-24
 
