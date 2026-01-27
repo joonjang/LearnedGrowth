@@ -47,21 +47,10 @@ const TAB_ORDER = ['Time', 'Scope', 'Blame'] as const;
 type PatternTab = keyof ThinkingPatternData;
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const POINTER_LABEL_WIDTH = 220;
 const CHART_TOTAL_HEIGHT = 220;
-const CHART_PADDING_BOTTOM = 20;
-const SLIDER_HEIGHT = 60;
 
 function formatShortDate(date: Date) {
    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function formatTime(date: Date) {
-   const hours = date.getHours();
-   const minutes = `${date.getMinutes()}`.padStart(2, '0');
-   const period = hours >= 12 ? 'PM' : 'AM';
-   const hour12 = hours % 12 || 12;
-   return `${hour12}:${minutes} ${period}`;
 }
 
 function getPatternDateParts(value: string | null | undefined) {
@@ -71,7 +60,6 @@ function getPatternDateParts(value: string | null | undefined) {
    return {
       weekday: WEEKDAY_LABELS[parsed.getDay()] ?? '',
       fullDate: formatShortDate(parsed),
-      time: formatTime(parsed),
    };
 }
 
@@ -89,8 +77,6 @@ type Props = {
    data: ThinkingPatternData | null;
 };
 
-type SelectionSource = 'chart' | 'list' | null;
-
 export default function ThinkingPatternSheet({
    sheetRef,
    onDismiss,
@@ -103,109 +89,14 @@ export default function ThinkingPatternSheet({
 
    const [activeTab, setActiveTab] = useState<PatternTab>('Time');
    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
-   const [pointerState, setPointerState] = useState({ index: -1, x: 0 });
-   const [selectionSource, setSelectionSource] =
-      useState<SelectionSource>(null);
+
+   const tabData = data?.[activeTab] ?? EMPTY_TAB;
 
    const lineGradientStartColor = isDark ? '#059669' : '#34d399';
    const lineGradientEndColor = isDark ? '#be123c' : '#f43f5e';
 
-   const tabData = data?.[activeTab] ?? EMPTY_TAB;
    const chartEdgePadding = 8;
    const chartContainerPadding = 16;
-
-   const activePattern = useMemo(
-      () =>
-         tabData.patterns.find((pattern) => pattern.id === expandedItemId) ??
-         null,
-      [expandedItemId, tabData.patterns],
-   );
-
-   const activeEntryId = activePattern?.entryId ?? null;
-
-   const activeChartIndex = useMemo(() => {
-      if (!activeEntryId) return -1;
-      return tabData.chartData.findIndex(
-         (point) => point.entryId === activeEntryId,
-      );
-   }, [activeEntryId, tabData.chartData]);
-
-   const activePointColor = useMemo(() => {
-      if (!activePattern) return isDark ? '#e2e8f0' : '#0f172a';
-
-      switch (activePattern.impact) {
-         case 'optimistic':
-            return isDark ? '#34d399' : '#059669';
-         case 'pessimistic':
-            return isDark ? '#f43f5e' : '#e11d48';
-         case 'mixed':
-            return isDark ? '#94a3b8' : '#64748b';
-         default:
-            return isDark ? '#94a3b8' : '#64748b';
-      }
-   }, [activePattern, isDark]);
-
-   const basePointColor = isDark ? '#94a3b8' : '#64748b';
-
-   const patternByEntryId = useMemo(() => {
-      const map = new Map<string, (typeof tabData.patterns)[number]>();
-      tabData.patterns.forEach((pattern) => {
-         if (!map.has(pattern.entryId)) {
-            map.set(pattern.entryId, pattern);
-         }
-      });
-      return map;
-   }, [tabData]);
-
-   const getImpactBubbleStyles = useCallback(
-      (impact: string | null | undefined) => {
-         if (impact === 'optimistic') {
-            return {
-               bubbleClasses:
-                  'bg-emerald-50 dark:bg-emerald-500/20 border-emerald-100 dark:border-emerald-800/30',
-               textClasses: 'text-emerald-700 dark:text-emerald-300',
-            };
-         }
-         if (impact === 'pessimistic') {
-            return {
-               bubbleClasses:
-                  'bg-rose-50 dark:bg-rose-500/20 border-rose-100 dark:border-rose-800/30',
-               textClasses: 'text-rose-700 dark:text-rose-300',
-            };
-         }
-         return {
-            bubbleClasses:
-               'bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700',
-            textClasses: 'text-slate-700 dark:text-slate-300',
-         };
-      },
-      [],
-   );
-
-   const chartDataWithHighlight = useMemo(
-      () =>
-         tabData.chartData.map((point, index) => ({
-            ...point,
-            hideDataPoint: false,
-            dataPointColor:
-               index === activeChartIndex ? activePointColor : basePointColor,
-            dataPointRadius: index === activeChartIndex ? 5 : 3,
-            dataPointWidth: index === activeChartIndex ? 10 : 6,
-            dataPointHeight: index === activeChartIndex ? 10 : 6,
-         })),
-      [activeChartIndex, activePointColor, basePointColor, tabData.chartData],
-   );
-
-   const tabShadow = useMemo(
-      () => getShadow({ isDark, preset: 'sm', disableInDark: true }),
-      [isDark],
-   );
-
-   const cardShadow = useMemo(
-      () => getShadow({ isDark, preset: 'sm', disableInDark: true }),
-      [isDark],
-   );
-
    const chartInset = chartContainerPadding * 2;
 
    const chartWidth = useMemo(
@@ -222,55 +113,75 @@ export default function ThinkingPatternSheet({
       return usableWidth / Math.max(points - 1, 1);
    }, [chartEdgePadding, chartWidth, tabData.chartData.length]);
 
-   // --- BUBBLE LOGIC ---
-   // Only show bubble for chart interaction, not list expansion.
-   const displayedPattern = useMemo(() => {
-      // If user is touching the chart, show that.
-      if (pointerState.index >= 0) {
-         const entryId = tabData.chartData[pointerState.index]?.entryId;
-         return patternByEntryId.get(entryId) ?? null;
-      }
-
-      // If the selection came from the chart (e.g., you decide to persist it),
-      // you could optionally show the activePattern here.
-      // But since you want "if expand from detected phrase, don't show bubble",
-      // we intentionally DO NOT fallback to activePattern.
-      return null;
-   }, [pointerState.index, patternByEntryId, tabData.chartData]);
-
-   const bubbleX = useMemo(() => {
-      if (pointerState.index >= 0) return pointerState.x;
-      if (activeChartIndex >= 0) {
-         return chartEdgePadding + activeChartIndex * chartSpacing;
-      }
-      return 0;
-   }, [pointerState.index, pointerState.x, activeChartIndex, chartSpacing]);
-
-   const pointerBubbleLeft = useMemo(() => {
-      if (!displayedPattern) return 0;
-      const raw = bubbleX - POINTER_LABEL_WIDTH / 2 + 5;
-      const minLeft = -8;
-      const maxLeft = chartWidth - POINTER_LABEL_WIDTH + 8;
-      return Math.min(Math.max(raw, minLeft), maxLeft);
-   }, [bubbleX, chartWidth, displayedPattern]);
-
-   const pointerDateParts = useMemo(
-      () =>
-         displayedPattern
-            ? getPatternDateParts(displayedPattern.createdAt)
-            : null,
-      [displayedPattern],
+   const tabShadow = useMemo(
+      () => getShadow({ isDark, preset: 'sm', disableInDark: true }),
+      [isDark],
    );
 
-   const pointerBubble = useMemo(() => {
-      if (!displayedPattern) return null;
-      const phrase =
-         displayedPattern.phrase ?? 'No phrase detected for this entry.';
-      const { bubbleClasses, textClasses } = getImpactBubbleStyles(
-         displayedPattern.impact,
+   const cardShadow = useMemo(
+      () => getShadow({ isDark, preset: 'sm', disableInDark: true }),
+      [isDark],
+   );
+
+   // ✅ Detected phrases list: OLD -> NEW
+   const sortedPatterns = useMemo(() => {
+      return [...(tabData.patterns ?? [])].sort(
+         (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
-      return { phrase, bubbleClasses, textClasses };
-   }, [getImpactBubbleStyles, displayedPattern]);
+   }, [tabData.patterns]);
+
+   const activePattern = useMemo(
+      () =>
+         sortedPatterns.find((pattern) => pattern.id === expandedItemId) ??
+         null,
+      [expandedItemId, sortedPatterns],
+   );
+
+   const activeEntryId = activePattern?.entryId ?? null;
+
+   // Find chart point index that matches the selected phrase's entryId
+   const activeChartIndex = useMemo(() => {
+      if (!activeEntryId) return -1;
+      return tabData.chartData.findIndex(
+         (pt: any) => pt.entryId === activeEntryId,
+      );
+   }, [activeEntryId, tabData.chartData]);
+
+   // Dot color based on selected phrase impact
+   const selectedDotColor = useMemo(() => {
+      if (!activePattern) return isDark ? '#e2e8f0' : '#0f172a';
+      switch (activePattern.impact) {
+         case 'optimistic':
+            return isDark ? '#34d399' : '#059669';
+         case 'pessimistic':
+            return isDark ? '#f43f5e' : '#be123c';
+         case 'mixed':
+            return isDark ? '#94a3b8' : '#64748b';
+         default:
+            return isDark ? '#94a3b8' : '#64748b';
+      }
+   }, [activePattern, isDark]);
+
+   // ✅ Chart data: hide ALL dots unless a phrase is selected
+   const chartDataStatic = useMemo(() => {
+      const hasSelection = activeChartIndex >= 0;
+
+      return tabData.chartData.map((point: any, index: number) => {
+         const isSelected = hasSelection && index === activeChartIndex;
+
+         return {
+            ...point,
+            // hide all points unless selected
+            hideDataPoint: !isSelected,
+            // dot appearance (only matters for selected)
+            dataPointColor: selectedDotColor,
+            dataPointRadius: isSelected ? 6 : 0,
+            dataPointWidth: isSelected ? 12 : 0,
+            dataPointHeight: isSelected ? 12 : 0,
+         };
+      });
+   }, [tabData.chartData, activeChartIndex, selectedDotColor]);
 
    const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -287,8 +198,6 @@ export default function ThinkingPatternSheet({
 
    const handleDismiss = useCallback(() => {
       setExpandedItemId(null);
-      setPointerState({ index: -1, x: 0 });
-      setSelectionSource(null);
       onDismiss?.();
    }, [onDismiss]);
 
@@ -296,17 +205,10 @@ export default function ThinkingPatternSheet({
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setActiveTab(tab);
       setExpandedItemId(null);
-      setPointerState({ index: -1, x: 0 });
-      setSelectionSource(null);
    }, []);
 
    const handleToggleItem = useCallback((id: string) => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-
-      // Expanding from the list => do NOT show chart bubble
-      setSelectionSource('list');
-      setPointerState({ index: -1, x: 0 });
-
       setExpandedItemId((current) => (current === id ? null : id));
    }, []);
 
@@ -317,39 +219,6 @@ export default function ThinkingPatternSheet({
       },
       [sheetRef],
    );
-
-   const pointerConfig = useMemo(
-      () => ({
-         activatePointersInstantlyOnTouch: true,
-         pointerRadius: 4,
-         pointerColor: isDark ? '#e2e8f0' : '#0f172a',
-         resetPointerIndexOnRelease: true,
-         shiftPointerLabelX: 0,
-         shiftPointerLabelY: 0,
-         autoAdjustPointerLabelPosition: false,
-         pointerStripWidth: 0,
-         pointerStripUptoDataPoint: false,
-      }),
-      [isDark],
-   );
-
-   const handlePointerProps = useCallback(
-      (props: { pointerIndex?: number; pointerX?: number }) => {
-         const nextIndex = props.pointerIndex ?? -1;
-
-         setPointerState({
-            index: nextIndex,
-            x: props.pointerX ?? 0,
-         });
-
-         // Touching chart => bubble allowed
-         setSelectionSource(nextIndex >= 0 ? 'chart' : null);
-      },
-      [],
-   );
-
-   const showSpeechBubble =
-      selectionSource === 'chart' && Boolean(pointerBubble);
 
    return (
       <BottomSheetModal
@@ -424,7 +293,7 @@ export default function ThinkingPatternSheet({
             {/* --- CHART CONTAINER --- */}
             <View
                className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4"
-               style={{ overflow: 'visible' }}
+               style={{ overflow: 'hidden' }}
             >
                {/* HIGH LABEL */}
                <Text className="text-xs font-semibold text-emerald-600 dark:text-emerald-300 absolute top-4 left-4 z-10">
@@ -433,74 +302,36 @@ export default function ThinkingPatternSheet({
 
                <View className="mt-2">
                   {tabData.chartData.length > 0 ? (
-                     <View
-                        style={{
-                           height: CHART_TOTAL_HEIGHT,
-                           overflow: 'visible',
-                        }}
-                     >
-                        <LineChart
-                           data={chartDataWithHighlight}
-                           width={chartWidth}
-                           spacing={chartSpacing}
-                           initialSpacing={chartEdgePadding}
-                           endSpacing={chartEdgePadding}
-                           height={CHART_TOTAL_HEIGHT}
-                           curved
-                           isAnimated
-                           areaChart
-                           pointerConfig={pointerConfig}
-                           getPointerProps={handlePointerProps}
-                           lineGradient
-                           lineGradientDirection="vertical"
-                           lineGradientStartColor={lineGradientStartColor}
-                           lineGradientEndColor={lineGradientEndColor}
-                           gradientDirection="vertical"
-                           color="#6366f1"
-                           startFillColor={lineGradientStartColor}
-                           endFillColor={lineGradientEndColor}
-                           startOpacity={0.2}
-                           endOpacity={0}
-                           hideRules
-                           hideYAxisText
-                           hideAxesAndRules
-                           yAxisThickness={0}
-                           xAxisThickness={0}
-                        />
-
-                        {/* POINTER BUBBLE (Overlays Graph) */}
-                        {showSpeechBubble && pointerBubble && (
-                           <View
-                              pointerEvents="none"
-                              style={{
-                                 position: 'absolute',
-                                 left: pointerBubbleLeft,
-                                 top: 0,
-                                 marginTop: 4,
-                                 zIndex: 30,
-                              }}
-                           >
-                              <View
-                                 className={`rounded-xl border px-3 py-2 shadow-sm ${pointerBubble.bubbleClasses}`}
-                                 style={{ maxWidth: POINTER_LABEL_WIDTH }}
-                              >
-                                 {pointerDateParts && (
-                                    <Text
-                                       className={`text-[10px] font-bold uppercase tracking-widest ${pointerBubble.textClasses}`}
-                                    >
-                                       {pointerDateParts.weekday} ·{' '}
-                                       {pointerDateParts.fullDate}
-                                    </Text>
-                                 )}
-                                 <Text
-                                    className={`text-xs font-semibold ${pointerBubble.textClasses}`}
-                                    numberOfLines={2}
-                                 >
-                                    {pointerBubble.phrase}
-                                 </Text>
-                              </View>
-                           </View>
-                        )}
+                     <View style={{ height: CHART_TOTAL_HEIGHT }}>
+                        {/* ✅ Disable ALL chart touch by blocking pointer events */}
+                        <View pointerEvents="none">
+                           <LineChart
+                              data={chartDataStatic}
+                              width={chartWidth}
+                              spacing={chartSpacing}
+                              initialSpacing={chartEdgePadding}
+                              endSpacing={chartEdgePadding}
+                              height={CHART_TOTAL_HEIGHT}
+                              curved
+                              isAnimated
+                              areaChart
+                              lineGradient
+                              lineGradientDirection="vertical"
+                              lineGradientStartColor={lineGradientStartColor}
+                              lineGradientEndColor={lineGradientEndColor}
+                              gradientDirection="vertical"
+                              color="#6366f1"
+                              startFillColor={lineGradientStartColor}
+                              endFillColor={lineGradientEndColor}
+                              startOpacity={0.2}
+                              endOpacity={0}
+                              hideRules
+                              hideYAxisText
+                              hideAxesAndRules
+                              yAxisThickness={0}
+                              xAxisThickness={0}
+                           />
+                        </View>
 
                         {/* LOW LABEL */}
                         <View
@@ -532,7 +363,7 @@ export default function ThinkingPatternSheet({
                </Text>
 
                <View className="gap-3">
-                  {tabData.patterns.length === 0 && (
+                  {sortedPatterns.length === 0 && (
                      <View className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-4">
                         <Text className="text-xs text-slate-500 dark:text-slate-400">
                            No detected phrases yet.
@@ -540,7 +371,7 @@ export default function ThinkingPatternSheet({
                      </View>
                   )}
 
-                  {tabData.patterns.map((pattern) => {
+                  {sortedPatterns.map((pattern) => {
                      const isExpanded = expandedItemId === pattern.id;
                      const dateParts = getPatternDateParts(pattern.createdAt);
 

@@ -41,7 +41,6 @@ export default function ThinkingPatternCard({
       setIsPressed(false);
    }, []);
 
-   // Data is pre-calculated now
    if (!data) return null;
 
    return (
