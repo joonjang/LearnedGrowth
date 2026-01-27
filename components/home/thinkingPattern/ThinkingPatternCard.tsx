@@ -66,7 +66,7 @@ export default function ThinkingPatternCard({
                </View>
 
                {/* Metric Blocks (Abstracted Loop) */}
-               <View className="gap-4">
+               <View className="gap-4 mb-2">
                   {dimensionKeys.map((key) => {
                      const config = THINKING_PATTERN_DIMENSIONS[key];
                      const score = data.threePs[config.dimension].score;
