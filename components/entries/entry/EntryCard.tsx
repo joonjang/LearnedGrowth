@@ -64,8 +64,8 @@ type Prop = {
    onToggleMenu: () => void;
    onCloseMenu: () => void;
    onDelete: (entry: Entry) => void;
-   onNavigate?: (entry: Entry) => void;
-   onAnalyze?: (entry: Entry) => void;
+   onNavigate?: (entry: Entry) => void | Promise<void>;
+   onAnalyze?: (entry: Entry) => void | Promise<void>;
    onMenuLayout?: (bounds: MenuBounds) => void;
    closeActiveSwipeable?: () => string | null;
    initialViewMode?: 'reframed' | 'original';
@@ -366,8 +366,11 @@ export default function EntryCard({
       if (isMenuOpen) {
          onCloseMenu();
       }
-      lockNavigation(() => {
-         onNavigate?.(entry);
+      lockNavigation(async () => {
+         const maybe = onNavigate?.(entry);
+         if (maybe && typeof (maybe as Promise<void>).then === 'function') {
+            await maybe;
+         }
          router.push({
             pathname: ROUTE_ENTRY_DETAIL,
             params: { id: entry.id },
@@ -394,8 +397,11 @@ export default function EntryCard({
    }, [entry, lockNavigation, onCloseMenu, onNavigate]);
 
    const handleAnalyze = useCallback(() => {
-      lockNavigation(() => {
-         onAnalyze?.(entry);
+      lockNavigation(async () => {
+         const maybe = onAnalyze?.(entry);
+         if (maybe && typeof (maybe as Promise<void>).then === 'function') {
+            await maybe;
+         }
          if (isSubscribed) {
             router.push({
                pathname: '/dispute/[id]',

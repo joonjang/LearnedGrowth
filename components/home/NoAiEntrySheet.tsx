@@ -16,10 +16,9 @@ import {
    BottomSheetModal,
    BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
-import { CheckCircle2, Sparkles, Zap } from 'lucide-react-native';
-import React, { useCallback, useMemo, useState } from 'react';
+import { CheckCircle2, Sparkles } from 'lucide-react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Text, useWindowDimensions, View } from 'react-native';
-import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type InsightCoverageSheetProps = {
@@ -30,7 +29,8 @@ type InsightCoverageSheetProps = {
    onDeleteEntry: (entry: Entry) => void;
 };
 
-const CoverageMeter = ({
+// --- Helper Component: CoverageMeter ---
+function CoverageMeter({
    missing,
    total,
    isDark,
@@ -38,7 +38,7 @@ const CoverageMeter = ({
    missing: number;
    total: number;
    isDark: boolean;
-}) => {
+}) {
    const analyzed = Math.max(0, total - missing);
    const percentage = total > 0 ? (analyzed / total) * 100 : 100;
 
@@ -65,7 +65,7 @@ const CoverageMeter = ({
          </Text>
       </View>
    );
-};
+}
 
 export default function NoAiEntrySheet({
    sheetRef,
@@ -77,6 +77,7 @@ export default function NoAiEntrySheet({
    const insets = useSafeAreaInsets();
    const { height: windowHeight } = useWindowDimensions();
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
+   const dismissResolverRef = useRef<(() => void) | null>(null);
 
    const maxSheetHeight = useMemo(() => windowHeight * 0.9, [windowHeight]);
    const hasMissingEntries = entries.length > 0;
@@ -112,11 +113,24 @@ export default function NoAiEntrySheet({
 
    const handleNavigate = useCallback(() => {
       handleCloseMenu();
-      sheetRef.current?.dismiss();
+      return new Promise<void>((resolve) => {
+         dismissResolverRef.current = resolve;
+         sheetRef.current?.dismiss();
+      });
+   }, [handleCloseMenu, sheetRef]);
+
+   const handleAnalyze = useCallback(() => {
+      handleCloseMenu();
+      return new Promise<void>((resolve) => {
+         dismissResolverRef.current = resolve;
+         sheetRef.current?.dismiss();
+      });
    }, [handleCloseMenu, sheetRef]);
 
    const handleSheetDismiss = useCallback(() => {
       setOpenMenuEntryId(null);
+      dismissResolverRef.current?.();
+      dismissResolverRef.current = null;
    }, []);
 
    return (
@@ -143,7 +157,6 @@ export default function NoAiEntrySheet({
             }}
             keyboardShouldPersistTaps="handled"
          >
-            {/* HEADER */}
             <View className="mb-2">
                <View className="flex-row items-center gap-2 mb-1">
                   <Sparkles size={16} color={isDark ? '#818cf8' : '#6366f1'} />
@@ -160,7 +173,7 @@ export default function NoAiEntrySheet({
 
                <Text className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-5">
                   {hasMissingEntries
-                     ? 'See how these specific moment shape your overall trends.'
+                     ? 'See how these specific moments shape your overall trends.'
                      : 'All your recent entries are analyzed and included in your trends.'}
                </Text>
 
@@ -171,21 +184,19 @@ export default function NoAiEntrySheet({
                />
             </View>
 
-            {/* LIST OF ENTRIES */}
             {hasMissingEntries ? (
                <View className="gap-4">
                   <View className="flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2 mb-2">
                      <Text className="text-xs font-bold text-slate-400 uppercase">
                         {entries.length} Ready for Analysis
                      </Text>
-                     <Zap size={12} color={isDark ? '#94a3b8' : '#64748b'} />
                   </View>
 
                   {entries.map((entry) => (
-                     <Animated.View
-                        key={entry.id}
-                        layout={LinearTransition.duration(180)}
-                     >
+                     // --- CRASH FIX: Use standard View instead of Animated.View ---
+                     // Reanimated Layout Transitions inside a dismissing BottomSheet
+                     // are a primary cause of the android.view.ViewGroup.dispatchGetDisplayList crash.
+                     <View key={entry.id}>
                         <EntryCard
                            entry={entry}
                            isMenuOpen={openMenuEntryId === entry.id}
@@ -193,13 +204,10 @@ export default function NoAiEntrySheet({
                            onCloseMenu={handleCloseMenu}
                            onDelete={handleDelete}
                            onNavigate={handleNavigate}
-                           onAnalyze={() => {
-                              handleCloseMenu();
-                              sheetRef.current?.dismiss();
-                           }}
+                           onAnalyze={handleAnalyze}
                            initialViewMode="original"
                         />
-                     </Animated.View>
+                     </View>
                   ))}
                </View>
             ) : (
