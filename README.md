@@ -49,6 +49,9 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - Decoupled EntriesScreen with entries section list
 - Home filters based off entry count and not week
 - abstracted style to its own file
+- bin.tsx header matches entries.tsx
+- QuickStart.tsx view logic fixed
+- thinking pattern simplified
 
 ### 2026-01-24
 

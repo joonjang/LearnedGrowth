@@ -1,9 +1,9 @@
-import { PInsightCard } from '@/components/appInfo/PDefinitions';
+import { THINKING_PATTERN_DIMENSIONS } from '@/components/constants';
 import { CARD_PRESS_STYLE } from '@/lib/styles';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BookOpen, ChevronDown, ChevronUp, Layers } from 'lucide-react-native';
+import { Layers } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';
-import { LayoutAnimation, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import HelperFooter from '../HelperFooter';
 import { ThinkingPatternViewModel } from '../types';
 import GradientSpectrumBar from './GradientSpectrumBar';
@@ -20,14 +20,8 @@ export default function ThinkingPatternCard({
    shadowStyle,
    isDark,
 }: Props) {
-   const [showHelp, setShowHelp] = useState(false);
    const [isPressed, setIsPressed] = useState(false);
    const sheetRef = useRef<BottomSheetModal>(null);
-
-   const handleToggleHelp = useCallback(() => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setShowHelp((prev) => !prev);
-   }, []);
 
    const handlePresentSheet = useCallback(() => {
       sheetRef.current?.present();
@@ -43,6 +37,11 @@ export default function ThinkingPatternCard({
 
    if (!data) return null;
 
+   // Helper to extract keys properly for iteration
+   const dimensionKeys = Object.keys(
+      THINKING_PATTERN_DIMENSIONS,
+   ) as (keyof typeof THINKING_PATTERN_DIMENSIONS)[];
+
    return (
       <>
          <Pressable
@@ -51,7 +50,7 @@ export default function ThinkingPatternCard({
             onPressOut={handlePressOut}
          >
             <View
-               className="p-5 pb-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
+               className="p-5 pb-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
                style={[
                   shadowStyle.ios,
                   shadowStyle.android,
@@ -59,79 +58,43 @@ export default function ThinkingPatternCard({
                ]}
             >
                {/* Header */}
-               <View className="flex-row items-center justify-between mb-4">
-                  <View className="flex-row items-center gap-2">
-                     <Layers size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
-                     <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                        Thinking Patterns
-                     </Text>
-                  </View>
-
-                  {/* Guide Toggle */}
-                  <Pressable onPress={handleToggleHelp} hitSlop={10}>
-                     <View
-                        className={`flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-full border ${
-                           showHelp
-                              ? 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600'
-                              : 'border-transparent'
-                        }`}
-                     >
-                        <BookOpen
-                           size={12}
-                           color={isDark ? '#94a3b8' : '#64748b'}
-                        />
-                        <Text className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                           Guide
-                        </Text>
-                        {showHelp ? (
-                           <ChevronUp
-                              size={12}
-                              color={isDark ? '#94a3b8' : '#64748b'}
-                           />
-                        ) : (
-                           <ChevronDown
-                              size={12}
-                              color={isDark ? '#94a3b8' : '#64748b'}
-                           />
-                        )}
-                     </View>
-                  </Pressable>
+               <View className="flex-row items-center gap-2 mb-5">
+                  <Layers size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
+                  <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                     Thinking Patterns
+                  </Text>
                </View>
 
-               {/* Expanded Content */}
-               {showHelp && (
-                  <View className="mb-4">
-                     <PInsightCard context="week" />
-                  </View>
-               )}
+               {/* Metric Blocks (Abstracted Loop) */}
+               <View className="gap-4">
+                  {dimensionKeys.map((key) => {
+                     const config = THINKING_PATTERN_DIMENSIONS[key];
+                     const score = data.threePs[config.dimension].score;
 
-               {/* Visuals */}
-               <View className="gap-6">
-                  <GradientSpectrumBar
-                     label="Time"
-                     subLabel="(Permanence)"
-                     leftLabel="Temporary"
-                     rightLabel="Permanent"
-                     optimisticPercentage={data.threePs.permanence.score}
-                     isDark={isDark}
-                  />
-                  <GradientSpectrumBar
-                     label="Scope"
-                     subLabel="(Pervasiveness)"
-                     leftLabel="Specific"
-                     rightLabel="Pervasive"
-                     optimisticPercentage={data.threePs.pervasiveness.score}
-                     isDark={isDark}
-                  />
-                  <GradientSpectrumBar
-                     label="Blame"
-                     subLabel="(Personalization)"
-                     leftLabel="External"
-                     rightLabel="Internal"
-                     optimisticPercentage={data.threePs.personalization.score}
-                     isDark={isDark}
-                  />
+                     return (
+                        <View
+                           key={key}
+                           className="bg-slate-50 dark:bg-slate-900/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/50"
+                        >
+                           <View className="flex-row justify-between mb-1.5">
+                              <Text className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+                                 {key}
+                              </Text>
+                           </View>
+                           <Text className="text-xs text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
+                              {config.description}
+                           </Text>
+                           <GradientSpectrumBar
+                              leftLabel={config.highLabel}
+                              rightLabel={config.lowLabel}
+                              optimisticPercentage={score}
+                              isDark={isDark}
+                           />
+                        </View>
+                     );
+                  })}
                </View>
+
                <HelperFooter isDark={isDark} />
             </View>
          </Pressable>

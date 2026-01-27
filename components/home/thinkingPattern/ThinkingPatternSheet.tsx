@@ -2,7 +2,11 @@ import {
    bottomSheetBackgroundStyle,
    bottomSheetHandleIndicatorStyle,
 } from '@/components/bottomSheetStyles';
-import { ROUTE_ENTRY_DETAIL } from '@/components/constants';
+import {
+   ROUTE_ENTRY_DETAIL,
+   THINKING_PATTERN_DIMENSIONS,
+   WEEKDAY_LABELS,
+} from '@/components/constants';
 import type {
    ThinkingPatternData,
    ThinkingPatternTab,
@@ -43,11 +47,13 @@ import { Pressable } from 'react-native-gesture-handler';
 import { LineChart } from 'react-native-gifted-charts';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const TAB_ORDER = ['Time', 'Scope', 'Blame'] as const;
-type PatternTab = keyof ThinkingPatternData;
+// Derive tab order from the constant keys
+const TAB_KEYS = Object.keys(
+   THINKING_PATTERN_DIMENSIONS,
+) as (keyof typeof THINKING_PATTERN_DIMENSIONS)[];
+type PatternTab = (typeof TAB_KEYS)[number];
 
-const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const CHART_TOTAL_HEIGHT = 220;
+const CHART_TOTAL_HEIGHT = 200; // Slightly reduced to fit the new text header
 
 function formatShortDate(date: Date) {
    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -91,9 +97,10 @@ export default function ThinkingPatternSheet({
    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
    const tabData = data?.[activeTab] ?? EMPTY_TAB;
+   const tabConfig = THINKING_PATTERN_DIMENSIONS[activeTab];
 
    const lineGradientStartColor = isDark ? '#059669' : '#34d399';
-   const lineGradientEndColor = isDark ? '#be123c' : '#f43f5e';
+   const lineGradientEndColor = isDark ? '#5b21b6' : '#ddd6fe';
 
    const chartEdgePadding = 8;
    const chartContainerPadding = 16;
@@ -123,7 +130,6 @@ export default function ThinkingPatternSheet({
       [isDark],
    );
 
-   // ✅ Detected phrases list: OLD -> NEW
    const sortedPatterns = useMemo(() => {
       return [...(tabData.patterns ?? [])].sort(
          (a, b) =>
@@ -140,7 +146,6 @@ export default function ThinkingPatternSheet({
 
    const activeEntryId = activePattern?.entryId ?? null;
 
-   // Find chart point index that matches the selected phrase's entryId
    const activeChartIndex = useMemo(() => {
       if (!activeEntryId) return -1;
       return tabData.chartData.findIndex(
@@ -148,7 +153,6 @@ export default function ThinkingPatternSheet({
       );
    }, [activeEntryId, tabData.chartData]);
 
-   // Dot color based on selected phrase impact
    const selectedDotColor = useMemo(() => {
       if (!activePattern) return isDark ? '#e2e8f0' : '#0f172a';
       switch (activePattern.impact) {
@@ -163,7 +167,6 @@ export default function ThinkingPatternSheet({
       }
    }, [activePattern, isDark]);
 
-   // ✅ Chart data: hide ALL dots unless a phrase is selected
    const chartDataStatic = useMemo(() => {
       const hasSelection = activeChartIndex >= 0;
 
@@ -172,9 +175,7 @@ export default function ThinkingPatternSheet({
 
          return {
             ...point,
-            // hide all points unless selected
             hideDataPoint: !isSelected,
-            // dot appearance (only matters for selected)
             dataPointColor: selectedDotColor,
             dataPointRadius: isSelected ? 6 : 0,
             dataPointWidth: isSelected ? 12 : 0,
@@ -245,8 +246,9 @@ export default function ThinkingPatternSheet({
             }}
             keyboardShouldPersistTaps="handled"
          >
-            <View className="mb-4">
-               <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+            {/* Header Section */}
+            <View className="mb-5">
+               <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
                   Thinking Patterns
                </Text>
                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100">
@@ -255,8 +257,8 @@ export default function ThinkingPatternSheet({
             </View>
 
             {/* --- TABS --- */}
-            <View className="flex-row items-center rounded-full bg-slate-100 dark:bg-slate-800 p-1 mb-6">
-               {TAB_ORDER.map((tab) => {
+            <View className="flex-row items-center rounded-full bg-slate-100 dark:bg-slate-800 p-1 mb-4">
+               {TAB_KEYS.map((tab) => {
                   const isActive = activeTab === tab;
                   const tabClasses = isActive
                      ? 'bg-white dark:bg-slate-700'
@@ -290,74 +292,87 @@ export default function ThinkingPatternSheet({
                })}
             </View>
 
-            {/* --- CHART CONTAINER --- */}
+            {/* --- CHART CONTAINER (With Question Inside) --- */}
             <View
-               className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4"
+               className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4 pt-5"
                style={{ overflow: 'hidden' }}
             >
-               {/* HIGH LABEL */}
-               <Text className="text-xs font-semibold text-emerald-600 dark:text-emerald-300 absolute top-4 left-4 z-10">
-                  {tabData.highLabel}
-               </Text>
+               {/* 1. The Helper Question (Centered Top) */}
+               <View className="items-center mb-6 px-4">
+                  <Text className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center leading-relaxed">
+                     {tabConfig.description}
+                  </Text>
+               </View>
 
-               <View className="mt-2">
-                  {tabData.chartData.length > 0 ? (
-                     <View style={{ height: CHART_TOTAL_HEIGHT }}>
-                        {/* ✅ Disable ALL chart touch by blocking pointer events */}
-                        <View pointerEvents="none">
-                           <LineChart
-                              data={chartDataStatic}
-                              width={chartWidth}
-                              spacing={chartSpacing}
-                              initialSpacing={chartEdgePadding}
-                              endSpacing={chartEdgePadding}
-                              height={CHART_TOTAL_HEIGHT}
-                              curved
-                              isAnimated
-                              areaChart
-                              lineGradient
-                              lineGradientDirection="vertical"
-                              lineGradientStartColor={lineGradientStartColor}
-                              lineGradientEndColor={lineGradientEndColor}
-                              gradientDirection="vertical"
-                              color="#6366f1"
-                              startFillColor={lineGradientStartColor}
-                              endFillColor={lineGradientEndColor}
-                              startOpacity={0.2}
-                              endOpacity={0}
-                              hideRules
-                              hideYAxisText
-                              hideAxesAndRules
-                              yAxisThickness={0}
-                              xAxisThickness={0}
-                           />
+               {/* 2. The Chart Area */}
+               <View className="relative">
+                  {/* High Label (Absolute, pushed down slightly to clear question area if needed) */}
+                  <Text className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400 absolute -top-1 left-2 z-10 tracking-wider">
+                     {tabConfig.highLabel}
+                  </Text>
+
+                  <View className="mt-4">
+                     {tabData.chartData.length > 0 ? (
+                        <View style={{ height: CHART_TOTAL_HEIGHT }}>
+                           <View pointerEvents="none">
+                              <LineChart
+                                 data={chartDataStatic}
+                                 width={chartWidth}
+                                 spacing={chartSpacing}
+                                 initialSpacing={chartEdgePadding}
+                                 endSpacing={chartEdgePadding}
+                                 height={CHART_TOTAL_HEIGHT}
+                                 curved
+                                 isAnimated
+                                 areaChart
+                                 lineGradient
+                                 lineGradientDirection="vertical"
+                                 lineGradientStartColor={lineGradientStartColor}
+                                 lineGradientEndColor={lineGradientEndColor}
+                                 gradientDirection="vertical"
+                                 color="#6366f1"
+                                 startFillColor={lineGradientStartColor}
+                                 endFillColor={lineGradientEndColor}
+                                 startOpacity={0.2}
+                                 endOpacity={0}
+                                 hideRules
+                                 hideYAxisText
+                                 hideAxesAndRules
+                                 yAxisThickness={0}
+                                 xAxisThickness={0}
+                              />
+                           </View>
+
+                           {/* Low Label */}
+                           <View
+                              pointerEvents="none"
+                              style={{
+                                 position: 'absolute',
+                                 left: 8,
+                                 bottom: 0,
+                              }}
+                           >
+                              <Text className="text-[10px] font-bold uppercase text-rose-600 dark:text-rose-400 tracking-wider">
+                                 {tabConfig.lowLabel}
+                              </Text>
+                           </View>
                         </View>
-
-                        {/* LOW LABEL */}
+                     ) : (
                         <View
-                           pointerEvents="none"
-                           style={{ position: 'absolute', left: 0, bottom: 0 }}
+                           className="items-center justify-center"
+                           style={{ height: CHART_TOTAL_HEIGHT }}
                         >
-                           <Text className="text-xs font-semibold text-rose-600 dark:text-rose-300">
-                              {tabData.lowLabel}
+                           <Text className="text-xs text-slate-500 dark:text-slate-400">
+                              No trend data yet.
                            </Text>
                         </View>
-                     </View>
-                  ) : (
-                     <View
-                        className="items-center justify-center"
-                        style={{ height: CHART_TOTAL_HEIGHT }}
-                     >
-                        <Text className="text-xs text-slate-500 dark:text-slate-400">
-                           No trend data yet.
-                        </Text>
-                     </View>
-                  )}
+                     )}
+                  </View>
                </View>
             </View>
 
             {/* --- LIST --- */}
-            <View className="mt-4">
+            <View className="mt-6">
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
                   Detected Phrases
                </Text>

@@ -1,3 +1,4 @@
+import { UNCATEGORIZED_LABEL } from '@/lib/styles';
 import {
    Asterisk,
    BookOpen,
@@ -10,7 +11,6 @@ import {
    User,
    Zap,
 } from 'lucide-react-native';
-import { UNCATEGORIZED_LABEL } from '@/lib/styles';
 
 export const FREE_MONTHLY_CREDITS = 5;
 export const AI_ANALYSIS_CREDIT_COST = 1;
@@ -70,6 +70,27 @@ export const ABCDE_FIELD = [
       placeholder: 'Note any shift in mood or energy',
    },
 ] as const;
+
+export const THINKING_PATTERN_DIMENSIONS = {
+   Time: {
+      dimension: 'permanence',
+      highLabel: 'Temporary',
+      lowLabel: 'Permanent',
+      description: 'Have you viewed setbacks as permanent?',
+   },
+   Scope: {
+      dimension: 'pervasiveness',
+      highLabel: 'Specific',
+      lowLabel: 'Everything',
+      description: 'Have you let one thing affect everything?',
+   },
+   Blame: {
+      dimension: 'personalization',
+      highLabel: 'Situation',
+      lowLabel: 'My Fault',
+      description: 'Have you blamed yourself entirely?',
+   },
+} as const;
 
 export const MONTHS = [
    'January',

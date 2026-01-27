@@ -35,12 +35,12 @@ const PATTERN_TAB_CONFIG = {
    Scope: {
       dimension: 'pervasiveness',
       highLabel: 'Specific',
-      lowLabel: 'Pervasive',
+      lowLabel: 'Everything',
    },
    Blame: {
       dimension: 'personalization',
-      highLabel: 'External',
-      lowLabel: 'Internal',
+      highLabel: 'My Fault',
+      lowLabel: 'Situation',
    },
 } as const;
 
