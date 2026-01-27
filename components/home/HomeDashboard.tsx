@@ -4,7 +4,6 @@ import { CATEGORY_COLOR_MAP, DEFAULT_CATEGORY_COLOR } from '@/lib/styles';
 import { isOptimistic, toDateKey } from '@/lib/utils';
 import { Entry } from '@/models/entry';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { ChevronRight, Sparkles } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
@@ -419,40 +418,35 @@ const HomeDashboard = React.memo(
                isDark={isDark}
             />
 
-            {/* --- ACTION BANNER (The Hook) --- */}
+            {/* --- AI COVERAGE DISCLAIMER ROW --- */}
             {insightCoverage && (
                <Animated.View
                   entering={FadeInDown.duration(400)}
-                  className="mx-0"
+                  className="mx-4 mt-2"
                >
                   <Pressable
                      onPress={handleOpenInsightCoverage}
-                     className="mx-2 px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 flex-row items-center gap-3 active:opacity-70 active:scale-[0.99]"
+                     accessibilityRole="button"
+                     accessibilityLabel={`AI coverage: ${insightCoverage.valid} of ${insightCoverage.total} entries. Analyze remaining.`}
+                     className="py-2 active:opacity-70"
+                     hitSlop={8}
                   >
-                     {/* Icon: Sparkles (AI Value) */}
-                     <View className="bg-white dark:bg-indigo-500/20 p-2 rounded-full border border-indigo-100 dark:border-indigo-400/30">
-                        <Sparkles
-                           size={14}
-                           color={isDark ? '#818cf8' : '#6366f1'}
-                        />
-                     </View>
-
-                     {/* Text: Value Proposition */}
-                     <View className="flex-1 gap-0.5">
-                        <Text className="text-xs font-bold text-indigo-900 dark:text-indigo-100">
-                           Using {insightCoverage.valid} of{' '}
-                           {insightCoverage.total} entries with AI analysis.
+                     <Text className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        AI coverage:{' '}
+                        <Text
+                           className="font-black text-slate-700 dark:text-slate-200"
+                           style={{ fontVariant: ['tabular-nums'] }}
+                        >
+                           {insightCoverage.valid}/{insightCoverage.total}
+                        </Text>{' '}
+                        entries{' '}
+                        <Text className="text-slate-400 dark:text-slate-600">
+                           •
+                        </Text>{' '}
+                        <Text className="font-semibold text-indigo-600 dark:text-indigo-400">
+                           Analyze remaining →
                         </Text>
-                        <Text className="text-[10px] text-indigo-600 dark:text-indigo-300 leading-4">
-                           Analyze the remaining to include them in your overall
-                           trends.
-                        </Text>
-                     </View>
-
-                     <ChevronRight
-                        size={16}
-                        color={isDark ? '#818cf8' : '#6366f1'}
-                     />
+                     </Text>
                   </Pressable>
                </Animated.View>
             )}

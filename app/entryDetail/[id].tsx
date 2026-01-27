@@ -2,8 +2,15 @@ import CardNextButton from '@/components/buttons/CardNextButton';
 import WideButton from '@/components/buttons/WideButton';
 import {
    ABCDE_FIELD,
+   AI_ANALYSIS_AMBER_ICON_DARK,
+   AI_ANALYSIS_AMBER_ICON_LIGHT_ALT,
+   AI_ANALYSIS_AMBER_PIVOT_BG_CLASS,
+   AI_ANALYSIS_AMBER_PIVOT_BORDER_CLASS,
+   AI_ANALYSIS_AMBER_PIVOT_TEXT_CLASS,
+   ANALYZE_WITH_AI_LABEL,
    MAX_AI_RETRIES,
    ROUTE_ENTRIES,
+   SAVE_TO_ANALYZE_LABEL,
 } from '@/components/constants';
 import { CATEGORY_COLOR_MAP, DEFAULT_CATEGORY_COLOR } from '@/lib/styles';
 import { EntryField } from '@/components/entries/details/EntryField';
@@ -469,8 +476,8 @@ export default function EntryDetailScreen() {
                               <TimelinePivot
                                  variant="full"
                                  // 1. Dim the container background/border when disabled
-                                 bgClassName={`bg-amber-50 dark:bg-amber-900/10 ${isEditing ? 'opacity-50' : ''}`}
-                                 borderClassName={`border-amber-300/60 dark:border-amber-700/50 ${isEditing ? 'opacity-50' : ''}`}
+                                 bgClassName={`${AI_ANALYSIS_AMBER_PIVOT_BG_CLASS} ${isEditing ? 'opacity-50' : ''}`}
+                                 borderClassName={`${AI_ANALYSIS_AMBER_PIVOT_BORDER_CLASS} ${isEditing ? 'opacity-50' : ''}`}
                               >
                                  <Pressable
                                     onPress={handleAnalyze}
@@ -480,13 +487,19 @@ export default function EntryDetailScreen() {
                                  >
                                     <Sparkles
                                        size={18}
-                                       color={isDark ? '#fbbf24' : '#d97706'}
+                                       color={
+                                          isDark
+                                             ? AI_ANALYSIS_AMBER_ICON_DARK
+                                             : AI_ANALYSIS_AMBER_ICON_LIGHT_ALT
+                                       }
                                        strokeWidth={2.5}
                                     />
-                                    <Text className="text-[12px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest">
+                                    <Text
+                                       className={`text-[12px] font-bold ${AI_ANALYSIS_AMBER_PIVOT_TEXT_CLASS}`}
+                                    >
                                        {isEditing
-                                          ? 'Save to Analyze'
-                                          : 'Analyze with AI'}
+                                          ? SAVE_TO_ANALYZE_LABEL
+                                          : ANALYZE_WITH_AI_LABEL}
                                     </Text>
                                  </Pressable>
                               </TimelinePivot>

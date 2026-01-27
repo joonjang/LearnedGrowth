@@ -189,7 +189,7 @@ export default function EntriesScreen() {
             showsVerticalScrollIndicator={false}
             onScroll={scrollHandler}
             scrollEventThrottle={16}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
          >
             <View
                style={{ paddingTop: insets.top + 12 }}
@@ -229,7 +229,7 @@ export default function EntriesScreen() {
                {isReady && (
                   <Animated.View
                      entering={FadeInDown.duration(600).springify()}
-                     className="mt-1 z-10"
+                     className="mt-6 z-10"
                   >
                      <Pressable
                         onPress={handleNewEntryPress}

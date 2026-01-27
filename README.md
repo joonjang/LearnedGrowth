@@ -59,6 +59,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - added disclaimer about the entries used for dashboard requiring ai analysis
 - added bottom sheet to display entries without ai
 - enabled entries to close sheet when pressing analyze with ai feature
+- home dashboard card disclaimer simplified
 - mental focus card and sheet WIP
 
 ### 2026-01-26

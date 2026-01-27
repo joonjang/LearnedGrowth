@@ -1,4 +1,9 @@
-import { THINKING_PATTERN_DIMENSIONS } from '@/components/constants';
+import {
+   AI_ANALYSIS_AMBER_BANNER_CLASS,
+   AI_ANALYSIS_AMBER_NOTE_TEXT_CLASS,
+   AI_ANALYSIS_LABEL,
+   THINKING_PATTERN_DIMENSIONS,
+} from '@/components/constants';
 import {
    ChevronDown,
    ChevronUp,
@@ -81,7 +86,7 @@ export function AiInsightMinimizedState({
             <View className="flex-1 flex-row items-center mr-3 overflow-hidden">
                {/* Label */}
                <Text className="text-[10px] font-bold uppercase tracking-[1.5px] text-slate-400 dark:text-slate-500">
-                  AI Analysis
+                  {AI_ANALYSIS_LABEL}
                </Text>
 
                {/* Divider */}
@@ -143,7 +148,7 @@ export function AiInsightHeader({
       <View className="flex-row items-center justify-between mb-1">
          <View className="flex-row items-center gap-2">
             <Text className={`text-base font-bold ${textColor}`}>
-               AI Analysis
+               {AI_ANALYSIS_LABEL}
             </Text>
          </View>
 
@@ -412,7 +417,7 @@ export function AiInsightStaleBanner({
    const containerStyle = isCoolingDown
       ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
       : isNudgeStep
-        ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+        ? AI_ANALYSIS_AMBER_BANNER_CLASS
         : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
 
    return (
@@ -442,7 +447,7 @@ export function AiInsightStaleBanner({
                         color={isDark ? '#f59e0b' : '#b45309'}
                         style={{ marginRight: 3 }}
                      />
-                     <Text className="text-[10px] font-semibold text-amber-700 dark:text-amber-200">
+                     <Text className={`text-[10px] font-semibold ${AI_ANALYSIS_AMBER_NOTE_TEXT_CLASS}`}>
                         {refreshCostNote}
                      </Text>
                   </View>

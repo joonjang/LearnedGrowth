@@ -45,8 +45,8 @@ export function getResolutionStatus(
 
    if (ratio >= 0.8) {
       return {
-         label: 'Thoughts Reframed',
-         subtext: 'You have successfully reframed your thoughts.',
+         label: 'Resilience Built',
+         subtext: 'You’re consistently finishing the full loop.',
          colorClass: 'text-indigo-600 dark:text-indigo-400',
          barColor: isDark ? '#818cf8' : '#4f46e5',
          percent,
@@ -57,8 +57,8 @@ export function getResolutionStatus(
 
    if (ratio >= 0.5) {
       return {
-         label: 'Processing',
-         subtext: 'You are actively working through your thoughts.',
+         label: 'Steady Growth',
+         subtext: 'You’re building the habit, one reframe at a time.',
          colorClass: 'text-slate-600 dark:text-slate-300',
          barColor: isDark ? '#94a3b8' : '#64748b',
          percent,
@@ -68,8 +68,8 @@ export function getResolutionStatus(
    }
 
    return {
-      label: 'Noting Thoughts',
-      subtext: `You are capturing what's on your mind.`,
+      label: 'Capturing Thoughts',
+      subtext: `Capture first. Reframe when you feel ready.`,
       colorClass: 'text-amber-600 dark:text-amber-500',
       barColor: isDark ? '#fbbf24' : '#d97706',
       percent,
@@ -93,6 +93,7 @@ export default function StatHero({
 }: StatHeroProps) {
    const labelColor = 'text-slate-400 dark:text-slate-500';
    const [isPressed, setIsPressed] = useState(false);
+
    const buttonShadow = useMemo(
       () =>
          getShadow({
@@ -108,7 +109,7 @@ export default function StatHero({
       <Animated.View
          entering={FadeInDown.duration(600).springify()}
          layout={LinearTransition.springify()}
-         className="px-4 py-6" // Added horizontal padding for breathing room
+         className="px-4 py-6"
       >
          {/* Container: Row layout, items aligned to top */}
          <View className="flex-row justify-between items-start">
@@ -119,8 +120,9 @@ export default function StatHero({
                >
                   {resolutionStats.label}
                </Text>
+
                <Text
-                  className={`text-base font-medium ${labelColor} leading-6 mb-4`} // Increased text size slightly for readability
+                  className={`text-base font-medium ${labelColor} leading-6 mb-4`}
                >
                   {resolutionStats.subtext}
                </Text>
@@ -138,10 +140,7 @@ export default function StatHero({
                         isPressed && CARD_PRESS_STYLE.cardPressed,
                      ]}
                   >
-                     {/* Optional: You could add a small icon here like a pencil or arrow */}
-                     <Text
-                        className={`text-[11px] font-bold uppercase tracking-wider text-white`}
-                     >
+                     <Text className="text-[11px] font-bold uppercase tracking-wider text-white">
                         {needsAttentionCount}{' '}
                         {needsAttentionCount === 1
                            ? 'Entry needs'
@@ -152,18 +151,41 @@ export default function StatHero({
                )}
             </View>
 
-            {/* RIGHT: Big Stat (No border, cleaner alignment) */}
+            {/* RIGHT: Big Stat */}
             <View className="items-end">
+               {/* ✅ Eyebrow label above the hero number */}
+               <View className="self-end mb-1 flex-row items-center">
+                  <Text className={`text-[10px] font-black ${labelColor}`}>
+                     [
+                  </Text>
+                  <Text
+                     className={`mx-1 text-[10px] font-black ${labelColor}`}
+                     style={{ fontVariant: ['tabular-nums'] }}
+                  >
+                     {resolutionStats.total}
+                  </Text>
+                  <Text className={`text-[10px] font-black ${labelColor}`}>
+                     ]
+                  </Text>
+                  <Text
+                     className={`ml-2 text-[10px] font-bold uppercase tracking-widest ${labelColor}`}
+                  >
+                     Entries
+                  </Text>
+               </View>
+
                <Text
-                  className={`font-black tracking-tighter ${resolutionStats.colorClass}`}
+                  className={`font-black tracking-tighter ${resolutionStats.colorClass} mt-1 mr-1`}
                   style={{
-                     fontSize: 64, // Bumped size slightly for impact
-                     lineHeight: 64, // Tight line height to prevent float
+                     fontSize: 64,
+                     lineHeight: 64,
                      includeFontPadding: false,
+                     fontVariant: ['tabular-nums'],
                   }}
                >
                   {resolutionStats.resolvedCount}
                </Text>
+
                <Text
                   className={`text-[10px] font-bold uppercase tracking-[3px] ${labelColor} mt-1 mr-1`}
                >

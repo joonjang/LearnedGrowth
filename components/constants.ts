@@ -131,3 +131,41 @@ export const STYLE_TO_TONE_MAP: Record<string, string> = {
 };
 
 export const DEFAULT_CATEGORY_ICON = HelpCircle;
+
+// --- AI Analysis Labels & Amber Styles ---
+export const AI_ANALYSIS_LABEL = 'AI Analysis';
+export const ANALYZE_WITH_AI_LABEL = 'Analyze with AI';
+export const SAVE_TO_ANALYZE_LABEL = 'Save to Analyze';
+
+export const AI_ANALYSIS_AMBER_ICON_DARK = '#fbbf24';
+export const AI_ANALYSIS_AMBER_ICON_LIGHT = '#b45309';
+export const AI_ANALYSIS_AMBER_ICON_LIGHT_ALT = '#d97706';
+
+export const AI_ANALYSIS_AMBER_BADGE_TEXT_CLASS =
+   'text-amber-600 dark:text-amber-400';
+export const AI_ANALYSIS_AMBER_BANNER_CONTAINER_CLASS =
+   'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/50';
+export const AI_ANALYSIS_AMBER_BANNER_ICON_WRAPPER_CLASS =
+   'bg-white dark:bg-amber-500/20 border-amber-100 dark:border-amber-400/30';
+export const AI_ANALYSIS_AMBER_BANNER_TITLE_CLASS =
+   'text-amber-900 dark:text-amber-100';
+export const AI_ANALYSIS_AMBER_BANNER_DESC_CLASS =
+   'text-amber-700 dark:text-amber-300';
+export const AI_ANALYSIS_AMBER_PROGRESS_TEXT_CLASS =
+   'text-amber-600 dark:text-amber-400';
+export const AI_ANALYSIS_AMBER_PROGRESS_BAR_CLASS = 'bg-amber-500';
+
+export const AI_ANALYSIS_AMBER_CTA_CONTAINER_CLASS =
+   'border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10';
+export const AI_ANALYSIS_AMBER_CTA_TEXT_CLASS =
+   'text-amber-700 dark:text-amber-400/80 uppercase tracking-widest';
+export const AI_ANALYSIS_AMBER_PIVOT_BG_CLASS =
+   'bg-amber-50 dark:bg-amber-900/10';
+export const AI_ANALYSIS_AMBER_PIVOT_BORDER_CLASS =
+   'border-amber-300/60 dark:border-amber-700/50';
+export const AI_ANALYSIS_AMBER_PIVOT_TEXT_CLASS =
+   'text-amber-700 dark:text-amber-400 uppercase tracking-widest';
+export const AI_ANALYSIS_AMBER_NOTE_TEXT_CLASS =
+   'text-amber-700 dark:text-amber-500';
+export const AI_ANALYSIS_AMBER_BANNER_CLASS =
+   'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800';

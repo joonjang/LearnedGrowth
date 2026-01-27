@@ -4,6 +4,11 @@ import {
    bottomSheetHandleIndicatorStyle,
 } from '@/components/utils/bottomSheetStyles';
 import {
+   AI_ANALYSIS_AMBER_BADGE_TEXT_CLASS,
+   AI_ANALYSIS_AMBER_ICON_DARK,
+   AI_ANALYSIS_AMBER_ICON_LIGHT_ALT,
+} from '@/components/constants';
+import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_BG_DARK,
    BOTTOM_SHEET_BG_LIGHT,
@@ -159,8 +164,17 @@ export default function NoAiEntrySheet({
          >
             <View className="mb-2">
                <View className="flex-row items-center gap-2 mb-1">
-                  <Sparkles size={16} color={isDark ? '#818cf8' : '#6366f1'} />
-                  <Text className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+                  <Sparkles
+                     size={16}
+                     color={
+                        isDark
+                           ? AI_ANALYSIS_AMBER_ICON_DARK
+                           : AI_ANALYSIS_AMBER_ICON_LIGHT_ALT
+                     }
+                  />
+                  <Text
+                     className={`text-xs font-bold uppercase tracking-widest ${AI_ANALYSIS_AMBER_BADGE_TEXT_CLASS}`}
+                  >
                      Unlock Insights
                   </Text>
                </View>

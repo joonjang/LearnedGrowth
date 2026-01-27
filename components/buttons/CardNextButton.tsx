@@ -1,4 +1,5 @@
 import AiDisclaimerModal from '@/components/appInfo/AiDisclaimerModal';
+import { ANALYZE_WITH_AI_LABEL } from '@/components/constants';
 import { DISPUTE_CTA_CLASS } from '@/lib/styles';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { supabase } from '@/lib/supabase';
@@ -83,7 +84,7 @@ export default function CardNextButton({ id, onNavigate }: Prop) {
       }
       if (isSubscribed) {
          return {
-            label: 'Analyze with AI',
+            label: ANALYZE_WITH_AI_LABEL,
             icon: Sparkles,
             bgColor: DISPUTE_CTA_CLASS,
             textColor: 'text-white',

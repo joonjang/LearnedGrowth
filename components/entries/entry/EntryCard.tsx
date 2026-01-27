@@ -1,5 +1,10 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
 import {
+   AI_ANALYSIS_AMBER_CTA_CONTAINER_CLASS,
+   AI_ANALYSIS_AMBER_CTA_TEXT_CLASS,
+   AI_ANALYSIS_AMBER_ICON_DARK,
+   AI_ANALYSIS_AMBER_ICON_LIGHT,
+   ANALYZE_WITH_AI_LABEL,
    CATEGORY_ICON_MAP,
    DEFAULT_CATEGORY_ICON,
    ROUTE_ENTRY_DETAIL,
@@ -636,14 +641,20 @@ export default function EntryCard({
                                     handleAnalyze();
                                  }}
                                  activeOpacity={0.9}
-                                 className="flex-row items-center justify-center gap-2 py-4 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10"
+                                 className={`flex-row items-center justify-center gap-2 py-4 rounded-xl border-2 border-dashed ${AI_ANALYSIS_AMBER_CTA_CONTAINER_CLASS}`}
                               >
                                  <Sparkles
                                     size={14}
-                                    color={isDark ? '#fbbf24' : '#b45309'}
+                                    color={
+                                       isDark
+                                          ? AI_ANALYSIS_AMBER_ICON_DARK
+                                          : AI_ANALYSIS_AMBER_ICON_LIGHT
+                                    }
                                  />
-                                 <Text className="text-[11px] font-bold text-amber-700 dark:text-amber-400/80 uppercase tracking-widest">
-                                    Analyze with AI
+                                 <Text
+                                    className={`text-[11px] font-bold ${AI_ANALYSIS_AMBER_CTA_TEXT_CLASS}`}
+                                 >
+                                    {ANALYZE_WITH_AI_LABEL}
                                  </Text>
                               </TouchableOpacity>
                            </View>
