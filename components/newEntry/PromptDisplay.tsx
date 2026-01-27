@@ -18,7 +18,7 @@ import {
    ViewStyle,
 } from 'react-native';
 import Animated, { AnimatedStyle } from 'react-native-reanimated';
-import ThreeDotsLoader from '../ThreeDotLoader';
+import ThreeDotsLoader from '../utils/ThreeDotLoader';
 
 const TYPING_SPEED_MS = 20;
 

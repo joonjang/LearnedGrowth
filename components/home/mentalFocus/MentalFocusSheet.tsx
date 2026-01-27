@@ -1,9 +1,9 @@
+import { STYLE_TO_TONE_MAP } from '@/components/constants';
+import EntryCard from '@/components/entries/entry/EntryCard';
 import {
    bottomSheetBackgroundStyle,
    bottomSheetHandleIndicatorStyle,
-} from '@/components/bottomSheetStyles';
-import { STYLE_TO_TONE_MAP } from '@/components/constants';
-import EntryCard from '@/components/entries/entry/EntryCard';
+} from '@/components/utils/bottomSheetStyles';
 import {
    buildMentalFocusCategoryCounts,
    filterEntriesByMentalFocusCategory,
@@ -346,31 +346,31 @@ export function MentalFocusSheet({
                            {/* SCORE BADGE ABOVE ENTRY */}
                            <EntryScoreBadge entry={entry} isDark={isDark} />
 
-                              <EntryCard
-                                 entry={entry}
-                                 isMenuOpen={openMenuEntryId === entry.id}
-                                 onToggleMenu={() =>
-                                    setOpenMenuEntryId(
-                                       openMenuEntryId === entry.id
-                                          ? null
-                                          : entry.id,
-                                    )
-                                 }
-                                 onCloseMenu={() => setOpenMenuEntryId(null)}
-                                 onDelete={(e) => {
-                                    setOpenMenuEntryId(null);
-                                    onDeleteEntry(e);
-                                 }}
-                                 onNavigate={() => {
-                                    setOpenMenuEntryId(null);
-                                    sheetRef.current?.dismiss();
-                                 }}
-                                 onAnalyze={() => {
-                                    setOpenMenuEntryId(null);
-                                    sheetRef.current?.dismiss();
-                                 }}
-                                 initialViewMode="original"
-                              />
+                           <EntryCard
+                              entry={entry}
+                              isMenuOpen={openMenuEntryId === entry.id}
+                              onToggleMenu={() =>
+                                 setOpenMenuEntryId(
+                                    openMenuEntryId === entry.id
+                                       ? null
+                                       : entry.id,
+                                 )
+                              }
+                              onCloseMenu={() => setOpenMenuEntryId(null)}
+                              onDelete={(e) => {
+                                 setOpenMenuEntryId(null);
+                                 onDeleteEntry(e);
+                              }}
+                              onNavigate={() => {
+                                 setOpenMenuEntryId(null);
+                                 sheetRef.current?.dismiss();
+                              }}
+                              onAnalyze={() => {
+                                 setOpenMenuEntryId(null);
+                                 sheetRef.current?.dismiss();
+                              }}
+                              initialViewMode="original"
+                           />
                         </Animated.View>
                      ))}
                   </View>

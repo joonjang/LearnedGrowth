@@ -1,6 +1,6 @@
-import { AdapterGuard } from '@/components/AdapterGuard';
-import { AuthGate } from '@/components/AuthGate';
-import TopFade from '@/components/TopFade';
+import { AdapterGuard } from '@/components/utils/AdapterGuard';
+import { AuthGate } from '@/components/utils/AuthGate';
+import TopFade from '@/components/utils/TopFade';
 import { AppProviders } from '@/providers/AppProviders';
 import { useAuth } from '@/providers/AuthProvider';
 import { Stack } from 'expo-router';
@@ -65,11 +65,15 @@ function RootLayoutContent() {
                      options={{
                         presentation: 'card',
                         headerShown: false,
+                        animation: 'slide_from_right',
                      }}
                   />
                   <Stack.Screen
                      name="entryDetail/[id]"
-                     options={{ headerShown: false }}
+                     options={{
+                        headerShown: false,
+                        animation: 'slide_from_right',
+                     }}
                   />
                   <Stack.Screen
                      name="(modal)"

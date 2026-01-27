@@ -1,8 +1,8 @@
+import EntryCard from '@/components/entries/entry/EntryCard';
 import {
    bottomSheetBackgroundStyle,
    bottomSheetHandleIndicatorStyle,
-} from '@/components/bottomSheetStyles';
-import EntryCard from '@/components/entries/entry/EntryCard';
+} from '@/components/utils/bottomSheetStyles';
 import {
    ALERT_COLOR_DARK,
    ALERT_COLOR_LIGHT,

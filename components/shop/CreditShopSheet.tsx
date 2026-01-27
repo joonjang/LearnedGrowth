@@ -1,14 +1,14 @@
+import CreditShop from '@/components/shop/CreditShop';
 import {
    bottomSheetBackgroundStyle,
    bottomSheetHandleIndicatorStyle,
-} from '@/components/bottomSheetStyles';
+} from '@/components/utils/bottomSheetStyles';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_BG_DARK,
    BOTTOM_SHEET_BG_LIGHT,
    BOTTOM_SHEET_CONTENT_PADDING,
 } from '@/lib/styles';
-import CreditShop from '@/components/CreditShop';
 import {
    BottomSheetBackdrop,
    BottomSheetBackdropProps,
@@ -50,7 +50,7 @@ export function AiInsightCreditShopSheet({
             pressBehavior="close"
          />
       ),
-      []
+      [],
    );
 
    return (
@@ -77,7 +77,10 @@ export function AiInsightCreditShopSheet({
                   Credits
                </Text>
                <View className="flex-row items-center justify-between">
-                  <Text className="text-2xl font-bold" style={{ color: theme.text }}>
+                  <Text
+                     className="text-2xl font-bold"
+                     style={{ color: theme.text }}
+                  >
                      Refill AI credits
                   </Text>
                </View>

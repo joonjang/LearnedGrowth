@@ -1,15 +1,15 @@
 import { FREE_MONTHLY_CREDITS, ROUTE_LOGIN } from '@/components/constants';
+import { AiInsightCreditShopSheet } from '@/components/shop/CreditShopSheet';
+import SendFeedback from '@/components/utils/SendFeedback';
+import { APP_VERSION } from '@/lib/appInfo';
+import { getShadow } from '@/lib/shadow';
 import {
-   DISPUTE_CTA_CLASS,
    DISPUTE_BG_CLASS,
    DISPUTE_BORDER_CLASS,
+   DISPUTE_CTA_CLASS,
    DISPUTE_TEXT_CLASS,
    PRIMARY_CTA_CLASS,
 } from '@/lib/styles';
-import { AiInsightCreditShopSheet } from '@/components/CreditShopSheet';
-import SendFeedback from '@/components/SendFeedback';
-import { APP_VERSION } from '@/lib/appInfo';
-import { getShadow } from '@/lib/shadow';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
@@ -51,7 +51,7 @@ import {
    TextInput,
    TouchableWithoutFeedback,
    View,
-   ViewStyle
+   ViewStyle,
 } from 'react-native';
 import {
    KeyboardAwareScrollView,
@@ -109,7 +109,7 @@ export default function SettingsScreen() {
    // --- UNIFORM SHADOW LOGIC ---
    const shadowSm = useMemo(
       () => getShadow({ isDark, preset: 'sm' }),
-      [isDark]
+      [isDark],
    );
    const shadowGreen = useMemo(
       () =>
@@ -118,17 +118,17 @@ export default function SettingsScreen() {
             preset: 'button',
             colorLight: '#bbf7d0',
          }),
-      [isDark]
+      [isDark],
    );
 
    // Pre-calculate the styles to keep JSX clean
    const commonShadowStyle = useMemo(
       () => [shadowSm.ios, shadowSm.android],
-      [shadowSm]
+      [shadowSm],
    );
    const greenShadowStyle = useMemo(
       () => [shadowGreen.ios, shadowGreen.android],
-      [shadowGreen]
+      [shadowGreen],
    );
 
    // Colors
@@ -198,7 +198,7 @@ export default function SettingsScreen() {
             }
          });
          return () => subscription.remove();
-      }, [checkCreditsCycle])
+      }, [checkCreditsCycle]),
    );
 
    useEffect(() => {
@@ -234,7 +234,7 @@ export default function SettingsScreen() {
          } else {
             Alert.alert(
                'No Subscriptions Found',
-               "We couldn't find any active subscriptions for this account."
+               "We couldn't find any active subscriptions for this account.",
             );
             setBillingNote(null);
          }
@@ -351,7 +351,7 @@ export default function SettingsScreen() {
                   style: 'default',
                },
             ],
-            { cancelable: false } // Prevent clicking outside to dismiss
+            { cancelable: false }, // Prevent clicking outside to dismiss
          );
 
          return true;
@@ -363,7 +363,7 @@ export default function SettingsScreen() {
 
    const planLabel = useMemo(
       () => (entitlementActive ? 'Growth Plus' : 'Free Plan'),
-      [entitlementActive]
+      [entitlementActive],
    );
    const nextResetAt = useMemo(() => {
       if (!profile?.aiCycleExpiresAt) return null;
@@ -417,7 +417,7 @@ export default function SettingsScreen() {
             onConfirm={performDeleteAccount}
             isDark={isDark}
          />
-   
+
          <KeyboardAwareScrollView
             bottomOffset={150}
             contentContainerStyle={{
@@ -741,9 +741,9 @@ export default function SettingsScreen() {
                </View>
             </View>
 
-               <Text className="text-center text-xs text-slate-400 dark:text-slate-600 pb-4">
-                  Version {APP_VERSION}
-               </Text>
+            <Text className="text-center text-xs text-slate-400 dark:text-slate-600 pb-4">
+               Version {APP_VERSION}
+            </Text>
          </KeyboardAwareScrollView>
 
          <AiInsightCreditShopSheet
@@ -902,7 +902,7 @@ function StatCard({
       pulseOpacity.value = withRepeat(
          withTiming(1, { duration: 700 }),
          -1,
-         true
+         true,
       );
    }, [isLoading, pulseOpacity]);
 

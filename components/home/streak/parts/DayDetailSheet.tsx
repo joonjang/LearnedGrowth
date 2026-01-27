@@ -1,23 +1,23 @@
-import {
-    bottomSheetBackgroundStyle,
-    bottomSheetHandleIndicatorStyle,
-} from '@/components/bottomSheetStyles';
-import {
-    ALERT_COLOR_DARK,
-    ALERT_COLOR_LIGHT,
-    BOTTOM_SHEET_BACKDROP_OPACITY,
-    BOTTOM_SHEET_BG_DARK,
-    BOTTOM_SHEET_BG_LIGHT,
-    BOTTOM_SHEET_CONTENT_PADDING,
-    BOTTOM_SHEET_MAX_SNAP,
-} from '@/lib/styles';
 import EntryCard from '@/components/entries/entry/EntryCard';
+import {
+   bottomSheetBackgroundStyle,
+   bottomSheetHandleIndicatorStyle,
+} from '@/components/utils/bottomSheetStyles';
+import {
+   ALERT_COLOR_DARK,
+   ALERT_COLOR_LIGHT,
+   BOTTOM_SHEET_BACKDROP_OPACITY,
+   BOTTOM_SHEET_BG_DARK,
+   BOTTOM_SHEET_BG_LIGHT,
+   BOTTOM_SHEET_CONTENT_PADDING,
+   BOTTOM_SHEET_MAX_SNAP,
+} from '@/lib/styles';
 import { Entry } from '@/models/entry';
 import {
-    BottomSheetBackdrop,
-    BottomSheetBackdropProps,
-    BottomSheetModal,
-    BottomSheetScrollView,
+   BottomSheetBackdrop,
+   BottomSheetBackdropProps,
+   BottomSheetModal,
+   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import { AlertCircle } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';

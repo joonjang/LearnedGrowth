@@ -1,20 +1,20 @@
 import AiDisclaimerModal from '@/components/appInfo/AiDisclaimerModal';
 import {
-   bottomSheetBackgroundStyle,
-   bottomSheetHandleIndicatorStyle,
-} from '@/components/bottomSheetStyles';
-import {
    AI_ANALYSIS_CREDIT_COST,
    FREE_MONTHLY_CREDITS,
    ROUTE_LOGIN,
 } from '@/components/constants';
+import CreditShop from '@/components/shop/CreditShop';
+import {
+   bottomSheetBackgroundStyle,
+   bottomSheetHandleIndicatorStyle,
+} from '@/components/utils/bottomSheetStyles';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_BG_DARK,
    BOTTOM_SHEET_BG_LIGHT,
    BOTTOM_SHEET_CONTENT_PADDING,
 } from '@/lib/styles';
-import CreditShop from '@/components/CreditShop';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import {

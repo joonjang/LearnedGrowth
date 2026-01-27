@@ -1,7 +1,7 @@
 import QuickStart from '@/components/appInfo/QuickStart';
-import EntriesWeekFilterHeader from '@/components/entries/EntriesWeekFilterHeader';
+import EntriesWeekFilterHeader from '@/components/home/EntriesWeekFilterHeader';
 import HomeDashboard from '@/components/home/HomeDashboard';
-import TopFade from '@/components/TopFade';
+import TopFade from '@/components/utils/TopFade';
 import { useDeletedEntries } from '@/hooks/useDeletedEntries';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';

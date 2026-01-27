@@ -9,14 +9,14 @@ import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutAnimation, Pressable, View } from 'react-native';
 
-import { AiInsightCreditShopSheet } from '../../CreditShopSheet';
+import { AiInsightCreditShopSheet } from '../../shop/CreditShopSheet';
 import AiInsightExpandedContent from './aiInsightCard/AiInsightExpandedContent';
 import { getAiInsightAnimationTimeline } from './aiInsightCard/animation';
 import {
    AiInsightErrorState,
    AiInsightHeader,
    AiInsightLoadingState,
-   AiInsightMinimizedState
+   AiInsightMinimizedState,
 } from './aiInsightCard/sections';
 
 type RefreshWindowState = {
@@ -64,7 +64,7 @@ export function AiInsightCard({
    // --- STATE ---
    const [showDefinitions, setShowDefinitions] = useState(false);
    const [isMinimized, setIsMinimized] = useState(
-      allowMinimize && initiallyMinimized
+      allowMinimize && initiallyMinimized,
    );
 
    const toggleHelp = () => {
@@ -110,7 +110,7 @@ export function AiInsightCard({
    const [nowMs, setNowMs] = useState(() => Date.now());
    const lastUpdate = useMemo(
       () => (updatedAt ? new Date(updatedAt) : new Date()),
-      [updatedAt]
+      [updatedAt],
    );
 
    useEffect(() => {
@@ -152,7 +152,7 @@ export function AiInsightCard({
       if (!snapshot || snapshot.timestamps.length === 0) return;
       const windowStart = nowMs - windowMs;
       const pruned = snapshot.timestamps.filter(
-         (timestamp) => timestamp >= windowStart
+         (timestamp) => timestamp >= windowStart,
       );
       if (pruned.length !== snapshot.timestamps.length) {
          refreshWindowStore.set(refreshWindowKey, {
@@ -165,7 +165,7 @@ export function AiInsightCard({
    const refreshWindowSnapshot = refreshWindowStore.get(refreshWindowKey);
    const windowStart = nowMs - windowMs;
    const timestampsInWindow = (refreshWindowSnapshot?.timestamps ?? []).filter(
-      (timestamp) => timestamp >= windowStart
+      (timestamp) => timestamp >= windowStart,
    );
    const refreshesInWindow = timestampsInWindow.length;
    const isCoolingDown = refreshesInWindow >= maxRetries;
@@ -179,7 +179,6 @@ export function AiInsightCard({
       if (status !== 'signedIn') return;
       refreshProfileIfStale();
    }, [refreshProfileIfStale, status]);
-
 
    // --- FRESHNESS LOGIC ---
    const isFreshAnalysis = useMemo(() => {
@@ -234,7 +233,7 @@ export function AiInsightCard({
    // --- ANIMATION TIMINGS ---
    const animationTimeline = useMemo(
       () => getAiInsightAnimationTimeline(isFreshAnalysis),
-      [isFreshAnalysis]
+      [isFreshAnalysis],
    );
 
    // --- VARIABLES FOR RENDER ---
