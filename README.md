@@ -16,6 +16,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- change Analyze with AI with new dispute amber color
+
 - make monthly credit come from api
 
 - change mental focus card and sheet
