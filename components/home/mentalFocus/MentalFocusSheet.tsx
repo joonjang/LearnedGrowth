@@ -2,13 +2,18 @@ import {
    bottomSheetBackgroundStyle,
    bottomSheetHandleIndicatorStyle,
 } from '@/components/bottomSheetStyles';
+import { STYLE_TO_TONE_MAP } from '@/components/constants';
+import EntryCard from '@/components/entries/entry/EntryCard';
+import {
+   buildMentalFocusCategoryCounts,
+   filterEntriesByMentalFocusCategory,
+} from '@/lib/mentalFocus';
+import { getShadow } from '@/lib/shadow';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_BG_DARK,
    BOTTOM_SHEET_BG_LIGHT,
 } from '@/lib/styles';
-import EntryCard from '@/components/entries/entry/EntryCard';
-import { getShadow } from '@/lib/shadow'; // Added shadow helper
 import { Entry } from '@/models/entry';
 import {
    BottomSheetBackdrop,
@@ -16,6 +21,7 @@ import {
    BottomSheetModal,
    BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
+import { MessageSquareText, Sparkles } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -24,20 +30,63 @@ import Animated, {
    LinearTransition,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-   buildMentalFocusCategoryCounts,
-   filterEntriesByMentalFocusCategory,
-} from '@/lib/mentalFocus';
 import { MentalFocusViewModel } from '../types';
 
-type MentalFocusSheetProps = {
-   sheetRef: React.RefObject<BottomSheetModal | null>;
-   analysis: MentalFocusViewModel;
-   entries: Entry[];
+// --- NEW COMPONENT: ENTRY SCORE BADGE ---
+const EntryScoreBadge = ({
+   entry,
+   isDark,
+}: {
+   entry: Entry;
    isDark: boolean;
-   onDeleteEntry: (entry: Entry) => void;
+}) => {
+   // Safety check if scores exist
+   const sentiment = entry.aiResponse?.meta?.sentimentScore ?? 0; // 1-10
+   const optimism = entry.aiResponse?.meta?.optimismScore ?? 0; // 1-10
+
+   // Simple color logic
+   const getScoreColor = (score: number) => {
+      if (score >= 7) return isDark ? '#34d399' : '#059669'; // Green
+      if (score <= 4) return isDark ? '#f87171' : '#dc2626'; // Red
+      return isDark ? '#fbbf24' : '#d97706'; // Amber/Mixed
+   };
+
+   return (
+      <View className="flex-row items-center justify-between mb-1.5 px-1">
+         <View className="flex-row gap-3">
+            {/* Sentiment Score */}
+            <View className="flex-row items-center gap-1.5">
+               <View
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: getScoreColor(sentiment) }}
+               />
+               <Text className="text-[10px] font-bold text-slate-400 uppercase">
+                  Sentiment:{' '}
+                  <Text style={{ color: getScoreColor(sentiment) }}>
+                     {sentiment}/10
+                  </Text>
+               </Text>
+            </View>
+
+            {/* Optimism Score */}
+            <View className="flex-row items-center gap-1.5">
+               <View
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: getScoreColor(optimism) }}
+               />
+               <Text className="text-[10px] font-bold text-slate-400 uppercase">
+                  Optimism:{' '}
+                  <Text style={{ color: getScoreColor(optimism) }}>
+                     {optimism}/10
+                  </Text>
+               </Text>
+            </View>
+         </View>
+      </View>
+   );
 };
 
+// ... TopicCard ...
 const TopicCard = ({
    isActive,
    color,
@@ -108,6 +157,14 @@ const TopicCard = ({
    );
 };
 
+type MentalFocusSheetProps = {
+   sheetRef: React.RefObject<BottomSheetModal | null>;
+   analysis: MentalFocusViewModel;
+   entries: Entry[];
+   isDark: boolean;
+   onDeleteEntry: (entry: Entry) => void;
+};
+
 export function MentalFocusSheet({
    sheetRef,
    analysis,
@@ -122,10 +179,14 @@ export function MentalFocusSheet({
 
    const maxSheetHeight = useMemo(() => windowHeight * 0.9, [windowHeight]);
 
+   // --- SAFE HOOKS ---
    const dynamicTopicStats = useMemo(() => {
+      // Guard inside hook
+      if (!analysis?.categoryStats) return [];
+
       const { counts, total } = buildMentalFocusCategoryCounts(entries);
 
-      return (analysis?.categoryStats ?? [])
+      return analysis.categoryStats
          .map((stat) => {
             const count = counts.get(stat.label) || 0;
             return {
@@ -142,8 +203,7 @@ export function MentalFocusSheet({
       if (!entries?.length || !activeTopic) return [];
       return filterEntriesByMentalFocusCategory(entries, activeTopic).sort(
          (a, b) =>
-            new Date(b.createdAt).getTime() -
-            new Date(a.createdAt).getTime(),
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
    }, [activeTopic, entries]);
 
@@ -165,7 +225,12 @@ export function MentalFocusSheet({
       [],
    );
 
+   // --- GUARD CLAUSE ---
    if (!analysis) return null;
+
+   // --- SAFE CALCULATIONS ---
+   const rawTone = STYLE_TO_TONE_MAP[analysis.narrative.styleLabel] ?? 'Mixed';
+   const attitudeLabel = rawTone === 'Mixed' ? 'Varied' : rawTone;
 
    return (
       <BottomSheetModal
@@ -190,26 +255,55 @@ export function MentalFocusSheet({
             }}
             keyboardShouldPersistTaps="handled"
          >
+            {/* --- SHEET HEADER --- */}
             <View className="px-5 mb-6">
-               <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+               <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
                   Mental Focus
                </Text>
-               <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+               <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
                   Observed Topics
                </Text>
 
-               {/* Only show hint if NO topic is selected */}
+               {/* HEADER STATS (Matching Card) */}
+               <View className="flex-row gap-3">
+                  <View className="flex-row items-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+                     <Sparkles
+                        size={10}
+                        color={isDark ? '#94a3b8' : '#64748b'}
+                     />
+                     <Text className="text-[10px] font-bold text-slate-500 dark:text-slate-400 ml-1.5 uppercase">
+                        Attitude:{' '}
+                        <Text className="text-slate-700 dark:text-slate-300">
+                           {attitudeLabel}
+                        </Text>
+                     </Text>
+                  </View>
+                  <View className="flex-row items-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+                     <MessageSquareText
+                        size={10}
+                        color={isDark ? '#94a3b8' : '#64748b'}
+                     />
+                     <Text className="text-[10px] font-bold text-slate-500 dark:text-slate-400 ml-1.5 uppercase">
+                        Style:{' '}
+                        <Text className="text-slate-700 dark:text-slate-300">
+                           {analysis.narrative.styleLabel}
+                        </Text>
+                     </Text>
+                  </View>
+               </View>
+
                {!activeTopic && (
                   <Animated.Text
                      entering={FadeIn.duration(200)}
                      exiting={FadeOut.duration(200)}
-                     className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mt-2"
+                     className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mt-4"
                   >
                      Tap a category to explore related entries
                   </Animated.Text>
                )}
             </View>
 
+            {/* --- TOPIC LIST --- */}
             <View className="px-5 mb-4">
                {dynamicTopicStats.map((stat) => (
                   <TopicCard
@@ -229,6 +323,7 @@ export function MentalFocusSheet({
                ))}
             </View>
 
+            {/* --- FILTERED ENTRIES WITH SCORES --- */}
             {activeTopic && (
                <Animated.View
                   entering={FadeIn.duration(300)}
@@ -241,34 +336,41 @@ export function MentalFocusSheet({
                         {activeTopic}
                      </Text>
                   </View>
-                  <View className="gap-3">
+                  <View className="gap-5">
                      {filteredEntries.map((entry) => (
                         <Animated.View
                            key={entry.id}
                            entering={FadeIn.duration(200)}
                            layout={LinearTransition.duration(200)}
                         >
-                           <EntryCard
-                              entry={entry}
-                              isMenuOpen={openMenuEntryId === entry.id}
-                              onToggleMenu={() =>
-                                 setOpenMenuEntryId(
-                                    openMenuEntryId === entry.id
-                                       ? null
-                                       : entry.id,
-                                 )
-                              }
-                              onCloseMenu={() => setOpenMenuEntryId(null)}
-                              onDelete={(e) => {
-                                 setOpenMenuEntryId(null);
-                                 onDeleteEntry(e);
-                              }}
-                              onNavigate={() => {
-                                 setOpenMenuEntryId(null);
-                                 sheetRef.current?.dismiss();
-                              }}
-                              initialViewMode="original"
-                           />
+                           {/* SCORE BADGE ABOVE ENTRY */}
+                           <EntryScoreBadge entry={entry} isDark={isDark} />
+
+                              <EntryCard
+                                 entry={entry}
+                                 isMenuOpen={openMenuEntryId === entry.id}
+                                 onToggleMenu={() =>
+                                    setOpenMenuEntryId(
+                                       openMenuEntryId === entry.id
+                                          ? null
+                                          : entry.id,
+                                    )
+                                 }
+                                 onCloseMenu={() => setOpenMenuEntryId(null)}
+                                 onDelete={(e) => {
+                                    setOpenMenuEntryId(null);
+                                    onDeleteEntry(e);
+                                 }}
+                                 onNavigate={() => {
+                                    setOpenMenuEntryId(null);
+                                    sheetRef.current?.dismiss();
+                                 }}
+                                 onAnalyze={() => {
+                                    setOpenMenuEntryId(null);
+                                    sheetRef.current?.dismiss();
+                                 }}
+                                 initialViewMode="original"
+                              />
                         </Animated.View>
                      ))}
                   </View>

@@ -4,13 +4,11 @@ import {
 } from '@/components/bottomSheetStyles';
 import EntryCard from '@/components/entries/entry/EntryCard';
 import {
-   ALERT_COLOR_DARK,
-   ALERT_COLOR_LIGHT,
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_BG_DARK,
    BOTTOM_SHEET_BG_LIGHT,
    BOTTOM_SHEET_CONTENT_PADDING,
-} from '@/lib/styles'; // Removed BOTTOM_SHEET_MAX_SNAP
+} from '@/lib/styles';
 import { Entry } from '@/models/entry';
 import {
    BottomSheetBackdrop,
@@ -24,7 +22,7 @@ import { Text, useWindowDimensions, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type ResolutionNeedsAttentionSheetProps = {
+type InsightCoverageSheetProps = {
    sheetRef: React.RefObject<BottomSheetModal | null>;
    entries: Entry[];
    totalCount: number;
@@ -32,31 +30,27 @@ type ResolutionNeedsAttentionSheetProps = {
    onDeleteEntry: (entry: Entry) => void;
 };
 
-export default function NeedsAttentionSheet({
+export default function NoAiEntrySheet({
    sheetRef,
    entries,
    totalCount,
    isDark,
    onDeleteEntry,
-}: ResolutionNeedsAttentionSheetProps) {
+}: InsightCoverageSheetProps) {
    const insets = useSafeAreaInsets();
    const { height: windowHeight } = useWindowDimensions();
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
 
-   // This sets the maximum possible height (90% of screen)
    const maxSheetHeight = useMemo(() => windowHeight * 0.9, [windowHeight]);
-
-   // REMOVED: snapPoints memo.
-   // We want the sheet to size itself dynamically up to maxSheetHeight.
 
    const summaryText = useMemo(() => {
       if (totalCount === 0) {
-         return 'Add entries to start tracking disputes.';
+         return 'Add entries to begin AI insights.';
       }
       if (entries.length === 0) {
-         return 'All caught up. Every recent entry has a dispute.';
+         return 'All recent entries include AI analysis.';
       }
-      return `${entries.length} of your last ${totalCount} entries need a dispute.`;
+      return `${entries.length} of your last ${totalCount} entries are missing AI analysis.`;
    }, [entries.length, totalCount]);
 
    const renderBackdrop = useCallback(
@@ -102,8 +96,7 @@ export default function NeedsAttentionSheet({
          ref={sheetRef}
          onDismiss={handleSheetDismiss}
          index={0}
-         // REMOVED: snapPoints={snapPoints}
-         enableDynamicSizing={true}
+         enableDynamicSizing
          maxDynamicContentSize={maxSheetHeight}
          enablePanDownToClose
          enableOverDrag={false}
@@ -126,14 +119,14 @@ export default function NeedsAttentionSheet({
                <View className="flex-row items-center gap-2 mb-1">
                   <AlertCircle
                      size={14}
-                     color={isDark ? ALERT_COLOR_DARK : ALERT_COLOR_LIGHT}
+                     color={isDark ? '#94a3b8' : '#64748b'}
                   />
-                  <Text className="text-xs font-bold uppercase tracking-widest text-orange-600 dark:text-orange-400">
-                     Needs Attention
+                  <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                     AI Coverage
                   </Text>
                </View>
                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  Entries Without Disputes
+                  Entries Without AI Analysis
                </Text>
                <Text className="text-sm text-slate-500 dark:text-slate-400">
                   {summaryText}
@@ -158,6 +151,7 @@ export default function NeedsAttentionSheet({
                               handleCloseMenu();
                               sheetRef.current?.dismiss();
                            }}
+                           initialViewMode="original"
                         />
                      </Animated.View>
                   ))}
@@ -165,7 +159,7 @@ export default function NeedsAttentionSheet({
             ) : (
                <View className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
                   <Text className="text-sm text-slate-500 dark:text-slate-400">
-                     No entries need a dispute right now.
+                     No missing AI insights right now.
                   </Text>
                </View>
             )}

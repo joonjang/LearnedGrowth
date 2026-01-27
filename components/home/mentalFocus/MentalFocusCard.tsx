@@ -1,5 +1,5 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { Activity } from 'lucide-react-native';
+import { Activity, MessageSquareText, Sparkles } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
@@ -22,6 +22,77 @@ type Props = {
    onDeleteEntry: (entry: Entry) => void;
 };
 
+// --- VISUAL: THE SIGNAL SEQUENCE (Phantom Slots) ---
+const SignalSequence = ({
+   label,
+   value,
+   history, // Array of objects: { score: number | null }
+   color,
+   icon: Icon,
+   isDark,
+}: {
+   label: string;
+   value: string;
+   history: { score: number | null }[];
+   color: string;
+   icon: any;
+   isDark: boolean;
+}) => {
+   // Helper: Map score 0-10 to height % (min 15% for visibility)
+   const getHeight = (score: number) =>
+      15 + (Math.min(Math.max(score, 0), 10) / 10) * 85;
+
+   return (
+      <View className="mb-6 last:mb-0">
+         {/* 1. Header Info */}
+         <View className="flex-row items-center justify-between mb-3">
+            <View className="flex-row items-center gap-2">
+               <Icon size={14} color={color} />
+               <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {label}
+               </Text>
+            </View>
+            <Text className="text-sm font-bold text-slate-900 dark:text-slate-100">
+               {value}
+            </Text>
+         </View>
+
+         {/* 2. The Signal Bars */}
+         <View className="flex-row items-end justify-between h-12 mb-2">
+            {history.map((item, index) => {
+               const hasData = item.score !== null;
+               const height = hasData ? getHeight(item.score!) : 100; // Full height for phantom placeholder
+
+               return (
+                  <View key={index} className="w-[18%] h-full justify-end">
+                     {hasData ? (
+                        // CASE A: DATA EXISTS (Solid Bar)
+                        <View
+                           className="w-full rounded-sm"
+                           style={{
+                              height: `${height}%`,
+                              backgroundColor: color,
+                              opacity: 0.5 + index * 0.1, // Fade older entries slightly
+                           }}
+                        />
+                     ) : (
+                        // CASE B: PHANTOM ENTRY (Dashed Slot)
+                        <View
+                           className="w-full h-full rounded-sm border-2 border-dashed"
+                           style={{
+                              borderColor: isDark ? '#334155' : '#e2e8f0',
+                              backgroundColor: 'transparent',
+                           }}
+                        />
+                     )}
+                  </View>
+               );
+            })}
+         </View>
+      </View>
+   );
+};
+
 export default function MentalFocusCard({
    analysis,
    entries,
@@ -32,7 +103,43 @@ export default function MentalFocusCard({
    const sheetRef = useRef<BottomSheetModal>(null);
    const [isPressed, setIsPressed] = useState(false);
 
-   // FIX: Move hooks before any early returns
+   // --- 1. Extract History with Null Handling ---
+   const history = useMemo(() => {
+      // Default empty structure
+      if (!entries || entries.length === 0)
+         return {
+            optimism: Array(5).fill({ score: null }),
+            sentiment: Array(5).fill({ score: null }),
+         };
+
+      // 1. Take the last 5 entries (or fewer if not enough exist)
+      const recentEntries = entries.slice(0, 5).reverse();
+
+      // 2. Map to score objects, preserving NULLs for missing AI data
+      const optHistory = recentEntries.map((e) => ({
+         score:
+            typeof e.aiResponse?.meta?.optimismScore === 'number'
+               ? e.aiResponse.meta.optimismScore
+               : null,
+      }));
+
+      const sentHistory = recentEntries.map((e) => ({
+         score:
+            typeof e.aiResponse?.meta?.sentimentScore === 'number'
+               ? e.aiResponse.meta.sentimentScore
+               : null,
+      }));
+
+      // 3. Pad with "Phantom" entries at the start if total < 5
+      while (optHistory.length < 5) optHistory.unshift({ score: null });
+      while (sentHistory.length < 5) sentHistory.unshift({ score: null });
+
+      return {
+         optimism: optHistory,
+         sentiment: sentHistory,
+      };
+   }, [entries]);
+
    const sortedStats = useMemo(() => {
       if (!analysis?.categoryStats) return [];
       return [...analysis.categoryStats].sort(
@@ -45,20 +152,21 @@ export default function MentalFocusCard({
       [],
    );
 
-   // Early return can only happen AFTER hooks
    if (!analysis) return null;
 
    const { categoryStats, narrative } = analysis;
    const TopIcon =
       CATEGORY_ICON_MAP[narrative.topCatLabel] || DEFAULT_CATEGORY_ICON;
-   const detectedTone = STYLE_TO_TONE_MAP[narrative.styleLabel] ?? 'Mixed';
+   const rawTone = STYLE_TO_TONE_MAP[narrative.styleLabel] ?? 'Mixed';
+   const attitudeLabel = rawTone === 'Mixed' ? 'Varied' : rawTone;
 
    const getToneColor = (tone: string) => {
       if (tone === 'Optimistic') return isDark ? '#34d399' : '#059669';
       if (tone === 'Pessimistic') return isDark ? '#f87171' : '#dc2626';
       return isDark ? '#a78bfa' : '#7c3aed';
    };
-   const toneColor = getToneColor(detectedTone);
+
+   const attitudeColor = getToneColor(attitudeLabel);
 
    return (
       <>
@@ -76,69 +184,60 @@ export default function MentalFocusCard({
                ]}
             >
                {/* --- HEADER --- */}
-               <View className="flex-row items-center gap-2 mb-5">
+               <View className="flex-row items-center gap-2 mb-4">
                   <Activity size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
                   <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                      Mental Focus
                   </Text>
                </View>
 
-               {/* --- PART 1: STATS CONTAINER --- */}
-               <View className="flex-row items-center mb-4 bg-slate-50 dark:bg-slate-900/40 rounded-xl py-4 border border-slate-100 dark:border-slate-700/50">
-                  <View className="flex-1 items-center justify-center">
-                     <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mb-1.5">
-                        Detected Tone
-                     </Text>
-                     <View className="flex-row items-center gap-2">
-                        <View
-                           className="w-2 h-2 rounded-full"
-                           style={{ backgroundColor: toneColor }}
-                        />
-                        <Text className="text-sm font-bold text-slate-900 dark:text-white">
-                           {detectedTone}
-                        </Text>
-                     </View>
-                  </View>
-
-                  <View className="w-[1px] h-8 bg-slate-200 dark:bg-slate-700" />
-
-                  <View className="flex-1 items-center justify-center">
-                     <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mb-1.5">
-                        Self-Talk Style
-                     </Text>
-                     <View className="flex-row items-center gap-2">
-                        <View
-                           className="w-2 h-2 rounded-full"
-                           style={{ backgroundColor: narrative.styleColor }}
-                        />
-                        <Text className="text-sm font-bold text-slate-900 dark:text-white">
-                           {narrative.styleLabel}
-                        </Text>
-                     </View>
-                  </View>
-               </View>
-
-               {/* --- PART 2: PRIMARY TOPIC (Centrally Aligned) --- */}
-               <View className="flex-row items-center gap-4 mb-5 px-1">
-                  <View className="h-14 w-14 items-center justify-center bg-slate-50 dark:bg-slate-700/40 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+               {/* --- HERO TOPIC --- */}
+               <View className="flex-row items-center gap-4 mb-6">
+                  <View className="h-14 w-14 items-center justify-center bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/50 shadow-sm">
                      <TopIcon
                         size={26}
-                        color={isDark ? '#e2e8f0' : '#334155'}
+                        color={isDark ? '#818cf8' : '#4f46e5'}
                         strokeWidth={2}
                      />
                   </View>
-
-                  <View className="justify-center">
-                     <Text className="text-xl font-extrabold text-slate-900 dark:text-white leading-6">
-                        {narrative.topCatLabel}
+                  <View className="flex-1">
+                     <Text className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                        Most Discussed Topic
                      </Text>
-                     <Text className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                        Most discussed topic
+                     <Text className="text-xl font-extrabold text-slate-900 dark:text-white leading-7">
+                        {narrative.topCatLabel}
                      </Text>
                   </View>
                </View>
 
-               {/* --- STATS FOOTER (Bar Design) --- */}
+               {/* --- SIGNAL SEQUENCES --- */}
+               {/* Visualizes history with Phantom slots */}
+               <View className="bg-slate-50 dark:bg-slate-900/40 rounded-xl p-5 border border-slate-100 dark:border-slate-700/50 mb-5">
+                  {/* 1. Attitude Signal */}
+                  <SignalSequence
+                     label="Attitude Signal"
+                     value={attitudeLabel}
+                     history={history.optimism}
+                     color={attitudeColor}
+                     icon={Sparkles}
+                     isDark={isDark}
+                  />
+
+                  {/* Divider */}
+                  <View className="h-[1px] bg-slate-200 dark:bg-slate-700/50 w-full mb-5 mt-2 opacity-50" />
+
+                  {/* 2. Style Signal */}
+                  <SignalSequence
+                     label="Style Signal"
+                     value={narrative.styleLabel}
+                     history={history.sentiment}
+                     color={narrative.styleColor}
+                     icon={MessageSquareText}
+                     isDark={isDark}
+                  />
+               </View>
+
+               {/* --- DISTRIBUTION BAR --- */}
                <View className="mb-4">
                   <View className="flex-row h-1.5 rounded-full overflow-hidden w-full bg-slate-100 dark:bg-slate-700">
                      {categoryStats.map(
@@ -157,7 +256,7 @@ export default function MentalFocusCard({
                   </View>
                </View>
 
-               {/* --- PART 4: COMPACT TRAILING LEGEND --- */}
+               {/* --- LEGEND --- */}
                <View className="mb-2 px-1">
                   <Text
                      numberOfLines={1}
@@ -172,14 +271,12 @@ export default function MentalFocusCard({
                            >
                               ■{' '}
                            </Text>
-
                            <Text className="text-[10px] font-bold tracking-tight text-slate-500 dark:text-slate-400">
                               {stat.label}{' '}
                               <Text className="text-xs font-bold text-slate-900 dark:text-white">
                                  {Math.round(stat.percentage)}%
                               </Text>
                            </Text>
-
                            {idx < sortedStats.length - 1 && (
                               <Text className="text-slate-300 dark:text-slate-600">
                                  {'   '}

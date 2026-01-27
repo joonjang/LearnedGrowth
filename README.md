@@ -18,6 +18,14 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - make monthly credit come from api
 
+- change mental focus card and sheet
+
+- change hero state to display number of total entries above the reframed number
+
+- change new dispute color
+
+- shorten the question character count for insight questions for ai api response
+
 - add search function
 
 - make ai insight respond with how the explanation style is helpful/unhelpful
@@ -44,6 +52,13 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-01-27
+
+- added disclaimer about the entries used for dashboard requiring ai analysis
+- added bottom sheet to display entries without ai
+- enabled entries to close sheet when pressing analyze with ai feature
+- mental focus card and sheet WIP
+
 ### 2026-01-26
 
 - Decoupled EntriesScreen with entries section list
@@ -54,6 +69,10 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - thinking pattern simplified
    - abstracted thinking pattern labels and description to constants.tsx
       - ai insight also gets data from one source of truth
+
+pulse strip. good
+ruler is good too
+focus map is cool
 
 ### 2026-01-24
 

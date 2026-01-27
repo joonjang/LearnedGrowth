@@ -4,14 +4,16 @@ import { CATEGORY_COLOR_MAP, DEFAULT_CATEGORY_COLOR } from '@/lib/styles';
 import { isOptimistic, toDateKey } from '@/lib/utils';
 import { Entry } from '@/models/entry';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { AlertCircle } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef } from 'react';
-import { View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import Animated, {
    FadeInDown,
    FadeOutUp,
    LinearTransition,
 } from 'react-native-reanimated';
 import { WEEKDAY_LABELS } from '../constants';
+import NoAiEntrySheet from './NoAiEntrySheet';
 import MentalFocusCard from './mentalFocus/MentalFocusCard';
 import NeedsAttentionSheet from './statHero/NeedsAttentionSheet';
 import StatHero, { getResolutionStatus } from './statHero/StatHero';
@@ -110,7 +112,21 @@ const HomeDashboard = React.memo(
       isLoading = false,
       isAllTime = false,
    }: Props) => {
-      // --- CALCULATE RESOLUTION STATS (New) ---
+      // 1. --- CALCULATE INSIGHT COVERAGE ---
+      const insightCoverage = useMemo(() => {
+         const total = entries.length;
+         if (total === 0) return null;
+
+         const validAiCount = entries.filter((e) => e.aiResponse).length;
+
+         // Only show if we are filtering out entries
+         if (validAiCount < total) {
+            return { valid: validAiCount, total };
+         }
+         return null;
+      }, [entries]);
+
+      // 2. --- CALCULATE RESOLUTION STATS ---
       const resolutionStats = useMemo(() => {
          return getResolutionStatus(entries, isDark);
       }, [entries, isDark]);
@@ -123,13 +139,23 @@ const HomeDashboard = React.memo(
          [entries],
       );
 
+      const entriesWithoutInsight = useMemo(
+         () => entries.filter((entry) => !entry.aiResponse),
+         [entries],
+      );
+
       const needsAttentionSheetRef = useRef<BottomSheetModal | null>(null);
+      const insightCoverageSheetRef = useRef<BottomSheetModal | null>(null);
 
       const handleOpenNeedsAttention = useCallback(() => {
          needsAttentionSheetRef.current?.present();
       }, []);
 
-      // --- THE SINGLE PASS AGGREGATOR ---
+      const handleOpenInsightCoverage = useCallback(() => {
+         insightCoverageSheetRef.current?.present();
+      }, []);
+
+      // 3. --- THE SINGLE PASS AGGREGATOR ---
       const { focusView, patternView } = useMemo(() => {
          // 1. Init Containers
          const dayBuckets = new Map<string, DayBucket>();
@@ -433,6 +459,54 @@ const HomeDashboard = React.memo(
                isDark={isDark}
             />
 
+            {/* --- PARENT-LEVEL DISCLAIMER --- */}
+            {insightCoverage && (
+               <Animated.View
+                  entering={FadeInDown.duration(400)}
+                  className="mx-2 px-3 py-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 flex-row items-start gap-3"
+               >
+                  {/* Icon pushed down slightly to align with the first line of text */}
+                  <View className="mt-0.5">
+                     <AlertCircle
+                        size={14}
+                        color={isDark ? '#94a3b8' : '#64748b'}
+                     />
+                  </View>
+
+                  <View className="flex-1 gap-0.5">
+                     {/* Line 1: The Status */}
+                     <Text className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                        Using{' '}
+                        <Text className="font-bold">
+                           {insightCoverage.valid}
+                        </Text>{' '}
+                        of{' '}
+                        <Text className="font-bold">
+                           {insightCoverage.total}
+                        </Text>{' '}
+                        entries with AI data.
+                     </Text>
+
+                     {/* Line 2: The Education (Why?) */}
+                     <Text className="text-[10px] text-slate-400 dark:text-slate-500 leading-4">
+                        Entries without AI analysis are excluded.
+                     </Text>
+
+                     {entriesWithoutInsight.length > 0 && (
+                        <Pressable
+                           onPress={handleOpenInsightCoverage}
+                           className="self-start mt-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/60 px-2.5 py-1 active:opacity-70"
+                           hitSlop={8}
+                        >
+                           <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300">
+                              View excluded entries
+                           </Text>
+                        </Pressable>
+                     )}
+                  </View>
+               </Animated.View>
+            )}
+
             {/* MENTAL FOCUS */}
             {focusView && (
                <Animated.View
@@ -470,6 +544,14 @@ const HomeDashboard = React.memo(
             <NeedsAttentionSheet
                sheetRef={needsAttentionSheetRef}
                entries={needsAttentionEntries}
+               totalCount={entries.length}
+               isDark={isDark}
+               onDeleteEntry={onDeleteEntry}
+            />
+
+            <NoAiEntrySheet
+               sheetRef={insightCoverageSheetRef}
+               entries={entriesWithoutInsight}
                totalCount={entries.length}
                isDark={isDark}
                onDeleteEntry={onDeleteEntry}

@@ -157,6 +157,10 @@ export function DayDetailSheet({
                                  onCloseMenu={handleCloseMenu}
                                  onDelete={handleDelete}
                                  onNavigate={handleNavigate}
+                                 onAnalyze={() => {
+                                    handleCloseMenu();
+                                    sheetRef.current?.dismiss();
+                                 }}
                               />
                            </Animated.View>
                         ))}
@@ -182,6 +186,10 @@ export function DayDetailSheet({
                                  onCloseMenu={handleCloseMenu}
                                  onDelete={handleDelete}
                                  onNavigate={handleNavigate}
+                                 onAnalyze={() => {
+                                    handleCloseMenu();
+                                    sheetRef.current?.dismiss();
+                                 }}
                               />
                            </Animated.View>
                         ))}

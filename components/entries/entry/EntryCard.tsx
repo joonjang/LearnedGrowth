@@ -65,6 +65,7 @@ type Prop = {
    onCloseMenu: () => void;
    onDelete: (entry: Entry) => void;
    onNavigate?: (entry: Entry) => void;
+   onAnalyze?: (entry: Entry) => void;
    onMenuLayout?: (bounds: MenuBounds) => void;
    closeActiveSwipeable?: () => string | null;
    initialViewMode?: 'reframed' | 'original';
@@ -201,6 +202,7 @@ export default function EntryCard({
    onCloseMenu,
    onDelete,
    onNavigate,
+   onAnalyze,
    onMenuLayout,
    closeActiveSwipeable,
    initialViewMode = 'reframed',
@@ -393,6 +395,7 @@ export default function EntryCard({
 
    const handleAnalyze = useCallback(() => {
       lockNavigation(() => {
+         onAnalyze?.(entry);
          if (isSubscribed) {
             router.push({
                pathname: '/dispute/[id]',
@@ -409,7 +412,7 @@ export default function EntryCard({
             params: { id: entry.id, isReframed: 'true' },
          });
       });
-   }, [isSubscribed, entry.id, lockNavigation]);
+   }, [entry, isSubscribed, lockNavigation, onAnalyze]);
 
    const toggleViewMode = (e: any) => {
       e.stopPropagation();
