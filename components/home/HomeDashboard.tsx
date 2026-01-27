@@ -4,7 +4,7 @@ import { CATEGORY_COLOR_MAP, DEFAULT_CATEGORY_COLOR } from '@/lib/styles';
 import { isOptimistic, toDateKey } from '@/lib/utils';
 import { Entry } from '@/models/entry';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { AlertCircle } from 'lucide-react-native';
+import { ChevronRight, Sparkles } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
@@ -27,7 +27,7 @@ import {
    ThinkingPatternViewModel,
 } from './types';
 
-// --- CONFIG ---
+// ... [CONFIG & HELPERS - REMAIN THE SAME] ...
 const PATTERN_TAB_CONFIG = {
    Time: {
       dimension: 'permanence',
@@ -45,9 +45,7 @@ const PATTERN_TAB_CONFIG = {
       lowLabel: 'Situation',
    },
 } as const;
-
 const MAX_TREND_POINTS = 7;
-
 const STYLE_CONFIG = {
    positive: { label: 'Positive', color: '#10b981', bg: '#ecfdf5' },
    constructive: { label: 'Constructive', color: '#3b82f6', bg: '#eff6ff' },
@@ -55,8 +53,6 @@ const STYLE_CONFIG = {
    mixed: { label: 'Mixed', color: '#f59e0b', bg: '#fffbeb' },
    critical: { label: 'Critical', color: '#ef4444', bg: '#fef2f2' },
 };
-
-// --- HELPERS ---
 function getStyleFromScore(score: number) {
    if (score >= 8) return STYLE_CONFIG.positive;
    if (score >= 6) return STYLE_CONFIG.constructive;
@@ -64,7 +60,6 @@ function getStyleFromScore(score: number) {
    if (score >= 2.5) return STYLE_CONFIG.mixed;
    return STYLE_CONFIG.critical;
 }
-
 function getNumericScore(val: any): number | null {
    if (typeof val === 'number') return val;
    if (typeof val === 'string') {
@@ -73,14 +68,12 @@ function getNumericScore(val: any): number | null {
    }
    return null;
 }
-
 function getTrendValue(score: string | null | undefined): number {
    if (!score) return 50;
    const lower = score.toLowerCase();
    if (lower.includes('mixed') || lower.includes('balanced')) return 50;
    return isOptimistic(score) ? 80 : 20;
 }
-
 function getPatternImpact(
    score: string | null | undefined,
 ): 'optimistic' | 'pessimistic' | 'mixed' {
@@ -113,24 +106,28 @@ const HomeDashboard = React.memo(
       isAllTime = false,
    }: Props) => {
       // 1. --- CALCULATE INSIGHT COVERAGE ---
-      const insightCoverage = useMemo(() => {
+      const { insightCoverage, entriesWithoutInsight } = useMemo(() => {
          const total = entries.length;
-         if (total === 0) return null;
+         if (total === 0)
+            return { insightCoverage: null, entriesWithoutInsight: [] };
 
-         const validAiCount = entries.filter((e) => e.aiResponse).length;
+         const missingEntries = entries.filter((e) => !e.aiResponse);
+         const validAiCount = total - missingEntries.length;
 
-         // Only show if we are filtering out entries
          if (validAiCount < total) {
-            return { valid: validAiCount, total };
+            return {
+               insightCoverage: { valid: validAiCount, total },
+               entriesWithoutInsight: missingEntries,
+            };
          }
-         return null;
+         return { insightCoverage: null, entriesWithoutInsight: [] };
       }, [entries]);
 
-      // 2. --- CALCULATE RESOLUTION STATS ---
-      const resolutionStats = useMemo(() => {
-         return getResolutionStatus(entries, isDark);
-      }, [entries, isDark]);
-
+      // ... [AGGREGATOR LOGIC - REMAINS THE SAME] ...
+      const resolutionStats = useMemo(
+         () => getResolutionStatus(entries, isDark),
+         [entries, isDark],
+      );
       const needsAttentionEntries = useMemo(
          () =>
             entries.filter(
@@ -138,37 +135,27 @@ const HomeDashboard = React.memo(
             ),
          [entries],
       );
-
-      const entriesWithoutInsight = useMemo(
-         () => entries.filter((entry) => !entry.aiResponse),
-         [entries],
-      );
-
       const needsAttentionSheetRef = useRef<BottomSheetModal | null>(null);
       const insightCoverageSheetRef = useRef<BottomSheetModal | null>(null);
+      const handleOpenNeedsAttention = useCallback(
+         () => needsAttentionSheetRef.current?.present(),
+         [],
+      );
+      const handleOpenInsightCoverage = useCallback(
+         () => insightCoverageSheetRef.current?.present(),
+         [],
+      );
 
-      const handleOpenNeedsAttention = useCallback(() => {
-         needsAttentionSheetRef.current?.present();
-      }, []);
-
-      const handleOpenInsightCoverage = useCallback(() => {
-         insightCoverageSheetRef.current?.present();
-      }, []);
-
-      // 3. --- THE SINGLE PASS AGGREGATOR ---
       const { focusView, patternView } = useMemo(() => {
-         // 1. Init Containers
+         // (Paste existing aggregator logic here)
          const dayBuckets = new Map<string, DayBucket>();
          const filledDaysSet = new Set<string>();
-
          const monthMap = new Map<string, MonthStat>();
-
          const catMap = new Map<
             string,
             { count: number; totalScore: number; validScores: number }
          >();
          const tagMap = new Map<string, number>();
-
          const threePsStats = {
             perm: { g: 0, t: 0 },
             perv: { g: 0, t: 0 },
@@ -177,16 +164,13 @@ const HomeDashboard = React.memo(
          const entriesWithMeta: { entry: Entry; created: Date }[] = [];
          let totalAnalyzedCount = 0;
 
-         // 2. The Loop
          for (const entry of entries) {
             const created = new Date(entry.createdAt);
             if (isNaN(created.getTime())) continue;
-
             const dateKey = toDateKey(created);
             const meta = entry.aiResponse?.meta;
             const analysis = entry.aiResponse?.analysis;
 
-            // --- STREAK AGGREGATION ---
             if (!dayBuckets.has(dateKey)) {
                dayBuckets.set(dateKey, {
                   entries: [],
@@ -197,9 +181,7 @@ const HomeDashboard = React.memo(
             }
             const bucket = dayBuckets.get(dateKey)!;
             bucket.entries.push(entry);
-
             const isReframed = (entry.dispute || '').trim().length > 0;
-
             if (isReframed) {
                bucket.completed.push(entry);
                bucket.disputeCount += 1;
@@ -212,7 +194,6 @@ const HomeDashboard = React.memo(
                const year = created.getFullYear();
                const monthIndex = created.getMonth();
                const monthKey = `${year}-${monthIndex}`;
-
                if (!monthMap.has(monthKey)) {
                   monthMap.set(monthKey, {
                      year,
@@ -226,13 +207,11 @@ const HomeDashboard = React.memo(
                if (isReframed) mStat.completedCount++;
             }
 
-            // --- AI DEPENDENT AGGREGATION ---
             if (entry.aiResponse) {
                if (meta) {
                   totalAnalyzedCount++;
                   const cat = normalizeMentalFocusCategory(meta.category);
                   const optScore = getNumericScore(meta.optimismScore);
-
                   const catData = catMap.get(cat) || {
                      count: 0,
                      totalScore: 0,
@@ -244,13 +223,11 @@ const HomeDashboard = React.memo(
                      catData.validScores++;
                   }
                   catMap.set(cat, catData);
-
                   (meta.tags || []).forEach((t) => {
                      const norm = t.toLowerCase().trim();
                      if (norm) tagMap.set(norm, (tagMap.get(norm) || 0) + 1);
                   });
                }
-
                const dims = analysis?.dimensions;
                if (dims) {
                   if (dims.permanence) {
@@ -273,11 +250,9 @@ const HomeDashboard = React.memo(
             }
          }
 
-         // 3. Post-Process Streak
          const today = new Date(anchorDate);
          today.setHours(0, 0, 0, 0);
          const weekStart = getWeekStart(today);
-
          const days = Array.from({ length: 7 }, (_, i) => {
             const d = new Date(weekStart);
             d.setDate(weekStart.getDate() + i);
@@ -287,7 +262,6 @@ const HomeDashboard = React.memo(
                filled: filledDaysSet.has(toDateKey(d)),
             };
          });
-
          const anchorKey = toDateKey(today);
          const anchorIndex = days.findIndex(
             (d) => toDateKey(d.date) === anchorKey,
@@ -298,14 +272,12 @@ const HomeDashboard = React.memo(
             if (days[i].filled) streakCount++;
             else break;
          }
-
          const monthlyStats = isAllTime
             ? Array.from(monthMap.values()).sort((a, b) => {
                  if (a.year !== b.year) return b.year - a.year;
                  return b.monthIndex - a.monthIndex;
               })
             : undefined;
-
          const streakView: StreakViewModel = {
             streakCount,
             days,
@@ -315,7 +287,6 @@ const HomeDashboard = React.memo(
             isAllTime,
          };
 
-         // 4. Post-Process Mental Focus
          let focusView: MentalFocusViewModel | null = null;
          if (catMap.size > 0) {
             const categoryStats = Array.from(catMap.entries())
@@ -334,12 +305,10 @@ const HomeDashboard = React.memo(
                   };
                })
                .sort((a, b) => b.count - a.count);
-
             const tagStats = Array.from(tagMap.entries())
                .filter(([, c]) => c > 1)
                .map(([label, count]) => ({ label, count }))
                .sort((a, b) => b.count - a.count);
-
             const topCat = categoryStats[0];
             focusView = {
                categoryStats,
@@ -359,7 +328,6 @@ const HomeDashboard = React.memo(
             };
          }
 
-         // 5. Post-Process Thinking Patterns
          let patternView: ThinkingPatternViewModel | null = null;
          if (entriesWithMeta.length > 0) {
             const getScore = (s: { g: number; t: number }) =>
@@ -370,24 +338,20 @@ const HomeDashboard = React.memo(
             const sortedDesc = [...entriesWithMeta].sort(
                (a, b) => b.created.getTime() - a.created.getTime(),
             );
-
             type DimensionKey = keyof NonNullable<
                NonNullable<Entry['aiResponse']>['analysis']
             >['dimensions'];
-
             const getDimScore = (e: Entry, k: DimensionKey) =>
                e.aiResponse?.analysis?.dimensions?.[k]?.score;
             const getDimPhrase = (e: Entry, k: DimensionKey) =>
                e.aiResponse?.analysis?.dimensions?.[k]?.detectedPhrase;
             const getDimInsight = (e: Entry, k: DimensionKey) =>
                e.aiResponse?.analysis?.dimensions?.[k]?.insight;
-
             const buildTabData = (
                configKey: keyof typeof PATTERN_TAB_CONFIG,
             ) => {
                const config = PATTERN_TAB_CONFIG[configKey];
                const dimKey = config.dimension;
-
                const chartData = sortedAsc
                   .map((item) => {
                      const score = getDimScore(item.entry, dimKey);
@@ -402,7 +366,6 @@ const HomeDashboard = React.memo(
                   value: number;
                   entryId: string;
                }[];
-
                const patterns = sortedDesc
                   .map((item) => {
                      const score = getDimScore(item.entry, dimKey);
@@ -420,7 +383,6 @@ const HomeDashboard = React.memo(
                      };
                   })
                   .filter(Boolean) as any[];
-
                return {
                   highLabel: config.highLabel,
                   lowLabel: config.lowLabel,
@@ -429,7 +391,6 @@ const HomeDashboard = React.memo(
                   patterns,
                };
             };
-
             patternView = {
                threePs: {
                   permanence: { score: getScore(threePsStats.perm) },
@@ -443,7 +404,6 @@ const HomeDashboard = React.memo(
                } as ThinkingPatternData,
             };
          }
-
          return { streakView, focusView, patternView };
       }, [anchorDate, isAllTime, entries]);
 
@@ -459,55 +419,45 @@ const HomeDashboard = React.memo(
                isDark={isDark}
             />
 
-            {/* --- PARENT-LEVEL DISCLAIMER --- */}
+            {/* --- ACTION BANNER (The Hook) --- */}
             {insightCoverage && (
                <Animated.View
                   entering={FadeInDown.duration(400)}
-                  className="mx-2 px-3 py-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 flex-row items-start gap-3"
+                  className="mx-0"
                >
-                  {/* Icon pushed down slightly to align with the first line of text */}
-                  <View className="mt-0.5">
-                     <AlertCircle
-                        size={14}
-                        color={isDark ? '#94a3b8' : '#64748b'}
+                  <Pressable
+                     onPress={handleOpenInsightCoverage}
+                     className="mx-2 px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 flex-row items-center gap-3 active:opacity-70 active:scale-[0.99] transition-all"
+                  >
+                     {/* Icon: Sparkles (AI Value) */}
+                     <View className="bg-white dark:bg-indigo-500/20 p-2 rounded-full border border-indigo-100 dark:border-indigo-400/30">
+                        <Sparkles
+                           size={14}
+                           color={isDark ? '#818cf8' : '#6366f1'}
+                        />
+                     </View>
+
+                     {/* Text: Value Proposition */}
+                     <View className="flex-1 gap-0.5">
+                        <Text className="text-xs font-bold text-indigo-900 dark:text-indigo-100">
+                           Using {insightCoverage.valid} of{' '}
+                           {insightCoverage.total} entries with AI analysis.
+                        </Text>
+                        <Text className="text-[10px] text-indigo-600 dark:text-indigo-300 leading-4">
+                           Analyze the remaining to include them in your overall
+                           trends.
+                        </Text>
+                     </View>
+
+                     <ChevronRight
+                        size={16}
+                        color={isDark ? '#818cf8' : '#6366f1'}
                      />
-                  </View>
-
-                  <View className="flex-1 gap-0.5">
-                     {/* Line 1: The Status */}
-                     <Text className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                        Using{' '}
-                        <Text className="font-bold">
-                           {insightCoverage.valid}
-                        </Text>{' '}
-                        of{' '}
-                        <Text className="font-bold">
-                           {insightCoverage.total}
-                        </Text>{' '}
-                        entries with AI data.
-                     </Text>
-
-                     {/* Line 2: The Education (Why?) */}
-                     <Text className="text-[10px] text-slate-400 dark:text-slate-500 leading-4">
-                        Entries without AI analysis are excluded.
-                     </Text>
-
-                     {entriesWithoutInsight.length > 0 && (
-                        <Pressable
-                           onPress={handleOpenInsightCoverage}
-                           className="self-start mt-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/60 px-2.5 py-1 active:opacity-70"
-                           hitSlop={8}
-                        >
-                           <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300">
-                              View excluded entries
-                           </Text>
-                        </Pressable>
-                     )}
-                  </View>
+                  </Pressable>
                </Animated.View>
             )}
 
-            {/* MENTAL FOCUS */}
+            {/* CARDS */}
             {focusView && (
                <Animated.View
                   entering={FadeInDown.duration(600).delay(100).springify()}
@@ -525,7 +475,6 @@ const HomeDashboard = React.memo(
                </Animated.View>
             )}
 
-            {/* THINKING PATTERNS */}
             {patternView && (
                <Animated.View
                   entering={FadeInDown.duration(600).delay(200).springify()}

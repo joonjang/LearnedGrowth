@@ -16,7 +16,7 @@ import {
    BottomSheetModal,
    BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
-import { AlertCircle } from 'lucide-react-native';
+import { CheckCircle2, Sparkles, Zap } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Text, useWindowDimensions, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
@@ -28,6 +28,43 @@ type InsightCoverageSheetProps = {
    totalCount: number;
    isDark: boolean;
    onDeleteEntry: (entry: Entry) => void;
+};
+
+const CoverageMeter = ({
+   missing,
+   total,
+   isDark,
+}: {
+   missing: number;
+   total: number;
+   isDark: boolean;
+}) => {
+   const analyzed = Math.max(0, total - missing);
+   const percentage = total > 0 ? (analyzed / total) * 100 : 100;
+
+   return (
+      <View className="mb-6">
+         <View className="flex-row justify-between mb-2">
+            <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+               Insight Coverage
+            </Text>
+            <Text className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+               {Math.round(percentage)}% Analyzed
+            </Text>
+         </View>
+
+         <View className="h-3 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+            <View
+               className="h-full rounded-full bg-indigo-500"
+               style={{ width: `${percentage}%` }}
+            />
+         </View>
+
+         <Text className="mt-2 text-[10px] text-slate-400 dark:text-slate-500 text-right">
+            {analyzed}/{total} entries included
+         </Text>
+      </View>
+   );
 };
 
 export default function NoAiEntrySheet({
@@ -42,16 +79,7 @@ export default function NoAiEntrySheet({
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
 
    const maxSheetHeight = useMemo(() => windowHeight * 0.9, [windowHeight]);
-
-   const summaryText = useMemo(() => {
-      if (totalCount === 0) {
-         return 'Add entries to begin AI insights.';
-      }
-      if (entries.length === 0) {
-         return 'All recent entries include AI analysis.';
-      }
-      return `${entries.length} of your last ${totalCount} entries are missing AI analysis.`;
-   }, [entries.length, totalCount]);
+   const hasMissingEntries = entries.length > 0;
 
    const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -115,26 +143,44 @@ export default function NoAiEntrySheet({
             }}
             keyboardShouldPersistTaps="handled"
          >
-            <View className="mb-4">
+            {/* HEADER */}
+            <View className="mb-2">
                <View className="flex-row items-center gap-2 mb-1">
-                  <AlertCircle
-                     size={14}
-                     color={isDark ? '#94a3b8' : '#64748b'}
-                  />
-                  <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                     AI Coverage
+                  <Sparkles size={16} color={isDark ? '#818cf8' : '#6366f1'} />
+                  <Text className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+                     Unlock Insights
                   </Text>
                </View>
-               <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  Entries Without AI Analysis
+
+               <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1">
+                  {hasMissingEntries
+                     ? 'Include in Analysis'
+                     : 'Trends Complete'}
                </Text>
-               <Text className="text-sm text-slate-500 dark:text-slate-400">
-                  {summaryText}
+
+               <Text className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-5">
+                  {hasMissingEntries
+                     ? 'See how these specific moment shape your overall trends.'
+                     : 'All your recent entries are analyzed and included in your trends.'}
                </Text>
+
+               <CoverageMeter
+                  missing={entries.length}
+                  total={totalCount}
+                  isDark={isDark}
+               />
             </View>
 
-            {entries.length > 0 ? (
-               <View className="gap-3">
+            {/* LIST OF ENTRIES */}
+            {hasMissingEntries ? (
+               <View className="gap-4">
+                  <View className="flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2 mb-2">
+                     <Text className="text-xs font-bold text-slate-400 uppercase">
+                        {entries.length} Ready for Analysis
+                     </Text>
+                     <Zap size={12} color={isDark ? '#94a3b8' : '#64748b'} />
+                  </View>
+
                   {entries.map((entry) => (
                      <Animated.View
                         key={entry.id}
@@ -157,9 +203,13 @@ export default function NoAiEntrySheet({
                   ))}
                </View>
             ) : (
-               <View className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
-                  <Text className="text-sm text-slate-500 dark:text-slate-400">
-                     No missing AI insights right now.
+               <View className="items-center justify-center py-8 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 border-dashed">
+                  <CheckCircle2
+                     size={32}
+                     color={isDark ? '#818cf8' : '#6366f1'}
+                  />
+                  <Text className="mt-3 text-sm font-bold text-indigo-900 dark:text-indigo-200">
+                     You are all caught up!
                   </Text>
                </View>
             )}
