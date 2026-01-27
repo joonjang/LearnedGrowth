@@ -4,10 +4,10 @@ import TopFade from '@/components/TopFade';
 import { AppProviders } from '@/providers/AppProviders';
 import { useAuth } from '@/providers/AuthProvider';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { useColorScheme, View } from 'react-native';
+import { Platform, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import '../global.css';
@@ -19,7 +19,7 @@ function EdgeToEdge({ children }: { children: React.ReactNode }) {
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
          {/* Adjust height/intensity here to control the blur depth and strength. */}
-         <TopFade height={insets.top + 12}  />
+         <TopFade height={insets.top + 12} />
          <StatusBar
             translucent
             // Logic: If Dark Mode -> Light Text. If Light Mode -> Dark Text.
@@ -45,9 +45,21 @@ function RootLayoutContent() {
       <AuthGate>
          <AdapterGuard>
             <EdgeToEdge>
-               <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
+               <Stack
+                  initialRouteName="index"
+                  screenOptions={{
+                     headerShown: false,
+                     animation:
+                        __DEV__ && Platform.OS === 'android'
+                           ? 'none'
+                           : 'default',
+                  }}
+               >
                   <Stack.Screen name="index" options={{ headerShown: false }} />
-                  <Stack.Screen name="entries" options={{ headerShown: false }} />
+                  <Stack.Screen
+                     name="entries"
+                     options={{ headerShown: false }}
+                  />
                   <Stack.Screen
                      name="settings"
                      options={{
