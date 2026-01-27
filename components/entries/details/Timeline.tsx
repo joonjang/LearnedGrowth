@@ -1,3 +1,14 @@
+import {
+   BELIEF_BG_CLASS,
+   BELIEF_BORDER_CLASS,
+   BELIEF_TEXT_CLASS,
+   DISPUTE_BG_CLASS,
+   DISPUTE_BORDER_CLASS,
+   DISPUTE_TEXT_CLASS,
+   ENERGY_BG_CLASS,
+   ENERGY_BORDER_CLASS,
+   ENERGY_TEXT_CLASS,
+} from '@/lib/styles';
 import { getShadow } from '@/lib/shadow';
 import { FieldTone, getFieldStyles } from '@/lib/theme';
 import {
@@ -118,25 +129,36 @@ export function TimelineItem({
    const getNodeStyles = () => {
       switch (step.tone) {
          case 'belief':
-            return 'bg-belief-bg dark:bg-belief-bgDark border-belief-border dark:border-belief-borderDark text-belief-text dark:text-belief-textDark';
+            return {
+               container: `${BELIEF_BG_CLASS} ${BELIEF_BORDER_CLASS}`,
+               text: BELIEF_TEXT_CLASS,
+            };
          case 'dispute':
-            return 'bg-dispute-bg dark:bg-dispute-bgDark border-dispute-border dark:border-dispute-borderDark text-dispute-text dark:text-dispute-textDark';
+            return {
+               container: `${DISPUTE_BG_CLASS} ${DISPUTE_BORDER_CLASS}`,
+               text: DISPUTE_TEXT_CLASS,
+            };
          case 'energy':
-            return 'bg-energy-bg dark:bg-energy-bgDark border-energy-border dark:border-energy-borderDark text-energy-text dark:text-energy-textDark';
+            return {
+               container: `${ENERGY_BG_CLASS} ${ENERGY_BORDER_CLASS}`,
+               text: ENERGY_TEXT_CLASS,
+            };
          default:
-            return 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400';
+            return {
+               container:
+                  'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-800',
+               text: 'text-slate-600 dark:text-slate-400',
+            };
       }
    };
-   const nodeClass = getNodeStyles();
+   const nodeStyles = getNodeStyles();
 
    return (
       <View className="flex-row items-start relative z-10">
          <View
-            className={`z-10 h-10 w-10 items-center justify-center rounded-full border-2 border-slate-300 dark:border-slate-950 ${nodeClass}`}
+            className={`z-10 h-10 w-10 items-center justify-center rounded-full border-2 border-slate-300 dark:border-slate-950 ${nodeStyles.container}`}
          >
-            <Text
-               className={`text-sm font-black ${nodeClass.split(' ').pop()}`}
-            >
+            <Text className={`text-sm font-black ${nodeStyles.text}`}>
                {step.letter}
             </Text>
          </View>

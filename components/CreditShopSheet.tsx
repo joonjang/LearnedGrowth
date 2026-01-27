@@ -1,13 +1,13 @@
 import {
-   BOTTOM_SHEET_BACKDROP_OPACITY,
-   BOTTOM_SHEET_CONTENT_PADDING,
-} from '@/components/constants';
-import {
-   BOTTOM_SHEET_BG_DARK,
-   BOTTOM_SHEET_BG_LIGHT,
    bottomSheetBackgroundStyle,
    bottomSheetHandleIndicatorStyle,
 } from '@/components/bottomSheetStyles';
+import {
+   BOTTOM_SHEET_BACKDROP_OPACITY,
+   BOTTOM_SHEET_BG_DARK,
+   BOTTOM_SHEET_BG_LIGHT,
+   BOTTOM_SHEET_CONTENT_PADDING,
+} from '@/lib/styles';
 import CreditShop from '@/components/CreditShop';
 import {
    BottomSheetBackdrop,

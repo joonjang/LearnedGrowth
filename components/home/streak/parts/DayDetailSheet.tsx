@@ -1,6 +1,4 @@
 import {
-    BOTTOM_SHEET_BG_DARK,
-    BOTTOM_SHEET_BG_LIGHT,
     bottomSheetBackgroundStyle,
     bottomSheetHandleIndicatorStyle,
 } from '@/components/bottomSheetStyles';
@@ -8,9 +6,11 @@ import {
     ALERT_COLOR_DARK,
     ALERT_COLOR_LIGHT,
     BOTTOM_SHEET_BACKDROP_OPACITY,
+    BOTTOM_SHEET_BG_DARK,
+    BOTTOM_SHEET_BG_LIGHT,
     BOTTOM_SHEET_CONTENT_PADDING,
     BOTTOM_SHEET_MAX_SNAP,
-} from '@/components/constants';
+} from '@/lib/styles';
 import EntryCard from '@/components/entries/entry/EntryCard';
 import { Entry } from '@/models/entry';
 import {

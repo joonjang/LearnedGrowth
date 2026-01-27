@@ -1,4 +1,4 @@
-import { HOME_ICON_DARK, HOME_ICON_LIGHT } from '@/components/constants';
+import { HOME_ICON_DARK, HOME_ICON_LIGHT } from '@/lib/styles';
 import { cx } from '@/lib/utils';
 import {
    CalendarCheck,

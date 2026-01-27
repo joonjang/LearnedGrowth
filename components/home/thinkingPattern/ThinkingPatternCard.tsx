@@ -1,5 +1,5 @@
 import { PInsightCard } from '@/components/appInfo/PDefinitions';
-import { CARD_PRESS_STYLE } from '@/lib/utils';
+import { CARD_PRESS_STYLE } from '@/lib/styles';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BookOpen, ChevronDown, ChevronUp, Layers } from 'lucide-react-native';
 import React, { useCallback, useRef, useState } from 'react';

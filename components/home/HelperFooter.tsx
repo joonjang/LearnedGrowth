@@ -1,6 +1,6 @@
 import { ChevronDown } from 'lucide-react-native';
 import { View } from 'react-native';
-import { CHEVRON_ICON_DARK, CHEVRON_ICON_LIGHT } from '../constants';
+import { CHEVRON_ICON_DARK, CHEVRON_ICON_LIGHT } from '@/lib/styles';
 
 export default function HelperFooter({ isDark }: { isDark: boolean }) {
    const chevronColor = isDark ? CHEVRON_ICON_DARK : CHEVRON_ICON_LIGHT;

@@ -2,7 +2,6 @@ import { Entry } from '@/models/entry';
 import { clsx, type ClassValue } from 'clsx';
 import { HelpCircle, Scale, Sprout, Wind } from 'lucide-react-native';
 import { ComponentType } from 'react';
-import { StyleSheet } from 'react-native';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
@@ -219,9 +218,3 @@ export const isFutureDate = (date: Date) => {
 };
 
 export const cx = (...xs: ClassValue[]) => xs.filter(Boolean).join(' ');
-
-export const CARD_PRESS_STYLE = StyleSheet.create({
-   cardPressed: {
-      transform: [{ scale: 0.985 }],
-   },
-});

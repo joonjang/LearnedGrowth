@@ -1,3 +1,15 @@
+import {
+  BELIEF_BG_CLASS,
+  BELIEF_BORDER_CLASS,
+  BELIEF_TEXT_CLASS,
+  DISPUTE_BG_CLASS,
+  DISPUTE_BORDER_CLASS,
+  DISPUTE_TEXT_CLASS,
+  ENERGY_BG_CLASS,
+  ENERGY_BORDER_CLASS,
+  ENERGY_TEXT_CLASS,
+} from '@/lib/styles';
+
 // 1. Add 'neutral' to the type definition
 export type FieldTone = 'default' | 'neutral' | 'belief' | 'dispute' | 'energy';
 
@@ -13,22 +25,22 @@ export const getFieldStyles = (tone: FieldTone, isEditing: boolean = false) => {
 
   // 2. VIEW MODE: Semantic styling
   switch (tone) {
-    case 'belief': // ORANGE
+    case 'belief': 
       return {
-        container: 'bg-belief-bg dark:bg-belief-bgDark border-belief-border dark:border-belief-borderDark',
-        text: 'text-belief-text dark:text-belief-textDark font-semibold',
+        container: `${BELIEF_BG_CLASS} ${BELIEF_BORDER_CLASS}`,
+        text: `${BELIEF_TEXT_CLASS} font-semibold`,
         label: 'text-slate-500 dark:text-slate-400',
       };
-    case 'dispute': // BLUE/INDIGO
+    case 'dispute': 
       return {
-        container: 'bg-dispute-bg dark:bg-dispute-bgDark border-dispute-border dark:border-dispute-borderDark',
-        text: 'text-dispute-text dark:text-dispute-textDark font-semibold',
+        container: `${DISPUTE_BG_CLASS} ${DISPUTE_BORDER_CLASS}`,
+        text: `${DISPUTE_TEXT_CLASS} font-semibold`,
         label: 'text-slate-500 dark:text-slate-400',
       };
-    case 'energy': // GREEN
+    case 'energy': 
       return {
-        container: 'bg-energy-bg dark:bg-energy-bgDark border-energy-border dark:border-energy-borderDark',
-        text: 'text-energy-text dark:text-energy-textDark font-semibold',
+        container: `${ENERGY_BG_CLASS} ${ENERGY_BORDER_CLASS}`,
+        text: `${ENERGY_TEXT_CLASS} font-semibold`,
         label: 'text-slate-500 dark:text-slate-400',
       };
     

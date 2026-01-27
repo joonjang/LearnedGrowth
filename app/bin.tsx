@@ -180,35 +180,44 @@ export default function DeleteBinScreen() {
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
          <View
-            className="px-6 pb-4 border-b border-slate-200 dark:border-slate-800"
-            style={{ paddingTop: insets.top + 16 }}
+            className="px-6 bg-slate-50/95 dark:bg-slate-900/95 z-50 border-b border-slate-200/50 dark:border-slate-800/50"
+            style={{ paddingTop: insets.top + 10, paddingBottom: 12 }}
          >
-            <View className="flex-row items-start gap-2">
-               <Pressable
-                  onPress={() => router.back()}
-                  hitSlop={8}
-                  className="mt-1 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
-               >
-                  <ChevronLeft size={26} strokeWidth={2.8} color={iconColor} />
-               </Pressable>
-               <View className="flex-1">
-                  <Text className="text-3xl font-extrabold text-slate-900 dark:text-slate-50">
-                     Delete Bin
-                  </Text>
-                  <Text
-                     numberOfLines={1}
-                     className="text-[15px] font-medium text-slate-500 dark:text-slate-400 mt-0.5"
+            <View className="flex-row items-center justify-between">
+               <View className="flex-row items-center gap-3 flex-1 overflow-hidden">
+                  <Pressable
+                     onPress={() => router.back()}
+                     hitSlop={12}
+                     className="p-2 -ml-2 rounded-full active:bg-slate-200/50 dark:active:bg-slate-800/50 self-start mt-1"
                   >
-                     {deletedCount > 0
-                        ? `${deletedCount} deleted ${deletedCount === 1 ? 'entry' : 'entries'}`
-                        : 'No deleted entries'}
-                  </Text>
+                     <ChevronLeft
+                        size={24}
+                        strokeWidth={2.5}
+                        color={iconColor}
+                     />
+                  </Pressable>
+                  <View className="flex-1 justify-center">
+                     <Text
+                        className="text-xl font-bold text-slate-900 dark:text-white"
+                        numberOfLines={1}
+                     >
+                        Delete Bin
+                     </Text>
+                     <Text
+                        numberOfLines={1}
+                        className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wide"
+                     >
+                        {deletedCount > 0
+                           ? `${deletedCount} deleted ${deletedCount === 1 ? 'entry' : 'entries'}`
+                           : 'No deleted entries'}
+                     </Text>
+                  </View>
                </View>
                {deletedCount > 0 && (
                   <Pressable
                      onPress={confirmDeleteAll}
                      disabled={deletingAll}
-                     className="mt-1 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
+                     className="p-2 rounded-full active:bg-slate-200/50 dark:active:bg-slate-800/50 self-start mt-1"
                   >
                      {deletingAll ? (
                         <ActivityIndicator size="small" color={deleteColor} />

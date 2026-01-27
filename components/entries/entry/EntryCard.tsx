@@ -1,13 +1,18 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
 import {
-   CATEGORY_COLOR_MAP,
    CATEGORY_ICON_MAP,
-   DEFAULT_CATEGORY_COLOR,
    DEFAULT_CATEGORY_ICON,
    ROUTE_ENTRY_DETAIL,
 } from '@/components/constants';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getShadow } from '@/lib/shadow';
+import {
+   CATEGORY_COLOR_MAP,
+   DEFAULT_CATEGORY_COLOR,
+   DISPUTE_BG_CLASS,
+   DISPUTE_BORDER_CLASS,
+   DISPUTE_TEXT_CLASS,
+} from '@/lib/styles';
 import { FieldTone, getFieldStyles } from '@/lib/theme';
 import { Entry } from '@/models/entry';
 import { useAuth } from '@/providers/AuthProvider';
@@ -97,7 +102,7 @@ const FlowBreadcrumb = ({
                      isResolved &&
                      activeMode === 'reframed' &&
                      step !== 'Adversity'
-                        ? 'text-dispute-text dark:text-dispute-textDark opacity-80'
+                        ? `${DISPUTE_TEXT_CLASS} opacity-80`
                         : 'text-slate-400 dark:text-slate-500'
                   }`}
                >
@@ -133,7 +138,7 @@ const FlowConnector = ({ isResolved }: { isResolved?: boolean }) => {
    return (
       <View className="items-center -my-1.5 z-10 relative">
          <View
-            className={`${isResolved ? 'bg-dispute-bg dark:bg-dispute-bgDark' : 'bg-slate-50 dark:bg-slate-800/80'} rounded-full p-1`}
+            className={`${isResolved ? DISPUTE_BG_CLASS : 'bg-slate-50 dark:bg-slate-800/80'} rounded-full p-1`}
          >
             <ArrowDown size={14} color={iconColor} />
          </View>
@@ -160,13 +165,16 @@ const FlowBlock = memo(
       isResolved?: boolean;
    }) => {
       const styles = getFieldStyles(type, false);
-      const beliefGlassBg = type === 'belief' ? 'dark:bg-rose-500/10' : '';
+      const neutralContainerClass =
+         'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700';
+      const containerClass =
+         type === 'dispute' || type === 'energy'
+            ? neutralContainerClass
+            : styles.container;
 
       return (
          <View>
-            <View
-               className={`px-3.5 py-3 rounded-xl border ${styles.container} bg-white dark:bg-slate-900/50 ${beliefGlassBg}`}
-            >
+            <View className={`px-3.5 py-3 rounded-xl border ${containerClass}`}>
                <Text
                   className={`text-[15px] leading-[22px] ${styles.text}`}
                   onTextLayout={onLayout}
@@ -450,9 +458,13 @@ export default function EntryCard({
             {/* Right Side: Badge + Menu */}
             <View className="flex-row items-center">
                {isReframed && (
-                  <View className="mr-3 bg-dispute-bg dark:bg-dispute-bgDark px-2 py-0.5 rounded-md border border-dispute-border dark:border-dispute-borderDark flex-row items-center gap-1">
+                  <View
+                     className={`mr-3 px-2 py-0.5 rounded-md border flex-row items-center gap-1 ${DISPUTE_BG_CLASS} ${DISPUTE_BORDER_CLASS}`}
+                  >
                      <Sprout size={12} color={isDark ? '#d1fae5' : '#065f46'} />
-                     <Text className="text-[9px] font-bold text-dispute-text dark:text-dispute-textDark uppercase tracking-wide">
+                     <Text
+                        className={`text-[9px] font-bold uppercase tracking-wide ${DISPUTE_TEXT_CLASS}`}
+                     >
                         Reframed
                      </Text>
                   </View>
@@ -554,7 +566,7 @@ export default function EntryCard({
                layout={LinearTransition.springify()}
                className={`p-3 pb-4 rounded-2xl relative border ${
                   viewMode === 'reframed'
-                     ? 'bg-dispute-bg dark:bg-dispute-bgDark border-dispute-border dark:border-dispute-borderDark'
+                     ? `${DISPUTE_BG_CLASS} ${DISPUTE_BORDER_CLASS}`
                      : 'bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-700'
                }`}
             >
@@ -659,7 +671,7 @@ export default function EntryCard({
                         className={`flex-row items-center gap-1.5 px-3.5 py-2 rounded-full border ${
                            viewMode === 'reframed'
                               ? 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700'
-                              : 'bg-dispute-bg border-dispute-border dark:bg-dispute-bgDark dark:border-dispute-borderDark'
+                              : `${DISPUTE_BG_CLASS} ${DISPUTE_BORDER_CLASS}`
                         }`}
                      >
                         {viewMode === 'reframed' ? (
@@ -678,7 +690,9 @@ export default function EntryCard({
                                  size={13}
                                  color={isDark ? '#d1fae5' : '#065f46'}
                               />
-                              <Text className="text-[11px] font-bold text-dispute-text dark:text-dispute-textDark uppercase tracking-wide">
+                              <Text
+                                 className={`text-[11px] font-bold uppercase tracking-wide ${DISPUTE_TEXT_CLASS}`}
+                              >
                                  View Reframed
                               </Text>
                            </>

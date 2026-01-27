@@ -16,6 +16,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- make monthly credit come from api
+
 - add search function
 
 - make ai insight respond with how the explanation style is helpful/unhelpful
@@ -46,6 +48,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 - Decoupled EntriesScreen with entries section list
 - Home filters based off entry count and not week
+- abstracted style to its own file
 
 ### 2026-01-24
 

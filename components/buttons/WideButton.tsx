@@ -1,8 +1,4 @@
-import {
-   ANALYSIS_CTA_CLASS,
-   BTN_HEIGHT,
-   DISPUTE_CTA_CLASS,
-} from '@/components/constants';
+import { ANALYSIS_CTA_CLASS, BTN_HEIGHT, DISPUTE_CTA_CLASS } from '@/lib/styles';
 import { getShadow } from '@/lib/shadow';
 import { LucideIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';

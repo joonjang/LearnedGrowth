@@ -1,4 +1,5 @@
 import AiDisclaimerModal from '@/components/appInfo/AiDisclaimerModal';
+import { DISPUTE_CTA_CLASS } from '@/lib/styles';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
@@ -84,14 +85,14 @@ export default function CardNextButton({ id, onNavigate }: Prop) {
          return {
             label: 'Analyze with AI',
             icon: Sparkles,
-            bgColor: 'bg-dispute-cta dark:bg-dispute-ctaDark',
+            bgColor: DISPUTE_CTA_CLASS,
             textColor: 'text-white',
          };
       }
       return {
          label: 'Continue',
          icon: ArrowRight,
-         bgColor: 'bg-dispute-cta dark:bg-dispute-ctaDark',
+         bgColor: DISPUTE_CTA_CLASS,
          textColor: 'text-white',
       };
    }, [hasCachedAnalysis, isSubscribed]);

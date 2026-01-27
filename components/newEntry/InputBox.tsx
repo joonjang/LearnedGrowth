@@ -1,10 +1,12 @@
 import {
    ENTRY_CHAR_WARN_MIN_REMAINING,
    ENTRY_CHAR_WARN_RATIO,
+} from '@/components/constants';
+import {
    INPUT_BOX_BOTTOM_INSET,
    INPUT_BOX_HORIZONTAL_INSET,
    INPUT_BOX_TOP_INSET,
-} from '@/components/constants';
+} from '@/lib/styles';
 import { getShadow } from '@/lib/shadow';
 import { useColorScheme } from 'nativewind';
 import {

@@ -1,5 +1,5 @@
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
-import { DISPUTE_CTA_CLASS } from '@/components/constants';
+import { DISPUTE_CTA_CLASS } from '@/lib/styles';
 import { useAuth } from '@/providers/AuthProvider';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as AppleAuthentication from 'expo-apple-authentication';

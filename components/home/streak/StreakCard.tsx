@@ -13,13 +13,13 @@ import { MONTHS } from '@/components/constants';
 import {
    buildMonthDays,
    buildMonthRows,
-   CARD_PRESS_STYLE,
    findWeekRowIndex,
    getEncouragement,
    getSummaryText,
    parseDateKey,
    toDateKey,
 } from '@/lib/utils';
+import { CARD_PRESS_STYLE } from '@/lib/styles';
 import type { Entry } from '@/models/entry';
 import { StreakViewModel } from '../types';
 import { AllTimeContent } from './parts/AllTimeContent';

@@ -1,17 +1,17 @@
-import {
-   CATEGORY_COLOR_MAP,
-   DEFAULT_CATEGORY_COLOR,
-   PRIMARY_CTA_CLASS,
-   PRIMARY_CTA_ICON_COLOR,
-   ROUTE_ENTRY_DETAIL,
-   UNCATEGORIZED_LABEL,
-} from '@/components/constants';
+import { ROUTE_ENTRY_DETAIL } from '@/components/constants';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow from '@/components/entries/entry/EntryRow';
 import { CategorySegment, WeekSummary } from '@/components/home/types';
 import { useDeletedEntries } from '@/hooks/useDeletedEntries';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
+import {
+   CATEGORY_COLOR_MAP,
+   DEFAULT_CATEGORY_COLOR,
+   PRIMARY_CTA_CLASS,
+   PRIMARY_CTA_ICON_COLOR,
+   UNCATEGORIZED_LABEL,
+} from '@/lib/styles';
 import {
    getWeekKey,
    getWeekLabel,
@@ -30,18 +30,11 @@ import React, {
    useRef,
    useState,
 } from 'react';
-import {
-   Pressable,
-   SectionList,
-   Text,
-   View,
-   ViewToken,
-   type CellRendererProps,
-} from 'react-native';
+import { Pressable, SectionList, Text, View, ViewToken } from 'react-native';
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
 import Animated, {
    FadeIn,
-   FadeOutUp, // <--- CHANGED FROM FadeOut
+   FadeOutUp,
    LinearTransition,
    useAnimatedRef,
    useAnimatedScrollHandler,
@@ -334,25 +327,33 @@ export default function EntriesListScreen() {
 
    const renderItem = useCallback(
       ({ item }: { item: RowItem }) => (
-         <EntryRow
-            entry={item.entry}
-            isMenuOpen={openMenuEntryId === item.entry.id}
-            onToggleMenu={() => toggleMenu(item.entry.id)}
-            onCloseMenu={closeMenu}
-            onMenuLayout={setOpenMenuBounds}
-            onSwipeOpen={onRowSwipeOpen}
-            onSwipeClose={onRowSwipeClose}
-            closeActiveSwipeable={closeActiveSwipeable}
-            onEdit={() =>
-               lockNavigation(() =>
-                  router.push({
-                     pathname: ROUTE_ENTRY_DETAIL,
-                     params: { id: item.entry.id, mode: 'edit' },
-                  }),
-               )
-            }
-            onDelete={() => requestDelete(item.entry)}
-         />
+         <Animated.View
+            // LAYOUT: Slide remaining rows up on delete
+            // EXITING: Fade + lift on removal
+            layout={LinearTransition.duration(180)}
+            exiting={FadeOutUp.duration(180)}
+            style={{ width: '100%' }}
+         >
+            <EntryRow
+               entry={item.entry}
+               isMenuOpen={openMenuEntryId === item.entry.id}
+               onToggleMenu={() => toggleMenu(item.entry.id)}
+               onCloseMenu={closeMenu}
+               onMenuLayout={setOpenMenuBounds}
+               onSwipeOpen={onRowSwipeOpen}
+               onSwipeClose={onRowSwipeClose}
+               closeActiveSwipeable={closeActiveSwipeable}
+               onEdit={() =>
+                  lockNavigation(() =>
+                     router.push({
+                        pathname: ROUTE_ENTRY_DETAIL,
+                        params: { id: item.entry.id, mode: 'edit' },
+                     }),
+                  )
+               }
+               onDelete={() => requestDelete(item.entry)}
+            />
+         </Animated.View>
       ),
       [
          closeActiveSwipeable,
@@ -364,21 +365,6 @@ export default function EntriesListScreen() {
          requestDelete,
          toggleMenu,
       ],
-   );
-
-   const renderCell = useCallback(
-      ({ children, style, ...rest }: CellRendererProps<RowItem>) => (
-         <Animated.View
-            {...rest}
-            style={style}
-            layout={LinearTransition.duration(180)}
-            entering={FadeIn}
-            exiting={FadeOutUp.duration(200)}
-         >
-            {children}
-         </Animated.View>
-      ),
-      [],
    );
 
    const HEADER_HEIGHT = 64;
@@ -470,7 +456,7 @@ export default function EntriesListScreen() {
             scrollEventThrottle={16}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
-            CellRendererComponent={renderCell}
+            removeClippedSubviews={false}
             contentContainerStyle={{
                paddingBottom: insets.bottom + 80,
                paddingTop: totalTopPadding + HEADER_HEIGHT,

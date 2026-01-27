@@ -1,8 +1,4 @@
 import QuickStart from '@/components/appInfo/QuickStart';
-import {
-   PRIMARY_CTA_CLASS,
-   PRIMARY_CTA_TEXT_CLASS,
-} from '@/components/constants';
 import EntriesWeekFilterHeader from '@/components/entries/EntriesWeekFilterHeader';
 import HomeDashboard from '@/components/home/HomeDashboard';
 import TopFade from '@/components/TopFade';
@@ -18,45 +14,19 @@ import {
    sortEntriesByCreatedAtDesc,
 } from '@/lib/entries';
 import { getShadow } from '@/lib/shadow';
+import { PRIMARY_CTA_CLASS, PRIMARY_CTA_TEXT_CLASS } from '@/lib/styles';
 import type { Entry } from '@/models/entry';
+import { useAuth } from '@/providers/AuthProvider';
 import { router, useFocusEffect } from 'expo-router';
-import { ChevronRight } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, Text, View } from 'react-native';
 import Animated, {
-   FadeIn,
    FadeInDown,
    useAnimatedScrollHandler,
-   useAnimatedStyle,
    useSharedValue,
-   withRepeat,
-   withSequence,
-   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-// --- HELPERS (Keep these here for the dashboard stats) ---
-const TitleSkeleton = () => {
-   const opacity = useSharedValue(0.3);
-   useEffect(() => {
-      opacity.value = withRepeat(
-         withSequence(
-            withTiming(0.7, { duration: 800 }),
-            withTiming(0.3, { duration: 800 }),
-         ),
-         -1,
-         true,
-      );
-   }, [opacity]);
-   const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
-   return (
-      <Animated.View
-         style={style}
-         className="h-8 w-48 bg-slate-200 dark:bg-slate-700 rounded-lg mb-4 ml-2"
-      />
-   );
-};
 
 export default function EntriesScreen() {
    const store = useEntries();
@@ -64,6 +34,7 @@ export default function EntriesScreen() {
    const insets = useSafeAreaInsets();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { status } = useAuth();
    const { lock: lockNavigation } = useNavigationLock();
    const [showHelpModal, setShowHelpModal] = useState(false);
    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -94,11 +65,6 @@ export default function EntriesScreen() {
 
    const handleNewEntryPress = useCallback(() => {
       lockNavigation(() => router.push('/new'));
-   }, [lockNavigation]);
-
-   // Navigate to the new List Screen
-   const handleViewEntries = useCallback(() => {
-      lockNavigation(() => router.push('/entries'));
    }, [lockNavigation]);
 
    const handleDeleteEntry = useCallback(
@@ -195,13 +161,6 @@ export default function EntriesScreen() {
       const anchorWeekStart = getWeekStart(anchorDate);
       return currentWeekStart.getTime() === anchorWeekStart.getTime();
    }, [anchorDate, selectedFilterKey]);
-
-   const reframedCount = useMemo(() => {
-      return filteredRows.filter((e) => (e.dispute ?? '').trim().length > 0)
-         .length;
-   }, [filteredRows]);
-
-   const thoughtLabel = reframedCount === 1 ? 'Thought' : 'Thoughts';
    const handleSelectFilter = useCallback((key: EntryCountFilterKey) => {
       setSelectedFilterKey(key);
       setIsDropdownOpen(false);
@@ -210,7 +169,18 @@ export default function EntriesScreen() {
 
    const hasEntries = totalCount > 0;
    const showQuickStart =
-      store.lastHydratedAt !== null && !store.isHydrating && !hasEntries;
+      store.lastHydratedAt !== null &&
+      !store.isHydrating &&
+      !hasEntries &&
+      status !== 'signedIn';
+
+   if (showQuickStart) {
+      return (
+         <View className="flex-1 bg-slate-50 dark:bg-slate-900">
+            <QuickStart />
+         </View>
+      );
+   }
 
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
@@ -241,36 +211,6 @@ export default function EntriesScreen() {
                   deletedCount={deletedCount}
                />
 
-               {/* MAIN STATS TEXT */}
-               {isReady ? (
-                  <Animated.View entering={FadeIn.duration(500)}>
-                     <Text className="text-2xl font-extrabold text-slate-900 dark:text-white mb-2 z-10 ml-2">
-                        {reframedCount} {thoughtLabel}{' '}
-                        <Text className="text-indigo-600 font-extrabold">
-                           Reframed
-                        </Text>
-                     </Text>
-                  </Animated.View>
-               ) : (
-                  <TitleSkeleton />
-               )}
-
-               {/* LINK TO LIST VIEW (Decoupled) */}
-               <Pressable
-                  onPress={handleViewEntries}
-                  hitSlop={8}
-                  className="flex-row items-center gap-2 mb-4 ml-2 self-start active:opacity-70"
-               >
-                  <Text className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
-                     View All Entries
-                  </Text>
-                  <ChevronRight
-                     size={14}
-                     color={isDark ? '#818cf8' : '#4f46e5'}
-                     strokeWidth={2.5}
-                  />
-               </Pressable>
-
                {/* DASHBOARD (No List) */}
                <View className="z-10 mb-6">
                   <HomeDashboard
@@ -286,7 +226,7 @@ export default function EntriesScreen() {
                </View>
 
                {/* PRIMARY ACTION */}
-               {isReady && !showQuickStart && (
+               {isReady && (
                   <Animated.View
                      entering={FadeInDown.duration(600).springify()}
                      className="mt-1 z-10"
@@ -304,8 +244,6 @@ export default function EntriesScreen() {
                      </Pressable>
                   </Animated.View>
                )}
-
-               {showQuickStart && <QuickStart />}
             </View>
          </Animated.ScrollView>
 

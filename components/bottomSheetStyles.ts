@@ -1,12 +1,13 @@
 import { StyleSheet } from 'react-native';
 
-import { BOTTOM_SHEET_RADIUS } from '@/components/constants';
-
-export const BOTTOM_SHEET_BG_DARK = '#0f172a';
-export const BOTTOM_SHEET_BG_LIGHT = '#ffffff';
-export const BOTTOM_SHEET_HANDLE_DARK = '#475569';
-export const BOTTOM_SHEET_HANDLE_LIGHT = '#cbd5e1';
-export const BOTTOM_SHEET_TOP_BORDER_DARK = 'rgba(71, 85, 105, 0.7)';
+import {
+   BOTTOM_SHEET_BG_DARK,
+   BOTTOM_SHEET_BG_LIGHT,
+   BOTTOM_SHEET_HANDLE_DARK,
+   BOTTOM_SHEET_HANDLE_LIGHT,
+   BOTTOM_SHEET_RADIUS,
+   BOTTOM_SHEET_TOP_BORDER_DARK,
+} from '@/lib/styles';
 
 export const bottomSheetBackgroundStyle = (
    isDark: boolean,

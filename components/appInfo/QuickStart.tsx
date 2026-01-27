@@ -1,8 +1,13 @@
 import {
    ABCDE_FIELD,
-   PRIMARY_CTA_CLASS,
    ROUTE_LOGIN,
 } from '@/components/constants';
+import {
+   BELIEF_TEXT_CLASS,
+   DISPUTE_TEXT_CLASS,
+   ENERGY_TEXT_CLASS,
+   PRIMARY_CTA_CLASS,
+} from '@/lib/styles';
 import {
    TimelineItem,
    TimelineLine,
@@ -262,7 +267,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
          <ScrollView
             contentContainerStyle={{
                paddingTop: !isModal ? insets.top + 20 : 20,
-               // paddingBottom: insets.bottom + 140,
+               paddingBottom: insets.bottom + 24,
             }}
             showsVerticalScrollIndicator={false}
          >
@@ -315,7 +320,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                         Adversity (A)
                      </Text>{' '}
                      happens. You form a{' '}
-                     <Text className="font-bold text-belief-text dark:text-belief-textDark">
+                     <Text className={`font-bold ${BELIEF_TEXT_CLASS}`}>
                         Belief (B)
                      </Text>{' '}
                      about it. That belief drives the{' '}
@@ -345,11 +350,11 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                {/* Solution Text - Updated colors to match Theme */}
                <Text className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-400">
                   Together, we’ll use{' '}
-                  <Text className="font-bold text-dispute-text dark:text-dispute-textDark">
+                  <Text className={`font-bold ${DISPUTE_TEXT_CLASS}`}>
                      Disputation (D)
                   </Text>{' '}
                   to challenge negative thoughts, helping you find{' '}
-                  <Text className="font-bold text-energy-text dark:text-energy-textDark">
+                  <Text className={`font-bold ${ENERGY_TEXT_CLASS}`}>
                      Energy (E)
                   </Text>{' '}
                   and a clearer perspective.
@@ -448,11 +453,15 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                                              standard questions
                                           </Text>{' '}
                                           for{' '}
-                                          <Text className="font-bold text-dispute-text dark:text-dispute-textDark">
+                                          <Text
+                                             className={`font-bold ${DISPUTE_TEXT_CLASS}`}
+                                          >
                                              Dispute (D)
                                           </Text>{' '}
                                           and{' '}
-                                          <Text className="font-bold text-energy-text dark:text-energy-textDark">
+                                          <Text
+                                             className={`font-bold ${ENERGY_TEXT_CLASS}`}
+                                          >
                                              Energy (E)
                                           </Text>
                                           .
@@ -493,35 +502,32 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                   })}
                </Animated.View>
             </View>
-         </ScrollView>
 
-         {/* Footer CTA */}
-         {!isModal && (
-            <View
-               className="pt-8 bottom-0 left-0 right-0 px-6 "
-               // style={{ paddingBottom: insets.bottom + 16 }}
-            >
-               <Pressable
-                  className={`relative flex-row items-center justify-center rounded-2xl px-6 py-4 ${PRIMARY_CTA_CLASS} ${buttonShadow.className}`}
-                  style={[buttonShadow.ios, buttonShadow.android]}
-                  onPress={handleCtaPress}
-                  disabled={navigationLocked}
-               >
-                  <Text
-                     className="text-lg font-bold text-center text-white"
-                     numberOfLines={1}
+            {/* Footer CTA */}
+            {!isModal && (
+               <View className="px-6 pt-8">
+                  <Pressable
+                     className={`relative flex-row items-center justify-center rounded-2xl px-6 py-4 ${PRIMARY_CTA_CLASS} ${buttonShadow.className}`}
+                     style={[buttonShadow.ios, buttonShadow.android]}
+                     onPress={handleCtaPress}
+                     disabled={navigationLocked}
                   >
-                     Try a 2-minute entry
+                     <Text
+                        className="text-lg font-bold text-center text-white"
+                        numberOfLines={1}
+                     >
+                        Try a 2-minute entry
+                     </Text>
+                     <View className="absolute right-4 opacity-50">
+                        <ArrowRight size={20} color="white" />
+                     </View>
+                  </Pressable>
+                  <Text className="mt-3 text-center text-xs font-medium text-slate-400">
+                     No perfection required. Just start.
                   </Text>
-                  <View className="absolute right-4 opacity-50">
-                     <ArrowRight size={20} color="white" />
-                  </View>
-               </Pressable>
-               <Text className="mt-3 text-center text-xs font-medium text-slate-400">
-                  No perfection required. Just start.
-               </Text>
-            </View>
-         )}
+               </View>
+            )}
+         </ScrollView>
       </View>
    );
 }

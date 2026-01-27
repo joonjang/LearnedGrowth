@@ -1,9 +1,11 @@
+import { FREE_MONTHLY_CREDITS, ROUTE_LOGIN } from '@/components/constants';
 import {
    DISPUTE_CTA_CLASS,
-   FREE_MONTHLY_CREDITS,
+   DISPUTE_BG_CLASS,
+   DISPUTE_BORDER_CLASS,
+   DISPUTE_TEXT_CLASS,
    PRIMARY_CTA_CLASS,
-   ROUTE_LOGIN,
-} from '@/components/constants';
+} from '@/lib/styles';
 import { AiInsightCreditShopSheet } from '@/components/CreditShopSheet';
 import SendFeedback from '@/components/SendFeedback';
 import { APP_VERSION } from '@/lib/appInfo';
@@ -906,12 +908,12 @@ function StatCard({
 
    return (
       <View
-         className={`flex-1 p-4 rounded-2xl border justify-between ${isHighlight ? 'bg-green-50 dark:bg-dispute-bgDark border-green-200 dark:border-dispute-borderDark' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}
+         className={`flex-1 p-4 rounded-2xl border justify-between ${isHighlight ? `${DISPUTE_BG_CLASS} ${DISPUTE_BORDER_CLASS}` : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}
          style={shadowStyle}
       >
          <View className="flex-row justify-between items-start">
             <Text
-               className={`text-xs font-bold uppercase tracking-wider mb-2 ${isHighlight ? 'text-green-600 dark:text-dispute-textDark' : 'text-slate-400'}`}
+               className={`text-xs font-bold uppercase tracking-wider mb-2 ${isHighlight ? DISPUTE_TEXT_CLASS : 'text-slate-400'}`}
             >
                {label}
             </Text>
@@ -925,13 +927,13 @@ function StatCard({
                />
             ) : (
                <Text
-                  className={`text-2xl font-black ${isHighlight ? 'text-green-700 dark:text-dispute-textDark' : 'text-slate-900 dark:text-slate-100'}`}
+                  className={`text-2xl font-black ${isHighlight ? DISPUTE_TEXT_CLASS : 'text-slate-900 dark:text-slate-100'}`}
                >
                   {value}
                </Text>
             )}
             <Text
-               className={`text-[10px] mt-1 ${isHighlight ? 'text-green-600/70 dark:text-dispute-textDark dark:opacity-70' : 'text-slate-400'}`}
+               className={`text-[10px] mt-1 ${isHighlight ? `${DISPUTE_TEXT_CLASS} opacity-70` : 'text-slate-400'}`}
             >
                {subtext}
             </Text>

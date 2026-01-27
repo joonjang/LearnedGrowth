@@ -8,7 +8,7 @@ import {
    DEFAULT_CATEGORY_ICON,
    STYLE_TO_TONE_MAP,
 } from '@/components/constants';
-import { CARD_PRESS_STYLE } from '@/lib/utils';
+import { CARD_PRESS_STYLE } from '@/lib/styles';
 import { Entry } from '@/models/entry';
 import HelperFooter from '../HelperFooter';
 import { MentalFocusStat, MentalFocusViewModel } from '../types';

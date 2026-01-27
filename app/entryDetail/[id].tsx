@@ -2,11 +2,10 @@ import CardNextButton from '@/components/buttons/CardNextButton';
 import WideButton from '@/components/buttons/WideButton';
 import {
    ABCDE_FIELD,
-   CATEGORY_COLOR_MAP,
-   DEFAULT_CATEGORY_COLOR,
    MAX_AI_RETRIES,
    ROUTE_ENTRIES,
 } from '@/components/constants';
+import { CATEGORY_COLOR_MAP, DEFAULT_CATEGORY_COLOR } from '@/lib/styles';
 import { EntryField } from '@/components/entries/details/EntryField';
 import { InsightStrip } from '@/components/entries/details/InsightStrip';
 import {

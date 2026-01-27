@@ -1,10 +1,12 @@
 import {
-   BOTTOM_SHEET_BG_DARK,
-   BOTTOM_SHEET_BG_LIGHT,
    bottomSheetBackgroundStyle,
    bottomSheetHandleIndicatorStyle,
 } from '@/components/bottomSheetStyles';
-import { BOTTOM_SHEET_BACKDROP_OPACITY } from '@/components/constants';
+import {
+   BOTTOM_SHEET_BACKDROP_OPACITY,
+   BOTTOM_SHEET_BG_DARK,
+   BOTTOM_SHEET_BG_LIGHT,
+} from '@/lib/styles';
 import EntryCard from '@/components/entries/entry/EntryCard';
 import { getShadow } from '@/lib/shadow'; // Added shadow helper
 import { Entry } from '@/models/entry';
@@ -22,6 +24,10 @@ import Animated, {
    LinearTransition,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+   buildMentalFocusCategoryCounts,
+   filterEntriesByMentalFocusCategory,
+} from '@/lib/mentalFocus';
 import { MentalFocusViewModel } from '../types';
 
 type MentalFocusSheetProps = {
@@ -117,18 +123,7 @@ export function MentalFocusSheet({
    const maxSheetHeight = useMemo(() => windowHeight * 0.9, [windowHeight]);
 
    const dynamicTopicStats = useMemo(() => {
-      const counts = new Map<string, number>();
-      let total = 0;
-
-      entries.forEach((e) => {
-         if (e.aiResponse?.meta) {
-            const rawCat = e.aiResponse.meta.category;
-            if (!rawCat) return;
-            const cat = !rawCat || rawCat === 'Other' ? 'Other' : rawCat;
-            counts.set(cat, (counts.get(cat) || 0) + 1);
-            total++;
-         }
-      });
+      const { counts, total } = buildMentalFocusCategoryCounts(entries);
 
       return (analysis?.categoryStats ?? [])
          .map((stat) => {
@@ -145,18 +140,11 @@ export function MentalFocusSheet({
 
    const filteredEntries = useMemo(() => {
       if (!entries?.length || !activeTopic) return [];
-      return entries
-         .filter((e) => {
-            const rawCat = e.aiResponse?.meta?.category;
-            if (!rawCat) return false;
-            const cat = !rawCat || rawCat === 'Other' ? 'Other' : rawCat;
-            return cat === activeTopic;
-         })
-         .sort(
-            (a, b) =>
-               new Date(b.createdAt).getTime() -
-               new Date(a.createdAt).getTime(),
-         );
+      return filterEntriesByMentalFocusCategory(entries, activeTopic).sort(
+         (a, b) =>
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime(),
+      );
    }, [activeTopic, entries]);
 
    const handleSheetDismiss = useCallback(() => {

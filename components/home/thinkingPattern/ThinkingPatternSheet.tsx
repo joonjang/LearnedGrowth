@@ -1,14 +1,14 @@
 import {
-   BOTTOM_SHEET_BG_DARK,
-   BOTTOM_SHEET_BG_LIGHT,
    bottomSheetBackgroundStyle,
    bottomSheetHandleIndicatorStyle,
 } from '@/components/bottomSheetStyles';
+import { ROUTE_ENTRY_DETAIL } from '@/components/constants';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
+   BOTTOM_SHEET_BG_DARK,
+   BOTTOM_SHEET_BG_LIGHT,
    BOTTOM_SHEET_CONTENT_PADDING,
-   ROUTE_ENTRY_DETAIL,
-} from '@/components/constants';
+} from '@/lib/styles';
 import type {
    ThinkingPatternData,
    ThinkingPatternTab,

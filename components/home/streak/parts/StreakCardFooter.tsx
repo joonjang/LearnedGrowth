@@ -1,4 +1,4 @@
-import { CHEVRON_ICON_DARK, CHEVRON_ICON_LIGHT } from '@/components/constants';
+import { CHEVRON_ICON_DARK, CHEVRON_ICON_LIGHT } from '@/lib/styles';
 import { ChevronDown, ChevronUp, Pointer } from 'lucide-react-native';
 import { Text, View } from 'react-native';
 

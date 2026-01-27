@@ -1,19 +1,20 @@
 import { getWeekStart } from '@/lib/date';
+import { normalizeMentalFocusCategory } from '@/lib/mentalFocus';
+import { CATEGORY_COLOR_MAP, DEFAULT_CATEGORY_COLOR } from '@/lib/styles';
 import { isOptimistic, toDateKey } from '@/lib/utils';
 import { Entry } from '@/models/entry';
-import React, { useMemo } from 'react';
-import { Text, View } from 'react-native';
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import React, { useCallback, useMemo, useRef } from 'react';
+import { View } from 'react-native';
 import Animated, {
    FadeInDown,
    FadeOutUp,
    LinearTransition,
 } from 'react-native-reanimated';
-import {
-   CATEGORY_COLOR_MAP,
-   DEFAULT_CATEGORY_COLOR,
-   WEEKDAY_LABELS,
-} from '../constants';
+import { WEEKDAY_LABELS } from '../constants';
 import MentalFocusCard from './mentalFocus/MentalFocusCard';
+import NeedsAttentionSheet from './statHero/NeedsAttentionSheet';
+import StatHero, { getResolutionStatus } from './statHero/StatHero';
 import ThinkingPatternCard from './thinkingPattern/ThinkingPatternCard';
 import {
    DayBucket,
@@ -109,8 +110,27 @@ const HomeDashboard = React.memo(
       isLoading = false,
       isAllTime = false,
    }: Props) => {
+      // --- CALCULATE RESOLUTION STATS (New) ---
+      const resolutionStats = useMemo(() => {
+         return getResolutionStatus(entries, isDark);
+      }, [entries, isDark]);
+
+      const needsAttentionEntries = useMemo(
+         () =>
+            entries.filter(
+               (entry) => (entry.dispute ?? '').trim().length === 0,
+            ),
+         [entries],
+      );
+
+      const needsAttentionSheetRef = useRef<BottomSheetModal | null>(null);
+
+      const handleOpenNeedsAttention = useCallback(() => {
+         needsAttentionSheetRef.current?.present();
+      }, []);
+
       // --- THE SINGLE PASS AGGREGATOR ---
-      const { streakView, focusView, patternView } = useMemo(() => {
+      const { focusView, patternView } = useMemo(() => {
          // 1. Init Containers
          const dayBuckets = new Map<string, DayBucket>();
          const filledDaysSet = new Set<string>();
@@ -128,7 +148,6 @@ const HomeDashboard = React.memo(
             perv: { g: 0, t: 0 },
             pers: { g: 0, t: 0 },
          };
-         // Only store entries here if they actually have dimensions data
          const entriesWithMeta: { entry: Entry; created: Date }[] = [];
          let totalAnalyzedCount = 0;
 
@@ -141,7 +160,7 @@ const HomeDashboard = React.memo(
             const meta = entry.aiResponse?.meta;
             const analysis = entry.aiResponse?.analysis;
 
-            // --- STREAK AGGREGATION (Always Runs) ---
+            // --- STREAK AGGREGATION ---
             if (!dayBuckets.has(dateKey)) {
                dayBuckets.set(dateKey, {
                   entries: [],
@@ -181,13 +200,11 @@ const HomeDashboard = React.memo(
                if (isReframed) mStat.completedCount++;
             }
 
-            // --- AI DEPENDENT AGGREGATION (Guarded) ---
+            // --- AI DEPENDENT AGGREGATION ---
             if (entry.aiResponse) {
-               // 1. Mental Focus (Requires Meta)
                if (meta) {
                   totalAnalyzedCount++;
-                  const rawCat = meta.category;
-                  const cat = !rawCat || rawCat === 'Other' ? 'Other' : rawCat;
+                  const cat = normalizeMentalFocusCategory(meta.category);
                   const optScore = getNumericScore(meta.optimismScore);
 
                   const catData = catMap.get(cat) || {
@@ -208,7 +225,6 @@ const HomeDashboard = React.memo(
                   });
                }
 
-               // 2. Thinking Patterns (Requires Analysis Dimensions)
                const dims = analysis?.dimensions;
                if (dims) {
                   if (dims.permanence) {
@@ -226,14 +242,12 @@ const HomeDashboard = React.memo(
                      if (isOptimistic(dims.personalization.score))
                         threePsStats.pers.g++;
                   }
-
-                  // Only push to array if dimensions actually exist
                   entriesWithMeta.push({ entry, created });
                }
             }
          }
 
-         // 3. Post-Process: Streak
+         // 3. Post-Process Streak
          const today = new Date(anchorDate);
          today.setHours(0, 0, 0, 0);
          const weekStart = getWeekStart(today);
@@ -261,8 +275,8 @@ const HomeDashboard = React.memo(
 
          const monthlyStats = isAllTime
             ? Array.from(monthMap.values()).sort((a, b) => {
-                 if (a.year !== b.year) return b.year - a.year; // Descending Year
-                 return b.monthIndex - a.monthIndex; // Descending Month
+                 if (a.year !== b.year) return b.year - a.year;
+                 return b.monthIndex - a.monthIndex;
               })
             : undefined;
 
@@ -275,18 +289,14 @@ const HomeDashboard = React.memo(
             isAllTime,
          };
 
-         // 4. Post-Process: Mental Focus
-         // Because we now guard the loop, catMap will be empty if no AI entries exist.
-         // This ensures focusView remains null in that case.
+         // 4. Post-Process Mental Focus
          let focusView: MentalFocusViewModel | null = null;
          if (catMap.size > 0) {
             const categoryStats = Array.from(catMap.entries())
                .map(([label, val]) => {
                   const avg =
                      val.validScores > 0 ? val.totalScore / val.validScores : 5;
-                  // 1. Get the base style (label + original color)
                   const baseStyle = getStyleFromScore(avg);
-                  // 2. Override the color with your constant map
                   const categoryColor =
                      CATEGORY_COLOR_MAP[label] || DEFAULT_CATEGORY_COLOR;
                   return {
@@ -323,8 +333,7 @@ const HomeDashboard = React.memo(
             };
          }
 
-         // 5. Post-Process: Thinking Patterns
-         // Because we guarded entriesWithMeta.push, this array will be empty if no AI entries exist.
+         // 5. Post-Process Thinking Patterns
          let patternView: ThinkingPatternViewModel | null = null;
          if (entriesWithMeta.length > 0) {
             const getScore = (s: { g: number; t: number }) =>
@@ -336,28 +345,22 @@ const HomeDashboard = React.memo(
                (a, b) => b.created.getTime() - a.created.getTime(),
             );
 
-            // Safe Accessors
-            const getDimScore = (
-               e: Entry,
-               k: 'permanence' | 'pervasiveness' | 'personalization',
-            ) => e.aiResponse?.analysis?.dimensions?.[k]?.score;
-            const getDimPhrase = (
-               e: Entry,
-               k: 'permanence' | 'pervasiveness' | 'personalization',
-            ) => e.aiResponse?.analysis?.dimensions?.[k]?.detectedPhrase;
-            const getDimInsight = (
-               e: Entry,
-               k: 'permanence' | 'pervasiveness' | 'personalization',
-            ) => e.aiResponse?.analysis?.dimensions?.[k]?.insight;
+            type DimensionKey = keyof NonNullable<
+               NonNullable<Entry['aiResponse']>['analysis']
+            >['dimensions'];
+
+            const getDimScore = (e: Entry, k: DimensionKey) =>
+               e.aiResponse?.analysis?.dimensions?.[k]?.score;
+            const getDimPhrase = (e: Entry, k: DimensionKey) =>
+               e.aiResponse?.analysis?.dimensions?.[k]?.detectedPhrase;
+            const getDimInsight = (e: Entry, k: DimensionKey) =>
+               e.aiResponse?.analysis?.dimensions?.[k]?.insight;
 
             const buildTabData = (
                configKey: keyof typeof PATTERN_TAB_CONFIG,
             ) => {
                const config = PATTERN_TAB_CONFIG[configKey];
-               const dimKey = config.dimension as
-                  | 'permanence'
-                  | 'pervasiveness'
-                  | 'personalization';
+               const dimKey = config.dimension;
 
                const chartData = sortedAsc
                   .map((item) => {
@@ -417,20 +420,19 @@ const HomeDashboard = React.memo(
          return { streakView, focusView, patternView };
       }, [anchorDate, isAllTime, entries]);
 
-      // --- RENDER WITH ANIMATIONS ---
+      // --- RENDER ---
       const dateKey = anchorDate.toISOString();
 
       return (
          <View className="gap-4">
-            {/* STREAK CARD - Always Render */}
-            <Animated.View
-               entering={FadeInDown.duration(600).springify()}
-               layout={LinearTransition.springify()}
-            >
-               <Text>INSERT INFO HERE</Text>
-            </Animated.View>
+            <StatHero
+               resolutionStats={resolutionStats}
+               needsAttentionCount={needsAttentionEntries.length}
+               onOpenNeedsAttention={handleOpenNeedsAttention}
+               isDark={isDark}
+            />
 
-            {/* MENTAL FOCUS - Only if focusView has valid AI data */}
+            {/* MENTAL FOCUS */}
             {focusView && (
                <Animated.View
                   entering={FadeInDown.duration(600).delay(100).springify()}
@@ -448,7 +450,7 @@ const HomeDashboard = React.memo(
                </Animated.View>
             )}
 
-            {/* THINKING PATTERNS - Only if patternView has valid AI data */}
+            {/* THINKING PATTERNS */}
             {patternView && (
                <Animated.View
                   entering={FadeInDown.duration(600).delay(200).springify()}
@@ -463,6 +465,14 @@ const HomeDashboard = React.memo(
                   />
                </Animated.View>
             )}
+
+            <NeedsAttentionSheet
+               sheetRef={needsAttentionSheetRef}
+               entries={needsAttentionEntries}
+               totalCount={entries.length}
+               isDark={isDark}
+               onDeleteEntry={onDeleteEntry}
+            />
          </View>
       );
    },
