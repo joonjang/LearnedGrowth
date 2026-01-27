@@ -1,6 +1,7 @@
 import { Platform, StyleSheet, type ViewStyle } from 'react-native';
 
 const BASE_IOS_SHADOW_PRESETS = {
+   xs: { opacity: 0.06, radius: 2, offset: { width: 0, height: 1 } },
    sm: { opacity: 0.08, radius: 4, offset: { width: 0, height: 2 } },
    md: { opacity: 0.1, radius: 8, offset: { width: 0, height: 4 } },
    lg: { opacity: 0.11, radius: 12, offset: { width: 0, height: 6 } },
@@ -46,6 +47,7 @@ type IosShadowStyle = Pick<
 >;
 
 const ANDROID_SHADOW_CLASSES: Record<IosShadowPreset, string> = {
+   xs: 'shadow-sm shadow-slate-300 dark:shadow-none',
    sm: 'shadow-sm shadow-slate-300 dark:shadow-none',
    md: 'shadow-md shadow-slate-300 dark:shadow-none',
    lg: 'shadow-lg shadow-slate-300 dark:shadow-none',
@@ -56,6 +58,7 @@ const ANDROID_SHADOW_CLASSES: Record<IosShadowPreset, string> = {
 };
 
 const ANDROID_ELEVATION: Record<IosShadowPreset, number> = {
+   xs: 1,
    sm: 2,
    md: 4,
    lg: 6,

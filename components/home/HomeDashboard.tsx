@@ -380,14 +380,15 @@ const HomeDashboard = React.memo(
                const patterns = sortedDesc
                   .map((item) => {
                      const score = getDimScore(item.entry, dimKey);
-                     const phrase = getDimPhrase(item.entry, dimKey)?.trim();
+                     const rawPhrase = getDimPhrase(item.entry, dimKey);
+                     const phrase = rawPhrase?.trim() ?? '';
                      const insight = getDimInsight(item.entry, dimKey);
-                     if (!phrase) return null;
+                     if (!phrase && !score) return null;
                      return {
                         id: `${item.entry.id}-${dimKey}`,
                         entryId: item.entry.id,
                         createdAt: item.entry.createdAt,
-                        phrase,
+                        phrase: phrase || 'No phrase detected for this entry.',
                         impact: getPatternImpact(score),
                         insight: insight ?? null,
                      };

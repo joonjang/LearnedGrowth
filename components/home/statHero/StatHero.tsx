@@ -1,5 +1,5 @@
-import { CARD_PRESS_STYLE, DISPUTE_CTA_CLASS } from '@/lib/styles';
 import { getShadow } from '@/lib/shadow';
+import { CARD_PRESS_STYLE, DISPUTE_CTA_CLASS } from '@/lib/styles';
 import { Entry } from '@/models/entry';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';

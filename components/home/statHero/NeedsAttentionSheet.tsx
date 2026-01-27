@@ -2,6 +2,7 @@ import {
    bottomSheetBackgroundStyle,
    bottomSheetHandleIndicatorStyle,
 } from '@/components/bottomSheetStyles';
+import EntryCard from '@/components/entries/entry/EntryCard';
 import {
    ALERT_COLOR_DARK,
    ALERT_COLOR_LIGHT,
@@ -9,9 +10,7 @@ import {
    BOTTOM_SHEET_BG_DARK,
    BOTTOM_SHEET_BG_LIGHT,
    BOTTOM_SHEET_CONTENT_PADDING,
-   BOTTOM_SHEET_MAX_SNAP,
-} from '@/lib/styles';
-import EntryCard from '@/components/entries/entry/EntryCard';
+} from '@/lib/styles'; // Removed BOTTOM_SHEET_MAX_SNAP
 import { Entry } from '@/models/entry';
 import {
    BottomSheetBackdrop,
@@ -44,8 +43,11 @@ export default function NeedsAttentionSheet({
    const { height: windowHeight } = useWindowDimensions();
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
 
+   // This sets the maximum possible height (90% of screen)
    const maxSheetHeight = useMemo(() => windowHeight * 0.9, [windowHeight]);
-   const snapPoints = useMemo(() => [BOTTOM_SHEET_MAX_SNAP], []);
+
+   // REMOVED: snapPoints memo.
+   // We want the sheet to size itself dynamically up to maxSheetHeight.
 
    const summaryText = useMemo(() => {
       if (totalCount === 0) {
@@ -100,8 +102,8 @@ export default function NeedsAttentionSheet({
          ref={sheetRef}
          onDismiss={handleSheetDismiss}
          index={0}
-         snapPoints={snapPoints}
-         enableDynamicSizing
+         // REMOVED: snapPoints={snapPoints}
+         enableDynamicSizing={true}
          maxDynamicContentSize={maxSheetHeight}
          enablePanDownToClose
          enableOverDrag={false}

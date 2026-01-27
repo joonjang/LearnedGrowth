@@ -3,17 +3,17 @@ import {
    bottomSheetHandleIndicatorStyle,
 } from '@/components/bottomSheetStyles';
 import { ROUTE_ENTRY_DETAIL } from '@/components/constants';
+import type {
+   ThinkingPatternData,
+   ThinkingPatternTab,
+} from '@/components/home/types';
+import { getShadow } from '@/lib/shadow';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_BG_DARK,
    BOTTOM_SHEET_BG_LIGHT,
    BOTTOM_SHEET_CONTENT_PADDING,
 } from '@/lib/styles';
-import type {
-   ThinkingPatternData,
-   ThinkingPatternTab,
-} from '@/components/home/types';
-import { getShadow } from '@/lib/shadow';
 import {
    BottomSheetBackdrop,
    BottomSheetBackdropProps,
@@ -27,7 +27,7 @@ import {
    FileText,
    Minus,
    TrendingDown,
-   TrendingUp
+   TrendingUp,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import type { RefObject } from 'react';
@@ -47,6 +47,10 @@ const TAB_ORDER = ['Time', 'Scope', 'Blame'] as const;
 type PatternTab = keyof ThinkingPatternData;
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const POINTER_LABEL_WIDTH = 220;
+const CHART_TOTAL_HEIGHT = 220;
+const CHART_PADDING_BOTTOM = 20;
+const SLIDER_HEIGHT = 60;
 
 function formatShortDate(date: Date) {
    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -85,6 +89,8 @@ type Props = {
    data: ThinkingPatternData | null;
 };
 
+type SelectionSource = 'chart' | 'list' | null;
+
 export default function ThinkingPatternSheet({
    sheetRef,
    onDismiss,
@@ -94,13 +100,19 @@ export default function ThinkingPatternSheet({
    const { width, height } = useWindowDimensions();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+
    const [activeTab, setActiveTab] = useState<PatternTab>('Time');
    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+   const [pointerState, setPointerState] = useState({ index: -1, x: 0 });
+   const [selectionSource, setSelectionSource] =
+      useState<SelectionSource>(null);
 
    const lineGradientStartColor = isDark ? '#059669' : '#34d399';
    const lineGradientEndColor = isDark ? '#be123c' : '#f43f5e';
+
    const tabData = data?.[activeTab] ?? EMPTY_TAB;
    const chartEdgePadding = 8;
+   const chartContainerPadding = 16;
 
    const activePattern = useMemo(
       () =>
@@ -108,7 +120,9 @@ export default function ThinkingPatternSheet({
          null,
       [expandedItemId, tabData.patterns],
    );
+
    const activeEntryId = activePattern?.entryId ?? null;
+
    const activeChartIndex = useMemo(() => {
       if (!activeEntryId) return -1;
       return tabData.chartData.findIndex(
@@ -131,19 +145,55 @@ export default function ThinkingPatternSheet({
       }
    }, [activePattern, isDark]);
 
+   const basePointColor = isDark ? '#94a3b8' : '#64748b';
+
+   const patternByEntryId = useMemo(() => {
+      const map = new Map<string, (typeof tabData.patterns)[number]>();
+      tabData.patterns.forEach((pattern) => {
+         if (!map.has(pattern.entryId)) {
+            map.set(pattern.entryId, pattern);
+         }
+      });
+      return map;
+   }, [tabData]);
+
+   const getImpactBubbleStyles = useCallback(
+      (impact: string | null | undefined) => {
+         if (impact === 'optimistic') {
+            return {
+               bubbleClasses:
+                  'bg-emerald-50 dark:bg-emerald-500/20 border-emerald-100 dark:border-emerald-800/30',
+               textClasses: 'text-emerald-700 dark:text-emerald-300',
+            };
+         }
+         if (impact === 'pessimistic') {
+            return {
+               bubbleClasses:
+                  'bg-rose-50 dark:bg-rose-500/20 border-rose-100 dark:border-rose-800/30',
+               textClasses: 'text-rose-700 dark:text-rose-300',
+            };
+         }
+         return {
+            bubbleClasses:
+               'bg-slate-100 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700',
+            textClasses: 'text-slate-700 dark:text-slate-300',
+         };
+      },
+      [],
+   );
+
    const chartDataWithHighlight = useMemo(
       () =>
          tabData.chartData.map((point, index) => ({
             ...point,
-            hideDataPoint:
-               activeChartIndex === -1 ? true : index !== activeChartIndex,
+            hideDataPoint: false,
             dataPointColor:
-               index === activeChartIndex ? activePointColor : undefined,
-            dataPointRadius: index === activeChartIndex ? 5 : undefined,
-            dataPointWidth: index === activeChartIndex ? 10 : undefined,
-            dataPointHeight: index === activeChartIndex ? 10 : undefined,
+               index === activeChartIndex ? activePointColor : basePointColor,
+            dataPointRadius: index === activeChartIndex ? 5 : 3,
+            dataPointWidth: index === activeChartIndex ? 10 : 6,
+            dataPointHeight: index === activeChartIndex ? 10 : 6,
          })),
-      [activeChartIndex, activePointColor, tabData.chartData],
+      [activeChartIndex, activePointColor, basePointColor, tabData.chartData],
    );
 
    const tabShadow = useMemo(
@@ -151,24 +201,76 @@ export default function ThinkingPatternSheet({
       [isDark],
    );
 
-   // Tighter preset 'sm' used here to match MentalFocusCard
    const cardShadow = useMemo(
       () => getShadow({ isDark, preset: 'sm', disableInDark: true }),
       [isDark],
    );
 
-   const chartInset = 16 * 2;
+   const chartInset = chartContainerPadding * 2;
+
    const chartWidth = useMemo(
       () =>
          Math.max(200, width - BOTTOM_SHEET_CONTENT_PADDING * 2 - chartInset),
       [chartInset, width],
    );
+
    const maxSheetHeight = useMemo(() => height * 0.9, [height]);
+
    const chartSpacing = useMemo(() => {
       const points = tabData.chartData.length;
       const usableWidth = Math.max(chartWidth - chartEdgePadding * 2, 0);
       return usableWidth / Math.max(points - 1, 1);
    }, [chartEdgePadding, chartWidth, tabData.chartData.length]);
+
+   // --- BUBBLE LOGIC ---
+   // Only show bubble for chart interaction, not list expansion.
+   const displayedPattern = useMemo(() => {
+      // If user is touching the chart, show that.
+      if (pointerState.index >= 0) {
+         const entryId = tabData.chartData[pointerState.index]?.entryId;
+         return patternByEntryId.get(entryId) ?? null;
+      }
+
+      // If the selection came from the chart (e.g., you decide to persist it),
+      // you could optionally show the activePattern here.
+      // But since you want "if expand from detected phrase, don't show bubble",
+      // we intentionally DO NOT fallback to activePattern.
+      return null;
+   }, [pointerState.index, patternByEntryId, tabData.chartData]);
+
+   const bubbleX = useMemo(() => {
+      if (pointerState.index >= 0) return pointerState.x;
+      if (activeChartIndex >= 0) {
+         return chartEdgePadding + activeChartIndex * chartSpacing;
+      }
+      return 0;
+   }, [pointerState.index, pointerState.x, activeChartIndex, chartSpacing]);
+
+   const pointerBubbleLeft = useMemo(() => {
+      if (!displayedPattern) return 0;
+      const raw = bubbleX - POINTER_LABEL_WIDTH / 2 + 5;
+      const minLeft = -8;
+      const maxLeft = chartWidth - POINTER_LABEL_WIDTH + 8;
+      return Math.min(Math.max(raw, minLeft), maxLeft);
+   }, [bubbleX, chartWidth, displayedPattern]);
+
+   const pointerDateParts = useMemo(
+      () =>
+         displayedPattern
+            ? getPatternDateParts(displayedPattern.createdAt)
+            : null,
+      [displayedPattern],
+   );
+
+   const pointerBubble = useMemo(() => {
+      if (!displayedPattern) return null;
+      const phrase =
+         displayedPattern.phrase ?? 'No phrase detected for this entry.';
+      const { bubbleClasses, textClasses } = getImpactBubbleStyles(
+         displayedPattern.impact,
+      );
+      return { phrase, bubbleClasses, textClasses };
+   }, [getImpactBubbleStyles, displayedPattern]);
 
    const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -185,6 +287,8 @@ export default function ThinkingPatternSheet({
 
    const handleDismiss = useCallback(() => {
       setExpandedItemId(null);
+      setPointerState({ index: -1, x: 0 });
+      setSelectionSource(null);
       onDismiss?.();
    }, [onDismiss]);
 
@@ -192,10 +296,17 @@ export default function ThinkingPatternSheet({
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setActiveTab(tab);
       setExpandedItemId(null);
+      setPointerState({ index: -1, x: 0 });
+      setSelectionSource(null);
    }, []);
 
    const handleToggleItem = useCallback((id: string) => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+      // Expanding from the list => do NOT show chart bubble
+      setSelectionSource('list');
+      setPointerState({ index: -1, x: 0 });
+
       setExpandedItemId((current) => (current === id ? null : id));
    }, []);
 
@@ -206,6 +317,39 @@ export default function ThinkingPatternSheet({
       },
       [sheetRef],
    );
+
+   const pointerConfig = useMemo(
+      () => ({
+         activatePointersInstantlyOnTouch: true,
+         pointerRadius: 4,
+         pointerColor: isDark ? '#e2e8f0' : '#0f172a',
+         resetPointerIndexOnRelease: true,
+         shiftPointerLabelX: 0,
+         shiftPointerLabelY: 0,
+         autoAdjustPointerLabelPosition: false,
+         pointerStripWidth: 0,
+         pointerStripUptoDataPoint: false,
+      }),
+      [isDark],
+   );
+
+   const handlePointerProps = useCallback(
+      (props: { pointerIndex?: number; pointerX?: number }) => {
+         const nextIndex = props.pointerIndex ?? -1;
+
+         setPointerState({
+            index: nextIndex,
+            x: props.pointerX ?? 0,
+         });
+
+         // Touching chart => bubble allowed
+         setSelectionSource(nextIndex >= 0 ? 'chart' : null);
+      },
+      [],
+   );
+
+   const showSpeechBubble =
+      selectionSource === 'chart' && Boolean(pointerBubble);
 
    return (
       <BottomSheetModal
@@ -277,54 +421,112 @@ export default function ThinkingPatternSheet({
                })}
             </View>
 
-            {/* --- CHART --- */}
-            <View className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4">
-               <Text className="text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+            {/* --- CHART CONTAINER --- */}
+            <View
+               className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4"
+               style={{ overflow: 'visible' }}
+            >
+               {/* HIGH LABEL */}
+               <Text className="text-xs font-semibold text-emerald-600 dark:text-emerald-300 absolute top-4 left-4 z-10">
                   {tabData.highLabel}
                </Text>
+
                <View className="mt-2">
                   {tabData.chartData.length > 0 ? (
-                     <LineChart
-                        data={chartDataWithHighlight}
-                        width={chartWidth}
-                        spacing={chartSpacing}
-                        initialSpacing={chartEdgePadding}
-                        endSpacing={chartEdgePadding}
-                        height={140}
-                        curved
-                        isAnimated
-                        areaChart
-                        lineGradient
-                        lineGradientDirection="vertical"
-                        lineGradientStartColor={lineGradientStartColor}
-                        lineGradientEndColor={lineGradientEndColor}
-                        gradientDirection="vertical"
-                        color="#6366f1"
-                        startFillColor={lineGradientStartColor}
-                        endFillColor={lineGradientEndColor}
-                        startOpacity={0.2}
-                        endOpacity={0}
-                        hideRules
-                        hideYAxisText
-                        hideAxesAndRules
-                        yAxisThickness={0}
-                        xAxisThickness={0}
-                     />
+                     <View
+                        style={{
+                           height: CHART_TOTAL_HEIGHT,
+                           overflow: 'visible',
+                        }}
+                     >
+                        <LineChart
+                           data={chartDataWithHighlight}
+                           width={chartWidth}
+                           spacing={chartSpacing}
+                           initialSpacing={chartEdgePadding}
+                           endSpacing={chartEdgePadding}
+                           height={CHART_TOTAL_HEIGHT}
+                           curved
+                           isAnimated
+                           areaChart
+                           pointerConfig={pointerConfig}
+                           getPointerProps={handlePointerProps}
+                           lineGradient
+                           lineGradientDirection="vertical"
+                           lineGradientStartColor={lineGradientStartColor}
+                           lineGradientEndColor={lineGradientEndColor}
+                           gradientDirection="vertical"
+                           color="#6366f1"
+                           startFillColor={lineGradientStartColor}
+                           endFillColor={lineGradientEndColor}
+                           startOpacity={0.2}
+                           endOpacity={0}
+                           hideRules
+                           hideYAxisText
+                           hideAxesAndRules
+                           yAxisThickness={0}
+                           xAxisThickness={0}
+                        />
+
+                        {/* POINTER BUBBLE (Overlays Graph) */}
+                        {showSpeechBubble && pointerBubble && (
+                           <View
+                              pointerEvents="none"
+                              style={{
+                                 position: 'absolute',
+                                 left: pointerBubbleLeft,
+                                 top: 0,
+                                 marginTop: 4,
+                                 zIndex: 30,
+                              }}
+                           >
+                              <View
+                                 className={`rounded-xl border px-3 py-2 shadow-sm ${pointerBubble.bubbleClasses}`}
+                                 style={{ maxWidth: POINTER_LABEL_WIDTH }}
+                              >
+                                 {pointerDateParts && (
+                                    <Text
+                                       className={`text-[10px] font-bold uppercase tracking-widest ${pointerBubble.textClasses}`}
+                                    >
+                                       {pointerDateParts.weekday} ·{' '}
+                                       {pointerDateParts.fullDate}
+                                    </Text>
+                                 )}
+                                 <Text
+                                    className={`text-xs font-semibold ${pointerBubble.textClasses}`}
+                                    numberOfLines={2}
+                                 >
+                                    {pointerBubble.phrase}
+                                 </Text>
+                              </View>
+                           </View>
+                        )}
+
+                        {/* LOW LABEL */}
+                        <View
+                           pointerEvents="none"
+                           style={{ position: 'absolute', left: 0, bottom: 0 }}
+                        >
+                           <Text className="text-xs font-semibold text-rose-600 dark:text-rose-300">
+                              {tabData.lowLabel}
+                           </Text>
+                        </View>
+                     </View>
                   ) : (
-                     <View className="h-[140px] items-center justify-center">
+                     <View
+                        className="items-center justify-center"
+                        style={{ height: CHART_TOTAL_HEIGHT }}
+                     >
                         <Text className="text-xs text-slate-500 dark:text-slate-400">
                            No trend data yet.
                         </Text>
                      </View>
                   )}
                </View>
-               <Text className="text-xs font-semibold text-rose-600 dark:text-rose-300 mt-2">
-                  {tabData.lowLabel}
-               </Text>
             </View>
 
             {/* --- LIST --- */}
-            <View className="mt-6">
+            <View className="mt-4">
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
                   Detected Phrases
                </Text>
