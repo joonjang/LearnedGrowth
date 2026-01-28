@@ -16,8 +16,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- shorten the question character count for insight questions for ai api response
-
 - add search function
 
 - make ai insight respond with how the explanation style is helpful/unhelpful
@@ -25,9 +23,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 - add a report problem button to send a snapshot of the issue
 
 - enable user to get extra analysis if someone signs up using their referal code
-
-- once user subscribes, enable all entries to get the ai insight
-- Entry categorization upon subscription
 
 ---
 
@@ -52,6 +47,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - home dashboard card disclaimer simplified
 - mental focus card and sheet streamlined to display simpler data
 - ai credit limit usage migrated to api
+- shortened the question character count for insight questions for ai api response
 
 ### 2026-01-26
 
