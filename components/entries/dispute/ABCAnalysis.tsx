@@ -6,17 +6,12 @@ import React, {
    useRef,
    useState,
 } from 'react';
-import {
-   LayoutChangeEvent,
-   ScrollView,
-   Text,
-   View,
-} from 'react-native';
+import { LayoutChangeEvent, ScrollView, Text, View } from 'react-native';
 
+import NewDisputeLink from '@/components/buttons/NewDisputeLink';
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import WideButton from '@/components/buttons/WideButton';
 import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
-import NewDisputeLink from '@/components/entries/dispute/NewDisputeLink';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { ArrowRight } from 'lucide-react-native';
@@ -198,10 +193,7 @@ export default function ABCAnalysis({
             </View>
          </View>
 
-         <View
-            className="flex-1"
-            onLayout={handleAiCardLayout}
-         >
+         <View className="flex-1" onLayout={handleAiCardLayout}>
             <AiInsightCard
                entryId={entry.id}
                data={aiData}

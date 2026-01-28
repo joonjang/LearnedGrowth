@@ -1,3 +1,9 @@
+import {
+   DISPUTE_BG_CLASS,
+   DISPUTE_BORDER_CLASS,
+   DISPUTE_TEXT_CLASS,
+   SEMANTIC_COLORS,
+} from '@/lib/styles';
 import { getShadow } from '@/lib/shadow';
 import type { LucideIcon } from 'lucide-react-native';
 import { Pencil } from 'lucide-react-native';
@@ -27,7 +33,9 @@ export default function NewDisputeLink({
       [isDark],
    );
    const Icon = icon ?? Pencil;
-   const iconColor = isDark ? '#fcd34d' : '#b45309';
+   const iconColor = isDark
+      ? SEMANTIC_COLORS.dispute.ctaDark
+      : SEMANTIC_COLORS.dispute.cta;
 
    return (
       <Pressable
@@ -37,15 +45,15 @@ export default function NewDisputeLink({
          className={`
             flex-row items-center relative h-14 justify-center
             px-5 rounded-2xl w-full
-            border border-amber-200 dark:border-amber-700/50
-            bg-amber-50 dark:bg-amber-900/20
+            border ${DISPUTE_BORDER_CLASS}
+            ${DISPUTE_BG_CLASS}
             active:opacity-90 active:scale-[0.99]
             ${className ?? ''}
          `}
          style={[shadow.ios, shadow.android]}
       >
          <Text
-            className={`text-[15px] font-bold text-center w-full text-amber-700 dark:text-amber-300 ${textClassName ?? ''}`}
+            className={`text-[15px] font-bold text-center w-full ${DISPUTE_TEXT_CLASS} ${textClassName ?? ''}`}
          >
             {label}
          </Text>

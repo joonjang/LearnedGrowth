@@ -1,4 +1,5 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
+import NewDisputeLink from '@/components/buttons/NewDisputeLink';
 import WideButton from '@/components/buttons/WideButton';
 import {
    ABCDE_FIELD,
@@ -12,7 +13,6 @@ import {
    ROUTE_ENTRIES,
    SAVE_TO_ANALYZE_LABEL,
 } from '@/components/constants';
-import { CATEGORY_COLOR_MAP, DEFAULT_CATEGORY_COLOR } from '@/lib/styles';
 import { EntryField } from '@/components/entries/details/EntryField';
 import { InsightStrip } from '@/components/entries/details/InsightStrip';
 import {
@@ -20,10 +20,10 @@ import {
    TimelineStepDef,
 } from '@/components/entries/details/Timeline';
 import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
-import NewDisputeLink from '@/components/entries/dispute/NewDisputeLink';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
+import { CATEGORY_COLOR_MAP, DEFAULT_CATEGORY_COLOR } from '@/lib/styles';
 import { FieldTone } from '@/lib/theme';
 import type { Entry } from '@/models/entry';
 import { useAuth } from '@/providers/AuthProvider';
