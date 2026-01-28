@@ -29,14 +29,14 @@ function getObservedMoodLabel(styleLabel: string | null | undefined) {
    if (lower.includes('balanced')) return 'Balanced';
 
    if (lower.includes('mixed') || lower.includes('varied')) {
-      return 'Up & down (positive + negative)';
+      return 'Up & down';
    }
 
    const tone = STYLE_TO_TONE_MAP[styleLabel ?? ''] ?? 'Mixed';
    if (tone === 'Optimistic') return 'Optimistic';
    if (tone === 'Pessimistic') return 'Pessimistic';
 
-   return 'Up & down (positive + negative)';
+   return 'Up & down';
 }
 
 export default function MentalFocusCard({

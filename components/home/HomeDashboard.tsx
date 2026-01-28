@@ -4,6 +4,7 @@ import { CATEGORY_COLOR_MAP, DEFAULT_CATEGORY_COLOR } from '@/lib/styles';
 import { isOptimistic, toDateKey } from '@/lib/utils';
 import { Entry } from '@/models/entry';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { Layers, MessageCircleMore } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
@@ -82,6 +83,76 @@ function getPatternImpact(
    return isOptimistic(score) ? 'optimistic' : 'pessimistic';
 }
 
+type AiDataEmptyCardProps = {
+   title: string;
+   Icon: React.ComponentType<{ size?: number; color?: string }>;
+   shadowStyle: any;
+   isDark: boolean;
+};
+
+function AiDataEmptyCard({
+   title,
+   Icon,
+   shadowStyle,
+   isDark,
+}: AiDataEmptyCardProps) {
+   const t = title.toLowerCase();
+
+   const subtitle = t.includes('mental')
+      ? 'Summarizes themes and observed mood from analyzed entries.'
+      : t.includes('thinking')
+        ? 'Displays the patterns in how you explain setbacks from analyzed entries.'
+        : 'Unlocks insights from analyzed entries.';
+
+   const thinkingQuestions = [
+      'Do your entries frame setbacks as lasting, or passing?',
+      'Do your entries suggest it affects everything, or one area?',
+      'Do your entries place the cause on you, or the situation?',
+   ];
+
+   return (
+      <View
+         className="p-5 pb-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
+         style={[shadowStyle.ios, shadowStyle.android]}
+      >
+         {/* Header */}
+         <View className="flex-row items-center gap-2 mb-3">
+            <Icon size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
+            <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+               {title}
+            </Text>
+         </View>
+
+         {/* Body (compact, aesthetic, no extra icon repetition) */}
+         <View className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700/50 px-4 py-4">
+            <Text className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+               Waiting for analysis
+            </Text>
+
+            <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-5">
+               {subtitle}
+            </Text>
+
+            {/* Thinking Patterns: show the 3 questions */}
+            {t.includes('thinking') && (
+               <View className="mt-3 gap-2">
+                  {thinkingQuestions.map((q) => (
+                     <View key={q} className="flex-row items-start">
+                        <Text className="text-xs text-slate-400 dark:text-slate-500 mr-2">
+                           •
+                        </Text>
+                        <Text className="flex-1 text-xs text-slate-500 dark:text-slate-400 leading-5">
+                           {q}
+                        </Text>
+                     </View>
+                  ))}
+               </View>
+            )}
+         </View>
+      </View>
+   );
+}
+
 type Props = {
    entries: Entry[];
    anchorDate: Date;
@@ -121,6 +192,8 @@ const HomeDashboard = React.memo(
          }
          return { insightCoverage: null, entriesWithoutInsight: [] };
       }, [entries]);
+      const showAiEmptyCards =
+         entries.length > 0 && insightCoverage?.valid === 0;
 
       // ... [AGGREGATOR LOGIC - REMAINS THE SAME] ...
       const resolutionStats = useMemo(
@@ -452,37 +525,67 @@ const HomeDashboard = React.memo(
             )}
 
             {/* CARDS */}
-            {focusView && (
+            {showAiEmptyCards ? (
                <Animated.View
                   entering={FadeInDown.duration(600).delay(100).springify()}
                   exiting={FadeOutUp.duration(400)}
                   layout={LinearTransition.springify()}
                >
-                  <MentalFocusCard
-                     key={`focus-${dateKey}`}
-                     analysis={focusView}
-                     entries={entries}
+                  <AiDataEmptyCard
+                     title="Mental Focus"
+                     Icon={MessageCircleMore}
                      shadowStyle={shadowSm}
                      isDark={isDark}
-                     onDeleteEntry={onDeleteEntry}
                   />
                </Animated.View>
+            ) : (
+               focusView && (
+                  <Animated.View
+                     entering={FadeInDown.duration(600).delay(100).springify()}
+                     exiting={FadeOutUp.duration(400)}
+                     layout={LinearTransition.springify()}
+                  >
+                     <MentalFocusCard
+                        key={`focus-${dateKey}`}
+                        analysis={focusView}
+                        entries={entries}
+                        shadowStyle={shadowSm}
+                        isDark={isDark}
+                        onDeleteEntry={onDeleteEntry}
+                     />
+                  </Animated.View>
+               )
             )}
 
-            {patternView && (
+            {showAiEmptyCards ? (
                <Animated.View
                   entering={FadeInDown.duration(600).delay(200).springify()}
                   exiting={FadeOutUp.duration(400)}
                   layout={LinearTransition.springify()}
                >
-                  <ThinkingPatternCard
-                     key={`pattern-${dateKey}`}
-                     data={patternView}
-                     entries={entries}
+                  <AiDataEmptyCard
+                     title="Thinking Patterns"
+                     Icon={Layers}
                      shadowStyle={shadowSm}
                      isDark={isDark}
                   />
                </Animated.View>
+            ) : (
+               patternView && (
+                  <Animated.View
+                     entering={FadeInDown.duration(600).delay(200).springify()}
+                     exiting={FadeOutUp.duration(400)}
+                     layout={LinearTransition.springify()}
+                  >
+                     <ThinkingPatternCard
+                        key={`pattern-${dateKey}`}
+                        data={patternView}
+                        entries={entries}
+                        shadowStyle={shadowSm}
+                        isDark={isDark}
+                     />
+                  </Animated.View>
+               )
             )}
 
             <NeedsAttentionSheet
