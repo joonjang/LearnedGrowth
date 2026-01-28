@@ -6,14 +6,22 @@ export function normalizeMentalFocusCategory(
    return !rawCategory || rawCategory === 'Other' ? 'Other' : rawCategory;
 }
 
+export function getAiAnalyzedEntryCount(entries: Entry[]) {
+   return entries.reduce(
+      (total, entry) => (entry.aiResponse ? total + 1 : total),
+      0,
+   );
+}
+
 export function buildMentalFocusCategoryCounts(entries: Entry[]) {
    const counts = new Map<string, number>();
    let total = 0;
 
    entries.forEach((entry) => {
-      const meta = entry.aiResponse?.meta;
-      if (!meta) return;
-      const category = normalizeMentalFocusCategory(meta.category);
+      if (!entry.aiResponse) return;
+      const category = normalizeMentalFocusCategory(
+         entry.aiResponse.meta?.category,
+      );
       counts.set(category, (counts.get(category) || 0) + 1);
       total += 1;
    });

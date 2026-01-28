@@ -478,6 +478,7 @@ const HomeDashboard = React.memo(
                   <ThinkingPatternCard
                      key={`pattern-${dateKey}`}
                      data={patternView}
+                     entries={entries}
                      shadowStyle={shadowSm}
                      isDark={isDark}
                   />

@@ -16,16 +16,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- change Analyze with AI with new dispute amber color
-
-- make monthly credit come from api
-
-- change mental focus card and sheet
-
-- change hero state to display number of total entries above the reframed number
-
-- change new dispute color
-
 - shorten the question character count for insight questions for ai api response
 
 - add search function
@@ -60,7 +50,8 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - added bottom sheet to display entries without ai
 - enabled entries to close sheet when pressing analyze with ai feature
 - home dashboard card disclaimer simplified
-- mental focus card and sheet WIP
+- mental focus card and sheet streamlined to display simpler data
+- ai credit limit usage migrated to api
 
 ### 2026-01-26
 

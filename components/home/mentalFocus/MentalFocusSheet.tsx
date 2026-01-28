@@ -1,4 +1,3 @@
-import { STYLE_TO_TONE_MAP } from '@/components/constants';
 import EntryCard from '@/components/entries/entry/EntryCard';
 import {
    bottomSheetBackgroundStyle,
@@ -21,7 +20,6 @@ import {
    BottomSheetModal,
    BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
-import { MessageSquareText, Sparkles } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -32,7 +30,130 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MentalFocusViewModel } from '../types';
 
-// --- NEW COMPONENT: ENTRY SCORE BADGE ---
+// ------------------------------
+// Mood helpers
+// ------------------------------
+type MoodKind = 'positive' | 'negative' | 'balanced' | 'mixed' | 'unknown';
+
+function isNum(v: any): v is number {
+   return typeof v === 'number' && Number.isFinite(v);
+}
+
+function getMoodColor(kind: MoodKind, isDark: boolean) {
+   if (kind === 'positive') return isDark ? '#34d399' : '#059669'; // green
+   if (kind === 'negative') return isDark ? '#f87171' : '#dc2626'; // red
+   if (kind === 'balanced') return isDark ? '#94a3b8' : '#64748b'; // slate
+   if (kind === 'mixed') return isDark ? '#fbbf24' : '#d97706'; // amber
+   return isDark ? '#64748b' : '#94a3b8';
+}
+
+function getMoodFromScores(
+   sentimentScore: number | null | undefined,
+   optimismScore: number | null | undefined,
+): { label: string; shortLabel: string; kind: MoodKind } {
+   if (!isNum(sentimentScore) && !isNum(optimismScore)) {
+      return {
+         label: 'Not analyzed',
+         shortLabel: 'Not analyzed',
+         kind: 'unknown',
+      };
+   }
+
+   const s = isNum(sentimentScore) ? sentimentScore : null;
+   const o = isNum(optimismScore) ? optimismScore : null;
+
+   const values = [s, o].filter(isNum) as number[];
+   const avg = values.reduce((a, b) => a + b, 0) / values.length;
+
+   // Strong agreement cases
+   if (s !== null && o !== null) {
+      if (s >= 7 && o >= 7) {
+         return {
+            label: 'Optimistic',
+            shortLabel: 'Optimistic',
+            kind: 'positive',
+         };
+      }
+      if (s <= 4 && o <= 4) {
+         return {
+            label: 'Pessimistic',
+            shortLabel: 'Pessimistic',
+            kind: 'negative',
+         };
+      }
+
+      // Balanced band
+      if (s >= 4.5 && s <= 6.5 && o >= 4.5 && o <= 6.5) {
+         return { label: 'Balanced', shortLabel: 'Balanced', kind: 'balanced' };
+      }
+
+      // Disagreement / volatility
+      const diff = Math.abs(s - o);
+      if (diff >= 3 || (s >= 7 && o <= 4) || (o >= 7 && s <= 4)) {
+         return { label: 'Up & down', shortLabel: 'Up & down', kind: 'mixed' };
+      }
+   }
+
+   // Single-score / fallback
+   if (avg >= 6.5)
+      return {
+         label: 'Optimistic',
+         shortLabel: 'Optimistic',
+         kind: 'positive',
+      };
+   if (avg <= 3.5)
+      return {
+         label: 'Pessimistic',
+         shortLabel: 'Pessimistic',
+         kind: 'negative',
+      };
+   if (avg >= 4.5 && avg <= 6.5)
+      return { label: 'Balanced', shortLabel: 'Balanced', kind: 'balanced' };
+
+   return { label: 'Up & down', shortLabel: 'Up & down', kind: 'mixed' };
+}
+
+function getCategoryMood(entriesInCategory: Entry[], isDark: boolean) {
+   const scored = entriesInCategory
+      .map((e) => {
+         const s = e.aiResponse?.meta?.sentimentScore;
+         const o = e.aiResponse?.meta?.optimismScore;
+         return getMoodFromScores(s as any, o as any);
+      })
+      .filter((m) => m.kind !== 'unknown');
+
+   if (scored.length === 0) {
+      const unknown = getMoodFromScores(null, null);
+      return { ...unknown, color: getMoodColor(unknown.kind, isDark) };
+   }
+
+   const kinds = new Set(scored.map((m) => m.kind));
+   let final: { label: string; shortLabel: string; kind: MoodKind };
+
+   if (kinds.has('mixed') || (kinds.has('positive') && kinds.has('negative'))) {
+      final = { label: 'Up & down', shortLabel: 'Up & down', kind: 'mixed' };
+   } else if (kinds.has('positive')) {
+      final = {
+         label: 'Optimistic',
+         shortLabel: 'Optimistic',
+         kind: 'positive',
+      };
+   } else if (kinds.has('negative')) {
+      final = {
+         label: 'Pessimistic',
+         shortLabel: 'Pessimistic',
+         kind: 'negative',
+      };
+   } else {
+      final = { label: 'Balanced', shortLabel: 'Balanced', kind: 'balanced' };
+   }
+
+   return { ...final, color: getMoodColor(final.kind, isDark) };
+}
+
+// ------------------------------
+// Entry badge (per entry)
+// ------------------------------
 const EntryScoreBadge = ({
    entry,
    isDark,
@@ -40,59 +161,44 @@ const EntryScoreBadge = ({
    entry: Entry;
    isDark: boolean;
 }) => {
-   // Safety check if scores exist
-   const sentiment = entry.aiResponse?.meta?.sentimentScore ?? 0; // 1-10
-   const optimism = entry.aiResponse?.meta?.optimismScore ?? 0; // 1-10
+   const sentiment = entry.aiResponse?.meta?.sentimentScore;
+   const optimism = entry.aiResponse?.meta?.optimismScore;
 
-   // Simple color logic
-   const getScoreColor = (score: number) => {
-      if (score >= 7) return isDark ? '#34d399' : '#059669'; // Green
-      if (score <= 4) return isDark ? '#f87171' : '#dc2626'; // Red
-      return isDark ? '#fbbf24' : '#d97706'; // Amber/Mixed
-   };
+   const mood = getMoodFromScores(sentiment as any, optimism as any);
+   if (mood.kind === 'unknown') return null;
+
+   const dotColor = getMoodColor(mood.kind, isDark);
 
    return (
-      <View className="flex-row items-center justify-between mb-1.5 px-1">
-         <View className="flex-row gap-3">
-            {/* Sentiment Score */}
-            <View className="flex-row items-center gap-1.5">
-               <View
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: getScoreColor(sentiment) }}
-               />
-               <Text className="text-[10px] font-bold text-slate-400 uppercase">
-                  Sentiment:{' '}
-                  <Text style={{ color: getScoreColor(sentiment) }}>
-                     {sentiment}/10
-                  </Text>
-               </Text>
-            </View>
-
-            {/* Optimism Score */}
-            <View className="flex-row items-center gap-1.5">
-               <View
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: getScoreColor(optimism) }}
-               />
-               <Text className="text-[10px] font-bold text-slate-400 uppercase">
-                  Optimism:{' '}
-                  <Text style={{ color: getScoreColor(optimism) }}>
-                     {optimism}/10
-                  </Text>
-               </Text>
-            </View>
+      <View className="mb-1.5 px-1">
+         <View className="flex-row items-center gap-2">
+            <View
+               className="w-1.5 h-1.5 rounded-full"
+               style={{ backgroundColor: dotColor }}
+            />
+            <Text
+               className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider"
+               numberOfLines={1}
+            >
+               Observed mood:{' '}
+               <Text style={{ color: dotColor }}>{mood.label}</Text>
+            </Text>
          </View>
       </View>
    );
 };
 
-// ... TopicCard ...
+// ------------------------------
+// Topic card (mood in CENTER so % stays right)
+// ------------------------------
 const TopicCard = ({
    isActive,
    color,
    label,
    percentage,
    count,
+   moodLabel,
+   moodColor,
    onPress,
    isDark,
 }: {
@@ -101,6 +207,8 @@ const TopicCard = ({
    label: string;
    percentage: number;
    count: number;
+   moodLabel: string;
+   moodColor: string;
    onPress: () => void;
    isDark: boolean;
 }) => {
@@ -119,15 +227,20 @@ const TopicCard = ({
          }`}
          style={!isActive ? [buttonShadow.ios, buttonShadow.android] : null}
       >
-         <View className="flex-row justify-between items-center mb-3">
-            <View className="flex-row items-center gap-2.5">
+         {/* Header row: left content, centered mood, right % */}
+         <View className="flex-row items-start mb-3">
+            {/* LEFT */}
+            <View className="flex-row items-center gap-2.5 flex-1 min-w-0">
                <View
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: color }}
                />
-               <View>
+               <View className="flex-1 min-w-0">
                   <Text
-                     className={`text-sm font-black ${isDark ? 'text-white' : 'text-slate-900'} tracking-tight`}
+                     numberOfLines={1}
+                     className={`text-sm font-black ${
+                        isDark ? 'text-white' : 'text-slate-900'
+                     } tracking-tight`}
                   >
                      {label}
                   </Text>
@@ -136,13 +249,37 @@ const TopicCard = ({
                   </Text>
                </View>
             </View>
+
+            {/* CENTER mood */}
+            <View className="w-[34%] items-center justify-center px-2">
+               <View className="flex-row items-center gap-2">
+                  <View
+                     className="w-1.5 h-1.5 rounded-full"
+                     style={{ backgroundColor: moodColor }}
+                  />
+                  <Text
+                     className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider"
+                     numberOfLines={1}
+                  >
+                     {moodLabel}
+                  </Text>
+               </View>
+            </View>
+
+            {/* RIGHT % */}
             <Text
-               className={`text-xs font-black ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
+               className={`text-xs font-black ${
+                  isActive
+                     ? 'text-indigo-600 dark:text-indigo-400'
+                     : 'text-slate-400'
+               }`}
+               style={{ fontVariant: ['tabular-nums'] }}
             >
                {percentage}%
             </Text>
          </View>
 
+         {/* Progress bar */}
          <View className="h-1.5 w-full bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden">
             <View
                className="h-full rounded-full"
@@ -179,9 +316,7 @@ export function MentalFocusSheet({
 
    const maxSheetHeight = useMemo(() => windowHeight * 0.9, [windowHeight]);
 
-   // --- SAFE HOOKS ---
    const dynamicTopicStats = useMemo(() => {
-      // Guard inside hook
       if (!analysis?.categoryStats) return [];
 
       const { counts, total } = buildMentalFocusCategoryCounts(entries);
@@ -189,15 +324,24 @@ export function MentalFocusSheet({
       return analysis.categoryStats
          .map((stat) => {
             const count = counts.get(stat.label) || 0;
+
+            const entriesInCat = filterEntriesByMentalFocusCategory(
+               entries,
+               stat.label,
+            );
+            const catMood = getCategoryMood(entriesInCat, isDark);
+
             return {
                ...stat,
                dynamicCount: count,
                dynamicPercentage: total > 0 ? (count / total) * 100 : 0,
+               moodLabel: catMood.shortLabel,
+               moodColor: catMood.color,
             };
          })
          .filter((stat) => stat.dynamicCount > 0)
          .sort((a, b) => b.dynamicPercentage - a.dynamicPercentage);
-   }, [entries, analysis?.categoryStats]);
+   }, [entries, analysis?.categoryStats, isDark]);
 
    const filteredEntries = useMemo(() => {
       if (!entries?.length || !activeTopic) return [];
@@ -225,12 +369,7 @@ export function MentalFocusSheet({
       [],
    );
 
-   // --- GUARD CLAUSE ---
    if (!analysis) return null;
-
-   // --- SAFE CALCULATIONS ---
-   const rawTone = STYLE_TO_TONE_MAP[analysis.narrative.styleLabel] ?? 'Mixed';
-   const attitudeLabel = rawTone === 'Mixed' ? 'Varied' : rawTone;
 
    return (
       <BottomSheetModal
@@ -256,7 +395,7 @@ export function MentalFocusSheet({
             keyboardShouldPersistTaps="handled"
          >
             {/* --- SHEET HEADER --- */}
-            <View className="px-5 mb-6">
+            <View className="px-5 mb-1">
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
                   Mental Focus
                </Text>
@@ -264,39 +403,11 @@ export function MentalFocusSheet({
                   Observed Topics
                </Text>
 
-               {/* HEADER STATS (Matching Card) */}
-               <View className="flex-row gap-3">
-                  <View className="flex-row items-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-                     <Sparkles
-                        size={10}
-                        color={isDark ? '#94a3b8' : '#64748b'}
-                     />
-                     <Text className="text-[10px] font-bold text-slate-500 dark:text-slate-400 ml-1.5 uppercase">
-                        Attitude:{' '}
-                        <Text className="text-slate-700 dark:text-slate-300">
-                           {attitudeLabel}
-                        </Text>
-                     </Text>
-                  </View>
-                  <View className="flex-row items-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-                     <MessageSquareText
-                        size={10}
-                        color={isDark ? '#94a3b8' : '#64748b'}
-                     />
-                     <Text className="text-[10px] font-bold text-slate-500 dark:text-slate-400 ml-1.5 uppercase">
-                        Style:{' '}
-                        <Text className="text-slate-700 dark:text-slate-300">
-                           {analysis.narrative.styleLabel}
-                        </Text>
-                     </Text>
-                  </View>
-               </View>
-
                {!activeTopic && (
                   <Animated.Text
                      entering={FadeIn.duration(200)}
                      exiting={FadeOut.duration(200)}
-                     className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mt-4"
+                     className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest "
                   >
                      Tap a category to explore related entries
                   </Animated.Text>
@@ -313,6 +424,8 @@ export function MentalFocusSheet({
                      label={stat.label}
                      percentage={Math.round(stat.dynamicPercentage)}
                      count={stat.dynamicCount}
+                     moodLabel={stat.moodLabel}
+                     moodColor={stat.moodColor}
                      onPress={() =>
                         setActiveTopic(
                            activeTopic === stat.label ? null : stat.label,
@@ -323,7 +436,7 @@ export function MentalFocusSheet({
                ))}
             </View>
 
-            {/* --- FILTERED ENTRIES WITH SCORES --- */}
+            {/* --- FILTERED ENTRIES WITH MOOD BADGE --- */}
             {activeTopic && (
                <Animated.View
                   entering={FadeIn.duration(300)}
@@ -336,6 +449,7 @@ export function MentalFocusSheet({
                         {activeTopic}
                      </Text>
                   </View>
+
                   <View className="gap-5">
                      {filteredEntries.map((entry) => (
                         <Animated.View
@@ -343,7 +457,6 @@ export function MentalFocusSheet({
                            entering={FadeIn.duration(200)}
                            layout={LinearTransition.duration(200)}
                         >
-                           {/* SCORE BADGE ABOVE ENTRY */}
                            <EntryScoreBadge entry={entry} isDark={isDark} />
 
                            <EntryCard
