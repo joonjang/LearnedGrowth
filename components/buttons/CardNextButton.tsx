@@ -4,7 +4,7 @@ import {
    AI_ANALYSIS_AMBER_BUTTON_CLASS,
    AI_ANALYSIS_AMBER_BUTTON_TEXT_CLASS,
    ANALYZE_WITH_AI_LABEL,
-   DISPUTE_CTA_CLASS
+   DISPUTE_CTA_CLASS,
 } from '@/lib/styles';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
@@ -86,7 +86,7 @@ export default function CardNextButton({ id, onNavigate }: Prop) {
          return {
             label: 'View Analysis',
             icon: FileText,
-            bgColor: 'bg-blue-500 dark:bg-blue-600',
+            bgColor: 'bg-blue-500 dark:bg-blue-700/50',
             textColor: 'text-white',
          };
       }

@@ -7,7 +7,7 @@ export const PRIMARY_CTA_CLASS =
 export const PRIMARY_CTA_TEXT_CLASS = 'text-white';
 export const PRIMARY_CTA_ICON_COLOR = '#ffffff';
 export const DISPUTE_CTA_CLASS =
-   'bg-[#059669] active:bg-[#059669] dark:bg-[#047857] dark:active:bg-[#047857]';
+   'bg-green-600 active:bg-green-700 dark:bg-green-700/50 dark:active:bg-green-800/50';
 export const ANALYSIS_CTA_CLASS =
    'bg-blue-500 active:bg-blue-600 dark:bg-blue-800 dark:active:bg-blue-900';
 
