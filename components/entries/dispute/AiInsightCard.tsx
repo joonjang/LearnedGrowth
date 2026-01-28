@@ -1,9 +1,6 @@
-import {
-   AI_ANALYSIS_CREDIT_COST,
-   FREE_MONTHLY_CREDITS,
-} from '@/components/constants';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { useAuth } from '@/providers/AuthProvider';
+import { useAppConfig } from '@/providers/AppConfigProvider';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -58,6 +55,8 @@ export function AiInsightCard({
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const { profile, status, refreshProfile, refreshProfileIfStale } = useAuth();
+   const { aiConfig } = useAppConfig();
+   const { freeMonthlyCredits, aiCreditCost } = aiConfig;
    const isFreePlan = profile?.plan === 'free';
    const shopSheetRef = useRef<BottomSheetModal>(null);
 
@@ -90,20 +89,20 @@ export function AiInsightCard({
    const availableCredits = useMemo(() => {
       if (!profile) return null;
       return (
-         Math.max(FREE_MONTHLY_CREDITS - (profile.aiCycleUsed ?? 0), 0) +
+         Math.max(freeMonthlyCredits - (profile.aiCycleUsed ?? 0), 0) +
          (profile.extraAiCredits ?? 0)
       );
-   }, [profile]);
+   }, [freeMonthlyCredits, profile]);
 
    const refreshCostNote = useMemo(() => {
       if (!isFreePlan) return null;
-      const costSuffix = AI_ANALYSIS_CREDIT_COST === 1 ? '' : 's';
+      const costSuffix = aiCreditCost === 1 ? '' : 's';
       if (availableCredits === null) {
-         return `Costs ${AI_ANALYSIS_CREDIT_COST} credit${costSuffix}.`;
+         return `Costs ${aiCreditCost} credit${costSuffix}.`;
       }
       const remainingSuffix = availableCredits === 1 ? '' : 's';
-      return `Costs ${AI_ANALYSIS_CREDIT_COST} credit${costSuffix} • ${availableCredits} credit${remainingSuffix} left`;
-   }, [availableCredits, isFreePlan]);
+      return `Costs ${aiCreditCost} credit${costSuffix} • ${availableCredits} credit${remainingSuffix} left`;
+   }, [aiCreditCost, availableCredits, isFreePlan]);
 
    const COOLDOWN_MINUTES = 2;
    const windowMs = COOLDOWN_MINUTES * 60000;
@@ -208,7 +207,9 @@ export function AiInsightCard({
       // FIX: Only enforce credit limits if the user is on the 'free' plan.
       // If isFreePlan is false (subscriber), we skip this check.
       const isCreditRestricted =
-         isFreePlan && availableCredits !== null && availableCredits <= 0;
+         isFreePlan &&
+         availableCredits !== null &&
+         availableCredits < aiCreditCost;
 
       if (isCreditRestricted) {
          shopSheetRef.current?.present();
@@ -223,6 +224,7 @@ export function AiInsightCard({
          }
       }
    }, [
+      aiCreditCost,
       availableCredits,
       onRefresh,
       refreshProfile,

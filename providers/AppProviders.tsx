@@ -1,4 +1,5 @@
 import { AdapterProvider } from '@/providers/AdapterProvider';
+import { AppConfigProvider } from '@/providers/AppConfigProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { EntriesStoreProvider } from '@/providers/EntriesStoreProvider';
 import { PreferencesProvider } from '@/providers/PreferencesProvider';
@@ -11,19 +12,21 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <KeyboardProvider>
       <PreferencesProvider>
-        <AuthProvider>
-            <RevenueCatProvider>
-               <AdapterProvider>
-                  <EntriesStoreProvider>
-                     <SafeAreaProvider>
-                        <BottomSheetModalProvider>
-                           {children}
-                        </BottomSheetModalProvider>
-                     </SafeAreaProvider>
-                  </EntriesStoreProvider>
-               </AdapterProvider>
-            </RevenueCatProvider>
-        </AuthProvider>
+         <AppConfigProvider>
+            <AuthProvider>
+               <RevenueCatProvider>
+                  <AdapterProvider>
+                     <EntriesStoreProvider>
+                        <SafeAreaProvider>
+                           <BottomSheetModalProvider>
+                              {children}
+                           </BottomSheetModalProvider>
+                        </SafeAreaProvider>
+                     </EntriesStoreProvider>
+                  </AdapterProvider>
+               </RevenueCatProvider>
+            </AuthProvider>
+         </AppConfigProvider>
       </PreferencesProvider>
     </KeyboardProvider>
   );

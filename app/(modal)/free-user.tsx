@@ -1,9 +1,5 @@
 import AiDisclaimerModal from '@/components/appInfo/AiDisclaimerModal';
-import {
-   AI_ANALYSIS_CREDIT_COST,
-   FREE_MONTHLY_CREDITS,
-   ROUTE_LOGIN,
-} from '@/components/constants';
+import { ROUTE_LOGIN } from '@/components/constants';
 import CreditShop from '@/components/shop/CreditShop';
 import {
    bottomSheetBackgroundStyle,
@@ -17,6 +13,7 @@ import {
 } from '@/lib/styles';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
+import { useAppConfig } from '@/providers/AppConfigProvider';
 import {
    BottomSheetBackdrop,
    BottomSheetBackdropProps,
@@ -59,6 +56,8 @@ export default function FreeUserChoiceScreen() {
 
    const { status, profile, loadingProfile, refreshProfileIfStale, user } =
       useAuth();
+   const { aiConfig } = useAppConfig();
+   const { freeMonthlyCredits, aiCreditCost } = aiConfig;
 
    const { id, autoAi, isReframed } = useLocalSearchParams<{
       id?: string | string[];
@@ -122,9 +121,11 @@ export default function FreeUserChoiceScreen() {
    const effectiveSignedIn = isSignedIn || hasSession;
 
    const availableCredits = profile
-      ? Math.max(FREE_MONTHLY_CREDITS - profile.aiCycleUsed, 0) +
+      ? Math.max(freeMonthlyCredits - profile.aiCycleUsed, 0) +
         (profile.extraAiCredits ?? 0)
       : null;
+   const isOutOfCredits =
+      availableCredits !== null && availableCredits < aiCreditCost;
 
    const creditAvailability = useMemo(() => {
       if (!isSignedIn) return 'Sign in to see your credits.';
@@ -241,7 +242,7 @@ export default function FreeUserChoiceScreen() {
 
    const handleChoice = useCallback(
       (requiresAuth: boolean) => {
-         if (requiresAuth && availableCredits === 0) {
+         if (requiresAuth && isOutOfCredits) {
             InteractionManager.runAfterInteractions(() => {
                setShowShop((prev) => !prev);
             });
@@ -267,7 +268,7 @@ export default function FreeUserChoiceScreen() {
          proceedToPath(path, requiresAuth);
       },
       [
-         availableCredits,
+         isOutOfCredits,
          checkConsentAndNavigate,
          entryId,
          effectiveSignedIn,
@@ -370,7 +371,7 @@ export default function FreeUserChoiceScreen() {
                      className="text-sm font-semibold mb-1"
                      style={{ color: theme.amberText }}
                   >
-                     {availableCredits === 0 ? 'Out of credits' : 'Free plan'}
+                     {isOutOfCredits ? 'Out of credits' : 'Free plan'}
                   </Text>
                   <Text
                      className="text-2xl font-bold mb-1"
@@ -406,13 +407,13 @@ export default function FreeUserChoiceScreen() {
                               className="text-lg font-bold"
                               style={{ color: theme.primaryText }}
                            >
-                              {availableCredits === 0
+                              {isOutOfCredits
                                  ? 'Get more AI Credits'
                                  : 'Let AI analyze this'}
                            </Text>
 
                            <View className="flex-row items-center mt-2 gap-1">
-                              {availableCredits === 0 ? (
+                              {isOutOfCredits ? (
                                  <AlertCircle
                                     size={14}
                                     color={theme.primaryText}
@@ -424,10 +425,10 @@ export default function FreeUserChoiceScreen() {
                                  className="text-xs font-bold"
                                  style={{ color: theme.primaryText }}
                               >
-                                 {availableCredits === 0
-                                    ? 'You have 0 credits left.'
-                                    : `Costs ${AI_ANALYSIS_CREDIT_COST} credit${
-                                         AI_ANALYSIS_CREDIT_COST === 1
+                                 {isOutOfCredits
+                                    ? 'Not enough credits for AI analysis.'
+                                    : `Costs ${aiCreditCost} credit${
+                                         aiCreditCost === 1
                                             ? ''
                                             : 's'
                                       }. ${creditAvailability}`}
@@ -435,7 +436,7 @@ export default function FreeUserChoiceScreen() {
                            </View>
                         </View>
 
-                        {availableCredits === 0 ? (
+                        {isOutOfCredits ? (
                            <PlusCircle size={24} color={theme.primaryText} />
                         ) : (
                            <Sparkles size={24} color={theme.primaryText} />

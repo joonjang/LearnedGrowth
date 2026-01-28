@@ -1,4 +1,4 @@
-import { FREE_MONTHLY_CREDITS, ROUTE_LOGIN } from '@/components/constants';
+import { ROUTE_LOGIN } from '@/components/constants';
 import { AiInsightCreditShopSheet } from '@/components/shop/CreditShopSheet';
 import SendFeedback from '@/components/utils/SendFeedback';
 import { APP_VERSION } from '@/lib/appInfo';
@@ -12,6 +12,7 @@ import {
 } from '@/lib/styles';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
+import { useAppConfig } from '@/providers/AppConfigProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -81,6 +82,8 @@ export default function SettingsScreen() {
       refreshProfileIfStale,
       loadingProfile,
    } = useAuth();
+   const { aiConfig } = useAppConfig();
+   const { freeMonthlyCredits } = aiConfig;
 
    const {
       loading: rcLoading,
@@ -174,20 +177,20 @@ export default function SettingsScreen() {
    const hasGrowth = entitlementActive;
    const aiUsed = profile?.aiCycleUsed ?? 0;
    const extraCredits = profile?.extraAiCredits ?? 0;
-   const cycleRemaining = Math.max(FREE_MONTHLY_CREDITS - aiUsed, 0);
+   const cycleRemaining = Math.max(freeMonthlyCredits - aiUsed, 0);
    const darkMode = theme === 'dark';
 
    const checkCreditsCycle = useCallback(() => {
       if (status !== 'signedIn') return;
       const currentProfile = profileRef.current;
       const aiUsed = currentProfile?.aiCycleUsed ?? 0;
-      const remaining = Math.max(FREE_MONTHLY_CREDITS - aiUsed, 0);
-      if (currentProfile && remaining < FREE_MONTHLY_CREDITS) {
+      const remaining = Math.max(freeMonthlyCredits - aiUsed, 0);
+      if (currentProfile && remaining < freeMonthlyCredits) {
          refreshProfile();
          return;
       }
       refreshProfileIfStale();
-   }, [refreshProfile, refreshProfileIfStale, status]);
+   }, [freeMonthlyCredits, refreshProfile, refreshProfileIfStale, status]);
 
    useFocusEffect(
       useCallback(() => {
@@ -507,7 +510,7 @@ export default function SettingsScreen() {
                <View className="flex-row gap-3">
                   <StatCard
                      label="Cycle Credits"
-                     value={`${cycleRemaining} / ${FREE_MONTHLY_CREDITS}`}
+                     value={`${cycleRemaining} / ${freeMonthlyCredits}`}
                      subtext={resetSubtext}
                      isLoading={isLoading}
                      icon={<Zap size={16} color="#fbbf24" fill="#fbbf24" />}
