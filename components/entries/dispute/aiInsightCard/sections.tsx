@@ -424,7 +424,9 @@ export function AiInsightStaleBanner({
       <View
          className={`flex-row justify-between p-3 rounded-lg border mb-2 ${containerStyle}`}
       >
+         {/* Left content */}
          <View className="flex-1 mr-2">
+            {/* Header row */}
             <View className="flex-row items-center justify-between">
                <View className="flex-row items-center gap-2">
                   {isCoolingDown ? (
@@ -435,27 +437,30 @@ export function AiInsightStaleBanner({
                   ) : (
                      <Clock3 size={16} color={isDark ? '#94a3b8' : '#64748b'} />
                   )}
+
                   <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
                      {isCoolingDown ? 'Analysis Paused' : 'Previous Analysis'}
                   </Text>
                </View>
-
-               {!isCoolingDown && refreshCostNote && (
-                  <View className="flex-row items-center opacity-90 ml-2">
-                     <Leaf
-                        size={10}
-                        color={isDark ? '#f59e0b' : '#b45309'}
-                        style={{ marginRight: 3 }}
-                     />
-                     <Text
-                        className={`text-[10px] font-semibold ${AI_ANALYSIS_AMBER_NOTE_TEXT_CLASS}`}
-                     >
-                        {refreshCostNote}
-                     </Text>
-                  </View>
-               )}
             </View>
 
+            {/* Cost tag below header (same visuals, better hierarchy) */}
+            {!isCoolingDown && refreshCostNote && (
+               <View className="flex-row items-center opacity-90 mt-1">
+                  <Leaf
+                     size={10}
+                     color={isDark ? '#f59e0b' : '#b45309'}
+                     style={{ marginRight: 3 }}
+                  />
+                  <Text
+                     className={`text-[10px] font-semibold ${AI_ANALYSIS_AMBER_NOTE_TEXT_CLASS}`}
+                  >
+                     {refreshCostNote}
+                  </Text>
+               </View>
+            )}
+
+            {/* Helper copy */}
             <Text className="text-[11px] text-slate-600 dark:text-slate-400 leading-4 mt-1">
                {isCoolingDown
                   ? 'Updates paused to enable deeper thinking.'
@@ -465,20 +470,19 @@ export function AiInsightStaleBanner({
             </Text>
          </View>
 
-         <View
-            className={`justify-end pl-1 ${!isCoolingDown && refreshCostNote ? 'pt-5' : ''}`}
-         >
+         {/* Right action: vertically centered */}
+         <View className="pl-1 self-stretch justify-center">
             {!isCoolingDown ? (
                <Pressable
                   onPress={onRefreshPress}
-                  className="p-2 mb-0.5 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
+                  accessibilityRole="button"
+                  accessibilityLabel="Refresh analysis"
+                  className="p-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
                >
                   <RefreshCw size={18} color={isDark ? '#f8fafc' : '#0f172a'} />
                </Pressable>
             ) : isCoolingDown && timeLabel !== '' ? (
-               <View
-                  className={`px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded mb-0.5 ${!isCoolingDown && refreshCostNote ? 'mt-auto' : ''}`}
-               >
+               <View className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">
                   <Text
                      className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
                      style={{ fontVariant: ['tabular-nums'] }}
