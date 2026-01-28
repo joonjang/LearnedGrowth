@@ -1,6 +1,8 @@
 import { getShadow } from '@/lib/shadow';
 import { CARD_PRESS_STYLE, DISPUTE_CTA_CLASS } from '@/lib/styles';
 import { Entry } from '@/models/entry';
+import { Link } from 'expo-router';
+import { ArrowRight } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
@@ -12,13 +14,13 @@ export type ResolutionStats = {
    label: string;
    subtext: string;
    colorClass: string;
-   barColor: string; // Kept for type compatibility, even if unused in UI
+   barColor: string;
    percent: number;
    resolvedCount: number;
    total: number;
 };
 
-// [Logic kept exactly as you provided]
+// [Logic kept exactly as before]
 export function getResolutionStatus(
    entries: Entry[],
    isDark: boolean,
@@ -151,31 +153,17 @@ export default function StatHero({
                )}
             </View>
 
-            {/* RIGHT: Big Stat */}
+            {/* RIGHT: Big Stat + View All Link Integrated */}
             <View className="items-end">
-               {/* ✅ Eyebrow label above the hero number */}
-               <View className="self-end mb-1 flex-row items-center">
-                  <Text className={`text-[10px] font-black ${labelColor}`}>
-                     [
-                  </Text>
-                  <Text
-                     className={`mx-1 text-[10px] font-black ${labelColor}`}
-                     style={{ fontVariant: ['tabular-nums'] }}
-                  >
-                     {resolutionStats.total}
-                  </Text>
-                  <Text className={`text-[10px] font-black ${labelColor}`}>
-                     ]
-                  </Text>
-                  <Text
-                     className={`ml-2 text-[10px] font-bold uppercase tracking-widest ${labelColor}`}
-                  >
-                     Entries
-                  </Text>
-               </View>
+               {/* 👇 CHANGED: Top Label is now the Clickable "View All" Link */}
 
                <Text
-                  className={`font-black tracking-tighter ${resolutionStats.colorClass} mt-1 mr-1`}
+                  className={`text-[10px] font-bold uppercase tracking-[3px] ${labelColor} mb-1 mr-1`}
+               >
+                  Reframed
+               </Text>
+               <Text
+                  className={`font-black tracking-tighter ${resolutionStats.colorClass} mt-0 mr-1`}
                   style={{
                      fontSize: 64,
                      lineHeight: 64,
@@ -186,11 +174,30 @@ export default function StatHero({
                   {resolutionStats.resolvedCount}
                </Text>
 
-               <Text
-                  className={`text-[10px] font-bold uppercase tracking-[3px] ${labelColor} mt-1 mr-1`}
-               >
-                  Reframed
-               </Text>
+               <Link href="/entries" asChild>
+                  <Pressable className="self-end flex-row items-center active:opacity-50 py-1">
+                     {/* Text Column */}
+                     <View className="items-start mr-1.5">
+                        <Text className="text-[10px] font-bold uppercase tracking-widest text-indigo-500 dark:text-indigo-400">
+                           VIEW ALL
+                        </Text>
+                        {/* Added extra letterSpacing to make ENTRIES match the width of VIEW ALL */}
+                        <Text
+                           className="text-[10px] font-bold uppercase tracking-widest text-indigo-500 dark:text-indigo-400"
+                           style={{ letterSpacing: 2 }}
+                        >
+                           ENTRIES
+                        </Text>
+                     </View>
+
+                     {/* Arrow (Vertically Centered) */}
+                     <ArrowRight
+                        size={12}
+                        color={isDark ? '#818cf8' : '#6366f1'}
+                        strokeWidth={3}
+                     />
+                  </Pressable>
+               </Link>
             </View>
          </View>
       </Animated.View>

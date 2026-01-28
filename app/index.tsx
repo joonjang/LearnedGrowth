@@ -189,7 +189,7 @@ export default function EntriesScreen() {
             showsVerticalScrollIndicator={false}
             onScroll={scrollHandler}
             scrollEventThrottle={16}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom }}
          >
             <View
                style={{ paddingTop: insets.top + 12 }}

@@ -7,10 +7,9 @@ import { Link } from 'expo-router';
 import {
    Check,
    ChevronDown,
-   FileClock,
    Infinity,
    Info,
-   Settings,
+   Settings
 } from 'lucide-react-native';
 import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -192,11 +191,6 @@ export default function EntriesWeekFilterHeader({
                >
                   <Info size={20} color={iconColor} strokeWidth={2.5} />
                </Pressable>
-               <Link href="/entries" asChild>
-                  <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
-                     <FileClock size={20} color={iconColor} strokeWidth={2.5} />
-                  </Pressable>
-               </Link>
                <Link href="/settings" asChild>
                   <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 active:opacity-80">
                      <Settings size={20} color={iconColor} strokeWidth={2.5} />

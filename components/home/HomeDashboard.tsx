@@ -491,39 +491,6 @@ const HomeDashboard = React.memo(
                isDark={isDark}
             />
 
-            {/* --- AI COVERAGE DISCLAIMER ROW --- */}
-            {insightCoverage && (
-               <Animated.View
-                  entering={FadeInDown.duration(400)}
-                  className="mx-4 mt-2"
-               >
-                  <Pressable
-                     onPress={handleOpenInsightCoverage}
-                     accessibilityRole="button"
-                     accessibilityLabel={`AI coverage: ${insightCoverage.valid} of ${insightCoverage.total} entries. Analyze remaining.`}
-                     className="py-2 active:opacity-70"
-                     hitSlop={8}
-                  >
-                     <Text className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                        AI coverage:{' '}
-                        <Text
-                           className="font-black text-slate-700 dark:text-slate-200"
-                           style={{ fontVariant: ['tabular-nums'] }}
-                        >
-                           {insightCoverage.valid}/{insightCoverage.total}
-                        </Text>{' '}
-                        entries{' '}
-                        <Text className="text-slate-400 dark:text-slate-600">
-                           •
-                        </Text>{' '}
-                        <Text className="font-semibold text-indigo-600 dark:text-indigo-400">
-                           Analyze remaining →
-                        </Text>
-                     </Text>
-                  </Pressable>
-               </Animated.View>
-            )}
-
             {/* CARDS */}
             {showAiEmptyCards ? (
                <Animated.View
@@ -586,6 +553,39 @@ const HomeDashboard = React.memo(
                      />
                   </Animated.View>
                )
+            )}
+
+            {/* --- AI COVERAGE DISCLAIMER ROW --- */}
+            {insightCoverage && (
+               <Animated.View
+                  entering={FadeInDown.duration(400)}
+                  className="mx-4"
+               >
+                  <Pressable
+                     onPress={handleOpenInsightCoverage}
+                     accessibilityRole="button"
+                     accessibilityLabel={`AI coverage: ${insightCoverage.valid} of ${insightCoverage.total} entries. Analyze remaining.`}
+                     className="py-2 active:opacity-70"
+                     hitSlop={8}
+                  >
+                     <Text className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        AI coverage:{' '}
+                        <Text
+                           className="font-black text-slate-700 dark:text-slate-200"
+                           style={{ fontVariant: ['tabular-nums'] }}
+                        >
+                           {insightCoverage.valid}/{insightCoverage.total}
+                        </Text>{' '}
+                        entries{' '}
+                        <Text className="text-slate-400 dark:text-slate-600">
+                           •
+                        </Text>{' '}
+                        <Text className="font-semibold text-indigo-600 dark:text-indigo-400">
+                           Analyze remaining →
+                        </Text>
+                     </Text>
+                  </Pressable>
+               </Animated.View>
             )}
 
             <NeedsAttentionSheet
