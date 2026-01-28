@@ -1,9 +1,4 @@
-import {
-   AI_ANALYSIS_AMBER_BANNER_CLASS,
-   AI_ANALYSIS_AMBER_NOTE_TEXT_CLASS,
-   AI_ANALYSIS_LABEL,
-   THINKING_PATTERN_DIMENSIONS,
-} from '@/components/constants';
+import { THINKING_PATTERN_DIMENSIONS } from '@/components/constants';
 import {
    ChevronDown,
    ChevronUp,
@@ -38,6 +33,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import {
+   AI_ANALYSIS_AMBER_BANNER_CLASS,
+   AI_ANALYSIS_AMBER_NOTE_TEXT_CLASS,
+   AI_ANALYSIS_LABEL,
+} from '@/lib/styles';
 import { AnimatedSpectrumRow } from './AnimatedSpectrumRow';
 import type { AnimationTimeline } from './animation';
 import { InsightDimensions, InsightSafety } from './types';
@@ -447,7 +447,9 @@ export function AiInsightStaleBanner({
                         color={isDark ? '#f59e0b' : '#b45309'}
                         style={{ marginRight: 3 }}
                      />
-                     <Text className={`text-[10px] font-semibold ${AI_ANALYSIS_AMBER_NOTE_TEXT_CLASS}`}>
+                     <Text
+                        className={`text-[10px] font-semibold ${AI_ANALYSIS_AMBER_NOTE_TEXT_CLASS}`}
+                     >
                         {refreshCostNote}
                      </Text>
                   </View>

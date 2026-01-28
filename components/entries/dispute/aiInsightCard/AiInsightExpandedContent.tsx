@@ -75,7 +75,6 @@ export default function AiInsightExpandedContent({
             isCoolingDown={isCoolingDown}
             isNudgeStep={isNudgeStep}
             refreshCostNote={refreshCostNote}
-            onRefresh={onRefresh}
             onRefreshPress={onRefreshPress}
             timeLabel={timeLabel}
             isDark={isDark}
@@ -90,8 +89,6 @@ export default function AiInsightExpandedContent({
 
          <AiInsightThinkingPatterns
             dims={dims}
-            showDefinitions={showDefinitions}
-            toggleHelp={toggleHelp}
             animationTimeline={animationTimeline}
             isFreshAnalysis={isFreshAnalysis}
             isDark={isDark}
@@ -99,7 +96,7 @@ export default function AiInsightExpandedContent({
 
          <AiInsightSuggestion
             counterBelief={suggestions?.counterBelief}
-            animationTimeline={animationTimeline}     
+            animationTimeline={animationTimeline}
          />
 
          <AiInsightDisclaimer
@@ -107,7 +104,7 @@ export default function AiInsightExpandedContent({
             toggleMinimized={toggleMinimized}
             animationTimeline={animationTimeline}
             isDark={isDark}
-            onAnimationComplete={ onAnimationComplete }
+            onAnimationComplete={onAnimationComplete}
          />
       </View>
    );
