@@ -326,10 +326,6 @@ export default function DisputeScreen() {
          params: { id: String(entry.id), animateInstant: '1' },
       } as const;
 
-      if (router.canGoBack()) {
-         router.back();
-         return;
-      }
       router.replace(targetRoute);
    }, [
       entry,
