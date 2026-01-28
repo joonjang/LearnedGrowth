@@ -3,16 +3,10 @@ import NewDisputeLink from '@/components/buttons/NewDisputeLink';
 import WideButton from '@/components/buttons/WideButton';
 import {
    ABCDE_FIELD,
-   AI_ANALYSIS_AMBER_ICON_DARK,
-   AI_ANALYSIS_AMBER_ICON_LIGHT_ALT,
-   AI_ANALYSIS_AMBER_PIVOT_BG_CLASS,
-   AI_ANALYSIS_AMBER_PIVOT_BORDER_CLASS,
-   AI_ANALYSIS_AMBER_PIVOT_TEXT_CLASS,
-   ANALYZE_WITH_AI_LABEL,
    MAX_AI_RETRIES,
    ROUTE_ENTRIES,
-   SAVE_TO_ANALYZE_LABEL,
 } from '@/components/constants';
+
 import { EntryField } from '@/components/entries/details/EntryField';
 import { InsightStrip } from '@/components/entries/details/InsightStrip';
 import {
@@ -23,7 +17,17 @@ import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
-import { CATEGORY_COLOR_MAP, DEFAULT_CATEGORY_COLOR } from '@/lib/styles';
+import {
+   AI_ANALYSIS_AMBER_ICON_DARK,
+   AI_ANALYSIS_AMBER_ICON_LIGHT_ALT,
+   AI_ANALYSIS_AMBER_PIVOT_BG_CLASS,
+   AI_ANALYSIS_AMBER_PIVOT_BORDER_CLASS,
+   AI_ANALYSIS_AMBER_PIVOT_TEXT_CLASS,
+   ANALYZE_WITH_AI_LABEL,
+   CATEGORY_COLOR_MAP,
+   DEFAULT_CATEGORY_COLOR,
+   SAVE_TO_ANALYZE_LABEL,
+} from '@/lib/styles';
 import { FieldTone } from '@/lib/theme';
 import type { Entry } from '@/models/entry';
 import { useAuth } from '@/providers/AuthProvider';

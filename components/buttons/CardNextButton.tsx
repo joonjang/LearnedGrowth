@@ -1,7 +1,11 @@
 import AiDisclaimerModal from '@/components/appInfo/AiDisclaimerModal';
-import { ANALYZE_WITH_AI_LABEL } from '@/components/constants';
-import { DISPUTE_CTA_CLASS } from '@/lib/styles';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
+import {
+   AI_ANALYSIS_AMBER_BUTTON_CLASS,
+   AI_ANALYSIS_AMBER_BUTTON_TEXT_CLASS,
+   ANALYZE_WITH_AI_LABEL,
+   DISPUTE_CTA_CLASS
+} from '@/lib/styles';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEntriesStore } from '@/providers/EntriesStoreProvider';
@@ -13,6 +17,7 @@ import {
    Sparkles,
    type LucideIcon,
 } from 'lucide-react-native';
+import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import WideButton from './WideButton';
 
@@ -21,6 +26,7 @@ type ButtonConfig = {
    icon: LucideIcon;
    bgColor: string;
    textColor: string;
+   iconColor?: string;
 };
 
 type Prop = {
@@ -33,10 +39,12 @@ export default function CardNextButton({ id, onNavigate }: Prop) {
    const { isGrowthPlusActive } = useRevenueCat();
    const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
    const { lock: lockNavigation } = useNavigationLock();
+   const { colorScheme } = useColorScheme();
+   const isDark = colorScheme === 'dark';
 
    const entriesStore = useEntriesStore();
    const hasCachedAnalysis = entriesStore((state) =>
-      Boolean(state.byId[id]?.aiResponse)
+      Boolean(state.byId[id]?.aiResponse),
    );
 
    const [showDisclaimer, setShowDisclaimer] = useState(false);
@@ -86,8 +94,9 @@ export default function CardNextButton({ id, onNavigate }: Prop) {
          return {
             label: ANALYZE_WITH_AI_LABEL,
             icon: Sparkles,
-            bgColor: DISPUTE_CTA_CLASS,
-            textColor: 'text-white',
+            bgColor: AI_ANALYSIS_AMBER_BUTTON_CLASS,
+            textColor: AI_ANALYSIS_AMBER_BUTTON_TEXT_CLASS,
+            iconColor: isDark ? '#fef3c7' : '#78350f',
          };
       }
       return {
@@ -96,9 +105,7 @@ export default function CardNextButton({ id, onNavigate }: Prop) {
          bgColor: DISPUTE_CTA_CLASS,
          textColor: 'text-white',
       };
-   }, [hasCachedAnalysis, isSubscribed]);
-
-   
+   }, [hasCachedAnalysis, isDark, isSubscribed]);
 
    const onConfirmDisclaimer = async () => {
       try {
@@ -150,6 +157,9 @@ export default function CardNextButton({ id, onNavigate }: Prop) {
             icon={config.icon}
             onPress={handlePress}
             variant={hasCachedAnalysis ? 'neutral' : 'primary'}
+            bgClassName={config.bgColor}
+            textClassName={config.textColor}
+            iconColor={config.iconColor}
          />
          <AiDisclaimerModal
             visible={showDisclaimer}

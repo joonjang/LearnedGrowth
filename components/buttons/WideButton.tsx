@@ -10,9 +10,20 @@ type Props = {
    icon?: LucideIcon;
    onPress: () => void;
    variant?: 'primary' | 'neutral'; // specific color schemes
+   bgClassName?: string;
+   textClassName?: string;
+   iconColor?: string;
 };
 
-export default function WideButton({ label, icon, onPress, variant = 'primary' }: Props) {
+export default function WideButton({
+   label,
+   icon,
+   onPress,
+   variant = 'primary',
+   bgClassName,
+   textClassName,
+   iconColor,
+}: Props) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const Icon = icon;
@@ -22,9 +33,11 @@ export default function WideButton({ label, icon, onPress, variant = 'primary' }
       [isDark]
    );
 
-   const bgClass = variant === 'primary'
-      ? DISPUTE_CTA_CLASS
-      : ANALYSIS_CTA_CLASS;
+   const bgClass =
+      bgClassName ??
+      (variant === 'primary' ? DISPUTE_CTA_CLASS : ANALYSIS_CTA_CLASS);
+   const textClass = textClassName ?? 'text-white';
+   const resolvedIconColor = iconColor ?? 'white';
 
    return (
       <View className="mt-6 mb-3">
@@ -38,13 +51,17 @@ export default function WideButton({ label, icon, onPress, variant = 'primary' }
                active:opacity-90 active:scale-[0.99]
             `}
          >
-            <Text className="text-[17px] font-bold text-center w-full text-white">
+            <Text className={`text-[17px] font-bold text-center w-full ${textClass}`}>
                {label}
             </Text>
 
             {Icon && (
                <View className="absolute right-5">
-                  <Icon size={18} color="white" style={{ opacity: 0.9 }} />
+                  <Icon
+                     size={18}
+                     color={resolvedIconColor}
+                     style={{ opacity: 0.9 }}
+                  />
                </View>
             )}
          </Pressable>

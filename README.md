@@ -16,6 +16,8 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- code cleanup on amber redundant usage
+
 - add search function
 
 - make ai insight respond with how the explanation style is helpful/unhelpful

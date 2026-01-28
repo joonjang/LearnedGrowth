@@ -51,12 +51,12 @@ export default function NeedsAttentionSheet({
 
    const summaryText = useMemo(() => {
       if (totalCount === 0) {
-         return 'Add entries to start tracking disputes.';
+         return 'Add entries to start tracking reframes.';
       }
       if (entries.length === 0) {
-         return 'All caught up. Every recent entry has a dispute.';
+         return 'All caught up. Every recent entry has a reframe.';
       }
-      return `${entries.length} of your last ${totalCount} entries need a dispute.`;
+      return `${entries.length} of your last ${totalCount} entries need a reframe.`;
    }, [entries.length, totalCount]);
 
    const renderBackdrop = useCallback(
@@ -133,7 +133,7 @@ export default function NeedsAttentionSheet({
                   </Text>
                </View>
                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  Entries Without Disputes
+                  Entries Without Reframes
                </Text>
                <Text className="text-sm text-slate-500 dark:text-slate-400">
                   {summaryText}
@@ -165,7 +165,7 @@ export default function NeedsAttentionSheet({
             ) : (
                <View className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
                   <Text className="text-sm text-slate-500 dark:text-slate-400">
-                     No entries need a dispute right now.
+                     No entries need a reframe right now.
                   </Text>
                </View>
             )}

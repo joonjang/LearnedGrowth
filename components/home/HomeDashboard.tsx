@@ -126,7 +126,7 @@ function AiDataEmptyCard({
          {/* Body (compact, aesthetic, no extra icon repetition) */}
          <View className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700/50 px-4 py-4">
             <Text className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-               Waiting for analysis
+               Requries entries with AI analysis
             </Text>
 
             <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-5">
