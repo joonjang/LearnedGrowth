@@ -1,8 +1,8 @@
 import rawAbcde from '@/assets/data/abcde.json';
 import {
    MAX_AI_RETRIES,
-   ROUTE_ENTRIES,
    ROUTE_ENTRY_DETAIL,
+   ROUTE_HOME,
 } from '@/components/constants';
 import ABCAnalysis from '@/components/entries/dispute/ABCAnalysis';
 import DisputeSteps from '@/components/entries/dispute/DisputeSteps';
@@ -526,7 +526,7 @@ export default function DisputeScreen() {
          if (router.canGoBack()) {
             router.back();
          } else {
-            router.replace(ROUTE_ENTRIES);
+            router.replace(ROUTE_HOME);
          }
       };
 

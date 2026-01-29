@@ -47,6 +47,9 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - removed credit count on ai refresh banner, made the bottom sheet display instead
 - fixed navigation redundancy for EntryDetailScreen when going to dispute when already at detail screen
    - navigation history added to param
+- added ability to view most recent entries
+   - removed mental focus card
+- fixed thinking pattern calculation logic
 
 ### 2026-01-27
 

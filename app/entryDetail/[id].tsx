@@ -4,7 +4,7 @@ import WideButton from '@/components/buttons/WideButton';
 import {
    ABCDE_FIELD,
    MAX_AI_RETRIES,
-   ROUTE_ENTRIES,
+   ROUTE_HOME,
 } from '@/components/constants';
 
 import { EntryField } from '@/components/entries/details/EntryField';
@@ -268,7 +268,7 @@ export default function EntryDetailScreen() {
          router.back();
          return;
       }
-      router.replace(ROUTE_ENTRIES);
+      router.replace(ROUTE_HOME);
    }, []);
 
    const handleOpenDisputeAndUpdate = useCallback(() => {

@@ -35,7 +35,7 @@ import {
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import type { RefObject } from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
    LayoutAnimation,
    Text,
@@ -51,9 +51,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const TAB_KEYS = Object.keys(
    THINKING_PATTERN_DIMENSIONS,
 ) as (keyof typeof THINKING_PATTERN_DIMENSIONS)[];
-type PatternTab = (typeof TAB_KEYS)[number];
 
-const CHART_TOTAL_HEIGHT = 200; // Slightly reduced to fit the new text header
+// Export this type so the parent can use it
+export type PatternTab = (typeof TAB_KEYS)[number];
+
+const CHART_TOTAL_HEIGHT = 200;
 
 function formatShortDate(date: Date) {
    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -81,20 +83,29 @@ type Props = {
    sheetRef: RefObject<BottomSheetModal | null>;
    onDismiss?: () => void;
    data: ThinkingPatternData | null;
+   initialTab?: PatternTab; // <--- NEW PROP
 };
 
 export default function ThinkingPatternSheet({
    sheetRef,
    onDismiss,
    data,
+   initialTab = 'Time',
 }: Props) {
    const insets = useSafeAreaInsets();
    const { width, height } = useWindowDimensions();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
 
-   const [activeTab, setActiveTab] = useState<PatternTab>('Time');
+   const [activeTab, setActiveTab] = useState<PatternTab>(initialTab);
    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+
+   // <--- NEW: Sync internal state when the parent changes the desired tab
+   useEffect(() => {
+      if (initialTab) {
+         setActiveTab(initialTab);
+      }
+   }, [initialTab]);
 
    const tabData = data?.[activeTab] ?? EMPTY_TAB;
    const tabConfig = THINKING_PATTERN_DIMENSIONS[activeTab];
@@ -292,21 +303,20 @@ export default function ThinkingPatternSheet({
                })}
             </View>
 
-            {/* --- CHART CONTAINER (With Question Inside) --- */}
+            {/* --- CHART CONTAINER --- */}
             <View
                className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4 pt-5"
                style={{ overflow: 'hidden' }}
             >
-               {/* 1. The Helper Question (Centered Top) */}
+               {/* Helper Question */}
                <View className="items-center mb-6 px-4">
                   <Text className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center leading-relaxed">
                      {tabConfig.description}
                   </Text>
                </View>
 
-               {/* 2. The Chart Area */}
+               {/* Chart Area */}
                <View className="relative">
-                  {/* High Label (Absolute, pushed down slightly to clear question area if needed) */}
                   <Text className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400 absolute -top-1 left-2 z-10 tracking-wider">
                      {tabConfig.highLabel}
                   </Text>
@@ -342,8 +352,6 @@ export default function ThinkingPatternSheet({
                                  xAxisThickness={0}
                               />
                            </View>
-
-                           {/* Low Label */}
                            <View
                               pointerEvents="none"
                               style={{
@@ -389,7 +397,7 @@ export default function ThinkingPatternSheet({
                   {sortedPatterns.map((pattern) => {
                      const isExpanded = expandedItemId === pattern.id;
                      const dateParts = getPatternDateParts(pattern.createdAt);
-
+                     // ... (Rest of your list rendering logic remains unchanged)
                      let ImpactIcon = Minus;
                      let iconColor = isDark ? '#94a3b8' : '#64748b';
                      let bubbleClasses =

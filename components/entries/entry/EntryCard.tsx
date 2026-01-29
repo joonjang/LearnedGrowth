@@ -79,9 +79,9 @@ type Prop = {
 // --- Truncation Constants ---
 const TRUNCATION_LIMITS = {
    adversity: 3,
-   belief: 4,
+   belief: 3,
    consequence: 4,
-   dispute: 8,
+   dispute: 4,
    energy: 3,
 } as const;
 

@@ -17,8 +17,9 @@ export const AI_ANALYSIS_CREDIT_COST = 1;
 export const MAX_AI_RETRIES = 4;
 
 export const ROUTE_LOGIN = '/(modal)/login' as const;
-export const ROUTE_ENTRIES = '/' as const;
+export const ROUTE_HOME = '/' as const;
 export const ROUTE_ENTRY_DETAIL = '/entryDetail/[id]' as const;
+export const ROUTE_ENTRIES = '/entries' as const;
 
 export const ENTRY_CHAR_LIMITS = {
    adversity: 300,

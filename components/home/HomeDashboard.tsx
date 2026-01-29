@@ -1,10 +1,9 @@
 import { getWeekStart } from '@/lib/date';
-import { normalizeMentalFocusCategory } from '@/lib/mentalFocus';
-import { CATEGORY_COLOR_MAP, DEFAULT_CATEGORY_COLOR } from '@/lib/styles';
 import { isOptimistic, toDateKey } from '@/lib/utils';
 import { Entry } from '@/models/entry';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { Layers, MessageCircleMore } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { Layers } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
@@ -12,22 +11,29 @@ import Animated, {
    FadeOutUp,
    LinearTransition,
 } from 'react-native-reanimated';
-import { WEEKDAY_LABELS } from '../constants';
+import { ROUTE_ENTRIES, WEEKDAY_LABELS } from '../constants';
 import NoAiEntrySheet from './NoAiEntrySheet';
-import MentalFocusCard from './mentalFocus/MentalFocusCard';
+import RecentEntriesCarousel from './RecentEntriesCarousel';
 import NeedsAttentionSheet from './statHero/NeedsAttentionSheet';
 import StatHero, { getResolutionStatus } from './statHero/StatHero';
 import ThinkingPatternCard from './thinkingPattern/ThinkingPatternCard';
 import {
    DayBucket,
-   MentalFocusViewModel,
    MonthStat,
    StreakViewModel,
    ThinkingPatternData,
    ThinkingPatternViewModel,
 } from './types';
 
-// ... [CONFIG & HELPERS - REMAIN THE SAME] ...
+// --- CONFIG & HELPERS ---
+
+function getScoreWeight(score: string | null | undefined): number {
+   if (!score) return 0.5; // Default to middle
+   const lower = score.toLowerCase();
+   if (lower.includes('mixed') || lower.includes('balanced')) return 0.5;
+   return isOptimistic(score) ? 1.0 : 0.0;
+}
+
 const PATTERN_TAB_CONFIG = {
    Time: {
       dimension: 'permanence',
@@ -45,35 +51,16 @@ const PATTERN_TAB_CONFIG = {
       lowLabel: 'Situation',
    },
 } as const;
+
 const MAX_TREND_POINTS = 7;
-const STYLE_CONFIG = {
-   positive: { label: 'Positive', color: '#10b981', bg: '#ecfdf5' },
-   constructive: { label: 'Constructive', color: '#3b82f6', bg: '#eff6ff' },
-   balanced: { label: 'Balanced', color: '#64748b', bg: '#f8fafc' },
-   mixed: { label: 'Mixed', color: '#f59e0b', bg: '#fffbeb' },
-   critical: { label: 'Critical', color: '#ef4444', bg: '#fef2f2' },
-};
-function getStyleFromScore(score: number) {
-   if (score >= 8) return STYLE_CONFIG.positive;
-   if (score >= 6) return STYLE_CONFIG.constructive;
-   if (score >= 4) return STYLE_CONFIG.balanced;
-   if (score >= 2.5) return STYLE_CONFIG.mixed;
-   return STYLE_CONFIG.critical;
-}
-function getNumericScore(val: any): number | null {
-   if (typeof val === 'number') return val;
-   if (typeof val === 'string') {
-      const n = parseFloat(val);
-      if (!isNaN(n)) return n;
-   }
-   return null;
-}
+
 function getTrendValue(score: string | null | undefined): number {
    if (!score) return 50;
    const lower = score.toLowerCase();
    if (lower.includes('mixed') || lower.includes('balanced')) return 50;
    return isOptimistic(score) ? 80 : 20;
 }
+
 function getPatternImpact(
    score: string | null | undefined,
 ): 'optimistic' | 'pessimistic' | 'mixed' {
@@ -97,43 +84,32 @@ function AiDataEmptyCard({
    isDark,
 }: AiDataEmptyCardProps) {
    const t = title.toLowerCase();
-
-   const subtitle = t.includes('mental')
-      ? 'Summarizes themes and observed mood from analyzed entries.'
-      : t.includes('thinking')
-        ? 'Displays the patterns in how you explain setbacks from analyzed entries.'
-        : 'Unlocks insights from analyzed entries.';
-
+   const subtitle = t.includes('thinking')
+      ? 'Displays the patterns in how you explain setbacks from analyzed entries.'
+      : 'Unlocks insights from analyzed entries.';
    const thinkingQuestions = [
       'Do your entries frame setbacks as lasting, or passing?',
       'Do your entries suggest it affects everything, or one area?',
       'Do your entries place the cause on you, or the situation?',
    ];
-
    return (
       <View
          className="p-5 pb-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
          style={[shadowStyle.ios, shadowStyle.android]}
       >
-         {/* Header */}
          <View className="flex-row items-center gap-2 mb-3">
             <Icon size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
             <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                {title}
             </Text>
          </View>
-
-         {/* Body (compact, aesthetic, no extra icon repetition) */}
          <View className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700/50 px-4 py-4">
             <Text className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                Requries entries with AI analysis
             </Text>
-
             <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-5">
                {subtitle}
             </Text>
-
-            {/* Thinking Patterns: show the 3 questions */}
             {t.includes('thinking') && (
                <View className="mt-3 gap-2">
                   {thinkingQuestions.map((q) => (
@@ -195,7 +171,6 @@ const HomeDashboard = React.memo(
       const showAiEmptyCards =
          entries.length > 0 && insightCoverage?.valid === 0;
 
-      // ... [AGGREGATOR LOGIC - REMAINS THE SAME] ...
       const resolutionStats = useMemo(
          () => getResolutionStatus(entries, isDark),
          [entries, isDark],
@@ -209,6 +184,7 @@ const HomeDashboard = React.memo(
       );
       const needsAttentionSheetRef = useRef<BottomSheetModal | null>(null);
       const insightCoverageSheetRef = useRef<BottomSheetModal | null>(null);
+
       const handleOpenNeedsAttention = useCallback(
          () => needsAttentionSheetRef.current?.present(),
          [],
@@ -218,29 +194,28 @@ const HomeDashboard = React.memo(
          [],
       );
 
-      const { focusView, patternView } = useMemo(() => {
-         // (Paste existing aggregator logic here)
+      const handleViewAllEntries = useCallback(() => {
+         // Adjust this route to match your journal tab or list screen
+         router.push(ROUTE_ENTRIES);
+      }, []);
+
+      const { patternView } = useMemo(() => {
          const dayBuckets = new Map<string, DayBucket>();
          const filledDaysSet = new Set<string>();
          const monthMap = new Map<string, MonthStat>();
-         const catMap = new Map<
-            string,
-            { count: number; totalScore: number; validScores: number }
-         >();
-         const tagMap = new Map<string, number>();
+
          const threePsStats = {
-            perm: { g: 0, t: 0 },
-            perv: { g: 0, t: 0 },
-            pers: { g: 0, t: 0 },
+            perm: { val: 0, count: 0 },
+            perv: { val: 0, count: 0 },
+            pers: { val: 0, count: 0 },
          };
+
          const entriesWithMeta: { entry: Entry; created: Date }[] = [];
-         let totalAnalyzedCount = 0;
 
          for (const entry of entries) {
             const created = new Date(entry.createdAt);
             if (isNaN(created.getTime())) continue;
             const dateKey = toDateKey(created);
-            const meta = entry.aiResponse?.meta;
             const analysis = entry.aiResponse?.analysis;
 
             if (!dayBuckets.has(dateKey)) {
@@ -280,42 +255,25 @@ const HomeDashboard = React.memo(
             }
 
             if (entry.aiResponse) {
-               if (meta) {
-                  totalAnalyzedCount++;
-                  const cat = normalizeMentalFocusCategory(meta.category);
-                  const optScore = getNumericScore(meta.optimismScore);
-                  const catData = catMap.get(cat) || {
-                     count: 0,
-                     totalScore: 0,
-                     validScores: 0,
-                  };
-                  catData.count++;
-                  if (optScore !== null) {
-                     catData.totalScore += optScore;
-                     catData.validScores++;
-                  }
-                  catMap.set(cat, catData);
-                  (meta.tags || []).forEach((t) => {
-                     const norm = t.toLowerCase().trim();
-                     if (norm) tagMap.set(norm, (tagMap.get(norm) || 0) + 1);
-                  });
-               }
                const dims = analysis?.dimensions;
                if (dims) {
                   if (dims.permanence) {
-                     threePsStats.perm.t++;
-                     if (isOptimistic(dims.permanence.score))
-                        threePsStats.perm.g++;
+                     threePsStats.perm.count++;
+                     threePsStats.perm.val += getScoreWeight(
+                        dims.permanence.score,
+                     );
                   }
                   if (dims.pervasiveness) {
-                     threePsStats.perv.t++;
-                     if (isOptimistic(dims.pervasiveness.score))
-                        threePsStats.perv.g++;
+                     threePsStats.perv.count++;
+                     threePsStats.perv.val += getScoreWeight(
+                        dims.pervasiveness.score,
+                     );
                   }
                   if (dims.personalization) {
-                     threePsStats.pers.t++;
-                     if (isOptimistic(dims.personalization.score))
-                        threePsStats.pers.g++;
+                     threePsStats.pers.count++;
+                     threePsStats.pers.val += getScoreWeight(
+                        dims.personalization.score,
+                     );
                   }
                   entriesWithMeta.push({ entry, created });
                }
@@ -359,51 +317,11 @@ const HomeDashboard = React.memo(
             isAllTime,
          };
 
-         let focusView: MentalFocusViewModel | null = null;
-         if (catMap.size > 0) {
-            const categoryStats = Array.from(catMap.entries())
-               .map(([label, val]) => {
-                  const avg =
-                     val.validScores > 0 ? val.totalScore / val.validScores : 5;
-                  const baseStyle = getStyleFromScore(avg);
-                  const categoryColor =
-                     CATEGORY_COLOR_MAP[label] || DEFAULT_CATEGORY_COLOR;
-                  return {
-                     label,
-                     count: val.count,
-                     percentage: (val.count / totalAnalyzedCount) * 100,
-                     avgScore: avg,
-                     style: { ...baseStyle, color: categoryColor },
-                  };
-               })
-               .sort((a, b) => b.count - a.count);
-            const tagStats = Array.from(tagMap.entries())
-               .filter(([, c]) => c > 1)
-               .map(([label, count]) => ({ label, count }))
-               .sort((a, b) => b.count - a.count);
-            const topCat = categoryStats[0];
-            focusView = {
-               categoryStats,
-               tagStats,
-               narrative: {
-                  topCatLabel: topCat.label,
-                  isCategoryTie:
-                     categoryStats.length > 1 &&
-                     categoryStats[0].count === categoryStats[1].count,
-                  topTagLabel: tagStats.length > 0 ? tagStats[0].label : null,
-                  isTagTie:
-                     tagStats.length > 1 &&
-                     tagStats[0].count === tagStats[1].count,
-                  styleColor: topCat.style.color,
-                  styleLabel: topCat.style.label,
-               },
-            };
-         }
-
          let patternView: ThinkingPatternViewModel | null = null;
          if (entriesWithMeta.length > 0) {
-            const getScore = (s: { g: number; t: number }) =>
-               s.t > 0 ? (s.g / s.t) * 100 : 50;
+            const getScore = (s: { val: number; count: number }) =>
+               s.count > 0 ? (s.val / s.count) * 100 : 50;
+
             const sortedAsc = [...entriesWithMeta].sort(
                (a, b) => a.created.getTime() - b.created.getTime(),
             );
@@ -476,7 +394,7 @@ const HomeDashboard = React.memo(
                } as ThinkingPatternData,
             };
          }
-         return { streakView, focusView, patternView };
+         return { streakView, patternView };
       }, [anchorDate, isAllTime, entries]);
 
       // --- RENDER ---
@@ -491,39 +409,40 @@ const HomeDashboard = React.memo(
                isDark={isDark}
             />
 
-            {/* CARDS */}
-            {showAiEmptyCards ? (
+            {/* INSIGHT COVERAGE FOOTER */}
+            {insightCoverage && (
                <Animated.View
-                  entering={FadeInDown.duration(600).delay(100).springify()}
-                  exiting={FadeOutUp.duration(400)}
-                  layout={LinearTransition.springify()}
+                  entering={FadeInDown.duration(400)}
+                  className="mx-4 pt-2 "
                >
-                  <AiDataEmptyCard
-                     title="Mental Focus"
-                     Icon={MessageCircleMore}
-                     shadowStyle={shadowSm}
-                     isDark={isDark}
-                  />
-               </Animated.View>
-            ) : (
-               focusView && (
-                  <Animated.View
-                     entering={FadeInDown.duration(600).delay(100).springify()}
-                     exiting={FadeOutUp.duration(400)}
-                     layout={LinearTransition.springify()}
+                  <Pressable
+                     onPress={handleOpenInsightCoverage}
+                     accessibilityRole="button"
+                     accessibilityLabel={`AI coverage: ${insightCoverage.valid} of ${insightCoverage.total} entries. Analyze remaining.`}
+                     className="active:opacity-70"
+                     hitSlop={8}
                   >
-                     <MentalFocusCard
-                        key={`focus-${dateKey}`}
-                        analysis={focusView}
-                        entries={entries}
-                        shadowStyle={shadowSm}
-                        isDark={isDark}
-                        onDeleteEntry={onDeleteEntry}
-                     />
-                  </Animated.View>
-               )
+                     <Text className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        AI coverage:{' '}
+                        <Text
+                           className="font-black text-slate-700 dark:text-slate-200"
+                           style={{ fontVariant: ['tabular-nums'] }}
+                        >
+                           {insightCoverage.valid}/{insightCoverage.total}
+                        </Text>{' '}
+                        entries{' '}
+                        <Text className="text-slate-400 dark:text-slate-600">
+                           •
+                        </Text>{' '}
+                        <Text className="font-semibold text-indigo-600 dark:text-indigo-400">
+                           Analyze remaining →
+                        </Text>
+                     </Text>
+                  </Pressable>
+               </Animated.View>
             )}
 
+            {/* THINKING PATTERNS */}
             {showAiEmptyCards ? (
                <Animated.View
                   entering={FadeInDown.duration(600).delay(200).springify()}
@@ -555,36 +474,18 @@ const HomeDashboard = React.memo(
                )
             )}
 
-            {/* --- AI COVERAGE DISCLAIMER ROW --- */}
-            {insightCoverage && (
+            {entries.length > 0 && (
                <Animated.View
-                  entering={FadeInDown.duration(400)}
-                  className="mx-4"
+                  entering={FadeInDown.duration(600).delay(100).springify()}
+                  exiting={FadeOutUp.duration(400)}
+                  layout={LinearTransition.springify()}
                >
-                  <Pressable
-                     onPress={handleOpenInsightCoverage}
-                     accessibilityRole="button"
-                     accessibilityLabel={`AI coverage: ${insightCoverage.valid} of ${insightCoverage.total} entries. Analyze remaining.`}
-                     className="py-2 active:opacity-70"
-                     hitSlop={8}
-                  >
-                     <Text className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                        AI coverage:{' '}
-                        <Text
-                           className="font-black text-slate-700 dark:text-slate-200"
-                           style={{ fontVariant: ['tabular-nums'] }}
-                        >
-                           {insightCoverage.valid}/{insightCoverage.total}
-                        </Text>{' '}
-                        entries{' '}
-                        <Text className="text-slate-400 dark:text-slate-600">
-                           •
-                        </Text>{' '}
-                        <Text className="font-semibold text-indigo-600 dark:text-indigo-400">
-                           Analyze remaining →
-                        </Text>
-                     </Text>
-                  </Pressable>
+                  <RecentEntriesCarousel
+                     entries={entries}
+                     onDelete={onDeleteEntry}
+                     isDark={isDark}
+                     onViewAll={handleViewAllEntries}
+                  />
                </Animated.View>
             )}
 
