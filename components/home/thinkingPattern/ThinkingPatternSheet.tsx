@@ -463,9 +463,9 @@ export default function ThinkingPatternSheet({
                                           className={`flex-1 px-3 py-2 rounded-xl border ${bubbleClasses}`}
                                        >
                                           <Text
-                                             className={`text-xs font-semibold ${bubbleTextClasses} leading-5`}
+                                             className={`text-xs font-semibold italic ${bubbleTextClasses} leading-5`}
                                           >
-                                             {pattern.phrase}
+                                             &quot;{pattern.phrase}&quot;
                                           </Text>
                                        </View>
 
