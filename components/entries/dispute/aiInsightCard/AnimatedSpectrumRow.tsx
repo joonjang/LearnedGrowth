@@ -327,7 +327,7 @@ export function AnimatedSpectrumRow({
                style={{ opacity: rowVisibility }}
                className="text-sm italic text-slate-500 dark:text-slate-400"
             >
-               {detectedPhrase}
+               &quot;{detectedPhrase}&quot;
             </Animated.Text>
          )}
 
