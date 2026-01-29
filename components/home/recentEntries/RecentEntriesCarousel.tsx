@@ -1,10 +1,12 @@
 import EntryCard from '@/components/entries/entry/EntryCard';
 import { getShadow } from '@/lib/shadow';
+import { HOME_ICON_DARK, HOME_ICON_LIGHT } from '@/lib/styles';
 import { Entry } from '@/models/entry';
 import {
+   ArrowRight,
    ChevronLeft,
    ChevronRight,
-   FileText
+   FileText,
 } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
@@ -30,6 +32,11 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const CARD_WIDTH_PERCENTAGE = 0.85;
 const SPACING = 12;
+
+// --- TYPES ---
+type CarouselItem =
+   | { type: 'entry'; data: Entry; id: string }
+   | { type: 'view-more'; id: 'view-more-card' };
 
 // --- CHEVRON COMPONENT ---
 const CarouselChevron = ({
@@ -92,8 +99,7 @@ export default function RecentEntriesCarousel({
    onViewAll,
    isLoading = false,
 }: Props) {
-   // --- ALL HOOKS MUST BE DECLARED BEFORE ANY EARLY RETURNS ---
-
+   // --- HOOKS ---
    const { width } = useWindowDimensions();
    const flatListRef = useRef<FlatList>(null);
    const [activeIndex, setActiveIndex] = useState(0);
@@ -103,8 +109,26 @@ export default function RecentEntriesCarousel({
    const ITEM_FULL_WIDTH = cardWidth + SPACING;
    const insetX = (width - ITEM_FULL_WIDTH) / 2;
 
-   const data = useMemo(() => entries.slice(0, 5), [entries]);
+   // --- DATA PREPARATION ---
+   const data = useMemo<CarouselItem[]>(() => {
+      const sliced = entries.slice(0, 5).map((e) => ({
+         type: 'entry' as const,
+         data: e,
+         id: e.id,
+      }));
 
+      // UPDATED LOGIC: If we have 5 OR MORE entries, append the "View More" card.
+      if (entries.length >= 5) {
+         return [
+            ...sliced,
+            { type: 'view-more' as const, id: 'view-more-card' },
+         ];
+      }
+
+      return sliced;
+   }, [entries]);
+
+   // --- SHADOWS ---
    const chevronShadow = useMemo(
       () =>
          getShadow({
@@ -117,6 +141,18 @@ export default function RecentEntriesCarousel({
       [isDark],
    );
 
+   const buttonShadow = useMemo(
+      () =>
+         getShadow({
+            isDark,
+            preset: 'button',
+            androidElevation: 2,
+            colorLight: '#000000',
+         }),
+      [isDark],
+   );
+
+   // --- HANDLERS ---
    const handleToggleMenu = useCallback((entryId: string) => {
       setOpenMenuEntryId((current) => (current === entryId ? null : entryId));
    }, []);
@@ -165,8 +201,42 @@ export default function RecentEntriesCarousel({
       [ITEM_FULL_WIDTH],
    );
 
+   // --- RENDER ITEM ---
    const renderItem = useCallback(
-      ({ item }: { item: Entry }) => {
+      ({ item }: { item: CarouselItem }) => {
+         // 1. RENDER "VIEW MORE" CARD
+         if (item.type === 'view-more') {
+            return (
+               <View
+                  style={{
+                     width: cardWidth,
+                     marginHorizontal: SPACING / 2,
+                     height: 350,
+                  }}
+               >
+                  <TouchableOpacity
+                     onPress={onViewAll}
+                     activeOpacity={0.7}
+                     className="flex-1 items-center justify-center bg-white dark:bg-slate-800 rounded-[24px] border-2 border-dashed border-slate-300 dark:border-slate-600"
+                  >
+                     <View className="w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-800/50 items-center justify-center mb-4">
+                        <ArrowRight
+                           size={24}
+                           color={isDark ? '#818cf8' : '#4f46e5'}
+                        />
+                     </View>
+                     <Text className="text-base font-bold text-slate-700 dark:text-slate-200">
+                        View All Entries
+                     </Text>
+                     <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        See your full history
+                     </Text>
+                  </TouchableOpacity>
+               </View>
+            );
+         }
+
+         // 2. RENDER ENTRY CARD
          return (
             <Animated.View
                style={{
@@ -178,9 +248,9 @@ export default function RecentEntriesCarousel({
                layout={LinearTransition.duration(300)}
             >
                <EntryCard
-                  entry={item}
-                  isMenuOpen={openMenuEntryId === item.id}
-                  onToggleMenu={() => handleToggleMenu(item.id)}
+                  entry={item.data}
+                  isMenuOpen={openMenuEntryId === item.data.id}
+                  onToggleMenu={() => handleToggleMenu(item.data.id)}
                   onCloseMenu={handleCloseMenu}
                   onDelete={handleDeleteWrapper}
                   onNavigate={() => handleCloseMenu()}
@@ -194,10 +264,12 @@ export default function RecentEntriesCarousel({
          handleToggleMenu,
          handleCloseMenu,
          handleDeleteWrapper,
+         isDark,
+         onViewAll,
       ],
    );
 
-   // --- LOADING CHECK AFTER HOOKS ---
+   // --- LOADING CHECK ---
    if (isLoading) {
       return (
          <RecentEntriesSkeleton
@@ -209,7 +281,7 @@ export default function RecentEntriesCarousel({
       );
    }
 
-   // --- EMPTY CHECK AFTER HOOKS ---
+   // --- EMPTY CHECK ---
    if (entries.length === 0) return null;
 
    const showLeftChevron = activeIndex > 0;
@@ -223,23 +295,36 @@ export default function RecentEntriesCarousel({
             style={{ paddingHorizontal: 32 }}
          >
             <View className="flex-row items-center gap-2">
-               <FileText size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
+               <FileText
+                  size={16}
+                  color={isDark ? HOME_ICON_DARK : HOME_ICON_LIGHT}
+               />
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                   Recent Entries
                </Text>
             </View>
 
-            <TouchableOpacity onPress={onViewAll} hitSlop={8}>
-               <Text className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+            {/* View All Button */}
+            <TouchableOpacity
+               onPress={onViewAll}
+               hitSlop={8}
+               activeOpacity={0.8}
+               style={[buttonShadow.ios, buttonShadow.android]}
+               className="bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-100 dark:border-slate-700 flex-row items-center gap-1"
+            >
+               {/* Changed text color from indigo to slate */}
+               <Text className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
                   View All
                </Text>
+               {/* Changed icon color to match slate text colors */}
+               <ArrowRight size={12} color={isDark ? '#cbd5e1' : '#64748b'} />
             </TouchableOpacity>
          </View>
 
          {/* CAROUSEL CONTAINER */}
          <View className="relative justify-center">
             {/* BACKGROUND TRACK */}
-            <View className="absolute left-0 right-0 top-0 bottom-0 bg-slate-100 dark:bg-slate-800/50" />
+            <View className="absolute left-0 right-0 top-0 bottom-0 bg-slate-200/50 dark:bg-slate-700/50" />
 
             <FlatList
                ref={flatListRef}
