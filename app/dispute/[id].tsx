@@ -17,14 +17,8 @@ import type { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 import { usePreferences } from '@/providers/PreferencesProvider';
-import {
-   activateKeepAwakeAsync,
-   deactivateKeepAwake,
-} from 'expo-keep-awake';
-import {
-   router,
-   useLocalSearchParams,
-} from 'expo-router';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import React, {
@@ -69,7 +63,9 @@ export default function DisputeScreen() {
    // Manual Control setup
    useEffect(() => {
       if (Platform.OS === 'android') {
-         KeyboardController.setInputMode(AndroidSoftInputModes.SOFT_INPUT_ADJUST_NOTHING);
+         KeyboardController.setInputMode(
+            AndroidSoftInputModes.SOFT_INPUT_ADJUST_NOTHING,
+         );
       }
       return () => {
          if (Platform.OS === 'android') {
@@ -83,6 +79,7 @@ export default function DisputeScreen() {
       view?: string | string[];
       refresh?: string | string[];
       newDispute?: string | string[];
+      from?: string | string[];
    }>();
 
    const { colorScheme } = useColorScheme();
@@ -96,6 +93,8 @@ export default function DisputeScreen() {
    const newDisputeQuery = Array.isArray(params.newDispute)
       ? params.newDispute[0]
       : params.newDispute;
+   const fromQuery = Array.isArray(params.from) ? params.from[0] : params.from;
+   const cameFromEntryDetail = fromQuery === 'entryDetail';
    const shouldRegenerate = refreshQuery === 'true';
    const shouldStartFresh =
       newDisputeQuery === 'true' || newDisputeQuery === '1';
@@ -133,13 +132,13 @@ export default function DisputeScreen() {
    const initialViewMode: 'steps' | 'analysis' =
       viewQuery === 'analysis' ? 'analysis' : 'steps';
    const [viewMode, setViewMode] = useState<'steps' | 'analysis'>(
-      initialViewMode
+      initialViewMode,
    );
    const [hasAutoOpenedAnalysis, setHasAutoOpenedAnalysis] = useState(false);
 
    const stepsProgress = useSharedValue(initialViewMode === 'steps' ? 1 : 0);
    const analysisProgress = useSharedValue(
-      initialViewMode === 'analysis' ? 1 : 0
+      initialViewMode === 'analysis' ? 1 : 0,
    );
 
    const { analyze, lastResult, loading, error, ready, streamText } =
@@ -214,11 +213,12 @@ export default function DisputeScreen() {
          if (key === 'energy') return data.energy;
          return data.dispute?.[key] ?? [];
       },
-      [data]
+      [data],
    );
    const prompts = usePrompts(STEP_ORDER, promptListGetter);
 
    const currKey = STEP_ORDER[idx];
+
    const trimmedForm = useMemo(
       () => ({
          evidence: form.evidence.trim(),
@@ -226,11 +226,12 @@ export default function DisputeScreen() {
          usefulness: form.usefulness.trim(),
          energy: form.energy.trim(),
       }),
-      [form]
+      [form],
    );
+
    const isBlankNewDispute = useMemo(
       () => Object.values(trimmedForm).every((value) => !value),
-      [trimmedForm]
+      [trimmedForm],
    );
 
    const hasUnsavedChanges = useMemo(() => {
@@ -264,17 +265,86 @@ export default function DisputeScreen() {
       } as Record<NewInputDisputeType, string>;
    }, [entry?.aiResponse?.suggestions, lastResult?.data?.suggestions, prompts]);
 
+   const suggestionStarters = useMemo(() => {
+      // NEW: Helper to strip trailing dots and ensure one trailing space
+      const clean = (val?: string | null) => {
+         if (!val || !val.trim()) return null;
+         // 1. Remove one or more dots at the end (\.+$)
+         // 2. Trim whitespace
+         // 3. Add exactly one space so the user can just type
+         return val.replace(/\.+$/, '').trim() + ' ';
+      };
+
+      const sug =
+         lastResult?.data?.suggestions ?? entry?.aiResponse?.suggestions;
+
+      return {
+         evidence: clean(sug?.evidenceStarter),
+         alternatives: clean(sug?.alternativesStarter),
+         usefulness: clean(sug?.usefulnessStarter),
+      };
+   }, [entry?.aiResponse?.suggestions, lastResult?.data?.suggestions]);
+
+   // 1. Get the current trimmed text
+   const currentText = trimmedForm[currKey];
+
+   // 2. Get the specific starter for this step (if one exists)
+   //    We cast as 'any' or Record to safely access the key since 'energy' might not exist in suggestionStarters
+   const currentStarter = (suggestionStarters as Record<string, string | null>)[
+      currKey
+   ];
+
+   // 3. Check if the user hasn't added anything to the starter
+   //    We compare trimmed strings to ignore the trailing space we added for UX
+   const isUnchangedStarter = useMemo(() => {
+      if (!currentStarter) return false;
+      return currentText === currentStarter.trim();
+   }, [currentStarter, currentText]);
+
+   // 4. Block 'Next' if empty OR if it's just the starter
+   const disableNext = !currentText || isUnchangedStarter;
+
+   useEffect(() => {
+      if (!entryId) return;
+      if (
+         !suggestionStarters.evidence &&
+         !suggestionStarters.alternatives &&
+         !suggestionStarters.usefulness
+      ) {
+         return;
+      }
+      setForm((prev) => ({
+         ...prev,
+         evidence:
+            prev.evidence.trim() || !suggestionStarters.evidence
+               ? prev.evidence
+               : suggestionStarters.evidence,
+         alternatives:
+            prev.alternatives.trim() || !suggestionStarters.alternatives
+               ? prev.alternatives
+               : suggestionStarters.alternatives,
+         usefulness:
+            prev.usefulness.trim() || !suggestionStarters.usefulness
+               ? prev.usefulness
+               : suggestionStarters.usefulness,
+      }));
+   }, [
+      entryId,
+      suggestionStarters.alternatives,
+      suggestionStarters.evidence,
+      suggestionStarters.usefulness,
+   ]);
+
    const aiData: LearnedGrowthResponse | null = useMemo(() => {
       if (isRegenerating) return null;
       if (lastResult?.data) return lastResult.data;
       return entry?.aiResponse ?? null;
    }, [entry?.aiResponse, isRegenerating, lastResult?.data]);
 
-   const currentEmpty = !trimmedForm[currKey];
    const scrollRef = useRef<ScrollView | null>(null);
    const stickToBottom = useRef(true);
    const inputRef = useRef<TextInput>(null);
-  const {
+   const {
       promptTextStyle,
       promptTextAnimatedStyle,
       inputBoxAnimatedStyle,
@@ -284,9 +354,9 @@ export default function DisputeScreen() {
    const setField = useCallback(
       (k: NewInputDisputeType) => (v: string) =>
          setForm((f) => ({ ...f, [k]: v })),
-      []
+      [],
    );
-   
+
    const submit = useCallback(async () => {
       if (!entry) return;
 
@@ -315,7 +385,7 @@ export default function DisputeScreen() {
       const hasChanges = Object.keys(patch).length > 0;
       if (hasChanges) {
          void updateEntry(entry.id, patch).catch((e) =>
-            console.error('Failed to save dispute', e)
+            console.error('Failed to save dispute', e),
          );
       }
 
@@ -326,8 +396,13 @@ export default function DisputeScreen() {
          params: { id: String(entry.id), animateInstant: '1' },
       } as const;
 
+      if (cameFromEntryDetail && router.canGoBack()) {
+         router.back();
+         return;
+      }
       router.replace(targetRoute);
    }, [
+      cameFromEntryDetail,
       entry,
       hapticsAvailable,
       hapticsEnabled,
@@ -350,7 +425,7 @@ export default function DisputeScreen() {
             contentSize.height - (contentOffset.y + layoutMeasurement.height);
          stickToBottom.current = gap < 12;
       },
-      []
+      [],
    );
 
    const handleRefreshAnalysis = useCallback(async () => {
@@ -391,8 +466,12 @@ export default function DisputeScreen() {
    }, [scrollToBottom]);
 
    useEffect(() => {
-      const handleShow = () => requestAnimationFrame(() => scrollToBottom(true));
-      const didShowSub = KeyboardEvents.addListener('keyboardDidShow', handleShow);
+      const handleShow = () =>
+         requestAnimationFrame(() => scrollToBottom(true));
+      const didShowSub = KeyboardEvents.addListener(
+         'keyboardDidShow',
+         handleShow,
+      );
       return () => {
          didShowSub.remove();
       };
@@ -461,17 +540,19 @@ export default function DisputeScreen() {
          'Discard changes?',
          'You have unsaved changes. Close without saving?',
          [
-            { 
-               text: 'Cancel', 
+            {
+               text: 'Cancel',
                style: 'cancel',
-               onPress: () => { isClosingRef.current = false; }
+               onPress: () => {
+                  isClosingRef.current = false;
+               },
             },
             {
                text: 'Discard',
                style: 'destructive',
                onPress: safeGoBack,
             },
-         ]
+         ],
       );
    }, [hasUnsavedChanges]);
 
@@ -494,7 +575,7 @@ export default function DisputeScreen() {
    }
 
    return (
-      <Animated.View 
+      <Animated.View
          className="flex-1 bg-slate-50 dark:bg-slate-900"
          // Apply keyboard padding here to whole screen
          style={[{ flex: 1 }, keyboardPaddingStyle]}
@@ -520,7 +601,7 @@ export default function DisputeScreen() {
                   setIdx={setIdx}
                   onSubmit={submit}
                   onExit={handleClose}
-                  disableNext={currentEmpty}
+                  disableNext={disableNext}
                   hasUnsavedChanges={hasUnsavedChanges}
                   scrollRef={scrollRef}
                   handleScroll={handleScroll}

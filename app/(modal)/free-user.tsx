@@ -12,8 +12,8 @@ import {
    BOTTOM_SHEET_CONTENT_PADDING,
 } from '@/lib/styles';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/providers/AuthProvider';
 import { useAppConfig } from '@/providers/AppConfigProvider';
+import { useAuth } from '@/providers/AuthProvider';
 import {
    BottomSheetBackdrop,
    BottomSheetBackdropProps,
@@ -59,14 +59,19 @@ export default function FreeUserChoiceScreen() {
    const { aiConfig } = useAppConfig();
    const { freeMonthlyCredits, aiCreditCost } = aiConfig;
 
-   const { id, autoAi, isReframed } = useLocalSearchParams<{
+   const { id, autoAi, onlyShowAiAnalysis, from } = useLocalSearchParams<{
       id?: string | string[];
       autoAi?: string | string[];
-      isReframed?: string | string[];
+      onlyShowAiAnalysis?: string | string[];
+      from?: string | string[];
    }>();
 
-   const isReframedBool =
-      (Array.isArray(isReframed) ? isReframed[0] : isReframed) === 'true';
+   const onlyShowAiAnalysisBool =
+      (Array.isArray(onlyShowAiAnalysis)
+         ? onlyShowAiAnalysis[0]
+         : onlyShowAiAnalysis) === 'true';
+   const fromQuery = Array.isArray(from) ? from[0] : from;
+   const isFromEntryDetail = fromQuery === 'entryDetail';
 
    const [showShop, setShowShop] = useState(false);
    const [showDisclaimer, setShowDisclaimer] = useState(false);
@@ -215,7 +220,9 @@ export default function FreeUserChoiceScreen() {
          let target: any = path;
 
          if (requiresAuth && !effectiveSignedIn) {
-            const redirectPath = `/(modal)/free-user?id=${entryId}&autoAi=1&isReframed=${isReframedBool}`;
+            const redirectPath = `/(modal)/free-user?id=${entryId}&autoAi=1&onlyShowAiAnalysis=${onlyShowAiAnalysisBool}${
+               isFromEntryDetail ? '&from=entryDetail' : ''
+            }`;
             target = {
                pathname: ROUTE_LOGIN,
                params: { redirect: encodeURIComponent(redirectPath) },
@@ -225,7 +232,7 @@ export default function FreeUserChoiceScreen() {
          navigationTargetRef.current = target;
          modalRef.current?.dismiss();
       },
-      [effectiveSignedIn, entryId, isReframedBool],
+      [effectiveSignedIn, entryId, isFromEntryDetail, onlyShowAiAnalysisBool],
    );
 
    const checkConsentAndNavigate = useCallback(
@@ -251,9 +258,12 @@ export default function FreeUserChoiceScreen() {
 
          if (!entryId) return modalRef.current?.dismiss();
 
+         const fromParam = isFromEntryDetail ? '&from=entryDetail' : '';
          const path = requiresAuth
-            ? `/dispute/${entryId}?view=analysis&refresh=true`
-            : `/dispute/${entryId}`;
+            ? `/dispute/${entryId}?view=analysis&refresh=true${fromParam}`
+            : isFromEntryDetail
+              ? `/dispute/${entryId}?from=entryDetail`
+              : `/dispute/${entryId}`;
 
          if (requiresAuth && !effectiveSignedIn) {
             proceedToPath(path, requiresAuth);
@@ -342,13 +352,13 @@ export default function FreeUserChoiceScreen() {
 
    const titleText = showShop
       ? 'Refill your credits'
-      : isReframedBool
+      : onlyShowAiAnalysisBool
         ? 'Deepen your insight'
         : 'How do you want to dispute?';
 
    const subText = showShop
       ? 'Refill your credits to analyze more entries instantly.'
-      : isReframedBool
+      : onlyShowAiAnalysisBool
         ? 'Unlock AI analysis to detect thinking patterns.'
         : 'Choose AI analysis or jump into the guided steps.';
 
@@ -428,9 +438,7 @@ export default function FreeUserChoiceScreen() {
                                  {isOutOfCredits
                                     ? 'Not enough credits for AI analysis.'
                                     : `Costs ${aiCreditCost} credit${
-                                         aiCreditCost === 1
-                                            ? ''
-                                            : 's'
+                                         aiCreditCost === 1 ? '' : 's'
                                       }. ${creditAvailability}`}
                               </Text>
                            </View>
@@ -443,8 +451,8 @@ export default function FreeUserChoiceScreen() {
                         )}
                      </Pressable>
 
-                     {/* OPTION 2: MANUAL STEPS (Hidden if isReframed is true) */}
-                     {!isReframedBool && (
+                     {/* OPTION 2: MANUAL STEPS (Hidden if onlyShowAiAnalysis is true) */}
+                     {!onlyShowAiAnalysisBool && (
                         <Pressable
                            onPress={handleChoiceFalse}
                            className={`flex-row items-center justify-between rounded-2xl border ${theme.slateBorder} ${theme.slateBg} py-4 px-4 active:opacity-90`}

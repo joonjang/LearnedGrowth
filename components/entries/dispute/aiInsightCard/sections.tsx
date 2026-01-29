@@ -6,7 +6,6 @@ import {
    Hourglass,
    Info,
    Layers,
-   Leaf,
    Quote,
    RefreshCw,
    Sparkles,
@@ -33,11 +32,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import {
-   AI_ANALYSIS_AMBER_BANNER_CLASS,
-   AI_ANALYSIS_AMBER_NOTE_TEXT_CLASS,
-   AI_ANALYSIS_LABEL,
-} from '@/lib/styles';
+import { AI_ANALYSIS_AMBER_BANNER_CLASS, AI_ANALYSIS_LABEL } from '@/lib/styles';
 import { AnimatedSpectrumRow } from './AnimatedSpectrumRow';
 import type { AnimationTimeline } from './animation';
 import { InsightDimensions, InsightSafety } from './types';
@@ -397,7 +392,6 @@ export type AiInsightStaleBannerProps = {
    isStale: boolean;
    isCoolingDown: boolean;
    isNudgeStep: boolean;
-   refreshCostNote: string | null;
    onRefreshPress: () => void;
    timeLabel: string;
    isDark: boolean;
@@ -407,7 +401,6 @@ export function AiInsightStaleBanner({
    isStale,
    isCoolingDown,
    isNudgeStep,
-   refreshCostNote,
    onRefreshPress,
    timeLabel,
    isDark,
@@ -443,22 +436,6 @@ export function AiInsightStaleBanner({
                   </Text>
                </View>
             </View>
-
-            {/* Cost tag below header (same visuals, better hierarchy) */}
-            {!isCoolingDown && refreshCostNote && (
-               <View className="flex-row items-center opacity-90 mt-1">
-                  <Leaf
-                     size={10}
-                     color={isDark ? '#f59e0b' : '#b45309'}
-                     style={{ marginRight: 3 }}
-                  />
-                  <Text
-                     className={`text-[10px] font-semibold ${AI_ANALYSIS_AMBER_NOTE_TEXT_CLASS}`}
-                  >
-                     {refreshCostNote}
-                  </Text>
-               </View>
-            )}
 
             {/* Helper copy */}
             <Text className="text-[11px] text-slate-600 dark:text-slate-400 leading-4 mt-1">

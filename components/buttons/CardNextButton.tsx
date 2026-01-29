@@ -32,9 +32,14 @@ type ButtonConfig = {
 type Prop = {
    id: string;
    onNavigate?: () => void;
+   fromEntryDetail?: boolean;
 };
 
-export default function CardNextButton({ id, onNavigate }: Prop) {
+export default function CardNextButton({
+   id,
+   onNavigate,
+   fromEntryDetail = false,
+}: Prop) {
    const { status, user } = useAuth();
    const { isGrowthPlusActive } = useRevenueCat();
    const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
@@ -54,10 +59,22 @@ export default function CardNextButton({ id, onNavigate }: Prop) {
       user?.user_metadata?.has_agreed_to_ai === 'true';
    const [hasConsent, setHasConsent] = useState<boolean>(hasAccountConsent);
 
+   const disputeParams = useMemo(
+      () => (fromEntryDetail ? { from: 'entryDetail' } : {}),
+      [fromEntryDetail],
+   );
+   const freeUserParams = useMemo(
+      () => (fromEntryDetail ? { from: 'entryDetail' } : {}),
+      [fromEntryDetail],
+   );
+
    const navigateToAnalysis = useCallback(() => {
       onNavigate?.();
-      router.push(`/dispute/${id}?view=analysis&refresh=true`);
-   }, [id, onNavigate]);
+      router.push({
+         pathname: '/dispute/[id]',
+         params: { id, view: 'analysis', refresh: 'true', ...disputeParams },
+      });
+   }, [disputeParams, id, onNavigate]);
 
    const checkConsentAndNavigate = useCallback(() => {
       if (hasConsent) {
@@ -126,7 +143,10 @@ export default function CardNextButton({ id, onNavigate }: Prop) {
       lockNavigation(() => {
          if (hasCachedAnalysis) {
             onNavigate?.();
-            router.push(`/dispute/${id}?view=analysis`);
+            router.push({
+               pathname: '/dispute/[id]',
+               params: { id, view: 'analysis', ...disputeParams },
+            });
             return;
          }
          if (isSubscribed) {
@@ -138,11 +158,13 @@ export default function CardNextButton({ id, onNavigate }: Prop) {
          onNavigate?.();
          router.push({
             pathname: '/(modal)/free-user',
-            params: { id },
+            params: { id, ...freeUserParams },
          } as any);
       });
    }, [
       checkConsentAndNavigate,
+      freeUserParams,
+      disputeParams,
       hasCachedAnalysis,
       id,
       isSubscribed,

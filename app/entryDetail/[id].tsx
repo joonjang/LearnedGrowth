@@ -177,13 +177,18 @@ export default function EntryDetailScreen() {
                   id: entry.id,
                   view: 'analysis',
                   refresh: 'true',
+                  from: 'entryDetail',
                },
             });
             return;
          }
          router.push({
             pathname: '/(modal)/free-user',
-            params: { id: entry.id, isReframed: 'true' },
+            params: {
+               id: entry.id,
+               onlyShowAiAnalysis: 'true',
+               from: 'entryDetail',
+            },
          });
       });
    }, [isSubscribed, entry, lockNavigation]);
@@ -271,7 +276,12 @@ export default function EntryDetailScreen() {
       lockNavigation(() => {
          router.push({
             pathname: '/dispute/[id]',
-            params: { id: entry.id, view: 'analysis', refresh: 'true' },
+            params: {
+               id: entry.id,
+               view: 'analysis',
+               refresh: 'true',
+               from: 'entryDetail',
+            },
          });
       });
    }, [entry, lockNavigation]);
@@ -281,7 +291,7 @@ export default function EntryDetailScreen() {
       lockNavigation(() => {
          router.push({
             pathname: '/dispute/[id]',
-            params: { id: entryId },
+            params: { id: entryId, from: 'entryDetail' },
          });
       });
    }, [entryId, lockNavigation]);
@@ -291,7 +301,7 @@ export default function EntryDetailScreen() {
       lockNavigation(() => {
          router.push({
             pathname: '/dispute/[id]',
-            params: { id: entryId, newDispute: 'true' },
+            params: { id: entryId, newDispute: 'true', from: 'entryDetail' },
          });
       });
    }, [entryId, lockNavigation]);
@@ -519,7 +529,10 @@ export default function EntryDetailScreen() {
                                        onPress={handleContinueToDispute}
                                     />
                                  ) : (
-                                    <CardNextButton id={entry.id} />
+                                    <CardNextButton
+                                       id={entry.id}
+                                       fromEntryDetail
+                                    />
                                  )}
                               </View>
                            )}

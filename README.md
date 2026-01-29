@@ -41,6 +41,13 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-01-28
+
+- extended ai api response to have default starter text
+- removed credit count on ai refresh banner, made the bottom sheet display instead
+- fixed navigation redundancy for EntryDetailScreen when going to dispute when already at detail screen
+   - navigation history added to param
+
 ### 2026-01-27
 
 - added disclaimer about the entries used for dashboard requiring ai analysis

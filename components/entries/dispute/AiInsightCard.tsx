@@ -1,12 +1,11 @@
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { useAuth } from '@/providers/AuthProvider';
-import { useAppConfig } from '@/providers/AppConfigProvider';
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { useRevenueCat } from '@/providers/RevenueCatProvider';
+import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LayoutAnimation, Pressable, View } from 'react-native';
 
-import { AiInsightCreditShopSheet } from '../../shop/CreditShopSheet';
 import AiInsightExpandedContent from './aiInsightCard/AiInsightExpandedContent';
 import { getAiInsightAnimationTimeline } from './aiInsightCard/animation';
 import {
@@ -54,11 +53,9 @@ export function AiInsightCard({
    const refreshWindowKey = entryId ?? 'ai-insight-default';
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const { profile, status, refreshProfile, refreshProfileIfStale } = useAuth();
-   const { aiConfig } = useAppConfig();
-   const { freeMonthlyCredits, aiCreditCost } = aiConfig;
-   const isFreePlan = profile?.plan === 'free';
-   const shopSheetRef = useRef<BottomSheetModal>(null);
+   const { status, refreshProfile, refreshProfileIfStale } = useAuth();
+   const { isGrowthPlusActive } = useRevenueCat();
+   const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
 
    // --- STATE ---
    const [showDefinitions, setShowDefinitions] = useState(false);
@@ -85,24 +82,7 @@ export function AiInsightCard({
       setIsMinimized(Boolean(initiallyMinimized));
    }, [allowMinimize, initiallyMinimized]);
 
-   // --- CREDITS & COOLDOWN LOGIC ---
-   const availableCredits = useMemo(() => {
-      if (!profile) return null;
-      return (
-         Math.max(freeMonthlyCredits - (profile.aiCycleUsed ?? 0), 0) +
-         (profile.extraAiCredits ?? 0)
-      );
-   }, [freeMonthlyCredits, profile]);
-
-   const refreshCostNote = useMemo(() => {
-      if (!isFreePlan) return null;
-      const costSuffix = aiCreditCost === 1 ? '' : 's';
-      if (availableCredits === null) {
-         return `Costs ${aiCreditCost} credit${costSuffix}.`;
-      }
-      const remainingSuffix = availableCredits === 1 ? '' : 's';
-      return `Costs ${aiCreditCost} credit${costSuffix} • ${availableCredits} credit${remainingSuffix} left`;
-   }, [aiCreditCost, availableCredits, isFreePlan]);
+   // --- COOLDOWN LOGIC ---
 
    const COOLDOWN_MINUTES = 2;
    const windowMs = COOLDOWN_MINUTES * 60000;
@@ -190,29 +170,14 @@ export function AiInsightCard({
    const streamLength = streamingText?.length ?? 0;
    const isLoading = !data && !error;
 
-   const handleShopSuccess = async () => {
-      shopSheetRef.current?.dismiss();
-      if (status === 'signedIn') {
-         try {
-            await refreshProfile();
-         } catch (err) {
-            console.warn('Failed to refresh credits after purchase', err);
-         }
-      }
-   };
-
-   // Inside AiInsightCard.tsx
-
    const handleRefreshPress = useCallback(async () => {
-      // FIX: Only enforce credit limits if the user is on the 'free' plan.
-      // If isFreePlan is false (subscriber), we skip this check.
-      const isCreditRestricted =
-         isFreePlan &&
-         availableCredits !== null &&
-         availableCredits < aiCreditCost;
-
-      if (isCreditRestricted) {
-         shopSheetRef.current?.present();
+      if (!isSubscribed) {
+         if (entryId) {
+            router.push({
+               pathname: '/(modal)/free-user',
+               params: { id: entryId, onlyShowAiAnalysis: 'true' },
+            });
+         }
          return;
       }
 
@@ -224,12 +189,11 @@ export function AiInsightCard({
          }
       }
    }, [
-      aiCreditCost,
-      availableCredits,
+      entryId,
+      isSubscribed,
       onRefresh,
       refreshProfile,
       status,
-      isFreePlan, // <--- Make sure to add this to the dependency array
    ]);
 
    // --- ANIMATION TIMINGS ---
@@ -302,7 +266,6 @@ export function AiInsightCard({
                isStale={Boolean(data.isStale)}
                isCoolingDown={isCoolingDown}
                isNudgeStep={isNudgeStep}
-               refreshCostNote={refreshCostNote}
                onRefresh={onRefresh}
                onRefreshPress={handleRefreshPress}
                cooldownAnchorMs={cooldownAnchor.getTime()} // Pass time as number
@@ -317,12 +280,6 @@ export function AiInsightCard({
             />
          )}
 
-         <AiInsightCreditShopSheet
-            sheetRef={shopSheetRef}
-            onDismiss={() => {}}
-            onSuccess={handleShopSuccess}
-            isDark={isDark}
-         />
       </View>
    );
 }

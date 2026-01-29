@@ -420,7 +420,7 @@ export default function EntryCard({
          }
          router.push({
             pathname: '/(modal)/free-user',
-            params: { id: entry.id, isReframed: 'true' },
+            params: { id: entry.id, onlyShowAiAnalysis: 'true' },
          });
       });
    }, [entry, isSubscribed, lockNavigation, onAnalyze]);

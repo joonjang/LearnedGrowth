@@ -53,8 +53,11 @@ export type LearnedGrowthResponse = {
   };
   suggestions: {
     evidenceQuestion: string | null;
+    evidenceStarter: string | null;
     alternativesQuestion: string | null;
+    alternativesStarter: string | null;
     usefulnessQuestion: string | null;
+    usefulnessStarter: string | null;
     counterBelief: string | null;
   };
 };
@@ -166,8 +169,11 @@ export function normalizeLearnedGrowthResponse(raw: any): LearnedGrowthResponse 
     },
     suggestions: {
       evidenceQuestion: ensureStringOrNull(suggestions.evidenceQuestion),
+      evidenceStarter: ensureStringOrNull(suggestions.evidenceStarter),
       alternativesQuestion: ensureStringOrNull(suggestions.alternativesQuestion),
+      alternativesStarter: ensureStringOrNull(suggestions.alternativesStarter),
       usefulnessQuestion: ensureStringOrNull(suggestions.usefulnessQuestion),
+      usefulnessStarter: ensureStringOrNull(suggestions.usefulnessStarter),
       counterBelief: ensureStringOrNull(suggestions.counterBelief),
     },
   };
