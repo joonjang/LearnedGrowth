@@ -1,3 +1,4 @@
+import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { getWeekStart } from '@/lib/date';
 import { isOptimistic, toDateKey } from '@/lib/utils';
 import { Entry } from '@/models/entry';
@@ -193,11 +194,11 @@ const HomeDashboard = React.memo(
          () => insightCoverageSheetRef.current?.present(),
          [],
       );
-
+      const { lock: lockNavigation } = useNavigationLock();
       const handleViewAllEntries = useCallback(() => {
          // Adjust this route to match your journal tab or list screen
-         router.push(ROUTE_ENTRIES);
-      }, []);
+         lockNavigation(() => router.push(ROUTE_ENTRIES));
+      }, [lockNavigation]);
 
       const { patternView } = useMemo(() => {
          const dayBuckets = new Map<string, DayBucket>();

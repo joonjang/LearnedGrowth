@@ -1,7 +1,11 @@
 import EntryCard from '@/components/entries/entry/EntryCard';
 import { getShadow } from '@/lib/shadow';
 import { Entry } from '@/models/entry';
-import { Book, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import {
+   ChevronLeft,
+   ChevronRight,
+   FileText
+} from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
    FlatList,
@@ -219,7 +223,7 @@ export default function RecentEntriesCarousel({
             style={{ paddingHorizontal: 32 }}
          >
             <View className="flex-row items-center gap-2">
-               <Book size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
+               <FileText size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                   Recent Entries
                </Text>
