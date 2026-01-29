@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { ROUTE_ENTRIES, WEEKDAY_LABELS } from '../constants';
 import NoAiEntrySheet from './NoAiEntrySheet';
-import RecentEntriesCarousel from './RecentEntriesCarousel';
+import RecentEntriesCarousel from './recentEntries/RecentEntriesCarousel';
 import NeedsAttentionSheet from './statHero/NeedsAttentionSheet';
 import StatHero, { getResolutionStatus } from './statHero/StatHero';
 import ThinkingPatternCard from './thinkingPattern/ThinkingPatternCard';
@@ -407,7 +407,7 @@ const HomeDashboard = React.memo(
                needsAttentionCount={needsAttentionEntries.length}
                onOpenNeedsAttention={handleOpenNeedsAttention}
                isDark={isDark}
-               isLoading={isLoading}
+               isLoading={isLoading && entries.length === 0}
             />
 
             {/* INSIGHT COVERAGE FOOTER */}
@@ -486,6 +486,7 @@ const HomeDashboard = React.memo(
                      onDelete={onDeleteEntry}
                      isDark={isDark}
                      onViewAll={handleViewAllEntries}
+                     isLoading={isLoading && entries.length === 0}
                   />
                </Animated.View>
             )}

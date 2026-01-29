@@ -14,20 +14,20 @@ import {
 } from 'react-native';
 import Animated, {
    FadeIn,
-   FadeOut,
    FadeOutLeft,
-   LinearTransition, // Layout transition
+   LinearTransition,
    useAnimatedStyle,
    useSharedValue,
-   withTiming
+   withTiming,
 } from 'react-native-reanimated';
+import RecentEntriesSkeleton from './RecentEntriesSkeleton';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const CARD_WIDTH_PERCENTAGE = 0.85;
 const SPACING = 12;
 
-// --- Helper: Big Touchable Chevron ---
+// --- CHEVRON COMPONENT ---
 const CarouselChevron = ({
    direction,
    onPress,
@@ -46,7 +46,6 @@ const CarouselChevron = ({
       transform: [{ scale: scale.value }],
    }));
 
-   // Using withTiming for non-bouncy press interaction
    const handlePressIn = () => {
       scale.value = withTiming(0.9, { duration: 100 });
    };
@@ -73,11 +72,13 @@ const CarouselChevron = ({
    );
 };
 
+// --- MAIN COMPONENT ---
 type Props = {
    entries: Entry[];
    onDelete: (entry: Entry) => void;
    isDark: boolean;
    onViewAll?: () => void;
+   isLoading?: boolean;
 };
 
 export default function RecentEntriesCarousel({
@@ -85,10 +86,14 @@ export default function RecentEntriesCarousel({
    onDelete,
    isDark,
    onViewAll,
+   isLoading = false,
 }: Props) {
+   // --- ALL HOOKS MUST BE DECLARED BEFORE ANY EARLY RETURNS ---
+
    const { width } = useWindowDimensions();
    const flatListRef = useRef<FlatList>(null);
    const [activeIndex, setActiveIndex] = useState(0);
+   const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
 
    const cardWidth = width * CARD_WIDTH_PERCENTAGE;
    const ITEM_FULL_WIDTH = cardWidth + SPACING;
@@ -96,7 +101,17 @@ export default function RecentEntriesCarousel({
 
    const data = useMemo(() => entries.slice(0, 5), [entries]);
 
-   const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
+   const chevronShadow = useMemo(
+      () =>
+         getShadow({
+            isDark,
+            preset: 'button',
+            disableInDark: false,
+            androidElevation: 6,
+            colorLight: '#0f172a',
+         }),
+      [isDark],
+   );
 
    const handleToggleMenu = useCallback((entryId: string) => {
       setOpenMenuEntryId((current) => (current === entryId ? null : entryId));
@@ -146,18 +161,6 @@ export default function RecentEntriesCarousel({
       [ITEM_FULL_WIDTH],
    );
 
-   const chevronShadow = useMemo(
-      () =>
-         getShadow({
-            isDark,
-            preset: 'button',
-            disableInDark: false,
-            androidElevation: 6,
-            colorLight: '#0f172a',
-         }),
-      [isDark],
-   );
-
    const renderItem = useCallback(
       ({ item }: { item: Entry }) => {
          return (
@@ -168,8 +171,6 @@ export default function RecentEntriesCarousel({
                }}
                entering={FadeIn}
                exiting={FadeOutLeft.duration(200)}
-               // CHANGED: Removed .springify()
-               // Uses standard duration timing for smooth sliding
                layout={LinearTransition.duration(300)}
             >
                <EntryCard
@@ -192,6 +193,19 @@ export default function RecentEntriesCarousel({
       ],
    );
 
+   // --- LOADING CHECK AFTER HOOKS ---
+   if (isLoading) {
+      return (
+         <RecentEntriesSkeleton
+            width={width}
+            cardWidth={cardWidth}
+            insetX={insetX}
+            isDark={isDark}
+         />
+      );
+   }
+
+   // --- EMPTY CHECK AFTER HOOKS ---
    if (entries.length === 0) return null;
 
    const showLeftChevron = activeIndex > 0;
@@ -250,10 +264,7 @@ export default function RecentEntriesCarousel({
                pointerEvents="box-none"
             >
                {showLeftChevron && (
-                  <Animated.View
-                     entering={FadeIn.duration(200)}
-                     exiting={FadeOut.duration(200)}
-                  >
+                  <Animated.View entering={FadeIn.duration(200)}>
                      <CarouselChevron
                         direction="left"
                         onPress={handleScrollLeft}
@@ -270,10 +281,7 @@ export default function RecentEntriesCarousel({
                pointerEvents="box-none"
             >
                {showRightChevron && (
-                  <Animated.View
-                     entering={FadeIn.duration(200)}
-                     exiting={FadeOut.duration(200)}
-                  >
+                  <Animated.View entering={FadeIn.duration(200)}>
                      <CarouselChevron
                         direction="right"
                         onPress={handleScrollRight}
