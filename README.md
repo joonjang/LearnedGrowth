@@ -41,6 +41,11 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-01-29
+
+- changed coloring and refactor bugs
+- added time to thinking pattern sheet
+
 ### 2026-01-28
 
 - extended ai api response to have default starter text

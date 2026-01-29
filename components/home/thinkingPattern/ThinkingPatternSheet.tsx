@@ -61,6 +61,14 @@ function formatShortDate(date: Date) {
    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// Helper to format time (e.g., "10:30 AM")
+function formatTime(date: Date) {
+   return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+   });
+}
+
 function getPatternDateParts(value: string | null | undefined) {
    if (!value) return null;
    const parsed = new Date(value);
@@ -68,6 +76,7 @@ function getPatternDateParts(value: string | null | undefined) {
    return {
       weekday: WEEKDAY_LABELS[parsed.getDay()] ?? '',
       fullDate: formatShortDate(parsed),
+      time: formatTime(parsed), // <--- Added time
    };
 }
 
@@ -83,7 +92,7 @@ type Props = {
    sheetRef: RefObject<BottomSheetModal | null>;
    onDismiss?: () => void;
    data: ThinkingPatternData | null;
-   initialTab?: PatternTab; // <--- NEW PROP
+   initialTab?: PatternTab;
 };
 
 export default function ThinkingPatternSheet({
@@ -100,7 +109,6 @@ export default function ThinkingPatternSheet({
    const [activeTab, setActiveTab] = useState<PatternTab>(initialTab);
    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
-   // <--- NEW: Sync internal state when the parent changes the desired tab
    useEffect(() => {
       if (initialTab) {
          setActiveTab(initialTab);
@@ -397,7 +405,7 @@ export default function ThinkingPatternSheet({
                   {sortedPatterns.map((pattern) => {
                      const isExpanded = expandedItemId === pattern.id;
                      const dateParts = getPatternDateParts(pattern.createdAt);
-                     // ... (Rest of your list rendering logic remains unchanged)
+
                      let ImpactIcon = Minus;
                      let iconColor = isDark ? '#94a3b8' : '#64748b';
                      let bubbleClasses =
@@ -434,45 +442,56 @@ export default function ThinkingPatternSheet({
                               <Pressable
                                  onPress={() => handleToggleItem(pattern.id)}
                               >
-                                 <View className="flex-row items-center p-3.5">
-                                    <View className="w-14 mr-2 items-center gap-1">
+                                 <View className="p-3.5">
+                                    {/* 1. Header Info (Full Width, Top) */}
+                                    <View className="flex-row items-center gap-2 mb-2.5">
                                        <ImpactIcon
                                           size={14}
                                           color={iconColor}
                                        />
-                                       <View className="items-center">
-                                          <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase leading-3">
-                                             {dateParts?.weekday ?? ''}
-                                          </Text>
-                                          <Text className="text-[9px] text-slate-400 dark:text-slate-500 leading-3">
-                                             {dateParts?.fullDate ?? ''}
-                                          </Text>
-                                       </View>
+                                       <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                                          {dateParts?.weekday}{' '}
+                                          {dateParts?.fullDate} •{' '}
+                                          {dateParts?.time}
+                                       </Text>
                                     </View>
 
-                                    <View className="flex-1 mr-3">
+                                    {/* 2. Row: Bubble + Chevron */}
+                                    <View className="flex-row items-center">
+                                       {/* Phrase Bubble (Takes remaining space) */}
                                        <View
-                                          className={`self-start px-3 py-1.5 rounded-xl border ${bubbleClasses}`}
+                                          className={`flex-1 px-3 py-2 rounded-xl border ${bubbleClasses}`}
                                        >
                                           <Text
-                                             className={`text-xs font-semibold ${bubbleTextClasses}`}
+                                             className={`text-xs font-semibold ${bubbleTextClasses} leading-5`}
                                           >
                                              {pattern.phrase}
                                           </Text>
                                        </View>
-                                    </View>
 
-                                    {isExpanded ? (
-                                       <ChevronUp
-                                          size={18}
-                                          color={isDark ? '#cbd5e1' : '#64748b'}
-                                       />
-                                    ) : (
-                                       <ChevronDown
-                                          size={18}
-                                          color={isDark ? '#cbd5e1' : '#64748b'}
-                                       />
-                                    )}
+                                       {/* Chevron (Sits right next to the bubble) */}
+                                       <View className="ml-3">
+                                          {isExpanded ? (
+                                             <ChevronUp
+                                                size={18}
+                                                color={
+                                                   isDark
+                                                      ? '#cbd5e1'
+                                                      : '#64748b'
+                                                }
+                                             />
+                                          ) : (
+                                             <ChevronDown
+                                                size={18}
+                                                color={
+                                                   isDark
+                                                      ? '#cbd5e1'
+                                                      : '#64748b'
+                                                }
+                                             />
+                                          )}
+                                       </View>
+                                    </View>
                                  </View>
                               </Pressable>
 

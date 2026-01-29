@@ -1,15 +1,15 @@
 import { UNCATEGORIZED_LABEL } from '@/lib/styles';
 import {
+   Activity,
    Asterisk,
    BookOpen,
    Briefcase,
    CircleDollarSign,
-   Dumbbell,
    Heart,
    HelpCircle,
    LucideIcon,
    User,
-   Zap,
+   Zap
 } from 'lucide-react-native';
 
 export const FREE_MONTHLY_CREDITS = 5;
@@ -115,7 +115,7 @@ export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
    Work: Briefcase,
    Education: BookOpen,
    Relationships: Heart,
-   Health: Dumbbell,
+   Health: Activity,
    Finance: CircleDollarSign,
    'Self-Image': User,
    'Daily Hassles': Zap,

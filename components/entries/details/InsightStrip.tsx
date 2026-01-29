@@ -1,40 +1,9 @@
-import {
-    Asterisk,
-    BookOpen,
-    Briefcase,
-    CircleDollarSign,
-    Dumbbell,
-    Heart,
-    HelpCircle,
-    User,
-    Zap,
-} from 'lucide-react-native';
+import { CATEGORY_ICON_MAP } from '@/components/constants';
 import React, { memo } from 'react';
 import { Text, View } from 'react-native';
 
 // Move this helper outside or to a utility file
-const getCategoryIcon = (category: string) => {
-   switch (category) {
-      case 'Work':
-         return Briefcase;
-      case 'Education':
-         return BookOpen;
-      case 'Relationships':
-         return Heart;
-      case 'Health':
-         return Dumbbell;
-      case 'Finance':
-         return CircleDollarSign;
-      case 'Self-Image':
-         return User;
-      case 'Daily Hassles':
-         return Zap;
-      case 'Other':
-         return Asterisk;
-      default:
-         return HelpCircle;
-   }
-};
+const getCategoryIcon = (category: string) => CATEGORY_ICON_MAP[category];
 
 type InsightStripProps = {
    category: string;
