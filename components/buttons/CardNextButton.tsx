@@ -59,11 +59,7 @@ export default function CardNextButton({
       user?.user_metadata?.has_agreed_to_ai === 'true';
    const [hasConsent, setHasConsent] = useState<boolean>(hasAccountConsent);
 
-   const disputeParams = useMemo(
-      () => (fromEntryDetail ? { from: 'entryDetail' } : {}),
-      [fromEntryDetail],
-   );
-   const freeUserParams = useMemo(
+   const pathParam = useMemo(
       () => (fromEntryDetail ? { from: 'entryDetail' } : {}),
       [fromEntryDetail],
    );
@@ -72,9 +68,9 @@ export default function CardNextButton({
       onNavigate?.();
       router.push({
          pathname: '/dispute/[id]',
-         params: { id, view: 'analysis', refresh: 'true', ...disputeParams },
+         params: { id, view: 'analysis', refresh: 'true', ...pathParam },
       });
-   }, [disputeParams, id, onNavigate]);
+   }, [pathParam, id, onNavigate]);
 
    const checkConsentAndNavigate = useCallback(() => {
       if (hasConsent) {
@@ -145,7 +141,7 @@ export default function CardNextButton({
             onNavigate?.();
             router.push({
                pathname: '/dispute/[id]',
-               params: { id, view: 'analysis', ...disputeParams },
+               params: { id, view: 'analysis', ...pathParam },
             });
             return;
          }
@@ -158,13 +154,12 @@ export default function CardNextButton({
          onNavigate?.();
          router.push({
             pathname: '/(modal)/free-user',
-            params: { id, ...freeUserParams },
+            params: { id, ...pathParam },
          } as any);
       });
    }, [
       checkConsentAndNavigate,
-      freeUserParams,
-      disputeParams,
+      pathParam,
       hasCachedAnalysis,
       id,
       isSubscribed,
