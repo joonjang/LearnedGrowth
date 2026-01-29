@@ -36,13 +36,13 @@ import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
    ArrowRight,
-   ChevronDown, // <--- Added this
+   ChevronDown,
    ChevronLeft,
    Sparkles,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LayoutAnimation, Pressable, Text, View } from 'react-native';
+import { Alert, LayoutAnimation, Pressable, Text, View } from 'react-native';
 import {
    KeyboardAwareScrollView,
    KeyboardController,
@@ -111,7 +111,6 @@ export default function EntryDetailScreen() {
    > | null>(null);
 
    // --- Collapse State for Disputes ---
-   // 1. New state for collapse logic
    const [historyExpanded, setHistoryExpanded] = useState(false);
 
    // --- AI Visuals Data ---
@@ -161,7 +160,6 @@ export default function EntryDetailScreen() {
 
    // --- Callbacks ---
 
-   // 2. Toggle handler
    const toggleHistory = useCallback(() => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setHistoryExpanded((prev) => !prev);
@@ -271,6 +269,38 @@ export default function EntryDetailScreen() {
       router.replace(ROUTE_HOME);
    }, []);
 
+   const handleDelete = useCallback(() => {
+      if (!entry) return;
+
+      Alert.alert(
+         'Delete Entry',
+         'Are you sure you want to delete this entry?',
+         [
+            { text: 'Cancel', style: 'cancel' },
+            {
+               text: 'Delete',
+               style: 'destructive',
+               onPress: async () => {
+                  try {
+                     await store.deleteEntry(entry.id);
+                     if (hapticsEnabled && hapticsAvailable) triggerHaptic();
+                     navigateToEntries();
+                  } catch (error) {
+                     console.error('Failed to delete entry:', error);
+                  }
+               },
+            },
+         ],
+      );
+   }, [
+      entry,
+      store,
+      hapticsEnabled,
+      hapticsAvailable,
+      triggerHaptic,
+      navigateToEntries,
+   ]);
+
    const handleOpenDisputeAndUpdate = useCallback(() => {
       if (!entry) return;
       lockNavigation(() => {
@@ -347,13 +377,7 @@ export default function EntryDetailScreen() {
    // --- Render ---
 
    if (!entry) {
-      return (
-         <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-slate-900">
-            <Text className="text-slate-900 dark:text-slate-100">
-               Entry not found.
-            </Text>
-         </View>
-      );
+      return <View />;
    }
 
    const statusMessage = justSaved
@@ -540,8 +564,6 @@ export default function EntryDetailScreen() {
                      )}
 
                      {step.key === 'energy' && hasDisputeHistory && (
-                        // 3. REPLACED: TimelinePivot removed to remove dashed border.
-                        // Added new UI container with solid border and collapse logic.
                         <View className="mb-2">
                            <View className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
                               <Pressable
@@ -604,9 +626,25 @@ export default function EntryDetailScreen() {
                   </EntryField>
                );
             })}
+
             {hasDispute && !isEditing && (
                <View className="pt-8">
                   <NewDisputeLink onPress={handleStartNewDispute} />
+               </View>
+            )}
+
+            {/* DELETE ENTRY BUTTON */}
+            {isEditing && (
+               <View className="pt-14  items-center">
+                  <Pressable
+                     onPress={handleDelete}
+                     hitSlop={12}
+                     className="active:opacity-60"
+                  >
+                     <Text className="text-xs font-bold uppercase tracking-widest text-rose-500 dark:text-rose-400">
+                        Delete Entry
+                     </Text>
+                  </Pressable>
                </View>
             )}
          </KeyboardAwareScrollView>

@@ -45,6 +45,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 - changed coloring and refactor bugs
 - added time to thinking pattern sheet
+- added delete feature for entry detail screen
 
 ### 2026-01-28
 
