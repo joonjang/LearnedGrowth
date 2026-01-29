@@ -407,6 +407,7 @@ const HomeDashboard = React.memo(
                needsAttentionCount={needsAttentionEntries.length}
                onOpenNeedsAttention={handleOpenNeedsAttention}
                isDark={isDark}
+               isLoading={isLoading}
             />
 
             {/* INSIGHT COVERAGE FOOTER */}

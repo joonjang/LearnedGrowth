@@ -1,24 +1,30 @@
 import { getShadow } from '@/lib/shadow';
 import { CARD_PRESS_STYLE, DISPUTE_CTA_CLASS } from '@/lib/styles';
 import { Entry } from '@/models/entry';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
-    FadeInDown,
+    FadeIn,
+    FadeOut,
     LinearTransition,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSequence,
+    withTiming,
 } from 'react-native-reanimated';
 
+// --- Types & Logic ---
 export type ResolutionStats = {
    label: string;
    subtext: string;
    colorClass: string;
-   barColor: string; // Kept for type compatibility, even if unused in UI
+   barColor: string;
    percent: number;
    resolvedCount: number;
    total: number;
 };
 
-// [Logic kept exactly as you provided]
 export function getResolutionStatus(
    entries: Entry[],
    isDark: boolean,
@@ -78,11 +84,78 @@ export function getResolutionStatus(
    };
 }
 
+// --- SKELETON COMPONENT ---
+function StatHeroSkeleton() {
+   const opacity = useSharedValue(0.4);
+
+   useEffect(() => {
+      opacity.value = withRepeat(
+         withSequence(
+            withTiming(0.8, { duration: 1000 }),
+            withTiming(0.4, { duration: 1000 }),
+         ),
+         -1,
+         true,
+      );
+   }, [opacity]);
+
+   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+   return (
+      <Animated.View
+         // Clean fade for the skeleton itself
+         entering={FadeIn.duration(300)}
+         exiting={FadeOut.duration(300)}
+         className="px-4 py-6 flex-row justify-between items-start"
+      >
+         {/* Left Side Skeleton */}
+         <View className="flex-1 pr-6 pt-1 gap-3">
+            <Animated.View
+               style={animatedStyle}
+               className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded-md"
+            />
+            <View className="gap-2">
+               <Animated.View
+                  style={animatedStyle}
+                  className="h-5 w-full bg-slate-200 dark:bg-slate-800 rounded-md"
+               />
+               <Animated.View
+                  style={animatedStyle}
+                  className="h-5 w-2/3 bg-slate-200 dark:bg-slate-800 rounded-md"
+               />
+            </View>
+            <Animated.View
+               style={animatedStyle}
+               className="h-8 w-40 bg-slate-200 dark:bg-slate-800 rounded-full mt-2"
+            />
+         </View>
+
+         {/* Right Side Skeleton */}
+         <View className="items-end gap-2">
+            <Animated.View
+               style={animatedStyle}
+               className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded-sm mb-1"
+            />
+            <Animated.View
+               style={animatedStyle}
+               className="h-16 w-20 bg-slate-200 dark:bg-slate-800 rounded-xl"
+            />
+            <Animated.View
+               style={animatedStyle}
+               className="h-3 w-14 bg-slate-200 dark:bg-slate-800 rounded-sm"
+            />
+         </View>
+      </Animated.View>
+   );
+}
+
+// --- MAIN COMPONENT ---
 type StatHeroProps = {
    resolutionStats: ResolutionStats;
    needsAttentionCount: number;
    onOpenNeedsAttention: () => void;
    isDark: boolean;
+   isLoading?: boolean;
 };
 
 export default function StatHero({
@@ -90,6 +163,7 @@ export default function StatHero({
    needsAttentionCount,
    onOpenNeedsAttention,
    isDark,
+   isLoading = false,
 }: StatHeroProps) {
    const labelColor = 'text-slate-400 dark:text-slate-500';
    const [isPressed, setIsPressed] = useState(false);
@@ -105,13 +179,17 @@ export default function StatHero({
       [isDark],
    );
 
+   if (isLoading) {
+      return <StatHeroSkeleton />;
+   }
+
    return (
       <Animated.View
-         entering={FadeInDown.duration(600).springify()}
+         // CHANGED: Use simple FadeIn for smooth Skeleton replacement
+         entering={FadeIn.duration(500)}
          layout={LinearTransition.springify()}
          className="px-4 py-6"
       >
-         {/* Container: Row layout, items aligned to top */}
          <View className="flex-row justify-between items-start">
             {/* LEFT: Context & Actions */}
             <View className="flex-1 pr-6 pt-1">
@@ -127,7 +205,7 @@ export default function StatHero({
                   {resolutionStats.subtext}
                </Text>
 
-               {/* Action Pill - Only renders if needed */}
+               {/* Action Pill */}
                {needsAttentionCount > 0 && (
                   <Pressable
                      onPress={onOpenNeedsAttention}
@@ -153,7 +231,6 @@ export default function StatHero({
 
             {/* RIGHT: Big Stat */}
             <View className="items-end">
-               {/* ✅ Eyebrow label above the hero number */}
                <View className="self-end mb-1 flex-row items-center">
                   <Text className={`text-[10px] font-black ${labelColor}`}>
                      [
