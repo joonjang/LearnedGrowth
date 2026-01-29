@@ -16,6 +16,11 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
+- confirm if app has backend character limit stopper if ABC is too long
+
+- change credit purchase
+   - remove icon and make it say credit
+
 - code cleanup on amber redundant usage
 
 - add search function
