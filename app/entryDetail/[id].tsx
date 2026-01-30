@@ -2,11 +2,7 @@ import CardNextButton from '@/components/buttons/CardNextButton';
 import LeftBackChevron from '@/components/buttons/LeftBackChevron';
 import NewDisputeLink from '@/components/buttons/NewDisputeLink';
 import WideButton from '@/components/buttons/WideButton';
-import {
-   ABCDE_FIELD,
-   MAX_AI_RETRIES,
-   ROUTE_HOME,
-} from '@/components/constants';
+import { ABCDE_FIELD, MAX_AI_RETRIES, ROUTE_HOME } from '@/lib/constants';
 
 import { EntryField } from '@/components/entries/details/EntryField';
 import { InsightStrip } from '@/components/entries/details/InsightStrip';

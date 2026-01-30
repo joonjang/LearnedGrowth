@@ -6,10 +6,11 @@ import {
    StyleSheet,
    useColorScheme,
    useWindowDimensions,
-   View
+   View,
 } from 'react-native';
 
-import { MONTHS } from '@/components/constants';
+import { MONTHS } from '@/lib/constants';
+import { CARD_PRESS_STYLE } from '@/lib/styles';
 import {
    buildMonthDays,
    buildMonthRows,
@@ -19,7 +20,6 @@ import {
    parseDateKey,
    toDateKey,
 } from '@/lib/utils';
-import { CARD_PRESS_STYLE } from '@/lib/styles';
 import type { Entry } from '@/models/entry';
 import { StreakViewModel } from '../types';
 import { AllTimeContent } from './parts/AllTimeContent';

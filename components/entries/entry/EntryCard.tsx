@@ -1,10 +1,10 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
+import { useNavigationLock } from '@/hooks/useNavigationLock';
 import {
    CATEGORY_ICON_MAP,
    DEFAULT_CATEGORY_ICON,
    ROUTE_ENTRY_DETAIL,
-} from '@/components/constants';
-import { useNavigationLock } from '@/hooks/useNavigationLock';
+} from '@/lib/constants';
 import { getShadow } from '@/lib/shadow';
 import {
    AI_ANALYSIS_AMBER_CTA_CONTAINER_CLASS,

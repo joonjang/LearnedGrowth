@@ -1,9 +1,4 @@
 import rawAbcde from '@/assets/data/abcde.json';
-import {
-   MAX_AI_RETRIES,
-   ROUTE_ENTRY_DETAIL,
-   ROUTE_HOME,
-} from '@/components/constants';
 import ABCAnalysis from '@/components/entries/dispute/ABCAnalysis';
 import DisputeSteps from '@/components/entries/dispute/DisputeSteps';
 import { useAbcAi } from '@/hooks/useAbcAi';
@@ -11,6 +6,11 @@ import { useEntries } from '@/hooks/useEntries';
 import { usePromptLayout } from '@/hooks/usePromptLayout';
 import { usePrompts } from '@/hooks/usePrompts';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
+import {
+   MAX_AI_RETRIES,
+   ROUTE_ENTRY_DETAIL,
+   ROUTE_HOME,
+} from '@/lib/constants';
 import { buildDisputeText } from '@/lib/textUtils';
 import type { AbcdeJson } from '@/models/abcdeJson';
 import type { LearnedGrowthResponse } from '@/models/aiService';

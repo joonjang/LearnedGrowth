@@ -1,4 +1,4 @@
-import { ROUTE_LOGIN } from '@/components/constants';
+import { ROUTE_LOGIN } from '@/lib/constants';
 import { getShadow } from '@/lib/shadow';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';

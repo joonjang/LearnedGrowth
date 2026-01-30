@@ -12,7 +12,7 @@ import Animated, {
    FadeOutUp,
    LinearTransition,
 } from 'react-native-reanimated';
-import { ROUTE_ENTRIES, WEEKDAY_LABELS } from '../constants';
+import { ROUTE_ENTRIES, WEEKDAY_LABELS } from '../../lib/constants';
 import NoAiEntrySheet from './NoAiEntrySheet';
 import RecentEntriesCarousel from './recentEntries/RecentEntriesCarousel';
 import NeedsAttentionSheet from './statHero/NeedsAttentionSheet';

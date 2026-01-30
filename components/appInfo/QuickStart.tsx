@@ -1,21 +1,18 @@
 import {
-   ABCDE_FIELD,
-   ROUTE_LOGIN,
-} from '@/components/constants';
-import {
-   BELIEF_TEXT_CLASS,
-   DISPUTE_TEXT_CLASS,
-   ENERGY_TEXT_CLASS,
-   PRIMARY_CTA_CLASS,
-} from '@/lib/styles';
-import {
    TimelineItem,
    TimelineLine,
    TimelinePivot,
    TimelineStepDef,
 } from '@/components/entries/details/Timeline';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
+import { ABCDE_FIELD, ROUTE_LOGIN } from '@/lib/constants';
 import { getShadow } from '@/lib/shadow';
+import {
+   BELIEF_TEXT_CLASS,
+   DISPUTE_TEXT_CLASS,
+   ENERGY_TEXT_CLASS,
+   PRIMARY_CTA_CLASS,
+} from '@/lib/styles';
 import { FieldTone } from '@/lib/theme';
 import { useAuth } from '@/providers/AuthProvider';
 import { router } from 'expo-router';

@@ -53,6 +53,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
    - says credits for consumables
    - removed icons for consumables
 - abstracted left chevron back button behaviour
+- made entries.tsx edge-to-edge design
 
 ### 2026-01-29
 

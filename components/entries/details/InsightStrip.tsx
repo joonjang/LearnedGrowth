@@ -1,4 +1,4 @@
-import { CATEGORY_ICON_MAP } from '@/components/constants';
+import { CATEGORY_ICON_MAP } from '@/lib/constants';
 import React, { memo } from 'react';
 import { Text, View } from 'react-native';
 

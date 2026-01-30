@@ -1,21 +1,15 @@
 import {
    ENTRY_CHAR_WARN_MIN_REMAINING,
    ENTRY_CHAR_WARN_RATIO,
-} from '@/components/constants';
+} from '@/lib/constants';
+import { getShadow } from '@/lib/shadow';
 import {
    INPUT_BOX_BOTTOM_INSET,
    INPUT_BOX_HORIZONTAL_INSET,
    INPUT_BOX_TOP_INSET,
 } from '@/lib/styles';
-import { getShadow } from '@/lib/shadow';
 import { useColorScheme } from 'nativewind';
-import {
-   forwardRef,
-   useCallback,
-   useMemo,
-   useRef,
-   useState,
-} from 'react';
+import { forwardRef, useCallback, useMemo, useRef, useState } from 'react';
 import {
    Pressable,
    Text,
@@ -59,11 +53,11 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
       onScroll,
       ...rest
    },
-   ref
+   ref,
 ) {
    const [focused, setFocused] = useState(false);
    const inputRef = useRef<TextInput | null>(null);
-   
+
    // Hook for placeholder color
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
@@ -72,12 +66,15 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
    const lineHeight = Math.round(fontSize * 1.3);
    const shadow = useMemo(
       () => getShadow({ isDark, preset: focused ? 'md' : 'sm' }),
-      [focused, isDark]
+      [focused, isDark],
    );
    const charCount = value.length;
    const remaining = maxLength ? maxLength - charCount : 0;
    const warnThreshold = maxLength
-      ? Math.max(ENTRY_CHAR_WARN_MIN_REMAINING, Math.round(maxLength * ENTRY_CHAR_WARN_RATIO))
+      ? Math.max(
+           ENTRY_CHAR_WARN_MIN_REMAINING,
+           Math.round(maxLength * ENTRY_CHAR_WARN_RATIO),
+        )
       : 0;
    const showCount = Boolean(maxLength) && remaining <= warnThreshold;
    const counterClassName =
@@ -96,22 +93,25 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
             ref.current = node;
          }
       },
-      [ref]
+      [ref],
    );
 
    return (
       <AnimatedPressable
-         onPress={() =>
-            inputRef.current ? inputRef.current.focus() : null
-         }
+         onPress={() => (inputRef.current ? inputRef.current.focus() : null)}
          className={`rounded-[14px] bg-zinc-50 dark:bg-slate-700 border mb-1.5 ${
             focused
                ? 'border-slate-300 dark:border-slate-500 opacity-100'
                : 'border-slate-200 dark:border-slate-700'
          }`}
-         style={[dims, containerStyle, shadow.ios, shadow.android, animatedStyle]}
+         style={[
+            dims,
+            containerStyle,
+            shadow.ios,
+            shadow.android,
+            animatedStyle,
+         ]}
       >
-          
          <TextInput
             ref={setRefs}
             testID="entry-input"

@@ -1,4 +1,4 @@
-import { WEEKDAY_LABELS } from '@/components/constants';
+import { WEEKDAY_LABELS } from '@/lib/constants';
 import {
    CalendarDay,
    cx,

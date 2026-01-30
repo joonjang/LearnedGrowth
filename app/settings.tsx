@@ -1,8 +1,8 @@
 import LeftBackChevron from '@/components/buttons/LeftBackChevron';
-import { ROUTE_LOGIN } from '@/components/constants';
 import { AiInsightCreditShopSheet } from '@/components/shop/CreditShopSheet';
 import SendFeedback from '@/components/utils/SendFeedback';
 import { APP_VERSION } from '@/lib/appInfo';
+import { ROUTE_LOGIN } from '@/lib/constants';
 import { getShadow } from '@/lib/shadow';
 import {
    DISPUTE_BG_CLASS,
@@ -27,7 +27,7 @@ import {
    Sprout,
    TicketPlus,
    TriangleAlert,
-   Zap
+   Zap,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import {

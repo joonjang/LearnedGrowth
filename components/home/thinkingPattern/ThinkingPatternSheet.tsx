@@ -1,8 +1,3 @@
-import {
-   ROUTE_ENTRY_DETAIL,
-   THINKING_PATTERN_DIMENSIONS,
-   WEEKDAY_LABELS,
-} from '@/components/constants';
 import type {
    ThinkingPatternData,
    ThinkingPatternTab,
@@ -11,6 +6,11 @@ import {
    bottomSheetBackgroundStyle,
    bottomSheetHandleIndicatorStyle,
 } from '@/components/utils/bottomSheetStyles';
+import {
+   ROUTE_ENTRY_DETAIL,
+   THINKING_PATTERN_DIMENSIONS,
+   WEEKDAY_LABELS,
+} from '@/lib/constants';
 import { getShadow } from '@/lib/shadow';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,

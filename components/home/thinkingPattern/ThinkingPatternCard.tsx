@@ -1,4 +1,4 @@
-import { THINKING_PATTERN_DIMENSIONS } from '@/components/constants';
+import { THINKING_PATTERN_DIMENSIONS } from '@/lib/constants';
 import { getAiAnalyzedEntryCount } from '@/lib/mentalFocus';
 import { CARD_PRESS_STYLE } from '@/lib/styles';
 import { Entry } from '@/models/entry';

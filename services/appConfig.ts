@@ -1,7 +1,7 @@
 import {
    AI_ANALYSIS_CREDIT_COST,
    FREE_MONTHLY_CREDITS,
-} from '@/components/constants';
+} from '@/lib/constants';
 import { supabase } from '@/lib/supabase';
 
 export type AiConfig = {

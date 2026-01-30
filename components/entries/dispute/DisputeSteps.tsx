@@ -8,17 +8,19 @@ import {
    TextInput,
    TextStyle,
    View,
-   ViewStyle
+   ViewStyle,
 } from 'react-native';
 import { AnimatedStyle } from 'react-native-reanimated';
 
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import StepperButton from '@/components/buttons/StepperButton';
-import { DISPUTE_STEP_CHAR_LIMITS } from '@/components/constants';
 import EntryContextView from '@/components/entries/dispute/EntryContextView';
 import InputBox from '@/components/newEntry/InputBox';
-import PromptDisplay, { PromptDisplayHandle } from '@/components/newEntry/PromptDisplay';
+import PromptDisplay, {
+   PromptDisplayHandle,
+} from '@/components/newEntry/PromptDisplay';
 import StepperHeader from '@/components/newEntry/StepperHeader';
+import { DISPUTE_STEP_CHAR_LIMITS } from '@/lib/constants';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
 
@@ -104,7 +106,7 @@ export default function DisputeSteps({
          const delta = direction === 'next' ? 1 : -1;
          const nextIdx = Math.min(
             Math.max(idx + delta, 0),
-            DISPUTE_STEP_ORDER.length - 1
+            DISPUTE_STEP_ORDER.length - 1,
          );
          const nextKey = DISPUTE_STEP_ORDER[nextIdx];
          const nextValue = form[nextKey] ?? '';
@@ -118,7 +120,7 @@ export default function DisputeSteps({
          }
          setIdx(nextIdx);
       },
-      [form, idx, inputRef, setIdx]
+      [form, idx, inputRef, setIdx],
    );
 
    return (
@@ -180,31 +182,28 @@ export default function DisputeSteps({
 
          {/* --- INPUT WRAPPER --- */}
 
-            <InputBox
-
-               ref={inputRef}
-               value={form[currKey]}
-               onChangeText={setField(currKey)}
-               placeholder={DISPUTE_PLACEHOLDER[currKey]}
-               maxLength={DISPUTE_STEP_CHAR_LIMITS[currKey]}
-               animatedStyle={inputBoxAnimatedStyle}
-               scrollEnabled
-               compact
-               onFocus={() => scrollToBottom(true)}
-               
-            />
-            <StepperButton
-               idx={idx}
-               totalSteps={4}
-               setIdx={setIdx}
-               onSubmit={onSubmit}
-               onExit={onExit}
-               disableNext={disableNext}
-               inputRef={inputRef}
-               onNext={() => handleStepChange('next')}
-               onBack={() => handleStepChange('back')}
-            />
-
+         <InputBox
+            ref={inputRef}
+            value={form[currKey]}
+            onChangeText={setField(currKey)}
+            placeholder={DISPUTE_PLACEHOLDER[currKey]}
+            maxLength={DISPUTE_STEP_CHAR_LIMITS[currKey]}
+            animatedStyle={inputBoxAnimatedStyle}
+            scrollEnabled
+            compact
+            onFocus={() => scrollToBottom(true)}
+         />
+         <StepperButton
+            idx={idx}
+            totalSteps={4}
+            setIdx={setIdx}
+            onSubmit={onSubmit}
+            onExit={onExit}
+            disableNext={disableNext}
+            inputRef={inputRef}
+            onNext={() => handleStepChange('next')}
+            onBack={() => handleStepChange('back')}
+         />
       </>
    );
 }

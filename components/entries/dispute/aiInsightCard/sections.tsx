@@ -1,4 +1,4 @@
-import { THINKING_PATTERN_DIMENSIONS } from '@/components/constants';
+import { THINKING_PATTERN_DIMENSIONS } from '@/lib/constants';
 import {
    ChevronDown,
    ChevronUp,
@@ -32,7 +32,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { AI_ANALYSIS_AMBER_BANNER_CLASS, AI_ANALYSIS_LABEL } from '@/lib/styles';
+import {
+   AI_ANALYSIS_AMBER_BANNER_CLASS,
+   AI_ANALYSIS_LABEL,
+} from '@/lib/styles';
 import { AnimatedSpectrumRow } from './AnimatedSpectrumRow';
 import type { AnimationTimeline } from './animation';
 import { InsightDimensions, InsightSafety } from './types';

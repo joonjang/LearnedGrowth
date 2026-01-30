@@ -1,14 +1,14 @@
 // components/entries/details/EntryField.tsx
 
 import {
-   ENTRY_CHAR_LIMITS,
-   ENTRY_CHAR_WARN_MIN_REMAINING,
-   ENTRY_CHAR_WARN_RATIO,
-} from '@/components/constants';
-import {
    TimelineItem,
    TimelineStepDef,
 } from '@/components/entries/details/Timeline';
+import {
+   ENTRY_CHAR_LIMITS,
+   ENTRY_CHAR_WARN_MIN_REMAINING,
+   ENTRY_CHAR_WARN_RATIO,
+} from '@/lib/constants';
 import React, { memo } from 'react';
 import { Text, TextInput, View } from 'react-native';
 

@@ -1,10 +1,10 @@
 import AiDisclaimerModal from '@/components/appInfo/AiDisclaimerModal';
-import { ROUTE_LOGIN } from '@/components/constants';
 import CreditShop from '@/components/shop/CreditShop';
 import {
    bottomSheetBackgroundStyle,
    bottomSheetHandleIndicatorStyle,
 } from '@/components/utils/bottomSheetStyles';
+import { ROUTE_LOGIN } from '@/lib/constants';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_BG_DARK,

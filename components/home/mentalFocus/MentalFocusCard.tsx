@@ -7,7 +7,7 @@ import {
    CATEGORY_ICON_MAP,
    DEFAULT_CATEGORY_ICON,
    STYLE_TO_TONE_MAP,
-} from '@/components/constants';
+} from '@/lib/constants';
 import { getAiAnalyzedEntryCount } from '@/lib/mentalFocus';
 import { CARD_PRESS_STYLE } from '@/lib/styles';
 import { Entry } from '@/models/entry';
