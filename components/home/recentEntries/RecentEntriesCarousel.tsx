@@ -141,17 +141,6 @@ export default function RecentEntriesCarousel({
       [isDark],
    );
 
-   const buttonShadow = useMemo(
-      () =>
-         getShadow({
-            isDark,
-            preset: 'button',
-            androidElevation: 2,
-            colorLight: '#000000',
-         }),
-      [isDark],
-   );
-
    // --- HANDLERS ---
    const handleToggleMenu = useCallback((entryId: string) => {
       setOpenMenuEntryId((current) => (current === entryId ? null : entryId));

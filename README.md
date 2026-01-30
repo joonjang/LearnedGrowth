@@ -16,10 +16,9 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- confirm if app has backend character limit stopper if ABC is too long
+- make edge to edge navigation such that there is blur at bottom of screen
 
-- change credit purchase
-   - remove icon and make it say credit
+- confirm if app has backend character limit stopper if ABC is too long
 
 - code cleanup on amber redundant usage
 
@@ -37,7 +36,7 @@ Prod checklist:
 
 rm -rf node_modules
 npm ci
-
+∂
 rm -rf .expo .expo-shared
 npx expo prebuild --clean
 
@@ -45,6 +44,14 @@ npx -y eas-cli@latest build -p android --profile playstore --local
 env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile production --local
 
 ## Development Journal
+
+### 2026-01-30
+
+- added home fab
+   - abstracted fab so home and entries screen share one source of truth
+- updated credit shop view
+   - says credits for consumables
+   - removed icons for consumables
 
 ### 2026-01-29
 

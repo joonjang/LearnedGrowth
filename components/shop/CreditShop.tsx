@@ -4,13 +4,13 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { Check, Crown, Infinity, Leaf, Sprout } from 'lucide-react-native';
+import { Check, Crown, Infinity, Sprout } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    ActivityIndicator,
    Alert,
-   Linking, // <--- Added for links
+   Linking,
    Pressable,
    Text,
    View,
@@ -18,21 +18,79 @@ import {
 import { PurchasesPackage } from 'react-native-purchases';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
+// --- HELPER COMPONENT: CONSUMABLE CARD ---
+const CreditPackCard = ({
+   pkg,
+   count,
+   isBuying,
+   onBuy,
+   isDark,
+}: {
+   pkg: PurchasesPackage;
+   count: number;
+   isBuying: boolean;
+   onBuy: () => void;
+   isDark: boolean;
+}) => {
+   return (
+      <Pressable
+         onPress={onBuy}
+         disabled={isBuying}
+         className={`
+          flex-1 rounded-2xl border bg-white dark:bg-slate-800 p-3 justify-between min-h-[110px]
+          ${isBuying ? 'opacity-50' : 'opacity-100'}
+          border-slate-200 dark:border-slate-700
+       `}
+      >
+         {/* Top: Count & Label (Centered) */}
+         <View className="items-center justify-center flex-1 gap-0.5 mt-1">
+            <Text className="text-2xl font-black text-slate-900 dark:text-white">
+               {count}
+            </Text>
+            <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+               Credits
+            </Text>
+         </View>
+
+         {/* Bottom: Price Button */}
+         <View className="w-full py-2 rounded-lg mt-3 items-center bg-slate-100 dark:bg-slate-700/50">
+            {isBuying ? (
+               <ActivityIndicator
+                  size={14}
+                  color={isDark ? 'white' : 'black'}
+               />
+            ) : (
+               <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  {pkg.product.priceString}
+               </Text>
+            )}
+         </View>
+      </Pressable>
+   );
+};
+
+// --- MAIN COMPONENT ---
+
 type Props = {
    onUpgrade?: () => void;
    onSuccess?: () => void;
 };
 
 export default function CreditShop({ onUpgrade, onSuccess }: Props) {
-   const { offerings, buyConsumable, refreshCustomerInfo, showPaywall, restorePurchases } =
-      useRevenueCat();
+   const {
+      offerings,
+      buyConsumable,
+      refreshCustomerInfo,
+      showPaywall,
+      restorePurchases,
+   } = useRevenueCat();
    const { refreshProfile, status, profile } = useAuth();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const isSignedIn = status === 'signedIn';
    const continueShadow = useMemo(
       () => getShadow({ isDark, preset: 'button', colorLight: '#064e3b' }),
-      [isDark]
+      [isDark],
    );
 
    const [buyingPackage, setBuyingPackage] = useState<string | null>(null);
@@ -57,7 +115,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
       } catch (err: any) {
          Alert.alert(
             'Unable to open paywall',
-            err?.message ?? 'Please try again.'
+            err?.message ?? 'Please try again.',
          );
       }
    }, [onSuccess, onUpgrade, refreshProfile, showPaywall]);
@@ -65,7 +123,6 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
    const handleRestore = async () => {
       try {
          const customerInfo = await restorePurchases();
-         // Update your auth profile to reflect the restored status
          await refreshProfile();
 
          if (customerInfo.activeSubscriptions.length > 0) {
@@ -73,7 +130,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
          } else {
             Alert.alert(
                'No Subscriptions',
-               "We couldn't find any active subscriptions to restore."
+               "We couldn't find any active subscriptions to restore.",
             );
          }
       } catch (e: any) {
@@ -85,17 +142,17 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
    const creditOffering = offerings?.current;
    const allPackages =
       creditOffering?.availablePackages.sort(
-         (a, b) => a.product.price - b.product.price
+         (a, b) => a.product.price - b.product.price,
       ) || [];
 
    // 1. Find Monthly for the "Hero" section
    const monthlyPackage = allPackages.find(
-      (pkg) => pkg.identifier === '$rc_monthly' || pkg.packageType === 'MONTHLY'
+      (pkg) =>
+         pkg.identifier === '$rc_monthly' || pkg.packageType === 'MONTHLY',
    );
    const monthlyPrice = monthlyPackage?.product.priceString;
 
    // 2. Filter ONLY credit packs for the "Grid" section
-   // This fixes the "two extra items" bug
    const creditPackages = allPackages
       .filter((pkg) => pkg.identifier.includes('credit_'))
       .sort((a, b) => a.product.price - b.product.price);
@@ -111,7 +168,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                   text: 'Log In / Sign Up',
                   onPress: () => router.push(ROUTE_LOGIN),
                },
-            ]
+            ],
          );
          return;
       }
@@ -123,7 +180,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
          await buyConsumable(pkg.product.identifier);
          await refreshCustomerInfo();
 
-         // Polling logic to wait for database sync
+         // Polling logic
          const startExtra = profileRef.current?.extraAiCredits ?? 0;
          const pollDelays = [600, 1200, 2000, 3200];
          for (const delay of pollDelays) {
@@ -145,16 +202,14 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
 
    const openLink = async (url: string) => {
       try {
-         // This opens the in-app browser modal
          await WebBrowser.openBrowserAsync(url, {
             presentationStyle:
                WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
             dismissButtonStyle: 'close',
-            controlsColor: '#10b981', // Your emerald color
-            toolbarColor: isDark ? '#0f172a' : '#ffffff', // Matches your theme
+            controlsColor: '#10b981',
+            toolbarColor: isDark ? '#0f172a' : '#ffffff',
          });
       } catch {
-         // Fallback to standard browser if something goes wrong
          Linking.openURL(url).catch(() => {});
       }
    };
@@ -186,10 +241,8 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
    }
 
    return (
-      <View className="gap-6 pt-2 ">
-         {/* Added pb-8 for spacing at bottom */}
-
-         {/* 1. THE HERO: Monthly Subscription */}
+      <View className="gap-8 pt-2">
+         {/* 1. THE HERO: Monthly Subscription (Your Original Design) */}
          <View>
             <View className="flex-row items-center justify-between mb-3">
                <View className="flex-row items-center gap-2">
@@ -231,16 +284,13 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                   </View>
 
                   <View className="gap-2.5 mb-5 pl-1">
-                     {/* Feature 1: The big seller */}
                      <View className="flex-row items-center gap-2">
                         <Infinity size={14} color="#10b981" />
                         <Text className="text-xs font-bold text-slate-700 dark:text-slate-200">
                            Unlimited AI Analysis
                         </Text>
                      </View>
-                     {/* Feature 2: Accurate to ABCDE Method */}
                      <FeatureRow text="Explore Alternative Views" />
-                     {/* Feature 3: Analytics */}
                      <FeatureRow text="Advanced Pattern Recognition" />
                   </View>
 
@@ -260,7 +310,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
             </Pressable>
          </View>
 
-         {/* 2. THE GRID: One-time Refills */}
+         {/* 2. THE GRID: One-time Refills (Merged Design: Vertical Cards, No Icon, No Badge) */}
          <View>
             <View className="mb-3 px-1">
                <Text className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">
@@ -269,60 +319,32 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
             </View>
 
             <View className="flex-row gap-3">
-               {/* FIX: Use creditPackages instead of packages */}
                {creditPackages.map((pkg) => {
                   const count = getCreditCount(pkg);
                   const isBuying = buyingPackage === pkg.identifier;
 
                   return (
-                     <Pressable
+                     <CreditPackCard
                         key={pkg.identifier}
-                        onPress={() => handleBuy(pkg)}
-                        disabled={!!buyingPackage}
-                        className={`
-                           flex-1 rounded-xl border border-slate-200 dark:border-slate-700 
-                           bg-white dark:bg-slate-800 p-2.5 items-center gap-1 
-                           active:bg-slate-50 dark:active:bg-slate-700
-                           ${isBuying ? 'opacity-50' : ''}
-                        `}
-                     >
-                        {isBuying ? (
-                           <View className="py-2">
-                              <ActivityIndicator
-                                 size="small"
-                                 color={isDark ? '#e2e8f0' : '#0f172a'}
-                              />
-                           </View>
-                        ) : (
-                           <>
-                              <Leaf
-                                 size={18}
-                                 color={isDark ? '#94a3b8' : '#64748b'}
-                              />
-                              <Text className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                                 {count}
-                              </Text>
-                              <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                 {pkg.product.priceString}
-                              </Text>
-                           </>
-                        )}
-                     </Pressable>
+                        pkg={pkg}
+                        count={count}
+                        isBuying={isBuying}
+                        onBuy={() => handleBuy(pkg)}
+                        isDark={isDark}
+                     />
                   );
                })}
             </View>
          </View>
 
-         {/* 3. LEGAL FOOTER (Mandatory) */}
+         {/* 3. LEGAL FOOTER */}
          <View className="mt-2 items-center">
-
-            {/* Restore Button (Primary Secondary Action) */}
             <Pressable onPress={handleRestore}>
                <Text className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                   Restore Purchases
                </Text>
             </Pressable>
-            
+
             <View className="flex-row justify-center gap-4 mt-3">
                <Pressable
                   onPress={() => openLink('https://learnedgrowth.com/terms')}
