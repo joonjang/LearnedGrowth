@@ -1,3 +1,4 @@
+import NewEntryFab from '@/components/buttons/NewEntryFAB';
 import { ROUTE_ENTRY_DETAIL } from '@/components/constants';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow from '@/components/entries/entry/EntryRow';
@@ -6,22 +7,19 @@ import { useDeletedEntries } from '@/hooks/useDeletedEntries';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import {
-   CATEGORY_COLOR_MAP,
-   DEFAULT_CATEGORY_COLOR,
-   PRIMARY_CTA_CLASS,
-   PRIMARY_CTA_ICON_COLOR,
-   UNCATEGORIZED_LABEL,
-} from '@/lib/styles';
-import {
    getWeekKey,
    getWeekLabel,
    getWeekRangeLabel,
    getWeekStart,
 } from '@/lib/date';
-import { getShadow } from '@/lib/shadow';
+import {
+   CATEGORY_COLOR_MAP,
+   DEFAULT_CATEGORY_COLOR,
+   UNCATEGORIZED_LABEL,
+} from '@/lib/styles';
 import type { Entry } from '@/models/entry';
 import { Link, router, useFocusEffect } from 'expo-router';
-import { ChevronLeft, Plus, Trash2 } from 'lucide-react-native';
+import { ChevronLeft, Trash2 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, {
    useCallback,
@@ -38,10 +36,8 @@ import Animated, {
    LinearTransition,
    useAnimatedRef,
    useAnimatedScrollHandler,
-   useAnimatedStyle,
+   useDerivedValue,
    useSharedValue,
-   withSpring,
-   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -162,26 +158,14 @@ export default function EntriesListScreen() {
 
    const listRef = useAnimatedRef<SectionList<RowItem, EntrySection>>();
 
-   const fabShadow = useMemo(
-      () => getShadow({ isDark, preset: 'button', colorLight: '#4f46e5' }),
-      [isDark],
-   );
-
    const scrollY = useSharedValue(0);
    const scrollHandler = useAnimatedScrollHandler((event) => {
       scrollY.value = event.contentOffset.y;
    });
 
-   const fabStyle = useAnimatedStyle(() => {
-      const showFab = scrollY.value > SCROLL_THRESHOLD_FOR_FAB;
-      return {
-         opacity: withTiming(showFab ? 1 : 0, { duration: 200 }),
-         transform: [
-            { scale: withSpring(showFab ? 1 : 0.8) },
-            { translateY: withTiming(showFab ? 0 : 20) },
-         ],
-         pointerEvents: showFab ? 'auto' : 'none',
-      };
+   // Derived visibility value for the FAB
+   const isFabVisible = useDerivedValue(() => {
+      return scrollY.value > SCROLL_THRESHOLD_FOR_FAB;
    });
 
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
@@ -328,8 +312,6 @@ export default function EntriesListScreen() {
    const renderItem = useCallback(
       ({ item }: { item: RowItem }) => (
          <Animated.View
-            // LAYOUT: Slide remaining rows up on delete
-            // EXITING: Fade + lift on removal
             layout={LinearTransition.duration(180)}
             exiting={FadeOutUp.duration(180)}
             style={{ width: '100%' }}
@@ -472,29 +454,7 @@ export default function EntriesListScreen() {
             renderItem={renderItem}
          />
 
-         <Animated.View
-            style={[
-               {
-                  position: 'absolute',
-                  bottom: insets.bottom + 24,
-                  right: 24,
-                  zIndex: 50,
-               },
-               fabStyle,
-            ]}
-         >
-            <Pressable
-               onPress={handleNewEntryPress}
-               className={`h-14 w-14 rounded-full items-center justify-center ${PRIMARY_CTA_CLASS}`}
-               style={[fabShadow.ios, fabShadow.android]}
-            >
-               <Plus
-                  size={28}
-                  color={PRIMARY_CTA_ICON_COLOR}
-                  strokeWidth={2.5}
-               />
-            </Pressable>
-         </Animated.View>
+         <NewEntryFab isVisible={isFabVisible} onPress={handleNewEntryPress} />
       </View>
    );
 }

@@ -11,6 +11,9 @@ export const DISPUTE_CTA_CLASS =
 export const ANALYSIS_CTA_CLASS =
    'bg-blue-500 active:bg-blue-600 dark:bg-blue-800 dark:active:bg-blue-900';
 
+   export const FAB_CTA_CLASS =
+   'bg-indigo-500 active:bg-indigo-600 dark:bg-indigo-600 dark:active:bg-indigo-900';
+
 export const SEMANTIC_COLORS = {
    belief: {
       bg: '#fff7ed',

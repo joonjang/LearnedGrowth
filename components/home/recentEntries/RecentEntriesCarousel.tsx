@@ -309,8 +309,7 @@ export default function RecentEntriesCarousel({
                onPress={onViewAll}
                hitSlop={8}
                activeOpacity={0.8}
-               style={[buttonShadow.ios, buttonShadow.android]}
-               className="bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-100 dark:border-slate-700 flex-row items-center gap-1"
+               className="bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-300/50 dark:border-slate-700 flex-row items-center gap-1"
             >
                {/* Changed text color from indigo to slate */}
                <Text className="text-[11px] font-bold text-slate-500 dark:text-slate-400">

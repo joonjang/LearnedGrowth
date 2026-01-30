@@ -1,4 +1,5 @@
 import QuickStart from '@/components/appInfo/QuickStart';
+import NewEntryFab from '@/components/buttons/NewEntryFAB';
 import EntriesWeekFilterHeader from '@/components/home/EntriesWeekFilterHeader';
 import HomeDashboard from '@/components/home/HomeDashboard';
 import TopFade from '@/components/utils/TopFade';
@@ -24,6 +25,7 @@ import { Modal, Platform, Pressable, Text, View } from 'react-native';
 import Animated, {
    FadeInDown,
    useAnimatedScrollHandler,
+   useDerivedValue,
    useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,10 +59,27 @@ export default function EntriesScreen() {
          }),
       [isDark],
    );
-
+   const contentHeight = useSharedValue(0);
+   const layoutHeight = useSharedValue(0);
    const scrollY = useSharedValue(0);
+
    const scrollHandler = useAnimatedScrollHandler((event) => {
       scrollY.value = event.contentOffset.y;
+      contentHeight.value = event.contentSize.height;
+      layoutHeight.value = event.layoutMeasurement.height;
+   });
+
+   // Derived visibility value: Show FAB unless we are at the bottom where the big button is
+   const isFabVisible = useDerivedValue(() => {
+      // Calculate how far the user is from the bottom of the list
+      const distanceToBottom =
+         contentHeight.value - layoutHeight.value - scrollY.value;
+
+      // Threshold: 100px works well to hide it just before the bottom button appears fully
+      // We also check if contentHeight > 0 to avoid hiding it during initial render if content is small
+      const isAtBottom = contentHeight.value > 0 && distanceToBottom < 100;
+
+      return !isAtBottom;
    });
 
    const handleNewEntryPress = useCallback(() => {
@@ -246,6 +265,8 @@ export default function EntriesScreen() {
                )}
             </View>
          </Animated.ScrollView>
+
+         <NewEntryFab isVisible={isFabVisible} onPress={handleNewEntryPress} />
 
          {/* MODALS */}
          <Modal
