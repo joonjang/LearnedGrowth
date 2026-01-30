@@ -1,4 +1,5 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
+import LeftBackChevron from '@/components/buttons/LeftBackChevron';
 import NewDisputeLink from '@/components/buttons/NewDisputeLink';
 import WideButton from '@/components/buttons/WideButton';
 import {
@@ -34,12 +35,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router, useLocalSearchParams } from 'expo-router';
-import {
-   ArrowRight,
-   ChevronDown,
-   ChevronLeft,
-   Sparkles,
-} from 'lucide-react-native';
+import { ArrowRight, ChevronDown, Sparkles, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, LayoutAnimation, Pressable, Text, View } from 'react-native';
@@ -48,6 +44,12 @@ import {
    KeyboardController,
    useResizeMode,
 } from 'react-native-keyboard-controller';
+import Animated, {
+   Easing,
+   useAnimatedStyle,
+   useSharedValue,
+   withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type FieldKey = (typeof ABCDE_FIELD)[number]['key'];
@@ -109,6 +111,9 @@ export default function EntryDetailScreen() {
       FieldKey,
       string
    > | null>(null);
+
+   // --- Animations ---
+   const headerTranslateY = useSharedValue(-150); // Start hidden above screen
 
    // --- Collapse State for Disputes ---
    const [historyExpanded, setHistoryExpanded] = useState(false);
@@ -201,17 +206,19 @@ export default function EntryDetailScreen() {
       setEditSnapshot(form);
       setIsEditing(true);
       setJustSaved(false);
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-   }, [form]);
+      headerTranslateY.value = withTiming(0, {
+         duration: 300,
+         easing: Easing.out(Easing.cubic),
+      });
+   }, [form, headerTranslateY]);
 
    const handleSave = useCallback(async () => {
       if (!entry) return;
 
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-
       if (!hasChanges) {
          setIsEditing(false);
          setEditSnapshot(null);
+         headerTranslateY.value = withTiming(-150);
          return;
       }
 
@@ -240,6 +247,7 @@ export default function EntryDetailScreen() {
       setIsEditing(false);
       setEditSnapshot(null);
       KeyboardController.dismiss();
+      headerTranslateY.value = withTiming(-150);
    }, [
       baseline,
       entry,
@@ -249,17 +257,33 @@ export default function EntryDetailScreen() {
       store,
       triggerHaptic,
       trimmed,
+      headerTranslateY,
    ]);
 
    const handleCancel = useCallback(() => {
       if (!isEditing) return;
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       if (editSnapshot) setForm(editSnapshot);
       setIsEditing(false);
       setJustSaved(false);
       setEditSnapshot(null);
       KeyboardController.dismiss();
-   }, [editSnapshot, isEditing]);
+      headerTranslateY.value = withTiming(-150);
+   }, [editSnapshot, isEditing, headerTranslateY]);
+
+   const handleCloseAttempt = useCallback(() => {
+      if (hasChanges) {
+         Alert.alert(
+            'Discard Changes?',
+            'You have unsaved changes. Are you sure you want to discard them?',
+            [
+               { text: 'Keep Editing', style: 'cancel' },
+               { text: 'Discard', style: 'destructive', onPress: handleCancel },
+            ],
+         );
+      } else {
+         handleCancel();
+      }
+   }, [hasChanges, handleCancel]);
 
    const navigateToEntries = useCallback(() => {
       if (router.canGoBack()) {
@@ -345,7 +369,9 @@ export default function EntryDetailScreen() {
       [hasScrolled],
    );
 
-   // --- Effects ---
+   const stickyHeaderStyle = useAnimatedStyle(() => ({
+      transform: [{ translateY: headerTranslateY.value }],
+   }));
 
    useEffect(() => {
       if (!entry) return;
@@ -354,8 +380,9 @@ export default function EntryDetailScreen() {
       setHasScrolled(false);
       setIsEditing(false);
       setEditSnapshot(null);
-      setHistoryExpanded(false); // Reset history collapse on entry change
-   }, [entry]);
+      setHistoryExpanded(false);
+      headerTranslateY.value = -150;
+   }, [entry, headerTranslateY]);
 
    useEffect(() => {
       initialEditApplied.current = false;
@@ -374,8 +401,6 @@ export default function EntryDetailScreen() {
       return () => clearTimeout(timer);
    }, [justSaved]);
 
-   // --- Render ---
-
    if (!entry) {
       return <View />;
    }
@@ -385,78 +410,16 @@ export default function EntryDetailScreen() {
       : hasChanges
         ? 'Unsaved changes'
         : '';
-   const statusDisplay = statusMessage || 'Saved';
-   const disputeHistory = entry.disputeHistory;
+
+   const disputeHistory = entry.disputeHistory ?? [];
    const hasDisputeHistory = disputeHistory.length > 0;
    const hasDispute = (entry.dispute ?? '').trim().length > 0;
 
    return (
       <View className="flex-1 bg-white dark:bg-slate-900">
-         <View style={{ height: insets.top }} />
-
-         {/* Header */}
-         <View className="h-14 flex-row items-center justify-center relative z-10">
-            <Pressable
-               onPress={navigateToEntries}
-               hitSlop={8}
-               className="absolute left-4 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
-            >
-               <ChevronLeft size={20} color={iconColor} />
-            </Pressable>
-
-            <View className="items-center justify-center gap-1 h-full">
-               <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
-                  {isEditing ? 'Editing' : formattedTimestamp || ' '}
-               </Text>
-               <Text
-                  className={`text-[13px] text-slate-500 dark:text-slate-400 absolute top-full mt-1 w-[200px] text-center ${!statusMessage ? 'opacity-0' : 'opacity-100'}`}
-                  numberOfLines={1}
-               >
-                  {statusDisplay}
-               </Text>
-            </View>
-
-            <View className="absolute right-4 flex-row items-center gap-2">
-               {isEditing ? (
-                  <>
-                     <Pressable
-                        onPress={handleCancel}
-                        className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800"
-                     >
-                        <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                           Cancel
-                        </Text>
-                     </Pressable>
-                     <Pressable
-                        onPress={hasChanges ? handleSave : undefined}
-                        disabled={!hasChanges}
-                        className={`px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 ${hasChanges ? '' : 'opacity-50'}`}
-                     >
-                        <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                           Save
-                        </Text>
-                     </Pressable>
-                  </>
-               ) : (
-                  <Pressable
-                     onPress={startEditing}
-                     className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800"
-                  >
-                     <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                        Edit
-                     </Text>
-                  </Pressable>
-               )}
-            </View>
-
-            {hasScrolled && (
-               <View className="absolute bottom-0 left-0 right-0 h-[1px] bg-slate-200 dark:bg-slate-800" />
-            )}
-         </View>
-
-         {/* Content */}
+         {/* 1. MAIN CONTENT (Bottom Layer) */}
          <KeyboardAwareScrollView
-            className="flex-1 px-4 pt-4"
+            className="flex-1"
             contentContainerStyle={[{ paddingBottom: insets.bottom + 40 }]}
             keyboardShouldPersistTaps="handled"
             bottomOffset={keyboardOffset}
@@ -464,190 +427,270 @@ export default function EntryDetailScreen() {
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
          >
-            {/* 1. Insight Strip */}
-            {isAnalyzed && (
-               <InsightStrip
-                  category={category}
-                  tags={tags}
-                  catColor={catColor}
-                  isDark={isDark}
-               />
-            )}
+            <View style={{ height: insets.top }} />
 
-            {/* 2. Entry Fields */}
-            {timelineSteps.map((step) => {
-               const rawValue = form[step.key as FieldKey];
-
-               return (
-                  <EntryField
-                     key={step.key}
-                     step={step}
-                     value={rawValue}
-                     isEditing={isEditing}
+            {/* === DEFAULT HEADER (Scrollable) === */}
+            <View className="h-14 flex-row items-center justify-between px-4 mb-2">
+               <View className="flex-1 items-start justify-center">
+                  <LeftBackChevron
                      isDark={isDark}
-                     onChangeText={handleFieldChange}
-                  >
-                     {step.key === 'consequence' && (
-                        <View>
-                           {/* A. If we have Analysis, show the Insight Card */}
-                           {aiDisplayData && (
-                              <TimelinePivot variant="full">
-                                 <AiInsightCard
-                                    entryId={entry.id}
-                                    data={aiDisplayData}
-                                    onRefresh={
-                                       isEditing
-                                          ? undefined
-                                          : handleOpenDisputeAndUpdate
-                                    }
-                                    retryCount={entry.aiRetryCount ?? 0}
-                                    maxRetries={MAX_AI_RETRIES}
-                                    updatedAt={entry.updatedAt}
-                                    allowMinimize={!!entry.dispute}
-                                    initiallyMinimized={!!entry.dispute}
-                                 />
-                              </TimelinePivot>
-                           )}
-
-                           {/* B. If NO Analysis, show "Analyze with AI" text inside the Pivot Box */}
-                           {!aiDisplayData && entry?.dispute && (
-                              <TimelinePivot
-                                 variant="full"
-                                 // 1. Dim the container background/border when disabled
-                                 bgClassName={`${AI_ANALYSIS_AMBER_PIVOT_BG_CLASS} ${isEditing ? 'opacity-50' : ''}`}
-                                 borderClassName={`${AI_ANALYSIS_AMBER_PIVOT_BORDER_CLASS} ${isEditing ? 'opacity-50' : ''}`}
-                              >
-                                 <Pressable
-                                    onPress={handleAnalyze}
-                                    disabled={isEditing}
-                                    // 2. Dim the content and disable active opacity when editing
-                                    className={`flex-row items-center justify-center gap-2 py-1 ${isEditing ? 'opacity-40' : 'active:opacity-50'}`}
-                                 >
-                                    <Sparkles
-                                       size={18}
-                                       color={
-                                          isDark
-                                             ? AI_ANALYSIS_AMBER_ICON_DARK
-                                             : AI_ANALYSIS_AMBER_ICON_LIGHT_ALT
-                                       }
-                                       strokeWidth={2.5}
-                                    />
-                                    <Text
-                                       className={`text-[12px] font-bold ${AI_ANALYSIS_AMBER_PIVOT_TEXT_CLASS}`}
-                                    >
-                                       {isEditing
-                                          ? SAVE_TO_ANALYZE_LABEL
-                                          : ANALYZE_WITH_AI_LABEL}
-                                    </Text>
-                                 </Pressable>
-                              </TimelinePivot>
-                           )}
-
-                           {/* C. Continue Button (Only if incomplete) */}
-                           {!entry.dispute && !isEditing && (
-                              <View className="mt-4 mb-2">
-                                 {aiDisplayData ? (
-                                    <WideButton
-                                       label="Continue"
-                                       icon={ArrowRight}
-                                       onPress={handleContinueToDispute}
-                                    />
-                                 ) : (
-                                    <CardNextButton
-                                       id={entry.id}
-                                       fromEntryDetail
-                                    />
-                                 )}
-                              </View>
-                           )}
-                        </View>
-                     )}
-
-                     {step.key === 'energy' && hasDisputeHistory && (
-                        <View className="mb-2">
-                           <View className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
-                              <Pressable
-                                 onPress={toggleHistory}
-                                 className="flex-row items-center justify-between px-4 py-3 active:bg-slate-100 dark:active:bg-slate-800/80"
-                              >
-                                 <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                    Previous Disputes ({disputeHistory.length})
-                                 </Text>
-                                 <View
-                                    style={{
-                                       transform: [
-                                          {
-                                             rotate: historyExpanded
-                                                ? '180deg'
-                                                : '0deg',
-                                          },
-                                       ],
-                                    }}
-                                 >
-                                    <ChevronDown
-                                       size={16}
-                                       color={isDark ? '#94a3b8' : '#64748b'}
-                                    />
-                                 </View>
-                              </Pressable>
-
-                              {historyExpanded && (
-                                 <View className="gap-3 px-4 pb-4 pt-1">
-                                    {disputeHistory.map((item, index) => {
-                                       const energyText = (
-                                          item.energy ?? ''
-                                       ).trim();
-                                       return (
-                                          <View
-                                             key={`${item.createdAt}-${index}`}
-                                             className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800"
-                                          >
-                                             <Text className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                                                {formatDateTimeWithWeekday(
-                                                   item.createdAt,
-                                                )}
-                                             </Text>
-                                             <Text className="text-sm leading-5 text-slate-700 dark:text-slate-200">
-                                                {item.dispute}
-                                             </Text>
-                                             {energyText ? (
-                                                <Text className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                                                   Energy: {energyText}
-                                                </Text>
-                                             ) : null}
-                                          </View>
-                                       );
-                                    })}
-                                 </View>
-                              )}
-                           </View>
-                        </View>
-                     )}
-                  </EntryField>
-               );
-            })}
-
-            {hasDispute && !isEditing && (
-               <View className="pt-8">
-                  <NewDisputeLink onPress={handleStartNewDispute} />
+                     onPress={navigateToEntries}
+                  />
                </View>
-            )}
 
-            {/* DELETE ENTRY BUTTON */}
-            {isEditing && (
-               <View className="pt-14  items-center">
+               <View className="absolute left-0 right-0 top-0 bottom-0 items-center justify-center pointer-events-none z-0">
+                  <View className="items-center justify-center gap-1">
+                     <Text className="text-base text-slate-900 dark:text-slate-100 font-medium">
+                        {formattedTimestamp || ' '}
+                     </Text>
+                  </View>
+               </View>
+
+               <View className="flex-1 items-end justify-center">
                   <Pressable
-                     onPress={handleDelete}
-                     hitSlop={12}
-                     className="active:opacity-60"
+                     onPress={startEditing}
+                     className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-700"
                   >
-                     <Text className="text-xs font-bold uppercase tracking-widest text-rose-500 dark:text-rose-400">
-                        Delete Entry
+                     <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        Edit
                      </Text>
                   </Pressable>
                </View>
-            )}
+            </View>
+
+            <View className="px-4">
+               {/* Insight Strip */}
+               {isAnalyzed && (
+                  <InsightStrip
+                     category={category}
+                     tags={tags}
+                     catColor={catColor}
+                     isDark={isDark}
+                  />
+               )}
+
+               {/* Entry Fields */}
+               {timelineSteps.map((step) => {
+                  const rawValue = form[step.key as FieldKey];
+
+                  return (
+                     <EntryField
+                        key={step.key}
+                        step={step}
+                        value={rawValue}
+                        isEditing={isEditing}
+                        isDark={isDark}
+                        onChangeText={handleFieldChange}
+                     >
+                        {step.key === 'consequence' && (
+                           <View>
+                              {aiDisplayData && (
+                                 <TimelinePivot variant="full">
+                                    <AiInsightCard
+                                       entryId={entry.id}
+                                       data={aiDisplayData}
+                                       onRefresh={
+                                          isEditing
+                                             ? undefined
+                                             : handleOpenDisputeAndUpdate
+                                       }
+                                       retryCount={entry.aiRetryCount ?? 0}
+                                       maxRetries={MAX_AI_RETRIES}
+                                       updatedAt={entry.updatedAt}
+                                       allowMinimize={!!entry.dispute}
+                                       initiallyMinimized={!!entry.dispute}
+                                    />
+                                 </TimelinePivot>
+                              )}
+
+                              {!aiDisplayData && entry?.dispute && (
+                                 <TimelinePivot
+                                    variant="full"
+                                    bgClassName={`${AI_ANALYSIS_AMBER_PIVOT_BG_CLASS} ${isEditing ? 'opacity-50' : ''}`}
+                                    borderClassName={`${AI_ANALYSIS_AMBER_PIVOT_BORDER_CLASS} ${isEditing ? 'opacity-50' : ''}`}
+                                 >
+                                    <Pressable
+                                       onPress={handleAnalyze}
+                                       disabled={isEditing}
+                                       className={`flex-row items-center justify-center gap-2 py-1 ${isEditing ? 'opacity-40' : 'active:opacity-50'}`}
+                                    >
+                                       <Sparkles
+                                          size={18}
+                                          color={
+                                             isDark
+                                                ? AI_ANALYSIS_AMBER_ICON_DARK
+                                                : AI_ANALYSIS_AMBER_ICON_LIGHT_ALT
+                                          }
+                                          strokeWidth={2.5}
+                                       />
+                                       <Text
+                                          className={`text-[12px] font-bold ${AI_ANALYSIS_AMBER_PIVOT_TEXT_CLASS}`}
+                                       >
+                                          {isEditing
+                                             ? SAVE_TO_ANALYZE_LABEL
+                                             : ANALYZE_WITH_AI_LABEL}
+                                       </Text>
+                                    </Pressable>
+                                 </TimelinePivot>
+                              )}
+
+                              {!entry.dispute && !isEditing && (
+                                 <View className="mt-4 mb-2">
+                                    {aiDisplayData ? (
+                                       <WideButton
+                                          label="Continue"
+                                          icon={ArrowRight}
+                                          onPress={handleContinueToDispute}
+                                       />
+                                    ) : (
+                                       <CardNextButton
+                                          id={entry.id}
+                                          fromEntryDetail
+                                       />
+                                    )}
+                                 </View>
+                              )}
+                           </View>
+                        )}
+
+                        {step.key === 'energy' && hasDisputeHistory && (
+                           <View className="mb-2">
+                              <View className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
+                                 <Pressable
+                                    onPress={toggleHistory}
+                                    className="flex-row items-center justify-between px-4 py-3 active:bg-slate-100 dark:active:bg-slate-800/80"
+                                 >
+                                    <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                       Previous Disputes (
+                                       {disputeHistory.length})
+                                    </Text>
+                                    <View
+                                       style={{
+                                          transform: [
+                                             {
+                                                rotate: historyExpanded
+                                                   ? '180deg'
+                                                   : '0deg',
+                                             },
+                                          ],
+                                       }}
+                                    >
+                                       <ChevronDown
+                                          size={16}
+                                          color={isDark ? '#94a3b8' : '#64748b'}
+                                       />
+                                    </View>
+                                 </Pressable>
+
+                                 {historyExpanded && (
+                                    <View className="gap-3 px-4 pb-4 pt-1">
+                                       {disputeHistory.map(
+                                          (item: any, index: number) => {
+                                             const energyText = (
+                                                item.energy ?? ''
+                                             ).trim();
+                                             return (
+                                                <View
+                                                   key={`${item.createdAt}-${index}`}
+                                                   className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+                                                >
+                                                   <Text className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                                                      {formatDateTimeWithWeekday(
+                                                         item.createdAt,
+                                                      )}
+                                                   </Text>
+                                                   <Text className="text-sm leading-5 text-slate-700 dark:text-slate-200">
+                                                      {item.dispute}
+                                                   </Text>
+                                                   {energyText ? (
+                                                      <Text className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                                         Energy: {energyText}
+                                                      </Text>
+                                                   ) : null}
+                                                </View>
+                                             );
+                                          },
+                                       )}
+                                    </View>
+                                 )}
+                              </View>
+                           </View>
+                        )}
+                     </EntryField>
+                  );
+               })}
+
+               {hasDispute && !isEditing && (
+                  <View className="pt-8">
+                     <NewDisputeLink onPress={handleStartNewDispute} />
+                  </View>
+               )}
+
+               {/* DELETE ENTRY BUTTON */}
+               {isEditing && (
+                  <View className="pt-14  items-center">
+                     <Pressable
+                        onPress={handleDelete}
+                        hitSlop={12}
+                        className="active:opacity-60"
+                     >
+                        <Text className="text-xs font-bold uppercase tracking-widest text-rose-500 dark:text-rose-400">
+                           Delete Entry
+                        </Text>
+                     </Pressable>
+                  </View>
+               )}
+            </View>
          </KeyboardAwareScrollView>
+
+         {/* 2. STICKY HEADER (Top Layer)
+            Absolute positioned. Animates in/out. Solid background.
+         */}
+         <Animated.View
+            className="absolute top-0 left-0 right-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-50 shadow-sm"
+            style={[
+               { paddingTop: insets.top, height: insets.top + 56 },
+               stickyHeaderStyle,
+            ]}
+         >
+            <View className="flex-1 flex-row items-center justify-between px-4">
+               {/* Left: Close/X */}
+               <View className="flex-1 items-start justify-center">
+                  <Pressable
+                     onPress={handleCloseAttempt}
+                     hitSlop={12}
+                     className="p-2 -ml-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
+                  >
+                     <X size={24} color={iconColor} />
+                  </Pressable>
+               </View>
+
+               {/* Center: Title + Unsaved Status */}
+               <View className="absolute left-0 right-0 bottom-0 h-[56px] items-center justify-center pointer-events-none z-0">
+                  <View className="items-center justify-center pt-3">
+                     <Text className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 leading-5">
+                        Editing
+                     </Text>
+                     <Text
+                        className={`text-[11px] pt-1 text-amber-600 dark:text-amber-500 font-medium leading-3 ${statusMessage ? 'opacity-100' : 'opacity-0'}`}
+                     >
+                        {statusMessage || ' '}
+                     </Text>
+                  </View>
+               </View>
+
+               {/* Right: Save Button */}
+               <View className="flex-1 items-end justify-center">
+                  <Pressable
+                     onPress={hasChanges ? handleSave : undefined}
+                     disabled={!hasChanges}
+                     className={`px-3 py-1.5 rounded-full bg-slate-700 dark:bg-slate-500 ${hasChanges ? '' : 'opacity-50'}`}
+                  >
+                     <Text className="text-sm font-bold text-white">Save</Text>
+                  </Pressable>
+               </View>
+            </View>
+         </Animated.View>
       </View>
    );
 }

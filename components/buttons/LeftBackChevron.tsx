@@ -5,14 +5,23 @@ import { Pressable } from 'react-native';
 
 type Props = {
    isDark: boolean;
+   onPress?: () => void;
 };
 
-export default function LeftBackChevron({ isDark }: Props) {
+export default function LeftBackChevron({ isDark, onPress }: Props) {
    const iconColor = isDark ? ICON_COLOR_DARK : ICON_COLOR_LIGHT;
+
+   const handlePress = () => {
+      if (onPress) {
+         onPress();
+      } else {
+         router.back();
+      }
+   };
 
    return (
       <Pressable
-         onPress={() => router.back()}
+         onPress={handlePress}
          hitSlop={12}
          className="p-2 -ml-2 rounded-full active:bg-slate-200/50 dark:active:bg-slate-800/50 self-start mt-1"
       >

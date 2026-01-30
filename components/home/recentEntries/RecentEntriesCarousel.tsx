@@ -298,10 +298,10 @@ export default function RecentEntriesCarousel({
                onPress={onViewAll}
                hitSlop={8}
                activeOpacity={0.8}
-               className="bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-300/50 dark:border-slate-700 flex-row items-center gap-1"
+               className="flex-row items-center gap-1
+               px-3 py-1.5 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700"
             >
-               {/* Changed text color from indigo to slate */}
-               <Text className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+               <Text className="text-[11px] font-medium text-slate-900 dark:text-slate-200">
                   View All
                </Text>
                {/* Changed icon color to match slate text colors */}
