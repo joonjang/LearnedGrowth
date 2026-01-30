@@ -1,3 +1,4 @@
+import LeftBackChevron from '@/components/buttons/LeftBackChevron';
 import NewEntryFab from '@/components/buttons/NewEntryFAB';
 import { ROUTE_ENTRY_DETAIL } from '@/components/constants';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
@@ -19,7 +20,7 @@ import {
 } from '@/lib/styles';
 import type { Entry } from '@/models/entry';
 import { Link, router, useFocusEffect } from 'expo-router';
-import { ChevronLeft, Trash2 } from 'lucide-react-native';
+import { Trash2 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, {
    useCallback,
@@ -153,7 +154,6 @@ export default function EntriesListScreen() {
    const insets = useSafeAreaInsets();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const iconColor = isDark ? '#cbd5e1' : '#475569';
    const { lock: lockNavigation } = useNavigationLock();
 
    const listRef = useAnimatedRef<SectionList<RowItem, EntrySection>>();
@@ -362,53 +362,44 @@ export default function EntriesListScreen() {
       >
          <View
             style={{ paddingTop: totalTopPadding, paddingBottom: 12 }}
-            className="px-6 bg-slate-50/95 dark:bg-slate-900/95 z-50 absolute top-0 left-0 right-0 border-b border-slate-200/50 dark:border-slate-800/50"
+            className="px-6 bg-slate-50/95 dark:bg-slate-900/95 absolute z-50 top-0 left-0 right-0 border-b border-slate-200/50 dark:border-slate-800/50"
          >
             <View className="flex-row items-center justify-between">
-               <View className="flex-row items-center gap-3 flex-1 overflow-hidden">
-                  <Pressable
-                     onPress={() => router.back()}
-                     hitSlop={12}
-                     className="p-2 -ml-2 rounded-full active:bg-slate-200/50 dark:active:bg-slate-800/50 self-start mt-1"
-                  >
-                     <ChevronLeft
-                        size={24}
-                        strokeWidth={2.5}
-                        color={iconColor}
-                     />
-                  </Pressable>
-
-                  <Animated.View
-                     key={
-                        headerInfo.title +
-                        headerInfo.range +
-                        headerInfo.bucketLabel
-                     }
-                     entering={FadeIn.duration(200)}
-                     exiting={FadeOutUp.duration(200)}
-                     className="flex-1 justify-center"
-                  >
-                     <Text
-                        className="text-xl font-bold text-slate-900 dark:text-white"
-                        numberOfLines={1}
+               <View className="flex-row items-center gap-3 flex-1">
+                  <LeftBackChevron isDark={isDark} />
+                  <View className="flex-1 overflow-hidden justify-center">
+                     <Animated.View
+                        key={
+                           headerInfo.title +
+                           headerInfo.range +
+                           headerInfo.bucketLabel
+                        }
+                        entering={FadeIn.duration(200)}
+                        exiting={FadeOutUp.duration(200)}
+                        className="flex-1 justify-center"
                      >
-                        {headerInfo.title}
-                     </Text>
-                     {headerInfo.range ? (
                         <Text
-                           className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wide"
+                           className="text-xl font-bold text-slate-900 dark:text-white"
                            numberOfLines={1}
                         >
-                           {headerInfo.range}
-                           {headerInfo.bucketLabel && (
-                              <Text className="text-slate-400 dark:text-slate-500">
-                                 {' '}
-                                 • {headerInfo.bucketLabel}
-                              </Text>
-                           )}
+                           {headerInfo.title}
                         </Text>
-                     ) : null}
-                  </Animated.View>
+                        {headerInfo.range ? (
+                           <Text
+                              className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wide"
+                              numberOfLines={1}
+                           >
+                              {headerInfo.range}
+                              {headerInfo.bucketLabel && (
+                                 <Text className="text-slate-400 dark:text-slate-500">
+                                    {' '}
+                                    • {headerInfo.bucketLabel}
+                                 </Text>
+                              )}
+                           </Text>
+                        ) : null}
+                     </Animated.View>
+                  </View>
                </View>
 
                <View className="flex-row items-center gap-4">

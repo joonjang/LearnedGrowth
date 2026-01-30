@@ -14,6 +14,9 @@ export const ANALYSIS_CTA_CLASS =
    export const FAB_CTA_CLASS =
    'bg-indigo-500 active:bg-indigo-600 dark:bg-indigo-600 dark:active:bg-indigo-900';
 
+export const ICON_COLOR_DARK = '#cbd5e1';
+export const ICON_COLOR_LIGHT = '#475569';
+
 export const SEMANTIC_COLORS = {
    belief: {
       bg: '#fff7ed',

@@ -1,3 +1,4 @@
+import LeftBackChevron from '@/components/buttons/LeftBackChevron';
 import { ROUTE_LOGIN } from '@/components/constants';
 import { AiInsightCreditShopSheet } from '@/components/shop/CreditShopSheet';
 import SendFeedback from '@/components/utils/SendFeedback';
@@ -11,8 +12,8 @@ import {
    PRIMARY_CTA_CLASS,
 } from '@/lib/styles';
 import { getSupabaseClient } from '@/lib/supabase';
-import { useAuth } from '@/providers/AuthProvider';
 import { useAppConfig } from '@/providers/AppConfigProvider';
+import { useAuth } from '@/providers/AuthProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -20,14 +21,13 @@ import NetInfo from '@react-native-community/netinfo';
 import { router, useFocusEffect } from 'expo-router';
 import {
    ChevronDown,
-   ChevronLeft,
    ChevronUp,
    Cloud,
    ShieldCheck,
    Sprout,
    TicketPlus,
    TriangleAlert,
-   Zap,
+   Zap
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import {
@@ -434,13 +434,7 @@ export default function SettingsScreen() {
          >
             {/* HEADER */}
             <View className="flex-row items-start gap-2 mb-2">
-               <Pressable
-                  onPress={() => router.back()}
-                  hitSlop={8}
-                  className="mt-1 p-2 rounded-full active:bg-slate-100 dark:active:bg-slate-800"
-               >
-                  <ChevronLeft size={26} strokeWidth={2.8} color={iconColor} />
-               </Pressable>
+               <LeftBackChevron isDark={isDark} />
                <View className="flex-1">
                   <Text className="text-3xl font-extrabold text-slate-900 dark:text-slate-50">
                      Settings

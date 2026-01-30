@@ -52,6 +52,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - updated credit shop view
    - says credits for consumables
    - removed icons for consumables
+- abstracted left chevron back button behaviour
 
 ### 2026-01-29
 
