@@ -1,9 +1,10 @@
-import { CATEGORY_ICON_MAP } from '@/lib/constants';
+import { CATEGORY_ICON_MAP, DEFAULT_CATEGORY_ICON } from '@/lib/constants';
 import React, { memo } from 'react';
 import { Text, View } from 'react-native';
 
 // Move this helper outside or to a utility file
-const getCategoryIcon = (category: string) => CATEGORY_ICON_MAP[category];
+const getCategoryIcon = (category: string) =>
+   CATEGORY_ICON_MAP[category] ?? DEFAULT_CATEGORY_ICON;
 
 type InsightStripProps = {
    category: string;

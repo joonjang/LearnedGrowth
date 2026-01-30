@@ -23,6 +23,8 @@ import {
    ANALYZE_WITH_AI_LABEL,
    CATEGORY_COLOR_MAP,
    DEFAULT_CATEGORY_COLOR,
+   ICON_COLOR_DARK,
+   ICON_COLOR_LIGHT,
    SAVE_TO_ANALYZE_LABEL,
 } from '@/lib/styles';
 import { FieldTone } from '@/lib/theme';
@@ -94,7 +96,7 @@ export default function EntryDetailScreen() {
 
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const iconColor = isDark ? '#f8fafc' : '#0f172a';
+   const iconColor = isDark ? ICON_COLOR_DARK : ICON_COLOR_LIGHT;
 
    // --- Form State ---
    const [form, setForm] = useState<Record<FieldKey, string>>(() =>
