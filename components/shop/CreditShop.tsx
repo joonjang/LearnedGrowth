@@ -242,7 +242,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
 
    return (
       <View className="gap-8 pt-2">
-         {/* 1. THE HERO: Monthly Subscription (Your Original Design) */}
+         {/* 1. THE HERO: Monthly Subscription */}
          <View>
             <View className="flex-row items-center justify-between mb-3">
                <View className="flex-row items-center gap-2">
@@ -310,11 +310,15 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
             </Pressable>
          </View>
 
-         {/* 2. THE GRID: One-time Refills (Merged Design: Vertical Cards, No Icon, No Badge) */}
+         {/* 2. THE GRID: One-time Refills */}
          <View>
-            <View className="mb-3 px-1">
+            {/* UPDATED HEADER with "One-time purchase" */}
+            <View className="flex-row items-center justify-between mb-3 px-1">
                <Text className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">
                   Get more analysis
+               </Text>
+               <Text className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                  One-time purchase
                </Text>
             </View>
 
