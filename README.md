@@ -36,7 +36,7 @@ Prod checklist:
 
 rm -rf node_modules
 npm ci
-∂
+
 rm -rf .expo .expo-shared
 npx expo prebuild --clean
 
