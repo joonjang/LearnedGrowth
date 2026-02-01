@@ -434,7 +434,8 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                                     You can continue on your own, or get an
                                     optional AI assisted analysis based on your{' '}
                                     <Text className="font-bold text-slate-900 dark:text-slate-200">
-                                       A + B + C
+                                       A{'\u00A0'}+{'\u00A0'}B{'\u00A0'}+
+                                       {'\u00A0'}C
                                     </Text>
                                     .
                                  </Text>

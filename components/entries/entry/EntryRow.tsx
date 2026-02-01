@@ -1,6 +1,6 @@
 import { Entry } from '@/models/entry';
 import { Pencil, Trash2 } from 'lucide-react-native';
-import { memo, useRef } from 'react';
+import { memo, useRef, type MutableRefObject } from 'react';
 import {
    Pressable,
    Text,
@@ -25,6 +25,7 @@ type EntryRowProps = {
    onSwipeOpen?: (id: string, ref: SwipeableMethods) => void;
    onSwipeClose?: (id: string) => void;
    closeActiveSwipeable?: () => string | null;
+   swipeGestureRef?: MutableRefObject<boolean>;
 };
 
 function EntryRow({
@@ -39,6 +40,7 @@ function EntryRow({
    onSwipeOpen,
    onSwipeClose,
    closeActiveSwipeable,
+   swipeGestureRef,
 }: EntryRowProps) {
    const swipeableRef = useRef<SwipeableMethods | null>(null);
 
@@ -59,17 +61,25 @@ function EntryRow({
             overshootRight={false}
             friction={1}
             enableTrackpadTwoFingerGesture
+            onSwipeableOpenStartDrag={() => {
+               if (swipeGestureRef) swipeGestureRef.current = true;
+            }}
             onSwipeableWillOpen={() => {
                onCloseMenu();
                if (swipeableRef.current && onSwipeOpen) {
                   onSwipeOpen(entry.id, swipeableRef.current);
                }
             }}
+            onSwipeableOpen={() => {
+               if (swipeGestureRef) swipeGestureRef.current = false;
+            }}
             rightThreshold={25}
             onSwipeableClose={() => {
+               if (swipeGestureRef) swipeGestureRef.current = false;
                if (onSwipeClose) onSwipeClose(entry.id);
             }}
             onSwipeableWillClose={() => {
+               if (swipeGestureRef) swipeGestureRef.current = false;
                if (onSwipeClose) onSwipeClose(entry.id);
             }}
             renderRightActions={() => (
@@ -113,6 +123,7 @@ function EntryRow({
                   onMenuLayout={onMenuLayout}
                   onDelete={onDelete}
                   closeActiveSwipeable={closeActiveSwipeable}
+                  swipeGestureRef={swipeGestureRef}
                />
             </View>
          </Swipeable>

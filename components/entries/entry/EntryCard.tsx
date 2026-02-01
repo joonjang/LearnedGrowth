@@ -34,7 +34,15 @@ import {
    Trash2,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+   memo,
+   useCallback,
+   useEffect,
+   useMemo,
+   useRef,
+   useState,
+   type MutableRefObject,
+} from 'react';
 import {
    Pressable,
    StyleSheet,
@@ -74,6 +82,7 @@ type Prop = {
    onMenuLayout?: (bounds: MenuBounds) => void;
    closeActiveSwipeable?: () => string | null;
    initialViewMode?: 'reframed' | 'original';
+   swipeGestureRef?: MutableRefObject<boolean>;
 };
 
 // --- Truncation Constants ---
@@ -211,6 +220,7 @@ export default function EntryCard({
    onMenuLayout,
    closeActiveSwipeable,
    initialViewMode = 'reframed',
+   swipeGestureRef,
 }: Prop) {
    // --- Auth & Subscription ---
    const { status } = useAuth();
@@ -360,6 +370,10 @@ export default function EntryCard({
    }, [isMenuOpen, measureMenu]);
 
    const handleOpenEntry = useCallback(() => {
+      if (swipeGestureRef?.current) {
+         swipeGestureRef.current = false;
+         return;
+      }
       if (closeActiveSwipeable) {
          const closedId = closeActiveSwipeable();
          if (closedId === entry.id && !swipeClosedRecently.current) {
@@ -388,6 +402,7 @@ export default function EntryCard({
       lockNavigation,
       onCloseMenu,
       onNavigate,
+      swipeGestureRef,
    ]);
 
    const handleEditFromMenu = useCallback(() => {

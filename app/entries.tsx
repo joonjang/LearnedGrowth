@@ -61,6 +61,7 @@ export default function EntriesListScreen() {
       id: string;
       ref: SwipeableMethods;
    } | null>(null);
+   const swipeGestureRef = useRef(false);
 
    const buttonShadow = useMemo(
       () =>
@@ -202,6 +203,7 @@ export default function EntriesListScreen() {
                      onSwipeOpen={onRowSwipeOpen}
                      onSwipeClose={onRowSwipeClose}
                      closeActiveSwipeable={closeActiveSwipeable}
+                     swipeGestureRef={swipeGestureRef}
                      onEdit={() =>
                         lockNavigation(() =>
                            router.push({
@@ -306,7 +308,9 @@ export default function EntriesListScreen() {
             }}
             onScrollBeginDrag={() => {
                closeMenu();
-               closeActiveSwipeable();
+               if (!swipeGestureRef.current) {
+                  closeActiveSwipeable();
+               }
             }}
          />
 
