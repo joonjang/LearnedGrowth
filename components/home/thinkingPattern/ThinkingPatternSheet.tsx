@@ -38,6 +38,9 @@ import type { RefObject } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
    LayoutAnimation,
+   LayoutChangeEvent,
+   NativeScrollEvent,
+   NativeSyntheticEvent,
    Text,
    TouchableOpacity,
    useWindowDimensions,
@@ -52,7 +55,6 @@ const TAB_KEYS = Object.keys(
    THINKING_PATTERN_DIMENSIONS,
 ) as (keyof typeof THINKING_PATTERN_DIMENSIONS)[];
 
-// Export this type so the parent can use it
 export type PatternTab = (typeof TAB_KEYS)[number];
 
 const CHART_TOTAL_HEIGHT = 200;
@@ -61,7 +63,6 @@ function formatShortDate(date: Date) {
    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-// Helper to format time (e.g., "10:30 AM")
 function formatTime(date: Date) {
    return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -76,7 +77,7 @@ function getPatternDateParts(value: string | null | undefined) {
    return {
       weekday: WEEKDAY_LABELS[parsed.getDay()] ?? '',
       fullDate: formatShortDate(parsed),
-      time: formatTime(parsed), // <--- Added time
+      time: formatTime(parsed),
    };
 }
 
@@ -108,6 +109,31 @@ export default function ThinkingPatternSheet({
 
    const [activeTab, setActiveTab] = useState<PatternTab>(initialTab);
    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+
+   // --- STANDARD SCROLL & SHADOW LOGIC (NO REANIMATED) ---
+   const [showShadow, setShowShadow] = useState(false);
+   const [headerHeight, setHeaderHeight] = useState(0);
+
+   // We simply toggle the boolean state when crossing the threshold.
+   // This is very efficient as it only re-renders TWICE per scroll session
+   // (once when shadow appears, once when it disappears).
+   const handleScroll = useCallback(
+      (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+         const scrollY = event.nativeEvent.contentOffset.y;
+         // Use a small buffer (e.g., 5px) so it doesn't flicker instantly
+         const shouldShow = scrollY > headerHeight + 5;
+
+         if (shouldShow !== showShadow) {
+            setShowShadow(shouldShow);
+         }
+      },
+      [headerHeight, showShadow],
+   );
+
+   const onHeaderLayout = useCallback((e: LayoutChangeEvent) => {
+      setHeaderHeight(e.nativeEvent.layout.height);
+   }, []);
+   // -----------------------------
 
    useEffect(() => {
       if (initialTab) {
@@ -141,6 +167,18 @@ export default function ThinkingPatternSheet({
 
    const tabShadow = useMemo(
       () => getShadow({ isDark, preset: 'sm', disableInDark: true }),
+      [isDark],
+   );
+
+   const stickyShadow = useMemo(
+      () =>
+         getShadow({
+            isDark,
+            preset: 'xs',
+            disableInDark: true,
+            colorLight: '#000000',
+            androidElevation: 4,
+         }),
       [isDark],
    );
 
@@ -240,6 +278,8 @@ export default function ThinkingPatternSheet({
       [sheetRef],
    );
 
+   const sheetBgColor = isDark ? BOTTOM_SHEET_BG_DARK : BOTTOM_SHEET_BG_LIGHT;
+
    return (
       <BottomSheetModal
          ref={sheetRef}
@@ -252,22 +292,24 @@ export default function ThinkingPatternSheet({
          enableOverDrag={false}
          handleIndicatorStyle={bottomSheetHandleIndicatorStyle(isDark)}
          backdropComponent={renderBackdrop}
-         backgroundStyle={bottomSheetBackgroundStyle(
-            isDark,
-            isDark ? BOTTOM_SHEET_BG_DARK : BOTTOM_SHEET_BG_LIGHT,
-         )}
+         backgroundStyle={bottomSheetBackgroundStyle(isDark, sheetBgColor)}
       >
          <BottomSheetScrollView
+            onScroll={handleScroll}
+            scrollEventThrottle={16} // Ensure we get scroll updates frequently
             contentContainerStyle={{
-               paddingHorizontal: BOTTOM_SHEET_CONTENT_PADDING,
                paddingTop: 12,
                paddingBottom: insets.bottom + 20,
             }}
-            stickyHeaderIndices={[2]}
+            stickyHeaderIndices={[1]}
             keyboardShouldPersistTaps="handled"
          >
-            {/* Header Section */}
-            <View className="mb-5">
+            {/* Index 0: Header Text (Scrolls Away) */}
+            <View
+               onLayout={onHeaderLayout}
+               className="mb-5"
+               style={{ paddingHorizontal: BOTTOM_SHEET_CONTENT_PADDING }}
+            >
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
                   Thinking Patterns
                </Text>
@@ -276,120 +318,159 @@ export default function ThinkingPatternSheet({
                </Text>
             </View>
 
-            {/* --- TABS --- */}
-            <View className="flex-row items-center rounded-full bg-slate-100 dark:bg-slate-800 p-1 mb-4">
-               {TAB_KEYS.map((tab) => {
-                  const isActive = activeTab === tab;
-                  const tabClasses = isActive
-                     ? 'bg-white dark:bg-slate-700'
-                     : 'bg-transparent';
-                  const textClasses = isActive
-                     ? 'text-slate-900 dark:text-slate-100'
-                     : 'text-slate-500 dark:text-slate-400';
-
-                  return (
-                     <Pressable
-                        key={tab}
-                        onPress={() => handleTabPress(tab)}
-                        style={{ flex: 1 }}
-                     >
-                        <View
-                           className={`py-2 rounded-full items-center ${tabClasses}`}
-                           style={
-                              isActive
-                                 ? [tabShadow.ios, tabShadow.android]
-                                 : undefined
-                           }
-                        >
-                           <Text
-                              className={`text-[11px] font-bold tracking-widest ${textClasses}`}
-                           >
-                              {String(tab).toUpperCase()}
-                           </Text>
-                        </View>
-                     </Pressable>
-                  );
-               })}
-            </View>
-
-            {/* --- CHART CONTAINER --- */}
+            {/* Index 1: Sticky Unified Card (Conditional Shadow) */}
             <View
-               className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4 pt-5"
-               style={{ overflow: 'hidden' }}
+               style={[
+                  {
+                     zIndex: 50,
+                     backgroundColor: sheetBgColor,
+                     paddingHorizontal: BOTTOM_SHEET_CONTENT_PADDING,
+                     paddingBottom: 12,
+                     ...(showShadow && isDark
+                        ? {
+                             borderBottomWidth: 1,
+                             borderBottomColor: '#1e293b',
+                          }
+                        : {}),
+                  },
+                  showShadow ? stickyShadow.style : null,
+               ]}
             >
-               {/* Helper Question */}
-               <View className="items-center mb-6 px-4">
-                  <Text className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center leading-relaxed">
-                     {tabConfig.description}
-                  </Text>
-               </View>
+               <View
+                  className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden"
+                  style={[cardShadow.ios, cardShadow.android]}
+               >
+                  {/* TABS HEADER */}
+                  <View className="bg-slate-50 dark:bg-slate-900/40 p-1.5 flex-row border-b border-slate-100 dark:border-slate-700/50">
+                     {TAB_KEYS.map((tab) => {
+                        const isActive = activeTab === tab;
+                        const tabClasses = isActive
+                           ? 'bg-white dark:bg-slate-700'
+                           : 'bg-transparent';
+                        const textClasses = isActive
+                           ? 'text-slate-900 dark:text-slate-100'
+                           : 'text-slate-500 dark:text-slate-400';
 
-               {/* Chart Area */}
-               <View className="relative">
-                  <Text className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400 absolute -top-1 left-2 z-10 tracking-wider">
-                     {tabConfig.highLabel}
-                  </Text>
-
-                  <View className="mt-4">
-                     {tabData.chartData.length > 0 ? (
-                        <View style={{ height: CHART_TOTAL_HEIGHT }}>
-                           <View pointerEvents="none">
-                              <LineChart
-                                 data={chartDataStatic}
-                                 width={chartWidth}
-                                 spacing={chartSpacing}
-                                 initialSpacing={chartEdgePadding}
-                                 endSpacing={chartEdgePadding}
-                                 height={CHART_TOTAL_HEIGHT}
-                                 curved
-                                 isAnimated
-                                 areaChart
-                                 lineGradient
-                                 lineGradientDirection="vertical"
-                                 lineGradientStartColor={lineGradientStartColor}
-                                 lineGradientEndColor={lineGradientEndColor}
-                                 gradientDirection="vertical"
-                                 color="#6366f1"
-                                 startFillColor={lineGradientStartColor}
-                                 endFillColor={lineGradientEndColor}
-                                 startOpacity={0.2}
-                                 endOpacity={0}
-                                 hideRules
-                                 hideYAxisText
-                                 hideAxesAndRules
-                                 yAxisThickness={0}
-                                 xAxisThickness={0}
-                              />
-                           </View>
-                           <View
-                              pointerEvents="none"
-                              style={{
-                                 position: 'absolute',
-                                 left: 8,
-                                 bottom: 0,
-                              }}
+                        return (
+                           <Pressable
+                              key={tab}
+                              onPress={() => handleTabPress(tab)}
+                              style={{ flex: 1 }}
                            >
-                              <Text className="text-[10px] font-bold uppercase text-rose-600 dark:text-rose-400 tracking-wider">
-                                 {tabConfig.lowLabel}
-                              </Text>
-                           </View>
+                              <View
+                                 className={`py-2 rounded-full items-center ${tabClasses}`}
+                                 style={
+                                    isActive
+                                       ? [tabShadow.ios, tabShadow.android]
+                                       : undefined
+                                 }
+                              >
+                                 <Text
+                                    className={`text-[10px] font-bold tracking-widest ${textClasses}`}
+                                 >
+                                    {String(tab).toUpperCase()}
+                                 </Text>
+                              </View>
+                           </Pressable>
+                        );
+                     })}
+                  </View>
+
+                  {/* CHART BODY */}
+                  <View className="p-4 pt-4 pb-2">
+                     <View className="items-center mb-2 px-4">
+                        <Text className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center leading-relaxed">
+                           {tabConfig.description}
+                        </Text>
+                     </View>
+
+                     <View className="relative">
+                        {/* High Label */}
+                        <Text className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400 absolute top-0 left-0 z-10 tracking-wider">
+                           {tabConfig.highLabel}
+                        </Text>
+
+                        <View className="mt-4">
+                           {tabData.chartData.length > 0 ? (
+                              <View style={{ height: CHART_TOTAL_HEIGHT }}>
+                                 <View pointerEvents="none">
+                                    <LineChart
+                                       data={chartDataStatic}
+                                       width={chartWidth}
+                                       spacing={chartSpacing}
+                                       initialSpacing={chartEdgePadding}
+                                       endSpacing={chartEdgePadding}
+                                       height={CHART_TOTAL_HEIGHT}
+                                       curved
+                                       isAnimated
+                                       areaChart
+                                       lineGradient
+                                       lineGradientDirection="vertical"
+                                       lineGradientStartColor={
+                                          lineGradientStartColor
+                                       }
+                                       lineGradientEndColor={
+                                          lineGradientEndColor
+                                       }
+                                       gradientDirection="vertical"
+                                       color="#6366f1"
+                                       startFillColor={lineGradientStartColor}
+                                       endFillColor={lineGradientEndColor}
+                                       startOpacity={0.2}
+                                       endOpacity={0}
+                                       hideRules
+                                       hideYAxisText
+                                       hideAxesAndRules
+                                       yAxisThickness={0}
+                                       xAxisThickness={0}
+                                       maxValue={
+                                          Math.max(
+                                             ...chartDataStatic.map(
+                                                (d: any) => d.value || 0,
+                                             ),
+                                          ) * 1.2
+                                       }
+                                       mostNegativeValue={0}
+                                    />
+                                 </View>
+
+                                 {/* Low Label */}
+                                 <View
+                                    pointerEvents="none"
+                                    style={{
+                                       position: 'absolute',
+                                       left: 0,
+                                       bottom: 4,
+                                    }}
+                                 >
+                                    <Text className="text-[10px] font-bold uppercase text-rose-600 dark:text-rose-400 tracking-wider bg-white/50 dark:bg-slate-800/50 px-1 rounded-sm overflow-hidden">
+                                       {tabConfig.lowLabel}
+                                    </Text>
+                                 </View>
+                              </View>
+                           ) : (
+                              <View
+                                 className="items-center justify-center"
+                                 style={{ height: CHART_TOTAL_HEIGHT }}
+                              >
+                                 <Text className="text-xs text-slate-500 dark:text-slate-400">
+                                    No trend data yet.
+                                 </Text>
+                              </View>
+                           )}
                         </View>
-                     ) : (
-                        <View
-                           className="items-center justify-center"
-                           style={{ height: CHART_TOTAL_HEIGHT }}
-                        >
-                           <Text className="text-xs text-slate-500 dark:text-slate-400">
-                              No trend data yet.
-                           </Text>
-                        </View>
-                     )}
+                     </View>
                   </View>
                </View>
             </View>
 
-            {/* --- LIST --- */}
-            <View className="mt-6">
+            {/* Index 2: List Section */}
+            <View
+               style={{
+                  paddingHorizontal: BOTTOM_SHEET_CONTENT_PADDING,
+                  paddingTop: 12,
+               }}
+            >
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
                   Detected Phrases
                </Text>
@@ -444,7 +525,6 @@ export default function ThinkingPatternSheet({
                                  onPress={() => handleToggleItem(pattern.id)}
                               >
                                  <View className="p-3.5">
-                                    {/* 1. Header Info (Full Width, Top) */}
                                     <View className="flex-row items-center gap-2 mb-2.5">
                                        <ImpactIcon
                                           size={14}
@@ -457,9 +537,7 @@ export default function ThinkingPatternSheet({
                                        </Text>
                                     </View>
 
-                                    {/* 2. Row: Bubble + Chevron */}
                                     <View className="flex-row items-center">
-                                       {/* Phrase Bubble (Takes remaining space) */}
                                        <View
                                           className={`flex-1 px-3 py-2 rounded-xl border ${bubbleClasses}`}
                                        >
@@ -470,7 +548,6 @@ export default function ThinkingPatternSheet({
                                           </Text>
                                        </View>
 
-                                       {/* Chevron (Sits right next to the bubble) */}
                                        <View className="ml-3">
                                           {isExpanded ? (
                                              <ChevronUp
