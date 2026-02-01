@@ -32,10 +32,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import {
-   AI_ANALYSIS_AMBER_BANNER_CLASS,
-   AI_ANALYSIS_LABEL,
-} from '@/lib/styles';
+import { AI_ANALYSIS_LABEL, AI_SURFACE_CLASS } from '@/lib/styles';
 import { AnimatedSpectrumRow } from './AnimatedSpectrumRow';
 import type { AnimationTimeline } from './animation';
 import { InsightDimensions, InsightSafety } from './types';
@@ -413,7 +410,7 @@ export function AiInsightStaleBanner({
    const containerStyle = isCoolingDown
       ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
       : isNudgeStep
-        ? AI_ANALYSIS_AMBER_BANNER_CLASS
+        ? AI_SURFACE_CLASS
         : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
 
    return (

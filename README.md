@@ -16,8 +16,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- code cleanup on amber redundant usage
-
 - add search function
 
 - make ai insight respond with how the explanation style is helpful/unhelpful
@@ -46,6 +44,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - fixed entry card gesture closing with gesture lock guard
 - made QuickStart A + B + C the same line
 - made the view edge to edge with bottom blur
+- code cleanup on amber redundant usage
 
 ### 2026-01-30
 

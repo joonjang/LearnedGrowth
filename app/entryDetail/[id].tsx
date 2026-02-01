@@ -16,12 +16,10 @@ import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
 import {
-   AI_ANALYSIS_AMBER_ICON_DARK,
-   AI_ANALYSIS_AMBER_ICON_LIGHT_ALT,
-   AI_ANALYSIS_AMBER_PIVOT_BG_CLASS,
-   AI_ANALYSIS_AMBER_PIVOT_BORDER_CLASS,
-   AI_ANALYSIS_AMBER_PIVOT_TEXT_CLASS,
+   AI_ICON_COLORS,
    ANALYZE_WITH_AI_LABEL,
+   AI_SURFACE_CLASS,
+   AI_TEXT_ACCENT_CLASS,
    CATEGORY_COLOR_MAP,
    DEFAULT_CATEGORY_COLOR,
    ICON_COLOR_DARK,
@@ -505,8 +503,8 @@ export default function EntryDetailScreen() {
                               {!aiDisplayData && entry?.dispute && (
                                  <TimelinePivot
                                     variant="full"
-                                    bgClassName={`${AI_ANALYSIS_AMBER_PIVOT_BG_CLASS} ${isEditing ? 'opacity-50' : ''}`}
-                                    borderClassName={`${AI_ANALYSIS_AMBER_PIVOT_BORDER_CLASS} ${isEditing ? 'opacity-50' : ''}`}
+                                    bgClassName={`${AI_SURFACE_CLASS} ${isEditing ? 'opacity-50' : ''}`}
+                                    borderClassName={`border-amber-200 dark:border-amber-800 ${isEditing ? 'opacity-50' : ''}`}
                                  >
                                     <Pressable
                                        onPress={handleAnalyze}
@@ -517,13 +515,13 @@ export default function EntryDetailScreen() {
                                           size={18}
                                           color={
                                              isDark
-                                                ? AI_ANALYSIS_AMBER_ICON_DARK
-                                                : AI_ANALYSIS_AMBER_ICON_LIGHT_ALT
+                                                ? AI_ICON_COLORS.dark
+                                                : AI_ICON_COLORS.light
                                           }
                                           strokeWidth={2.5}
                                        />
                                        <Text
-                                          className={`text-[12px] font-bold ${AI_ANALYSIS_AMBER_PIVOT_TEXT_CLASS}`}
+                                          className={`text-[12px] font-bold ${AI_TEXT_ACCENT_CLASS}`}
                                        >
                                           {isEditing
                                              ? SAVE_TO_ANALYZE_LABEL

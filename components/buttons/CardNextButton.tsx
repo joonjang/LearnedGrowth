@@ -1,8 +1,8 @@
 import AiDisclaimerModal from '@/components/appInfo/AiDisclaimerModal';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import {
-   AI_ANALYSIS_AMBER_BUTTON_CLASS,
-   AI_ANALYSIS_AMBER_BUTTON_TEXT_CLASS,
+   AI_BUTTON_CLASS,
+   AI_TEXT_PRIMARY_CLASS,
    ANALYZE_WITH_AI_LABEL,
    DISPUTE_CTA_CLASS,
 } from '@/lib/styles';
@@ -107,8 +107,8 @@ export default function CardNextButton({
          return {
             label: ANALYZE_WITH_AI_LABEL,
             icon: Sparkles,
-            bgColor: AI_ANALYSIS_AMBER_BUTTON_CLASS,
-            textColor: AI_ANALYSIS_AMBER_BUTTON_TEXT_CLASS,
+            bgColor: AI_BUTTON_CLASS,
+            textColor: AI_TEXT_PRIMARY_CLASS,
             iconColor: isDark ? '#fef3c7' : '#78350f',
          };
       }

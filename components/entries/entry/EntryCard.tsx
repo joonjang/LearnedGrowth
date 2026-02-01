@@ -7,10 +7,9 @@ import {
 } from '@/lib/constants';
 import { getShadow } from '@/lib/shadow';
 import {
-   AI_ANALYSIS_AMBER_CTA_CONTAINER_CLASS,
-   AI_ANALYSIS_AMBER_CTA_TEXT_CLASS,
-   AI_ANALYSIS_AMBER_ICON_DARK,
-   AI_ANALYSIS_AMBER_ICON_LIGHT,
+   AI_ICON_COLORS,
+   AI_SURFACE_CLASS,
+   AI_TEXT_ACCENT_CLASS,
    ANALYZE_WITH_AI_LABEL,
    CATEGORY_COLOR_MAP,
    DEFAULT_CATEGORY_COLOR,
@@ -47,9 +46,9 @@ import {
    Pressable,
    StyleSheet,
    Text,
-   type TextLayoutEvent,
    TouchableOpacity,
    View,
+   type TextLayoutEvent,
 } from 'react-native';
 import Animated, {
    Easing,
@@ -656,18 +655,18 @@ export default function EntryCard({
                                     handleAnalyze();
                                  }}
                                  activeOpacity={0.9}
-                                 className={`flex-row items-center justify-center gap-2 py-4 rounded-xl border-2 border-dashed ${AI_ANALYSIS_AMBER_CTA_CONTAINER_CLASS}`}
+                                 className={`flex-row items-center justify-center gap-2 py-4 rounded-xl border-2 border-dashed ${AI_SURFACE_CLASS}`}
                               >
                                  <Sparkles
                                     size={14}
                                     color={
                                        isDark
-                                          ? AI_ANALYSIS_AMBER_ICON_DARK
-                                          : AI_ANALYSIS_AMBER_ICON_LIGHT
+                                          ? AI_ICON_COLORS.dark
+                                          : AI_ICON_COLORS.light
                                     }
                                  />
                                  <Text
-                                    className={`text-[11px] font-bold ${AI_ANALYSIS_AMBER_CTA_TEXT_CLASS}`}
+                                    className={`text-[11px] font-bold ${AI_TEXT_ACCENT_CLASS}`}
                                  >
                                     {ANALYZE_WITH_AI_LABEL}
                                  </Text>

@@ -4,9 +4,8 @@ import {
    bottomSheetHandleIndicatorStyle,
 } from '@/components/utils/bottomSheetStyles';
 import {
-   AI_ANALYSIS_AMBER_BADGE_TEXT_CLASS,
-   AI_ANALYSIS_AMBER_ICON_DARK,
-   AI_ANALYSIS_AMBER_ICON_LIGHT_ALT,
+   AI_ICON_COLORS,
+   AI_TEXT_ACCENT_CLASS,
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_BG_DARK,
    BOTTOM_SHEET_BG_LIGHT,
@@ -166,12 +165,12 @@ export default function NoAiEntrySheet({
                      size={16}
                      color={
                         isDark
-                           ? AI_ANALYSIS_AMBER_ICON_DARK
-                           : AI_ANALYSIS_AMBER_ICON_LIGHT_ALT
+                           ? AI_ICON_COLORS.dark
+                           : AI_ICON_COLORS.light
                      }
                   />
                   <Text
-                     className={`text-xs font-bold uppercase tracking-widest ${AI_ANALYSIS_AMBER_BADGE_TEXT_CLASS}`}
+                     className={`text-xs font-bold uppercase tracking-widest ${AI_TEXT_ACCENT_CLASS}`}
                   >
                      Unlock Insights
                   </Text>

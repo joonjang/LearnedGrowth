@@ -124,40 +124,42 @@ export const DEFAULT_CATEGORY_COLOR = '#cbd5e1';
 export const AI_ANALYSIS_LABEL = 'AI Analysis';
 export const ANALYZE_WITH_AI_LABEL = 'Analyze with AI';
 export const SAVE_TO_ANALYZE_LABEL = 'Save to Analyze';
+// 1. ICONS
+export const AI_ICON_COLORS = {
+   light: '#b45309', // amber-700
+   dark: '#fbbf24',  // amber-400
+} as const;
 
-export const AI_ANALYSIS_AMBER_ICON_DARK = '#fbbf24';
-export const AI_ANALYSIS_AMBER_ICON_LIGHT = '#b45309';
-export const AI_ANALYSIS_AMBER_ICON_LIGHT_ALT = '#d97706';
-
-export const AI_ANALYSIS_AMBER_BADGE_TEXT_CLASS =
-   'text-amber-600 dark:text-amber-400';
-export const AI_ANALYSIS_AMBER_BANNER_CONTAINER_CLASS =
-   'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/50';
-export const AI_ANALYSIS_AMBER_BANNER_ICON_WRAPPER_CLASS =
-   'bg-white dark:bg-amber-500/20 border-amber-100 dark:border-amber-400/30';
-export const AI_ANALYSIS_AMBER_BANNER_TITLE_CLASS =
-   'text-amber-900 dark:text-amber-100';
-export const AI_ANALYSIS_AMBER_BANNER_DESC_CLASS =
-   'text-amber-700 dark:text-amber-300';
-export const AI_ANALYSIS_AMBER_PROGRESS_TEXT_CLASS =
-   'text-amber-600 dark:text-amber-400';
-export const AI_ANALYSIS_AMBER_PROGRESS_BAR_CLASS = 'bg-amber-500';
-
-export const AI_ANALYSIS_AMBER_CTA_CONTAINER_CLASS =
-   'border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10';
-export const AI_ANALYSIS_AMBER_CTA_TEXT_CLASS =
-   'text-amber-700 dark:text-amber-400/80 uppercase tracking-widest';
-export const AI_ANALYSIS_AMBER_BUTTON_CLASS =
-   'bg-amber-200 active:bg-amber-300 dark:bg-amber-800/40 dark:active:bg-amber-800/60 border border-amber-300 dark:border-amber-700/60';
-export const AI_ANALYSIS_AMBER_BUTTON_TEXT_CLASS =
-   'text-amber-900 dark:text-amber-100';
-export const AI_ANALYSIS_AMBER_PIVOT_BG_CLASS =
-   'bg-amber-50 dark:bg-amber-900/10';
-export const AI_ANALYSIS_AMBER_PIVOT_BORDER_CLASS =
-   'border-amber-300/60 dark:border-amber-700/50';
-export const AI_ANALYSIS_AMBER_PIVOT_TEXT_CLASS =
-   'text-amber-700 dark:text-amber-400 uppercase tracking-widest';
-export const AI_ANALYSIS_AMBER_NOTE_TEXT_CLASS =
-   'text-amber-700 dark:text-amber-500';
-export const AI_ANALYSIS_AMBER_BANNER_CLASS =
+// 2. SURFACES (Merged)
+// Replaces: Banner Container, Pivot BG, CTA Container, Note BG
+// Use this for any "Box" that needs the Amber theme.
+export const AI_SURFACE_CLASS = 
    'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800';
+
+// 3. TEXT HIERARCHY (Merged)
+// Primary: Headings, Button Labels, Strong Emphasis
+// Replaces: Banner Title, Button Text
+export const AI_TEXT_PRIMARY_CLASS = 
+   'text-amber-900 dark:text-amber-100';
+
+// Secondary: Body text, Descriptions, Notes
+// Replaces: Banner Desc, Note Text
+export const AI_TEXT_SECONDARY_CLASS = 
+   'text-amber-700 dark:text-amber-300';
+
+// Accent: Badges, Progress Text, "Pivot" Labels, Links
+// Replaces: Badge Text, Progress Text, CTA Text, Pivot Text
+export const AI_TEXT_ACCENT_CLASS = 
+   'text-amber-600 dark:text-amber-400';
+
+// 4. INTERACTIVE & GRAPHICAL
+// The main action button
+export const AI_BUTTON_CLASS =
+   'bg-amber-200 active:bg-amber-300 dark:bg-amber-800/40 dark:active:bg-amber-800/60 border border-amber-300 dark:border-amber-700/60';
+
+// Progress bars
+export const AI_PROGRESS_BAR_CLASS = 'bg-amber-500';
+
+// Icon backgrounds (white circles with amber border)
+export const AI_ICON_WRAPPER_CLASS = 
+   'bg-white dark:bg-amber-500/20 border-amber-100 dark:border-amber-400/30';
