@@ -11,6 +11,7 @@ import {
    TimelineStepDef,
 } from '@/components/entries/details/Timeline';
 import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
+import BottomFade from '@/components/utils/BottomFade';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
@@ -689,6 +690,8 @@ export default function EntryDetailScreen() {
                </View>
             </View>
          </Animated.View>
+
+         <BottomFade height={insets.bottom + 12} />
       </View>
    );
 }

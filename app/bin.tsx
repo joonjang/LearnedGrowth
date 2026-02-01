@@ -1,4 +1,5 @@
 import LeftBackChevron from '@/components/buttons/LeftBackChevron';
+import BottomFade from '@/components/utils/BottomFade';
 import { useDeletedEntries } from '@/hooks/useDeletedEntries';
 import { useEntries } from '@/hooks/useEntries';
 import { formatDateTimeWithWeekday } from '@/lib/date';
@@ -392,6 +393,8 @@ export default function DeleteBinScreen() {
                )}
             />
          )}
+
+         <BottomFade height={insets.bottom + 12} />
       </View>
    );
 }

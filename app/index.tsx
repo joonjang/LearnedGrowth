@@ -2,6 +2,7 @@ import QuickStart from '@/components/appInfo/QuickStart';
 import NewEntryFab from '@/components/buttons/NewEntryFAB';
 import EntriesWeekFilterHeader from '@/components/home/EntriesWeekFilterHeader';
 import HomeDashboard from '@/components/home/HomeDashboard';
+import BottomFade from '@/components/utils/BottomFade';
 import TopFade from '@/components/utils/TopFade';
 import { useDeletedEntries } from '@/hooks/useDeletedEntries';
 import { useEntries } from '@/hooks/useEntries';
@@ -267,6 +268,7 @@ export default function EntriesScreen() {
          </Animated.ScrollView>
 
          <NewEntryFab isVisible={isFabVisible} onPress={handleNewEntryPress} />
+         <BottomFade height={insets.bottom + 12} />
 
          {/* MODALS */}
          <Modal

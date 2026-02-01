@@ -16,10 +16,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- make edge to edge navigation such that there is blur at bottom of screen
-
-- confirm if app has backend character limit stopper if ABC is too long
-
 - code cleanup on amber redundant usage
 
 - add search function
@@ -49,6 +45,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 - fixed entry card gesture closing with gesture lock guard
 - made QuickStart A + B + C the same line
+- made the view edge to edge with bottom blur
 
 ### 2026-01-30
 

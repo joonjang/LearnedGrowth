@@ -2,6 +2,7 @@ import LeftBackChevron from '@/components/buttons/LeftBackChevron';
 import NewEntryFab from '@/components/buttons/NewEntryFAB';
 import { MenuBounds } from '@/components/entries/entry/EntryCard';
 import EntryRow from '@/components/entries/entry/EntryRow';
+import BottomFade from '@/components/utils/BottomFade';
 import { useDeletedEntries } from '@/hooks/useDeletedEntries';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
@@ -313,6 +314,8 @@ export default function EntriesListScreen() {
                }
             }}
          />
+
+         <BottomFade height={insets.bottom + 12} />
 
          {/* --- 3. FAB --- */}
          <NewEntryFab isVisible={isFabVisible} onPress={handleNewEntryPress} />

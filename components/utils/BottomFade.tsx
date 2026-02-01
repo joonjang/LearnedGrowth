@@ -7,13 +7,13 @@ type Props = {
    style?: StyleProp<ViewStyle>;
 };
 
-export default function TopFade({ height, intensity, style }: Props) {
+export default function BottomFade({ height, intensity, style }: Props) {
    return (
       <EdgeFade
          height={height}
          intensity={intensity}
          style={style}
-         position="top"
+         position="bottom"
       />
    );
 }
