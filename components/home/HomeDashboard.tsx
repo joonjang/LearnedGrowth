@@ -53,8 +53,6 @@ const PATTERN_TAB_CONFIG = {
    },
 } as const;
 
-const MAX_TREND_POINTS = 7;
-
 function getTrendValue(score: string | null | undefined): number {
    if (!score) return 50;
    const lower = score.toLowerCase();
@@ -343,7 +341,7 @@ const HomeDashboard = React.memo(
             ) => {
                const config = PATTERN_TAB_CONFIG[configKey];
                const dimKey = config.dimension;
-               const chartData = sortedAsc
+               const chartDataRaw = sortedAsc
                   .map((item) => {
                      const score = getDimScore(item.entry, dimKey);
                      if (!score) return null;
@@ -352,11 +350,11 @@ const HomeDashboard = React.memo(
                         entryId: item.entry.id,
                      };
                   })
-                  .filter(Boolean)
-                  .slice(-MAX_TREND_POINTS) as {
+                  .filter(Boolean) as {
                   value: number;
                   entryId: string;
                }[];
+               const chartData = chartDataRaw;
                const patterns = sortedDesc
                   .map((item) => {
                      const score = getDimScore(item.entry, dimKey);

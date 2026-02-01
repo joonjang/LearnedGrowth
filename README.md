@@ -39,6 +39,10 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-02-01
+
+- thinking pattern graph sticky header implemented
+
 ### 2026-01-31
 
 - fixed entry card gesture closing with gesture lock guard

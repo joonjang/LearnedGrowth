@@ -263,6 +263,7 @@ export default function ThinkingPatternSheet({
                paddingTop: 12,
                paddingBottom: insets.bottom + 20,
             }}
+            stickyHeaderIndices={[2]}
             keyboardShouldPersistTaps="handled"
          >
             {/* Header Section */}
