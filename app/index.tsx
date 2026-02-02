@@ -162,7 +162,13 @@ export default function EntriesScreen() {
       [filterOptions, selectedFilterKey],
    );
 
-   const displayLabel = selectedFilterOption?.label ?? 'All Entries';
+   const allEntriesLabel = `All Entries (${totalCount})`;
+   const displayLabel =
+      totalCount <= 5
+         ? `${totalCount} ${totalCount === 1 ? 'Entry' : 'Entries'}`
+         : selectedFilterKey === 'all'
+           ? allEntriesLabel
+           : (selectedFilterOption?.label ?? allEntriesLabel);
 
    const anchorDate = useMemo(() => {
       const latestEntry = filteredRows[0];
@@ -222,6 +228,8 @@ export default function EntriesScreen() {
                   displayLabel={displayLabel}
                   selectedFilterKey={selectedFilterKey}
                   filterOptions={filterOptions}
+                  showDropdown={totalCount > 5}
+                  totalCount={totalCount}
                   onToggleDropdown={() =>
                      setIsDropdownOpen((prevOpen) => !prevOpen)
                   }

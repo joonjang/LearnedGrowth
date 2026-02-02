@@ -263,7 +263,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
       <View className="flex-1 bg-slate-50 dark:bg-slate-950">
          <ScrollView
             contentContainerStyle={{
-               paddingTop: !isModal ? insets.top + 20 : 20,
+               paddingTop: !isModal ? insets.top + 24 : 20,
                paddingBottom: insets.bottom + 24,
             }}
             showsVerticalScrollIndicator={false}

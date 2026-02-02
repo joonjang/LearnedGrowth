@@ -4,14 +4,14 @@ import { Entry } from '@/models/entry';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
-    FadeIn,
-    FadeOut,
-    LinearTransition,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSequence,
-    withTiming,
+   FadeIn,
+   FadeOut,
+   LinearTransition,
+   useAnimatedStyle,
+   useSharedValue,
+   withRepeat,
+   withSequence,
+   withTiming,
 } from 'react-native-reanimated';
 
 // --- Types & Logic ---
@@ -188,11 +188,32 @@ export default function StatHero({
          // CHANGED: Use simple FadeIn for smooth Skeleton replacement
          entering={FadeIn.duration(500)}
          layout={LinearTransition.springify()}
-         className="px-4 py-6"
+         className="px-4 pb-6"
       >
          <View className="flex-row justify-between items-start">
-            {/* LEFT: Context & Actions */}
-            <View className="flex-1 pr-6 pt-1">
+            <View className="items-end pr-6">
+               <View className="self-end mb-1 flex-row items-center">
+                  <Text
+                     className={`text-[10px] font-bold uppercase tracking-[3px] ${labelColor} mr-1`}
+                  >
+                     Reframed
+                  </Text>
+               </View>
+
+               <Text
+                  className={`font-black tracking-tighter ${resolutionStats.colorClass} mt-1 mr-1`}
+                  style={{
+                     fontSize: 64,
+                     lineHeight: 64,
+                     includeFontPadding: false,
+                     fontVariant: ['tabular-nums'],
+                  }}
+               >
+                  {resolutionStats.resolvedCount}
+               </Text>
+            </View>
+
+            <View className="flex-1">
                <Text
                   className={`text-sm font-bold uppercase tracking-widest mb-1.5 ${resolutionStats.colorClass}`}
                >
@@ -227,47 +248,6 @@ export default function StatHero({
                      </Text>
                   </Pressable>
                )}
-            </View>
-
-            {/* RIGHT: Big Stat */}
-            <View className="items-end">
-               <View className="self-end mb-1 flex-row items-center">
-                  <Text className={`text-[10px] font-black ${labelColor}`}>
-                     [
-                  </Text>
-                  <Text
-                     className={`mx-1 text-[10px] font-black ${labelColor}`}
-                     style={{ fontVariant: ['tabular-nums'] }}
-                  >
-                     {resolutionStats.total}
-                  </Text>
-                  <Text className={`text-[10px] font-black ${labelColor}`}>
-                     ]
-                  </Text>
-                  <Text
-                     className={`ml-2 text-[10px] font-bold uppercase tracking-widest ${labelColor}`}
-                  >
-                     Entries
-                  </Text>
-               </View>
-
-               <Text
-                  className={`font-black tracking-tighter ${resolutionStats.colorClass} mt-1 mr-1`}
-                  style={{
-                     fontSize: 64,
-                     lineHeight: 64,
-                     includeFontPadding: false,
-                     fontVariant: ['tabular-nums'],
-                  }}
-               >
-                  {resolutionStats.resolvedCount}
-               </Text>
-
-               <Text
-                  className={`text-[10px] font-bold uppercase tracking-[3px] ${labelColor} mt-1 mr-1`}
-               >
-                  Reframed
-               </Text>
             </View>
          </View>
       </Animated.View>

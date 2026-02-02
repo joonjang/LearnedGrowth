@@ -9,7 +9,7 @@ import {
    ChevronDown,
    Infinity,
    Info,
-   Settings
+   Settings,
 } from 'lucide-react-native';
 import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -23,6 +23,8 @@ type EntriesWeekFilterHeaderProps = {
    displayLabel: string;
    selectedFilterKey: EntryCountFilterKey;
    filterOptions: EntryCountFilterOption[];
+   showDropdown: boolean;
+   totalCount: number;
    onToggleDropdown: () => void;
    onCloseDropdown: () => void;
    onSelectFilter: (key: EntryCountFilterKey) => void;
@@ -37,6 +39,8 @@ export default function EntriesWeekFilterHeader({
    displayLabel,
    selectedFilterKey,
    filterOptions,
+   showDropdown,
+   totalCount,
    onToggleDropdown,
    onCloseDropdown,
    onSelectFilter,
@@ -52,10 +56,56 @@ export default function EntriesWeekFilterHeader({
       () => getShadow({ isDark, preset: 'md', disableInDark: true }),
       [isDark],
    );
+   const isDropdownVisible = showDropdown && isDropdownOpen;
+
+   const triggerContent = (
+      <View
+         className={`flex-row items-center gap-2 bg-white dark:bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 self-start ${isLoading ? 'opacity-70' : ''}`}
+      >
+         {isLoading ? (
+            <View className="h-5 w-24 rounded-md bg-slate-200 dark:bg-slate-700" />
+         ) : (
+            <Text
+               numberOfLines={1}
+               ellipsizeMode="tail"
+               className="text-xl font-bold text-slate-900 dark:text-white max-w-[200px]"
+            >
+               {displayLabel}
+            </Text>
+         )}
+         {showDropdown && (
+            <View
+               className={`transform ${isDropdownVisible ? 'rotate-180' : 'rotate-0'}`}
+            >
+               <ChevronDown
+                  size={16}
+                  color={isDark ? '#94a3b8' : '#64748b'}
+                  strokeWidth={2.5}
+               />
+            </View>
+         )}
+      </View>
+   );
+
+   const staticLabelContent = (
+      <View className="flex-row items-center gap-2 self-start px-3.5 py-2">
+         {isLoading ? (
+            <View className="h-5 w-24 rounded-md bg-slate-200 dark:bg-slate-700" />
+         ) : (
+            <Text
+               numberOfLines={1}
+               ellipsizeMode="tail"
+               className="text-xl font-bold text-slate-900 dark:text-white max-w-[200px]"
+            >
+               {displayLabel}
+            </Text>
+         )}
+      </View>
+   );
 
    return (
       <>
-         {isDropdownOpen && (
+         {isDropdownVisible && (
             <Pressable
                style={{
                   position: 'absolute',
@@ -69,44 +119,25 @@ export default function EntriesWeekFilterHeader({
             />
          )}
 
-         <View className="flex-row items-center justify-between mb-2 z-50">
+         <View className="flex-row items-center justify-between mb-4 z-50">
             <View className="z-50 flex-1">
                <View className="z-50">
-                  <Pressable onPress={onToggleDropdown} disabled={isLoading}>
-                     <View
-                        className={`flex-row items-center gap-2 bg-white dark:bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 self-start ${isLoading ? 'opacity-70' : ''}`}
-                     >
-                        {isLoading ? (
-                           <View className="h-5 w-24 rounded-md bg-slate-200 dark:bg-slate-700" />
-                        ) : (
-                           <Text
-                              numberOfLines={1}
-                              ellipsizeMode="tail"
-                              className="text-xl font-bold text-slate-900 dark:text-white max-w-[200px]"
-                           >
-                              {displayLabel}
-                           </Text>
-                        )}
-                        <View
-                           className={`transform ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
-                        >
-                           <ChevronDown
-                              size={16}
-                              color={isDark ? '#94a3b8' : '#64748b'}
-                              strokeWidth={2.5}
-                           />
-                        </View>
-                     </View>
-                  </Pressable>
+                  {showDropdown ? (
+                     <Pressable onPress={onToggleDropdown} disabled={isLoading}>
+                        {triggerContent}
+                     </Pressable>
+                  ) : (
+                     staticLabelContent
+                  )}
 
-                  {isDropdownOpen && (
+                  {isDropdownVisible && (
                      <Animated.View
                         entering={FadeIn.duration(150)}
                         exiting={FadeOut.duration(150)}
                         style={[
                            {
                               position: 'absolute',
-                              top: 54,
+                              top: 48,
                               left: 0,
                               width: 240,
                               maxHeight: 320,
@@ -150,7 +181,7 @@ export default function EntriesWeekFilterHeader({
                                                    }
                                                 />
                                                 <Text className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                                                   {option.label}
+                                                   {`${option.label} (${totalCount})`}
                                                 </Text>
                                              </View>
                                           ) : (
