@@ -1,11 +1,13 @@
 import rawAbcde from '@/assets/data/abcde.json';
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
-import StepperHeader from '@/components/newEntry/StepperHeader';
-import SmartInput from '@/components/SmartInput';
-import TypewriterText, { TypewriterHandle } from '@/components/TypewriterText';
+import SmartInput from '@/components/inputABCDE/SmartInput';
+import StepperHeader from '@/components/inputABCDE/StepperHeader';
+import TypewriterText, {
+   TypewriterHandle,
+} from '@/components/inputABCDE/TypewriterText';
 import { useEntries } from '@/hooks/useEntries';
 import { usePrompts } from '@/hooks/usePrompts';
-import { useSmartScroll } from '@/hooks/useSmartScroll'; // <--- NEW IMPORT
+import { useSmartScroll } from '@/hooks/useSmartScroll';
 import { useSmoothKeyboard } from '@/hooks/useSmoothKeyboard';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
 import { ROUTE_ENTRY_DETAIL } from '@/lib/constants';
@@ -234,8 +236,8 @@ export default function NewEntryModal() {
 
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
-         <Animated.View style={[{ flex: 1 }, animatedWrapperStyle]}>
-            <View style={{ flex: 1 }}>
+         <Animated.View className="flex-1" style={animatedWrapperStyle}>
+            <View className="flex-1">
                {/* SCROLL VIEW (Using Hook Props) */}
                <ScrollView
                   {...scrollProps}
@@ -243,18 +245,12 @@ export default function NewEntryModal() {
                   contentContainerStyle={{
                      flexGrow: 1, // Required for centering
                      paddingTop: topPadding,
-                     paddingHorizontal: 20,
                   }}
+                  className="px-5"
                >
                   {/* HEADER */}
-                  <View
-                     style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        marginBottom: 10,
-                     }}
-                  >
-                     <View style={{ flex: 1, marginRight: 8 }}>
+                  <View className="flex-row items-center mb-2.5">
+                     <View className="flex-1 mr-2">
                         <StepperHeader
                            step={idx + 1}
                            total={STEP_ORDER.length}
@@ -265,26 +261,23 @@ export default function NewEntryModal() {
                   </View>
 
                   {/* PROMPT (Vertically Centered) */}
-                  <View style={{ flex: 1, justifyContent: 'center' }}>
+                  <View className="flex-1 justify-center">
                      <TypewriterText
                         ref={typewriterRef}
                         text={prompts[currKey]}
                         visited={hasVisited(currKey)}
                         onFinished={() => markVisited(currKey)}
-                        style={[
-                           { fontWeight: '700', color: '#0f172a' },
-                           animatedPromptStyle,
-                        ]}
+                        style={[{ fontWeight: '700' }, animatedPromptStyle]}
                      />
                   </View>
 
                   {/* Spacer */}
-                  <View style={{ height: 20 }} />
+                  <View className="h-5" />
                </ScrollView>
 
                {/* FOOTER */}
-               <View style={{ paddingHorizontal: 20 }}>
-                  <View style={{ marginBottom: 10, marginTop: 10 }}>
+               <View className="px-5">
+                  <View className="my-2.5">
                      <SmartInput
                         ref={inputRef}
                         value={form[currKey]}
@@ -299,40 +292,23 @@ export default function NewEntryModal() {
                      />
                   </View>
 
-                  <View
-                     style={{
-                        flexDirection: 'row',
-                        height: 50,
-                        gap: 12,
-                        alignItems: 'center',
-                     }}
-                  >
+                  <View className="flex-row h-[50px] gap-3 items-center">
                      <TouchableOpacity
                         onPress={() => handleStepChange('back')}
-                        style={{
-                           flex: 1,
-                           justifyContent: 'center',
-                           alignItems: 'center',
-                        }}
+                        className="flex-1 justify-center items-center"
                      >
                         <Text
-                           style={{
-                              fontSize: 16,
-                              fontWeight: '600',
-                              color: idx === 0 ? '#e11d48' : '#64748b',
-                           }}
+                           className={`text-base font-semibold ${
+                              idx === 0
+                                 ? 'text-rose-600 dark:text-rose-400'
+                                 : 'text-slate-900 dark:text-slate-100'
+                           }`}
                         >
                            {idx === 0 ? 'Close' : 'Back'}
                         </Text>
                      </TouchableOpacity>
 
-                     <View
-                        style={{
-                           width: 1,
-                           height: 24,
-                           backgroundColor: '#e2e8f0',
-                        }}
-                     />
+                     <View className="w-[1px] h-6 bg-slate-200 dark:bg-slate-700" />
 
                      <TouchableOpacity
                         onPress={
@@ -341,22 +317,18 @@ export default function NewEntryModal() {
                               : () => handleStepChange('next')
                         }
                         disabled={currentEmpty || isSubmitting}
-                        style={{
-                           flex: 1,
-                           justifyContent: 'center',
-                           alignItems: 'center',
-                           opacity: currentEmpty || isSubmitting ? 0.5 : 1,
-                        }}
+                        className={`flex-1 justify-center items-center ${
+                           currentEmpty || isSubmitting
+                              ? 'opacity-50'
+                              : 'opacity-100'
+                        }`}
                      >
                         <Text
-                           style={{
-                              fontSize: 16,
-                              fontWeight: '600',
-                              color:
-                                 idx === STEP_ORDER.length - 1
-                                    ? '#e11d48'
-                                    : '#0f172a',
-                           }}
+                           className={`text-base font-semibold ${
+                              idx === STEP_ORDER.length - 1
+                                 ? 'text-rose-600 dark:text-rose-400'
+                                 : 'text-slate-900 dark:text-slate-100'
+                           }`}
                         >
                            {idx === STEP_ORDER.length - 1 ? 'Finish' : 'Next'}
                         </Text>

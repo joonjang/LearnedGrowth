@@ -9,12 +9,14 @@ import {
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import SmartInput from '@/components/SmartInput';
-import TypewriterText, { TypewriterHandle } from '@/components/TypewriterText';
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import EntryContextView from '@/components/entries/dispute/EntryContextView';
-import StepperHeader from '@/components/newEntry/StepperHeader';
-import { useSmartScroll } from '@/hooks/useSmartScroll'; // <--- The Hook
+import SmartInput from '@/components/inputABCDE/SmartInput';
+import StepperHeader from '@/components/inputABCDE/StepperHeader';
+import TypewriterText, {
+   TypewriterHandle,
+} from '@/components/inputABCDE/TypewriterText';
+import { useSmartScroll } from '@/hooks/useSmartScroll';
 import { useSmoothKeyboard } from '@/hooks/useSmoothKeyboard';
 
 import { Entry } from '@/models/entry';
@@ -54,10 +56,8 @@ export default function DisputeSteps({
    const inputRef = useRef<TextInput>(null);
    const typewriterRef = useRef<TypewriterHandle>(null);
 
-   // 1. USE SMART SCROLL HOOK (Replaces all manual refs/handlers)
    const { scrollProps, reenableAutoScroll, scrollToBottom } = useSmartScroll();
 
-   // 2. KEYBOARD ANIMATION (Constraint logic)
    const { height: screenHeight } = useWindowDimensions();
    const maxInputHeight = Math.floor(screenHeight * 0.25);
    const { animatedPromptStyle, animatedInputStyle, animatedWrapperStyle } =
@@ -65,7 +65,6 @@ export default function DisputeSteps({
          closedHeight: maxInputHeight,
       });
 
-   // Reset scroll on step change
    useEffect(() => {
       reenableAutoScroll();
       requestAnimationFrame(() => scrollToBottom(false));
@@ -92,27 +91,21 @@ export default function DisputeSteps({
    };
 
    return (
-      <Animated.View style={[{ flex: 1 }, animatedWrapperStyle]}>
-         <View style={{ flex: 1 }}>
-            {/* Main Scrollable Area */}
+      <Animated.View className="flex-1" style={animatedWrapperStyle}>
+         <View className="flex-1">
             <ScrollView
-               {...scrollProps} // <--- Spread the hook props here
+               {...scrollProps}
                showsVerticalScrollIndicator={false}
+               // We mix style for dynamic padding with classes for static styling
                contentContainerStyle={{
                   flexGrow: 1,
                   paddingTop: contentTopPadding,
-                  paddingHorizontal: 20,
                }}
+               className="px-5"
             >
                {/* HEADER */}
-               <View
-                  style={{
-                     flexDirection: 'row',
-                     alignItems: 'center',
-                     marginBottom: 10,
-                  }}
-               >
-                  <View style={{ flex: 1, marginRight: 8 }}>
+               <View className="flex-row items-center mb-2.5">
+                  <View className="flex-1 mr-2">
                      <StepperHeader
                         step={idx + 1}
                         total={4}
@@ -125,7 +118,7 @@ export default function DisputeSteps({
                </View>
 
                {/* CONTEXT CARD */}
-               <View style={{ marginBottom: 16 }}>
+               <View className="mb-4">
                   <EntryContextView
                      adversity={entry.adversity}
                      belief={entry.belief}
@@ -134,25 +127,27 @@ export default function DisputeSteps({
                </View>
 
                {/* PROMPT (Vertically Centered) */}
-               <View style={{ flex: 1, justifyContent: 'center' }}>
+               <View className="flex-1 justify-center">
                   <TypewriterText
                      ref={typewriterRef}
                      text={prompts[currKey]}
                      visited={hasVisited(currKey)}
                      onFinished={() => markVisited(currKey)}
                      style={[
-                        { fontWeight: '700', color: '#0f172a' },
+                        { fontWeight: '700' }, // Kept inline for specific font weight control
                         animatedPromptStyle,
                      ]}
                   />
                </View>
 
-               <View style={{ height: 20 }} />
+               {/* Spacer */}
+               <View className="h-5" />
             </ScrollView>
 
             {/* FOOTER */}
-            <View style={{ paddingHorizontal: 20 }}>
-               <View style={{ marginBottom: 10, marginTop: 10 }}>
+            <View className="px-5">
+               {/* Input Container */}
+               <View className="my-2.5">
                   <SmartInput
                      ref={inputRef}
                      value={form[currKey]}
@@ -165,57 +160,41 @@ export default function DisputeSteps({
                   />
                </View>
 
-               <View
-                  style={{
-                     flexDirection: 'row',
-                     height: 50,
-                     gap: 12,
-                     alignItems: 'center',
-                  }}
-               >
+               {/* Buttons Row */}
+               <View className="flex-row h-[50px] gap-3 items-center">
+                  {/* Back/Close Button */}
                   <TouchableOpacity
                      onPress={handleBack}
-                     style={{
-                        flex: 1,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                     }}
+                     className="flex-1 justify-center items-center"
                   >
                      <Text
-                        style={{
-                           fontSize: 16,
-                           fontWeight: '600',
-                           color: idx === 0 ? '#e11d48' : '#64748b',
-                        }}
+                        className={`text-base font-semibold ${
+                           idx === 0
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-slate-900 dark:text-slate-100'
+                        }`}
                      >
                         {idx === 0 ? 'Close' : 'Back'}
                      </Text>
                   </TouchableOpacity>
 
-                  <View
-                     style={{
-                        width: 1,
-                        height: 24,
-                        backgroundColor: '#e2e8f0',
-                     }}
-                  />
+                  {/* Vertical Divider */}
+                  <View className="w-[1px] h-6 bg-slate-200 dark:bg-slate-700" />
 
+                  {/* Next/Finish Button */}
                   <TouchableOpacity
                      onPress={handleNext}
                      disabled={disableNext}
-                     style={{
-                        flex: 1,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        opacity: disableNext ? 0.5 : 1,
-                     }}
+                     className={`flex-1 justify-center items-center ${
+                        disableNext ? 'opacity-50' : 'opacity-100'
+                     }`}
                   >
                      <Text
-                        style={{
-                           fontSize: 16,
-                           fontWeight: '600',
-                           color: idx === 3 ? '#e11d48' : '#0f172a',
-                        }}
+                        className={`text-base font-semibold ${
+                           idx === 3
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-slate-900 dark:text-slate-100'
+                        }`}
                      >
                         {idx === 3 ? 'Finish' : 'Next'}
                      </Text>

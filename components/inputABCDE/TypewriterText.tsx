@@ -121,7 +121,12 @@ const TypewriterText = forwardRef<TypewriterHandle, TypewriterProps>(
 
             {/* Visible Text (Animated overlay) */}
             <View className="absolute inset-0">
-               <Animated.Text style={style}>{displayedText}</Animated.Text>
+               <Animated.Text
+                  className="text-slate-900 dark:text-slate-100"
+                  style={style}
+               >
+                  {displayedText}
+               </Animated.Text>
             </View>
          </View>
       );
