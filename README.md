@@ -46,6 +46,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
    - go into the play console > Setup > License Testing and remove that email from the License testers section
 - fixed android navigation button covering bottom stepper buttons with inset.bottom
 - EntryWeekFilterHeader.tsx integrated with statHero
+- fixed entryCard inner container view animation lag by removing the animation altogether
 
 ### 2026-01-31
 

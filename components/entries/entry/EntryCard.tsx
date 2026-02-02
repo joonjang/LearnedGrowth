@@ -52,9 +52,6 @@ import {
 } from 'react-native';
 import Animated, {
    Easing,
-   FadeIn,
-   FadeOut,
-   LinearTransition,
    useAnimatedStyle,
    useSharedValue,
    withTiming,
@@ -574,8 +571,7 @@ export default function EntryCard({
 
          {isReframed ? (
             // === VIEW 1: COMPLETE (TOGGLEABLE) ===
-            <Animated.View
-               layout={LinearTransition.springify()}
+            <View
                className={`p-3 pb-4 rounded-2xl relative border ${
                   viewMode === 'reframed'
                      ? `${DISPUTE_BG_CLASS} ${DISPUTE_BORDER_CLASS}`
@@ -603,10 +599,7 @@ export default function EntryCard({
                   />
 
                   {viewMode === 'reframed' ? (
-                     <Animated.View
-                        entering={FadeIn.duration(200)}
-                        exiting={FadeOut.duration(150)}
-                     >
+                     <View>
                         <FlowBlock
                            text={entry.dispute || ''}
                            type="dispute"
@@ -624,12 +617,9 @@ export default function EntryCard({
                            isLast={true}
                            isResolved={true}
                         />
-                     </Animated.View>
+                     </View>
                   ) : (
-                     <Animated.View
-                        entering={FadeIn.duration(200)}
-                        exiting={FadeOut.duration(150)}
-                     >
+                     <View>
                         <FlowBlock
                            text={entry.belief}
                            type="belief"
@@ -673,7 +663,7 @@ export default function EntryCard({
                               </TouchableOpacity>
                            </View>
                         )}
-                     </Animated.View>
+                     </View>
                   )}
                </View>
 
@@ -717,7 +707,7 @@ export default function EntryCard({
                      </View>
                   </TouchableOpacity>
                </View>
-            </Animated.View>
+            </View>
          ) : (
             // === VIEW 2: INCOMPLETE (A-B-C Progress) ===
             <>
