@@ -3,7 +3,6 @@ import ABCAnalysis from '@/components/entries/dispute/ABCAnalysis';
 import DisputeSteps from '@/components/entries/dispute/DisputeSteps';
 import { useAbcAi } from '@/hooks/useAbcAi';
 import { useEntries } from '@/hooks/useEntries';
-import { usePromptLayout } from '@/hooks/usePromptLayout';
 import { usePrompts } from '@/hooks/usePrompts';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
 import {
@@ -28,21 +27,10 @@ import React, {
    useRef,
    useState,
 } from 'react';
-import {
-   Alert,
-   Keyboard,
-   NativeScrollEvent,
-   NativeSyntheticEvent,
-   Platform,
-   ScrollView,
-   Text,
-   TextInput,
-   View,
-} from 'react-native';
+import { Alert, Keyboard, Platform, Text, View } from 'react-native';
 import {
    AndroidSoftInputModes,
    KeyboardController,
-   KeyboardEvents,
 } from 'react-native-keyboard-controller';
 import Animated, {
    useAnimatedStyle,
@@ -161,7 +149,7 @@ export default function DisputeScreen() {
       resetForm();
    }, [resetForm, shouldStartFresh]);
 
-   // ... (AI Trigger Effect - unchanged) ...
+   // AI Trigger Effect
    useEffect(() => {
       if (!entry || !ready) return;
       if (!shouldRegenerate || analysisTriggered || lastResult) return;
@@ -266,12 +254,8 @@ export default function DisputeScreen() {
    }, [entry?.aiResponse?.suggestions, lastResult?.data?.suggestions, prompts]);
 
    const suggestionStarters = useMemo(() => {
-      // NEW: Helper to strip trailing dots and ensure one trailing space
       const clean = (val?: string | null) => {
          if (!val || !val.trim()) return null;
-         // 1. Remove one or more dots at the end (\.+$)
-         // 2. Trim whitespace
-         // 3. Add exactly one space so the user can just type
          return val.replace(/\.+$/, '').trim() + ' ';
       };
 
@@ -285,23 +269,15 @@ export default function DisputeScreen() {
       };
    }, [entry?.aiResponse?.suggestions, lastResult?.data?.suggestions]);
 
-   // 1. Get the current trimmed text
    const currentText = trimmedForm[currKey];
-
-   // 2. Get the specific starter for this step (if one exists)
-   //    We cast as 'any' or Record to safely access the key since 'energy' might not exist in suggestionStarters
    const currentStarter = (suggestionStarters as Record<string, string | null>)[
       currKey
    ];
-
-   // 3. Check if the user hasn't added anything to the starter
-   //    We compare trimmed strings to ignore the trailing space we added for UX
    const isUnchangedStarter = useMemo(() => {
       if (!currentStarter) return false;
       return currentText === currentStarter.trim();
    }, [currentStarter, currentText]);
 
-   // 4. Block 'Next' if empty OR if it's just the starter
    const disableNext = !currentText || isUnchangedStarter;
 
    useEffect(() => {
@@ -340,16 +316,6 @@ export default function DisputeScreen() {
       if (lastResult?.data) return lastResult.data;
       return entry?.aiResponse ?? null;
    }, [entry?.aiResponse, isRegenerating, lastResult?.data]);
-
-   const scrollRef = useRef<ScrollView | null>(null);
-   const stickToBottom = useRef(true);
-   const inputRef = useRef<TextInput>(null);
-   const {
-      promptTextStyle,
-      promptTextAnimatedStyle,
-      inputBoxAnimatedStyle,
-      keyboardPaddingStyle,
-   } = usePromptLayout();
 
    const setField = useCallback(
       (k: NewInputDisputeType) => (v: string) =>
@@ -411,23 +377,6 @@ export default function DisputeScreen() {
       updateEntry,
    ]);
 
-   const scrollToBottom = useCallback((animated = true) => {
-      const ref = scrollRef.current;
-      if (!ref) return;
-      ref.scrollToEnd({ animated });
-   }, []);
-
-   const handleScroll = useCallback(
-      (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-         const { layoutMeasurement, contentOffset, contentSize } =
-            e.nativeEvent;
-         const gap =
-            contentSize.height - (contentOffset.y + layoutMeasurement.height);
-         stickToBottom.current = gap < 12;
-      },
-      [],
-   );
-
    const handleRefreshAnalysis = useCallback(async () => {
       if (!entry) return;
       setIsRegenerating(true);
@@ -460,22 +409,6 @@ export default function DisputeScreen() {
       hapticsAvailable,
       triggerHaptic,
    ]);
-
-   useEffect(() => {
-      requestAnimationFrame(() => scrollToBottom(false));
-   }, [scrollToBottom]);
-
-   useEffect(() => {
-      const handleShow = () =>
-         requestAnimationFrame(() => scrollToBottom(true));
-      const didShowSub = KeyboardEvents.addListener(
-         'keyboardDidShow',
-         handleShow,
-      );
-      return () => {
-         didShowSub.remove();
-      };
-   }, [scrollToBottom]);
 
    useEffect(() => {
       if (!hasAutoOpenedAnalysis && (analysisTriggered || lastResult)) {
@@ -575,25 +508,22 @@ export default function DisputeScreen() {
    }
 
    return (
-      <Animated.View
-         className="flex-1 bg-slate-50 dark:bg-slate-900"
-         // Apply keyboard padding here to whole screen
-         style={[{ flex: 1 }, keyboardPaddingStyle]}
-      >
+      <Animated.View className="flex-1 bg-slate-50 dark:bg-slate-900">
          <View className="flex-1 relative">
             {/* 1. Steps Layer (Dispute) */}
             <Animated.View
                pointerEvents={showAnalysis ? 'none' : 'auto'}
-               className="absolute inset-0 px-5"
+               className="absolute inset-0"
                style={stepsAnimatedStyle}
             >
+               {/* NOTE: DisputeSteps now manages its own layout/keyboard logic via useSmoothKeyboard.
+                  We just pass the data props.
+               */}
                <DisputeSteps
                   entry={entry}
                   idx={idx}
                   currKey={currKey}
                   prompts={suggestionPrompts}
-                  promptTextStyle={promptTextStyle}
-                  promptTextAnimatedStyle={promptTextAnimatedStyle}
                   hasVisited={hasVisited}
                   markVisited={markVisited}
                   form={form}
@@ -602,16 +532,6 @@ export default function DisputeScreen() {
                   onSubmit={submit}
                   onExit={handleClose}
                   disableNext={disableNext}
-                  hasUnsavedChanges={hasUnsavedChanges}
-                  scrollRef={scrollRef}
-                  handleScroll={handleScroll}
-                  scrollToBottom={scrollToBottom}
-                  inputRef={inputRef}
-                  inputBoxAnimatedStyle={inputBoxAnimatedStyle}
-                  promptContainerStyle={{
-                     flexGrow: 1,
-                     justifyContent: 'space-evenly',
-                  }}
                   contentTopPadding={topPadding}
                />
             </Animated.View>

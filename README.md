@@ -39,6 +39,10 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-02-02
+
+- update ABCDE input animation to be less choppy
+
 ### 2026-02-01
 
 - thinking pattern graph sticky header implemented

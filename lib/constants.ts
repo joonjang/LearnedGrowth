@@ -12,6 +12,8 @@ import {
    Zap
 } from 'lucide-react-native';
 
+export const TYPING_SPEED = 35
+
 export const FREE_MONTHLY_CREDITS = 5;
 export const AI_ANALYSIS_CREDIT_COST = 1;
 export const MAX_AI_RETRIES = 4;

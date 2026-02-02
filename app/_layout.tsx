@@ -18,11 +18,20 @@ function EdgeToEdge({ children }: { children: React.ReactNode }) {
    const insets = useSafeAreaInsets();
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
-         {/* Adjust height/intensity here to control the blur depth and strength. */}
-         <TopFade height={insets.top + 12} />
+         {/* Ensure TopFade is absolute so it doesn't push the Stack down layout-wise */}
+         <View
+            style={{
+               position: 'absolute',
+               top: 0,
+               left: 0,
+               right: 0,
+               zIndex: 10,
+            }}
+         >
+            <TopFade height={insets.top + 12} />
+         </View>
          <StatusBar
             translucent
-            // Logic: If Dark Mode -> Light Text. If Light Mode -> Dark Text.
             style={useColorScheme() === 'dark' ? 'light' : 'dark'}
          />
          {children}
@@ -85,7 +94,8 @@ function RootLayoutContent() {
                   <Stack.Screen
                      name="dispute/[id]"
                      options={{
-                        presentation: 'containedModal',
+                        // CHANGED: fullScreenModal removes the top gap on iOS
+                        presentation: 'fullScreenModal',
                         animation: 'slide_from_bottom',
                         headerShown: false,
                      }}
@@ -93,7 +103,8 @@ function RootLayoutContent() {
                   <Stack.Screen
                      name="new"
                      options={{
-                        presentation: 'modal',
+                        // CHANGED: fullScreenModal removes the top gap on iOS
+                        presentation: 'fullScreenModal',
                         animation: 'slide_from_bottom',
                         headerShown: false,
                      }}

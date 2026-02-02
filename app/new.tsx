@@ -1,33 +1,31 @@
 import rawAbcde from '@/assets/data/abcde.json';
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
-import StepperButton from '@/components/buttons/StepperButton';
-import InputBox from '@/components/newEntry/InputBox';
-import PromptDisplay, {
-   PromptDisplayHandle,
-} from '@/components/newEntry/PromptDisplay';
 import StepperHeader from '@/components/newEntry/StepperHeader';
+import SmartInput from '@/components/SmartInput';
+import TypewriterText, { TypewriterHandle } from '@/components/TypewriterText';
 import { useEntries } from '@/hooks/useEntries';
-import { usePromptLayout } from '@/hooks/usePromptLayout';
 import { usePrompts } from '@/hooks/usePrompts';
+import { useSmartScroll } from '@/hooks/useSmartScroll'; // <--- NEW IMPORT
+import { useSmoothKeyboard } from '@/hooks/useSmoothKeyboard';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
-import { ENTRY_CHAR_LIMITS, ROUTE_ENTRY_DETAIL } from '@/lib/constants';
+import { ROUTE_ENTRY_DETAIL } from '@/lib/constants';
 import { NewInputEntryType } from '@/models/newInputEntryType';
 import { router, useRootNavigationState } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    Alert,
    Keyboard,
-   NativeScrollEvent,
-   NativeSyntheticEvent,
    Platform,
    ScrollView,
+   Text,
    TextInput,
+   TouchableOpacity,
+   useWindowDimensions,
    View,
 } from 'react-native';
 import {
    AndroidSoftInputModes,
    KeyboardController,
-   KeyboardEvents,
 } from 'react-native-keyboard-controller';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -44,7 +42,6 @@ const STEP_PLACEHOLDER: Record<NewInputEntryType, string> = {
    consequence: 'Feelings, reactions, and behaviors',
 };
 
-// ... routeTreeHasEntryDetail helper (unchanged) ...
 const routeTreeHasEntryDetail = (state: any, entryId: string | number) => {
    if (!state?.routes?.length) return false;
    for (const route of state.routes as any[]) {
@@ -83,21 +80,19 @@ export default function NewEntryModal() {
    const store = useEntries();
    const insets = useSafeAreaInsets();
    const rootNavigationState = useRootNavigationState();
+   const { height: screenHeight } = useWindowDimensions();
 
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
-   const promptRef = useRef<PromptDisplayHandle | null>(null);
+   const typewriterRef = useRef<TypewriterHandle>(null);
 
-   // 1. Add Scroll Refs
-   const scrollRef = useRef<ScrollView>(null);
-   const stickToBottom = useRef(true); // Default to auto-scrolling
+   // 1. USE THE NEW SCROLL HOOK
+   const { scrollProps, reenableAutoScroll, scrollToBottom } = useSmartScroll();
 
-   const {
-      promptTextStyle,
-      promptTextAnimatedStyle,
-      inputBoxAnimatedStyle,
-      keyboardPaddingStyle,
-   } = usePromptLayout();
+   // 2. USE KEYBOARD ANIMATION HOOK
+   const maxInputHeight = Math.floor(screenHeight * 0.25);
+   const { animatedPromptStyle, animatedInputStyle, animatedWrapperStyle } =
+      useSmoothKeyboard({ closedHeight: maxInputHeight });
 
    const topPadding = insets.top + 12;
 
@@ -138,49 +133,11 @@ export default function NewEntryModal() {
    const [isSubmitting, setIsSubmitting] = useState(false);
    const submittingRef = useRef(false);
 
-   // 2. Scroll Logic Helpers
-   const scrollToBottom = useCallback((animated = true) => {
-      if (stickToBottom.current && scrollRef.current) {
-         scrollRef.current.scrollToEnd({ animated });
-      }
-   }, []);
-
-   const handleScroll = useCallback(
-      (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-         const { layoutMeasurement, contentOffset, contentSize } =
-            e.nativeEvent;
-         const paddingToBottom = 20;
-         // If user is within 20px of the bottom, we "stick" to the bottom
-         const isCloseToBottom =
-            layoutMeasurement.height + contentOffset.y >=
-            contentSize.height - paddingToBottom;
-         stickToBottom.current = isCloseToBottom;
-      },
-      [],
-   );
-
-   // 3. Keyboard Listener: Force scroll when keyboard opens
+   // Reset scroll on step change
    useEffect(() => {
-      const handleShow = () => {
-         stickToBottom.current = true; // Reset stickiness so it definitely scrolls
-         // Small delay ensures layout calculation of the shrink has happened
-         requestAnimationFrame(() => scrollToBottom(true));
-      };
-
-      const didShowSub = KeyboardEvents.addListener(
-         'keyboardDidShow',
-         handleShow,
-      );
-      return () => {
-         didShowSub.remove();
-      };
-   }, [scrollToBottom]);
-
-   // 4. Reset scroll stickiness when step changes
-   useEffect(() => {
-      stickToBottom.current = true;
+      reenableAutoScroll();
       requestAnimationFrame(() => scrollToBottom(false));
-   }, [idx, scrollToBottom]);
+   }, [idx, reenableAutoScroll, scrollToBottom]);
 
    const submit = useCallback(async () => {
       if (submittingRef.current) return;
@@ -229,29 +186,6 @@ export default function NewEntryModal() {
       }
    }, [rootNavigationState, store, trimmedForm]);
 
-   const handleStepChange = useCallback(
-      (direction: 'next' | 'back') => {
-         promptRef.current?.stop({ finish: true });
-         const delta = direction === 'next' ? 1 : -1;
-         const nextIdx = Math.min(
-            Math.max(idx + delta, 0),
-            STEP_ORDER.length - 1,
-         );
-         const nextKey = STEP_ORDER[nextIdx];
-         const nextValue = form[nextKey] ?? '';
-         inputRef.current?.setNativeProps({ text: nextValue });
-         if (Platform.OS === 'android') {
-            requestAnimationFrame(() => {
-               inputRef.current?.setNativeProps({
-                  selection: { start: 0, end: 0 },
-               });
-            });
-         }
-         setIdx(nextIdx);
-      },
-      [form, idx, inputRef, setIdx],
-   );
-
    const handleClose = useCallback(() => {
       if (!hasAnyContent) {
          router.back();
@@ -272,77 +206,162 @@ export default function NewEntryModal() {
       );
    }, [hasAnyContent]);
 
+   const handleStepChange = useCallback(
+      (direction: 'next' | 'back') => {
+         if (direction === 'back' && idx === 0) {
+            handleClose();
+            return;
+         }
+
+         // Re-enable stickiness for the new step
+         reenableAutoScroll();
+
+         const delta = direction === 'next' ? 1 : -1;
+         const nextIdx = Math.min(
+            Math.max(idx + delta, 0),
+            STEP_ORDER.length - 1,
+         );
+
+         const nextKey = STEP_ORDER[nextIdx];
+         const nextValue = form[nextKey] ?? '';
+         inputRef.current?.setNativeProps({ text: nextValue });
+
+         markVisited(currKey);
+         setIdx(nextIdx);
+      },
+      [form, idx, currKey, markVisited, handleClose, reenableAutoScroll],
+   );
+
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
-         <Animated.View style={[{ flex: 1 }, keyboardPaddingStyle]}>
-            <View className="flex-1 px-5">
-               <View className="flex-1 overflow-hidden">
-                  <ScrollView
-                     ref={scrollRef} // Attach Ref
-                     onScroll={handleScroll} // Listen for manual scrolls
-                     scrollEventThrottle={16}
-                     onContentSizeChange={() => scrollToBottom(true)} // Auto-scroll on resize
-                     className="flex-1"
-                     contentContainerStyle={{
-                        flexGrow: 1,
-                        gap: 16,
-                        paddingTop: Platform.OS === 'android' ? topPadding : 16,
-                        paddingBottom: 10,
+         <Animated.View style={[{ flex: 1 }, animatedWrapperStyle]}>
+            <View style={{ flex: 1 }}>
+               {/* SCROLL VIEW (Using Hook Props) */}
+               <ScrollView
+                  {...scrollProps}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{
+                     flexGrow: 1, // Required for centering
+                     paddingTop: topPadding,
+                     paddingHorizontal: 20,
+                  }}
+               >
+                  {/* HEADER */}
+                  <View
+                     style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        marginBottom: 10,
                      }}
-                     keyboardShouldPersistTaps="handled"
-                     showsVerticalScrollIndicator={false}
-                     scrollEnabled={true}
                   >
-                     <View className="flex-row items-center mb-2">
-                        <View className="flex-1 mr-2">
-                           <StepperHeader
-                              step={idx + 1}
-                              total={STEP_ORDER.length}
-                              label={STEP_LABEL[currKey]}
-                           />
-                        </View>
-                        <RoundedCloseButton onPress={handleClose} />
+                     <View style={{ flex: 1, marginRight: 8 }}>
+                        <StepperHeader
+                           step={idx + 1}
+                           total={STEP_ORDER.length}
+                           label={STEP_LABEL[currKey]}
+                        />
                      </View>
+                     <RoundedCloseButton onPress={handleClose} />
+                  </View>
 
-                     <PromptDisplay
-                        key={currKey}
-                        ref={promptRef}
+                  {/* PROMPT (Vertically Centered) */}
+                  <View style={{ flex: 1, justifyContent: 'center' }}>
+                     <TypewriterText
+                        ref={typewriterRef}
                         text={prompts[currKey]}
                         visited={hasVisited(currKey)}
-                        onVisited={() => markVisited(currKey)}
-                        textStyle={promptTextStyle}
-                        textAnimatedStyle={promptTextAnimatedStyle}
-                        scrollEnabled
-                        numberOfLines={6}
-                        containerStyle={{ flexGrow: 1 }}
-                        delay={idx === 0 ? 800 : 0}
+                        onFinished={() => markVisited(currKey)}
+                        style={[
+                           { fontWeight: '700', color: '#0f172a' },
+                           animatedPromptStyle,
+                        ]}
                      />
-                  </ScrollView>
-               </View>
+                  </View>
 
-               <View>
-                  <InputBox
-                     ref={inputRef}
-                     value={form[currKey]}
-                     onChangeText={setField(currKey)}
-                     placeholder={STEP_PLACEHOLDER[currKey]}
-                     maxLength={ENTRY_CHAR_LIMITS[currKey]}
-                     // No dims needed anymore, animatedStyle handles it
-                     animatedStyle={inputBoxAnimatedStyle}
-                     scrollEnabled
-                  />
-                  <StepperButton
-                     idx={idx}
-                     totalSteps={STEP_ORDER.length}
-                     setIdx={setIdx}
-                     onSubmit={submit}
-                     onExit={() => router.back()}
-                     hasUnsavedChanges={hasAnyContent}
-                     disableNext={currentEmpty || isSubmitting}
-                     inputRef={inputRef}
-                     onNext={() => handleStepChange('next')}
-                     onBack={() => handleStepChange('back')}
-                  />
+                  {/* Spacer */}
+                  <View style={{ height: 20 }} />
+               </ScrollView>
+
+               {/* FOOTER */}
+               <View style={{ paddingHorizontal: 20 }}>
+                  <View style={{ marginBottom: 10, marginTop: 10 }}>
+                     <SmartInput
+                        ref={inputRef}
+                        value={form[currKey]}
+                        onChangeText={setField(currKey)}
+                        placeholder={STEP_PLACEHOLDER[currKey]}
+                        // Dynamic height from hook
+                        animatedStyle={animatedInputStyle}
+                        onFocus={() => {
+                           // Use helper to snap to bottom on focus
+                           reenableAutoScroll(true);
+                        }}
+                     />
+                  </View>
+
+                  <View
+                     style={{
+                        flexDirection: 'row',
+                        height: 50,
+                        gap: 12,
+                        alignItems: 'center',
+                     }}
+                  >
+                     <TouchableOpacity
+                        onPress={() => handleStepChange('back')}
+                        style={{
+                           flex: 1,
+                           justifyContent: 'center',
+                           alignItems: 'center',
+                        }}
+                     >
+                        <Text
+                           style={{
+                              fontSize: 16,
+                              fontWeight: '600',
+                              color: idx === 0 ? '#e11d48' : '#64748b',
+                           }}
+                        >
+                           {idx === 0 ? 'Close' : 'Back'}
+                        </Text>
+                     </TouchableOpacity>
+
+                     <View
+                        style={{
+                           width: 1,
+                           height: 24,
+                           backgroundColor: '#e2e8f0',
+                        }}
+                     />
+
+                     <TouchableOpacity
+                        onPress={
+                           idx === STEP_ORDER.length - 1
+                              ? submit
+                              : () => handleStepChange('next')
+                        }
+                        disabled={currentEmpty || isSubmitting}
+                        style={{
+                           flex: 1,
+                           justifyContent: 'center',
+                           alignItems: 'center',
+                           opacity: currentEmpty || isSubmitting ? 0.5 : 1,
+                        }}
+                     >
+                        <Text
+                           style={{
+                              fontSize: 16,
+                              fontWeight: '600',
+                              color:
+                                 idx === STEP_ORDER.length - 1
+                                    ? '#e11d48'
+                                    : '#0f172a',
+                           }}
+                        >
+                           {idx === STEP_ORDER.length - 1 ? 'Finish' : 'Next'}
+                        </Text>
+                     </TouchableOpacity>
+                  </View>
                </View>
             </View>
          </Animated.View>
