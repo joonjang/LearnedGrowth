@@ -11,32 +11,59 @@ import { getWeekLabel, getWeekStart } from '@/lib/date';
 import { getShadow } from '@/lib/shadow';
 import type { Entry } from '@/models/entry';
 import { router, useFocusEffect } from 'expo-router';
-import { Trash2 } from 'lucide-react-native';
+import {
+   ArrowRight,
+   ChevronLeft,
+   ChevronRight,
+   Search,
+   Trash2,
+   X,
+} from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, {
    useCallback,
+   useDeferredValue,
    useEffect,
    useMemo,
    useRef,
    useState,
 } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import {
+   ActivityIndicator,
+   FlatList,
+   Keyboard,
+   Pressable,
+   Text,
+   TextInput,
+   useWindowDimensions,
+   View,
+} from 'react-native';
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
 import Animated, {
+   FadeIn,
+   FadeOut,
    FadeOutUp,
+   interpolate,
    LinearTransition,
    useAnimatedScrollHandler,
+   useAnimatedStyle,
    useDerivedValue,
    useSharedValue,
+   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedFlatList = Animated.createAnimatedComponent(
    FlatList,
 ) as typeof FlatList;
+const AnimatedScrollView = Animated.ScrollView;
 
 // --- CONSTANTS ---
 const SCROLL_THRESHOLD_FOR_FAB = 100;
+const UNANALYZED_CATEGORY_LABEL = 'Not analyzed';
+const SEARCH_BUTTON_SIZE = 44; // Matches w-11
+
+type FilterMenuType = 'category' | 'theme' | null;
 
 export default function EntriesListScreen() {
    const store = useEntries();
@@ -45,7 +72,14 @@ export default function EntriesListScreen() {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const { lock: lockNavigation } = useNavigationLock();
+   const { width: screenWidth } = useWindowDimensions();
 
+   const searchPanelWidth = Math.max(
+      SEARCH_BUTTON_SIZE,
+      Math.min(screenWidth - 32, 380),
+   );
+
+   // Main List Scroll
    const scrollY = useSharedValue(0);
    const scrollHandler = useAnimatedScrollHandler((event) => {
       scrollY.value = event.contentOffset.y;
@@ -55,15 +89,56 @@ export default function EntriesListScreen() {
       return scrollY.value > SCROLL_THRESHOLD_FOR_FAB;
    });
 
+   // Filter Scroll Logic (Chevrons)
+   const filterScrollX = useSharedValue(0);
+   const [filterContentWidth, setFilterContentWidth] = useState(0);
+   const [filterLayoutWidth, setFilterLayoutWidth] = useState(0);
+
+   const filterScrollHandler = useAnimatedScrollHandler((event) => {
+      filterScrollX.value = event.contentOffset.x;
+   });
+
+   const showLeftChevronStyle = useAnimatedStyle(() => {
+      return {
+         opacity: withTiming(filterScrollX.value > 10 ? 1 : 0),
+      };
+   });
+
+   const showRightChevronStyle = useAnimatedStyle(() => {
+      const maxScroll = filterContentWidth - filterLayoutWidth;
+      return {
+         opacity: withTiming(
+            filterScrollX.value < maxScroll - 10 && maxScroll > 0 ? 1 : 0,
+         ),
+      };
+   });
+
    // --- STATE ---
+   const searchOpenProgress = useSharedValue(0);
+   const [isSearchOpen, setIsSearchOpen] = useState(false);
+   const [searchQuery, setSearchQuery] = useState('');
+
+   const deferredQuery = useDeferredValue(searchQuery);
+
+   // Filter state
+   const [activeMenu, setActiveMenu] = useState<FilterMenuType>(null);
+   const [selectedCategory, setSelectedCategory] = useState<string | null>(
+      null,
+   );
+   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+   const deferredCategory = useDeferredValue(selectedCategory);
+   const deferredTheme = useDeferredValue(selectedTheme);
+
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
    const [, setOpenMenuBounds] = useState<MenuBounds | null>(null);
+
    const openSwipeableRef = useRef<{
       id: string;
       ref: SwipeableMethods;
    } | null>(null);
    const swipeGestureRef = useRef(false);
 
+   // Reverted to 'sm' preset (standard shadow)
    const buttonShadow = useMemo(
       () =>
          getShadow({
@@ -87,9 +162,68 @@ export default function EntriesListScreen() {
          refreshDeletedEntries();
       }, [refreshDeletedEntries]),
    );
+
    useEffect(() => {
       refreshDeletedEntries();
    }, [refreshDeletedEntries, store.rows.length]);
+
+   const toggleSearch = useCallback(() => {
+      setIsSearchOpen((prev) => {
+         if (prev) {
+            // Closing
+            setActiveMenu(null);
+            setSelectedCategory(null);
+            setSelectedTheme(null);
+            Keyboard.dismiss();
+            return false;
+         }
+         return true;
+      });
+   }, []);
+
+
+   const resetSearchFilters = useCallback(() => {
+      setSearchQuery('');
+      setSelectedCategory(null);
+      setSelectedTheme(null);
+      setActiveMenu(null);
+      Keyboard.dismiss();
+   }, []);
+
+   const clearSearchInput = useCallback(() => {
+      setSearchQuery('');
+   }, []);
+
+   const toggleMenu = useCallback((menu: FilterMenuType) => {
+      Keyboard.dismiss();
+
+      // Strict Reset Logic
+      setSelectedCategory(null);
+      setSelectedTheme(null);
+
+      setActiveMenu((prev) => {
+         if (prev === menu) return null;
+         return menu;
+      });
+   }, []);
+
+   const handleCategorySelect = useCallback((cat: string) => {
+      Keyboard.dismiss();
+      setSelectedCategory((prev) => (prev === cat ? null : cat));
+      setSelectedTheme(null);
+   }, []);
+
+   const handleThemeSelect = useCallback((theme: string) => {
+      Keyboard.dismiss();
+      setSelectedTheme((prev) => (prev === theme ? null : theme));
+      setSelectedCategory(null);
+   }, []);
+
+   useEffect(() => {
+      searchOpenProgress.value = withTiming(isSearchOpen ? 1 : 0, {
+         duration: 250,
+      });
+   }, [isSearchOpen, searchOpenProgress]);
 
    const closeMenu = useCallback(() => {
       if (openMenuEntryId !== null) {
@@ -121,7 +255,7 @@ export default function EntriesListScreen() {
       }
    }, []);
 
-   const toggleMenu = useCallback((entryId: string) => {
+   const toggleEntryMenu = useCallback((entryId: string) => {
       setOpenMenuEntryId((c) => {
          const n = c === entryId ? null : entryId;
          if (n !== c) setOpenMenuBounds(null);
@@ -139,7 +273,7 @@ export default function EntriesListScreen() {
    );
 
    // --- DATA PREP ---
-   const filteredRows = useMemo(
+   const sortedRows = useMemo(
       () =>
          [...store.rows].sort(
             (a, b) =>
@@ -148,7 +282,92 @@ export default function EntriesListScreen() {
          ),
       [store.rows],
    );
+
+   const categoryOptions = useMemo(() => {
+      const categories = new Set<string>();
+      let hasUnanalyzed = false;
+
+      sortedRows.forEach((entry) => {
+         if (entry.isDeleted) return;
+         const category = entry.aiResponse?.meta?.category?.trim();
+         if (category) {
+            categories.add(category);
+         } else {
+            hasUnanalyzed = true;
+         }
+      });
+
+      const list = Array.from(categories).sort((a, b) =>
+         a.localeCompare(b, undefined, { sensitivity: 'base' }),
+      );
+
+      if (hasUnanalyzed) {
+         list.push(UNANALYZED_CATEGORY_LABEL);
+      }
+
+      return list;
+   }, [sortedRows]);
+
+   const themeOptions = useMemo(() => {
+      const tags = new Set<string>();
+      sortedRows.forEach((entry) => {
+         if (entry.isDeleted) return;
+         entry.aiResponse?.meta?.tags?.forEach((tag) => {
+            if (tag?.trim()) tags.add(tag.trim());
+         });
+      });
+      return Array.from(tags).sort((a, b) =>
+         a.localeCompare(b, undefined, { sensitivity: 'base' }),
+      );
+   }, [sortedRows]);
+
+   const filteredRows = useMemo(() => {
+      const q = deferredQuery.trim().toLowerCase(); // Use deferredQuery here
+      const hasQuery = q.length > 0;
+
+      return sortedRows.filter((entry) => {
+         // 1. Check Category (Fastest check first)
+         if (deferredCategory) {
+            const category = entry.aiResponse?.meta?.category?.trim() ?? null;
+            if (deferredCategory === UNANALYZED_CATEGORY_LABEL) {
+               if (category) return false;
+            } else if (category !== deferredCategory) {
+               return false;
+            }
+         }
+
+         // 2. Check Theme
+         if (deferredTheme) {
+            const tags = entry.aiResponse?.meta?.tags ?? [];
+            if (!tags.includes(deferredTheme)) return false;
+         }
+
+         // 3. Check Text Search (Optimized)
+         if (hasQuery) {
+            // Check fields one by one. If 'adversity' matches, we stop checking the others.
+            // This prevents allocating a large joined string for every row.
+            const matches =
+               (entry.adversity && entry.adversity.toLowerCase().includes(q)) ||
+               (entry.belief && entry.belief.toLowerCase().includes(q)) ||
+               (entry.consequence &&
+                  entry.consequence.toLowerCase().includes(q)) ||
+               (entry.dispute && entry.dispute.toLowerCase().includes(q)) ||
+               (entry.energy && entry.energy.toLowerCase().includes(q));
+
+            if (!matches) return false;
+         }
+
+         return true;
+      });
+   }, [deferredQuery, deferredCategory, deferredTheme, sortedRows]);
+
    const totalEntries = filteredRows.length;
+   const hasActiveFilters =
+      searchQuery !== '' || selectedCategory !== null || selectedTheme !== null;
+   const isUpdatingResults =
+      deferredQuery !== searchQuery ||
+      deferredCategory !== selectedCategory ||
+      deferredTheme !== selectedTheme;
 
    // --- RENDER HELPERS ---
    const renderItem = useCallback(
@@ -197,8 +416,9 @@ export default function EntriesListScreen() {
                   </View>
                   <EntryRow
                      entry={item}
+                     searchQuery={deferredQuery}
                      isMenuOpen={openMenuEntryId === item.id}
-                     onToggleMenu={() => toggleMenu(item.id)}
+                     onToggleMenu={() => toggleEntryMenu(item.id)}
                      onCloseMenu={closeMenu}
                      onMenuLayout={setOpenMenuBounds}
                      onSwipeOpen={onRowSwipeOpen}
@@ -222,31 +442,152 @@ export default function EntriesListScreen() {
       [
          filteredRows,
          totalEntries,
+         deferredQuery,
          openMenuEntryId,
-         toggleMenu,
          closeMenu,
          onRowSwipeOpen,
          onRowSwipeClose,
          closeActiveSwipeable,
+         toggleEntryMenu,
          lockNavigation,
          requestDelete,
       ],
    );
 
-   // --- HEADER: BIG TITLE (Restored) ---
+   // --- NEW: EMPTY STATE COMPONENT ---
+   const renderEmpty = useCallback(() => {
+      // Only show this specific empty state if we have filters active but no results
+      if (hasActiveFilters && filteredRows.length === 0) {
+         return (
+            <Animated.View
+               entering={FadeIn.duration(300)}
+               className="items-center justify-center pt-24 px-8"
+            >
+               <View className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center mb-4">
+                  <Search size={24} color={isDark ? '#64748b' : '#94a3b8'} />
+               </View>
+               <Text className="text-base font-bold text-slate-700 dark:text-slate-200 text-center mb-1">
+                  No matching entries found
+               </Text>
+               <Text className="text-sm text-slate-500 dark:text-slate-400 text-center">
+                  Try adjusting your search terms or filters
+               </Text>
+            </Animated.View>
+         );
+      }
+      return null;
+   }, [hasActiveFilters, filteredRows.length, isDark]);
+
    const ListHeader = useMemo(
       () => (
-         // Added pt-14 to push it down below the floating buttons visually
          <View className="px-6 pt-4 items-center justify-center">
             <Text className="text-2xl font-black text-slate-900 dark:text-white mb-1 text-center">
                Entry History
             </Text>
-            <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center">
-               {totalEntries} Entries • All Time
-            </Text>
+            <View className="flex-row items-center gap-2">
+               <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center">
+                  {totalEntries} Entries •{' '}
+                  {hasActiveFilters ? 'Filtered' : 'All Time'}
+               </Text>
+               {!isSearchOpen && isUpdatingResults && (
+                  <ActivityIndicator
+                     size="small"
+                     color={isDark ? '#94a3b8' : '#64748b'}
+                  />
+               )}
+            </View>
+            {deletedCount > 0 && (
+               <Pressable
+                  onPress={handleBinPress}
+                  className="mt-3 flex-row items-center gap-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-4 py-2 active:opacity-80"
+               >
+                  <Trash2
+                     size={14}
+                     color={isDark ? '#f87171' : '#ef4444'}
+                     strokeWidth={2.5}
+                  />
+                  <Text
+                     numberOfLines={1}
+                     className="text-xs font-semibold text-slate-700 dark:text-slate-200"
+                  >
+                     View deleted {deletedCount === 1 ? 'entry' : 'entries'}
+                  </Text>
+                  <ArrowRight
+                     size={12}
+                     color={isDark ? '#94a3b8' : '#64748b'}
+                     strokeWidth={2.5}
+                  />
+               </Pressable>
+            )}
          </View>
       ),
-      [totalEntries],
+      [
+         deletedCount,
+         handleBinPress,
+         hasActiveFilters,
+         isDark,
+         isSearchOpen,
+         isUpdatingResults,
+         totalEntries,
+      ],
+   );
+
+   // --- SEARCH ANIMATION STYLES ---
+   const searchContainerStyle = useAnimatedStyle(() => {
+      const width = interpolate(
+         searchOpenProgress.value,
+         [0, 1],
+         [SEARCH_BUTTON_SIZE, searchPanelWidth],
+      );
+
+      const borderRadius = interpolate(
+         searchOpenProgress.value,
+         [0, 1],
+         [SEARCH_BUTTON_SIZE / 2, 24],
+      );
+
+      return {
+         width,
+         borderRadius,
+      };
+   }, [searchPanelWidth]);
+
+   const searchIconStyle = useAnimatedStyle(() => {
+      const scale = interpolate(searchOpenProgress.value, [0, 1], [1, 0.9]);
+      const rotate = interpolate(searchOpenProgress.value, [0, 1], [0, 90]);
+      return {
+         transform: [{ scale }, { rotate: `${rotate}deg` }],
+      };
+   });
+
+   // Chip Styles
+   const chipBase =
+      'px-3 py-1.5 rounded-full border mr-2 flex-row items-center justify-center';
+   const chipInactive =
+      'bg-slate-100 border-slate-200 dark:bg-slate-700/50 dark:border-slate-600';
+   const chipActive =
+      'bg-slate-900 border-slate-900 dark:bg-indigo-500 dark:border-indigo-500';
+   const chipTextInactive =
+      'text-slate-600 dark:text-slate-300 text-xs font-semibold';
+   const chipTextActive = 'text-white text-xs font-bold';
+
+   const FilterChip = ({
+      label,
+      isActive,
+      onPress,
+   }: {
+      label: string;
+      isActive: boolean;
+      onPress: () => void;
+   }) => (
+      <Pressable
+         onPress={onPress}
+         className={`${chipBase} ${isActive ? chipActive : chipInactive}`}
+      >
+         <Text className={isActive ? chipTextActive : chipTextInactive}>
+            {label}
+         </Text>
+      </Pressable>
    );
 
    return (
@@ -257,7 +598,7 @@ export default function EntriesListScreen() {
             return false;
          }}
       >
-         {/* --- 1. FLOATING NAVIGATION (Absolute) --- */}
+         {/* --- 1. FLOATING NAVIGATION --- */}
 
          {/* Left Button */}
          <View
@@ -266,7 +607,7 @@ export default function EntriesListScreen() {
          >
             <View
                style={[buttonShadow.ios, buttonShadow.android]}
-               className="w-11 h-11 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700"
+               className="w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700"
             >
                <View className="items-center justify-center pl-1">
                   <LeftBackChevron isDark={isDark} />
@@ -274,22 +615,283 @@ export default function EntriesListScreen() {
             </View>
          </View>
 
-         {/* Right Button (Trash) */}
-         {deletedCount > 0 && (
-            <View
-               className="absolute right-6 z-50"
-               style={{ top: insets.top + 10 }}
+         {/* Right Button (Search & Filter) */}
+         <View
+            className="absolute right-6 z-50 items-end"
+            style={{ top: insets.top + 10 }}
+         >
+            <Animated.View
+               style={[
+                  buttonShadow.ios,
+                  buttonShadow.android,
+                  searchContainerStyle,
+               ]}
+               className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 items-end"
             >
-               <Pressable
-                  style={[buttonShadow.ios, buttonShadow.android]}
-                  hitSlop={16}
-                  onPress={handleBinPress}
-                  className="w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 active:opacity-80"
-               >
-                  <Trash2 size={20} color="#ef4444" strokeWidth={2.5} />
-               </Pressable>
-            </View>
-         )}
+               <View className="w-full">
+                  {/* Top Row: Input + Filter Toggles + Search/Close */}
+                  <View
+                     className="flex-row items-center w-full"
+                     style={{ height: SEARCH_BUTTON_SIZE }}
+                  >
+                     {isSearchOpen ? (
+                        <Animated.View
+                           entering={FadeIn.duration(200)}
+                           className="flex-1 flex-row items-center pl-3"
+                        >
+                           {/* Text Input Container */}
+                           <View className="flex-1 flex-row items-center relative mr-2">
+                              <TextInput
+                                 value={searchQuery}
+                                 onChangeText={setSearchQuery}
+                                 placeholder="Search..."
+                                 placeholderTextColor={
+                                    isDark ? '#64748b' : '#94a3b8'
+                                 }
+                                 className="flex-1 h-full text-base font-medium text-slate-900 dark:text-slate-100 pr-12"
+                                 autoFocus={false}
+                                 returnKeyType="search"
+                                 onSubmitEditing={Keyboard.dismiss}
+                              />
+                              <View className="absolute right-0 flex-row items-center gap-2">
+                                 {isUpdatingResults && (
+                                    <ActivityIndicator
+                                       size="small"
+                                       color={isDark ? '#94a3b8' : '#64748b'}
+                                    />
+                                 )}
+                                 {searchQuery.length > 0 && (
+                                    <Pressable
+                                       onPress={clearSearchInput}
+                                       hitSlop={10}
+                                       className="p-1"
+                                    >
+                                       <View className="bg-slate-200 dark:bg-slate-600 rounded-full p-0.5">
+                                          <X
+                                             size={12}
+                                             color={
+                                                isDark ? '#e2e8f0' : '#475569'
+                                             }
+                                             strokeWidth={3}
+                                          />
+                                       </View>
+                                    </Pressable>
+                                 )}
+                              </View>
+                           </View>
+
+                           {/* Divider */}
+                           <View className="w-[1px] h-5 bg-slate-200 dark:bg-slate-700 mx-2" />
+
+                           {/* Text Buttons Container */}
+                           <View className="flex-row items-center gap-1 mr-1">
+                              {/* Category Button */}
+                              <Pressable
+                                 onPress={() => toggleMenu('category')}
+                                 className={`px-2 py-1.5 rounded-md ${
+                                    activeMenu === 'category' ||
+                                    selectedCategory !== null
+                                       ? 'bg-slate-100 dark:bg-slate-700'
+                                       : 'bg-transparent'
+                                 }`}
+                              >
+                                 <Text
+                                    className={`text-[10px] font-bold uppercase tracking-wide ${
+                                       activeMenu === 'category' ||
+                                       selectedCategory !== null
+                                          ? 'text-indigo-600 dark:text-indigo-400'
+                                          : 'text-slate-500 dark:text-slate-400'
+                                    }`}
+                                 >
+                                    Category
+                                 </Text>
+                              </Pressable>
+
+                              {/* Theme Button */}
+                              <Pressable
+                                 onPress={() => toggleMenu('theme')}
+                                 className={`px-2 py-1.5 rounded-md ${
+                                    activeMenu === 'theme' ||
+                                    selectedTheme !== null
+                                       ? 'bg-slate-100 dark:bg-slate-700'
+                                       : 'bg-transparent'
+                                 }`}
+                              >
+                                 <Text
+                                    className={`text-[10px] font-bold uppercase tracking-wide ${
+                                       activeMenu === 'theme' ||
+                                       selectedTheme !== null
+                                          ? 'text-indigo-600 dark:text-indigo-400'
+                                          : 'text-slate-500 dark:text-slate-400'
+                                    }`}
+                                 >
+                                    Theme
+                                 </Text>
+                              </Pressable>
+                           </View>
+                        </Animated.View>
+                     ) : (
+                        <View className="flex-1" />
+                     )}
+
+                     {/* Search/Close Toggle - ALIGNED CENTER */}
+                     <Pressable
+                        hitSlop={12}
+                        onPress={() => {
+                           if (isSearchOpen) {
+                              resetSearchFilters();
+                           }
+                           toggleSearch();
+                        }}
+                        style={{
+                           height: SEARCH_BUTTON_SIZE,
+                           width: SEARCH_BUTTON_SIZE,
+                        }}
+                        className="items-center justify-center active:opacity-60"
+                     >
+                        <Animated.View style={searchIconStyle}>
+                           {isSearchOpen ? (
+                              <X
+                                 size={24}
+                                 color={isDark ? '#e2e8f0' : '#0f172a'}
+                                 strokeWidth={2.5}
+                              />
+                           ) : (
+                              <Search
+                                 size={24}
+                                 color={isDark ? '#e2e8f0' : '#0f172a'}
+                                 strokeWidth={2.5}
+                              />
+                           )}
+                        </Animated.View>
+                     </Pressable>
+                  </View>
+
+                  {/* Bottom Row: Options Area */}
+                  {isSearchOpen && activeMenu !== null && (
+                     <Animated.View
+                        entering={FadeIn.duration(200)}
+                        exiting={FadeOut.duration(150)}
+                        className="w-full pb-3 pl-4 pr-4"
+                     >
+                        <View className="h-[1px] bg-slate-100 dark:bg-slate-700 mb-2.5 w-full" />
+
+                        {/* Title for Context */}
+                        <Text className="text-[10px] uppercase font-bold text-slate-400 mb-2 tracking-wider">
+                           {activeMenu === 'category'
+                              ? 'Select Category'
+                              : 'Select Theme'}
+                        </Text>
+
+                        {/* Scrolling Container */}
+                        <View className="relative">
+                           <Animated.View
+                              style={[
+                                 showLeftChevronStyle,
+                                 {
+                                    position: 'absolute',
+                                    left: -6,
+                                    top: 0,
+                                    bottom: 0,
+                                    zIndex: 10,
+                                    justifyContent: 'center',
+                                 },
+                              ]}
+                              pointerEvents="none"
+                           >
+                              <View className="bg-white/80 dark:bg-slate-800/80 rounded-full p-1 shadow-sm">
+                                 <ChevronLeft
+                                    size={14}
+                                    color={isDark ? '#94a3b8' : '#64748b'}
+                                 />
+                              </View>
+                           </Animated.View>
+
+                           <Animated.View
+                              style={[
+                                 showRightChevronStyle,
+                                 {
+                                    position: 'absolute',
+                                    right: -8,
+                                    top: 0,
+                                    bottom: 0,
+                                    zIndex: 10,
+                                    justifyContent: 'center',
+                                 },
+                              ]}
+                              pointerEvents="none"
+                           >
+                              <View className="bg-white/80 dark:bg-slate-800/80 rounded-full p-1 shadow-sm">
+                                 <ChevronRight
+                                    size={14}
+                                    color={isDark ? '#94a3b8' : '#64748b'}
+                                 />
+                              </View>
+                           </Animated.View>
+
+                           <AnimatedScrollView
+                              horizontal
+                              showsHorizontalScrollIndicator={false}
+                              keyboardShouldPersistTaps="always"
+                              onScroll={filterScrollHandler}
+                              scrollEventThrottle={16}
+                              onContentSizeChange={(w) =>
+                                 setFilterContentWidth(w)
+                              }
+                              onLayout={(e) =>
+                                 setFilterLayoutWidth(
+                                    e.nativeEvent.layout.width,
+                                 )
+                              }
+                              className="flex-row"
+                           >
+                              {activeMenu === 'category' && (
+                                 <>
+                                    {categoryOptions.length === 0 && (
+                                       <Text className="text-xs text-slate-400 italic">
+                                          No categories found
+                                       </Text>
+                                    )}
+                                    {categoryOptions.map((cat) => (
+                                       <FilterChip
+                                          key={cat}
+                                          label={cat}
+                                          isActive={selectedCategory === cat}
+                                          onPress={() =>
+                                             handleCategorySelect(cat)
+                                          }
+                                       />
+                                    ))}
+                                 </>
+                              )}
+
+                              {activeMenu === 'theme' && (
+                                 <>
+                                    {themeOptions.length === 0 && (
+                                       <Text className="text-xs text-slate-400 italic">
+                                          No themes found
+                                       </Text>
+                                    )}
+                                    {themeOptions.map((theme) => (
+                                       <FilterChip
+                                          key={theme}
+                                          label={theme}
+                                          isActive={selectedTheme === theme}
+                                          onPress={() =>
+                                             handleThemeSelect(theme)
+                                          }
+                                       />
+                                    ))}
+                                 </>
+                              )}
+                              <View className="w-4" />
+                           </AnimatedScrollView>
+                        </View>
+                     </Animated.View>
+                  )}
+               </View>
+            </Animated.View>
+         </View>
 
          {/* --- 2. MAIN LIST --- */}
          <AnimatedFlatList
@@ -297,15 +899,21 @@ export default function EntriesListScreen() {
             keyExtractor={(item: any) => item.id}
             renderItem={renderItem}
             ListHeaderComponent={ListHeader}
+            ListEmptyComponent={renderEmpty}
             className="flex-1"
             showsVerticalScrollIndicator={false}
             onScroll={scrollHandler}
             scrollEventThrottle={16}
-            removeClippedSubviews={false}
+            // Performance Props
+            removeClippedSubviews={false} // Keep false if you have complex swipe interactions
+            initialNumToRender={10} // Only render what fits on screen initially
+            maxToRenderPerBatch={10} // Batches updates
+            windowSize={5} // Reduces memory usage (default is 21)
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
-               // Padding top allows the floating buttons to sit above content initially
                paddingTop: insets.top,
-               paddingBottom: insets.bottom,
+               paddingBottom: insets.bottom + 80,
             }}
             onScrollBeginDrag={() => {
                closeMenu();

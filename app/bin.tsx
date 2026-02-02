@@ -242,7 +242,7 @@ export default function DeleteBinScreen() {
                onPress={() => router.back()}
                hitSlop={16}
                style={[buttonShadow.ios, buttonShadow.android]}
-               className="w-11 h-11 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700"
+               className="w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700"
             >
                <View className="items-center justify-center pl-1">
                   <LeftBackChevron isDark={isDark} />
@@ -253,7 +253,7 @@ export default function DeleteBinScreen() {
          {/* Right Button (Delete All - Text Pill) */}
          {deletedCount > 0 && (
             <View
-               className="absolute right-4 z-50 h-11 justify-center"
+               className="absolute right-4 z-50 h-12 justify-center"
                style={{ top: insets.top + 10 }}
             >
                <Pressable

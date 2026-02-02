@@ -6,7 +6,6 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Layers } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import HelperFooter from '../HelperFooter';
 import { ThinkingPatternViewModel } from '../types';
 import GradientSpectrumBar from './GradientSpectrumBar';
 import ThinkingPatternSheet, { PatternTab } from './ThinkingPatternSheet';
@@ -130,7 +129,12 @@ export default function ThinkingPatternCard({
                   })}
                </View>
 
-               <HelperFooter isDark={isDark} />
+               {/* HINT TEXT */}
+               <View className="mt-2 mb-1">
+                  <Text className="text-[10px] text-center font-medium text-slate-400 dark:text-slate-500">
+                     Tap a pattern above to view details
+                  </Text>
+               </View>
             </View>
          </Pressable>
 

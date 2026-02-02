@@ -1,6 +1,7 @@
 import { Entry } from '@/models/entry';
+import { RefObject } from '@testing-library/react-native/build/types';
 import { Pencil, Trash2 } from 'lucide-react-native';
-import { memo, useRef, type MutableRefObject } from 'react';
+import { memo, useRef } from 'react';
 import {
    Pressable,
    Text,
@@ -25,7 +26,8 @@ type EntryRowProps = {
    onSwipeOpen?: (id: string, ref: SwipeableMethods) => void;
    onSwipeClose?: (id: string) => void;
    closeActiveSwipeable?: () => string | null;
-   swipeGestureRef?: MutableRefObject<boolean>;
+   swipeGestureRef?: RefObject<boolean>;
+   searchQuery?: string; // <--- 1. Added Prop Type
 };
 
 function EntryRow({
@@ -41,6 +43,7 @@ function EntryRow({
    onSwipeClose,
    closeActiveSwipeable,
    swipeGestureRef,
+   searchQuery, // <--- 2. Destructured Prop
 }: EntryRowProps) {
    const swipeableRef = useRef<SwipeableMethods | null>(null);
 
@@ -89,7 +92,7 @@ function EntryRow({
                      <Pressable
                         className="w-14 h-14 rounded-full items-center justify-center bg-amber-500 active:bg-amber-600 dark:bg-amber-600 dark:active:bg-amber-700"
                         onPress={handleEdit}
-                        testID="entry-swipe-edit-btn" // <--- ADDED TEST ID
+                        testID="entry-swipe-edit-btn"
                      >
                         <Pencil size={24} color="#ffffff" />
                      </Pressable>
@@ -103,7 +106,7 @@ function EntryRow({
                      <Pressable
                         className="w-14 h-14 rounded-full items-center justify-center bg-rose-600 active:bg-rose-700 dark:bg-rose-700 dark:active:bg-rose-800"
                         onPress={handleDelete}
-                        testID="entry-swipe-delete-btn" // <--- ADDED TEST ID
+                        testID="entry-swipe-delete-btn"
                      >
                         <Trash2 size={24} color="#ffffff" />
                      </Pressable>
@@ -124,6 +127,7 @@ function EntryRow({
                   onDelete={onDelete}
                   closeActiveSwipeable={closeActiveSwipeable}
                   swipeGestureRef={swipeGestureRef}
+                  searchQuery={searchQuery} // <--- 3. Passed Prop to Card
                />
             </View>
          </Swipeable>
@@ -134,6 +138,9 @@ function EntryRow({
 const arePropsEqual = (prev: EntryRowProps, next: EntryRowProps) => {
    const prevEntry = prev.entry;
    const nextEntry = next.entry;
+
+   // <--- 4. Important: Check if search query changed to trigger re-render
+   if (prev.searchQuery !== next.searchQuery) return false;
 
    if (prev.isMenuOpen !== next.isMenuOpen) return false;
    if (prevEntry.id !== nextEntry.id) return false;

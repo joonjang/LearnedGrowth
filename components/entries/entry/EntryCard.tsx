@@ -21,6 +21,7 @@ import { FieldTone, getFieldStyles } from '@/lib/theme';
 import { Entry } from '@/models/entry';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
+import { RefObject } from '@testing-library/react-native/build/types';
 import { router } from 'expo-router';
 import {
    ArrowDown,
@@ -39,8 +40,7 @@ import {
    useEffect,
    useMemo,
    useRef,
-   useState,
-   type MutableRefObject,
+   useState
 } from 'react';
 import {
    Pressable,
@@ -78,7 +78,8 @@ type Prop = {
    onMenuLayout?: (bounds: MenuBounds) => void;
    closeActiveSwipeable?: () => string | null;
    initialViewMode?: 'reframed' | 'original';
-   swipeGestureRef?: MutableRefObject<boolean>;
+   swipeGestureRef?: RefObject<boolean>;
+   searchQuery?: string; // <--- 1. Added prop
 };
 
 // --- Truncation Constants ---
@@ -217,6 +218,7 @@ export default function EntryCard({
    closeActiveSwipeable,
    initialViewMode = 'reframed',
    swipeGestureRef,
+   searchQuery, // <--- 2. Destructure new prop
 }: Prop) {
    // --- Auth & Subscription ---
    const { status } = useAuth();
@@ -235,6 +237,36 @@ export default function EntryCard({
    const [viewMode, setViewMode] = useState<'reframed' | 'original'>(
       initialViewMode,
    );
+
+   // <--- 3. ADDED LOGIC FOR SEARCH VIEW SWITCHING --->
+   useEffect(() => {
+      if (!searchQuery || !isReframed) return;
+
+      const q = searchQuery.toLowerCase().trim();
+      if (!q) return;
+
+      // Check where the text exists
+      const inOriginalUnique =
+         entry.belief?.toLowerCase().includes(q) ||
+         false ||
+         entry.consequence?.toLowerCase().includes(q) ||
+         false;
+
+      const inReframedUnique =
+         entry.dispute?.toLowerCase().includes(q) ||
+         false ||
+         entry.energy?.toLowerCase().includes(q) ||
+         false;
+
+      // Only switch to 'original' if it's in original fields
+      // AND NOT in reframed fields (or we prioritize the 'original' match context)
+      // Note: We ignore 'adversity' because that is shown in both views.
+      if (inOriginalUnique && !inReframedUnique) {
+         setViewMode('original');
+      } else if (inReframedUnique && !inOriginalUnique) {
+         setViewMode('reframed');
+      }
+   }, [searchQuery, entry, isReframed]);
 
    // --- AI Visuals Setup ---
    const category = entry.aiResponse?.meta?.category || 'Uncategorized';
@@ -294,8 +326,11 @@ export default function EntryCard({
             {} as TruncationState,
          ),
       );
-      setViewMode(initialViewMode);
-   }, [entry.id, initialViewMode]);
+      // Reset to initial only if no active search is overriding it
+      if (!searchQuery) {
+         setViewMode(initialViewMode);
+      }
+   }, [entry.id, initialViewMode, searchQuery]);
 
    // --- Animations ---
    const menuOpacity = useSharedValue(0);
