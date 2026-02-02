@@ -9,6 +9,7 @@ import {
    View,
    ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // REMOVED: import { makeThemedStyles, useTheme } from '@/theme/theme';
 
 type Props = {
@@ -41,6 +42,7 @@ export default function StepperButton({
    onBack,
 }: Props) {
    const isKeyboardVisible = useKeyboardVisible();
+   const insets = useSafeAreaInsets();
    // Logic
    const isLast = useMemo(() => idx === totalSteps - 1, [idx, totalSteps]);
    const canGoBack = useMemo(() => idx > 0, [idx]);
@@ -98,10 +100,12 @@ export default function StepperButton({
       }
    }, [inputRef, isLast, onNext, onSubmit, setIdx, totalSteps]);
 
+   const bottomPadding = isKeyboardVisible ? 0 : insets.bottom;
+
    return (
       <View
-         className={`${isKeyboardVisible ? 'pb-0' : 'pb-6'} flex-row min-h-[48px] items-center px-4 gap-3`}
-         style={style}
+         className="flex-row min-h-[48px] items-center px-4 gap-3"
+         style={[{ paddingBottom: bottomPadding }, style]}
       >
          {/* Left Action (Back/Close) */}
          <View className="flex-1">
