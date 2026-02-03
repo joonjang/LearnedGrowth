@@ -37,6 +37,11 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-02-03
+
+- fixed entry detail screen navigation double stacking
+- enabled data to be fetched even upon connection failure
+
 ### 2026-02-02
 
 - update ABCDE input animation to be less choppy

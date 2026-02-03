@@ -450,7 +450,8 @@ export default function EntryDetailScreen() {
                <View className="flex-1 items-end justify-center">
                   <Pressable
                      onPress={startEditing}
-                     className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-700"
+                     className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-500/50 border border-slate-200 dark:border-slate-700"
+                     hitSlop={10}
                   >
                      <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">
                         Edit
@@ -685,7 +686,8 @@ export default function EntryDetailScreen() {
                   <Pressable
                      onPress={hasChanges ? handleSave : undefined}
                      disabled={!hasChanges}
-                     className={`px-3 py-1.5 rounded-full bg-slate-700 dark:bg-slate-500 ${hasChanges ? '' : 'opacity-50'}`}
+                     className={`px-3 py-1.5 rounded-full bg-slate-700 dark:bg-slate-500/50 ${hasChanges ? '' : 'opacity-50'}`}
+                     hitSlop={10}
                   >
                      <Text className="text-sm font-bold text-white">Save</Text>
                   </Pressable>

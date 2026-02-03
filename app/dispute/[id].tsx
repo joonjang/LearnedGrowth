@@ -16,6 +16,7 @@ import type { AbcdeJson } from '@/models/abcdeJson';
 import type { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
+import { useEntriesSync } from '@/providers/EntriesStoreProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -88,6 +89,7 @@ export default function DisputeScreen() {
    const { hapticsEnabled, hapticsAvailable, triggerHaptic } = usePreferences();
 
    const { getEntryById, updateEntry } = useEntries();
+   const syncEntries = useEntriesSync();
    const entry = entryId ? getEntryById(entryId) : undefined;
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
    const insets = useSafeAreaInsets();
@@ -115,6 +117,7 @@ export default function DisputeScreen() {
 
    const [analysisTriggered, setAnalysisTriggered] = useState(false);
    const [isRegenerating, setIsRegenerating] = useState(shouldRegenerate);
+   const [aiAttemptId, setAiAttemptId] = useState(0);
 
    const initialViewMode: 'steps' | 'analysis' =
       viewQuery === 'analysis' ? 'analysis' : 'steps';
@@ -153,6 +156,7 @@ export default function DisputeScreen() {
       if (!entry || !ready) return;
       if (!shouldRegenerate || analysisTriggered || lastResult) return;
 
+      setAiAttemptId((prev) => prev + 1);
       setAnalysisTriggered(true);
       setIsRegenerating(true);
 
@@ -373,6 +377,7 @@ export default function DisputeScreen() {
 
    const handleRefreshAnalysis = useCallback(async () => {
       if (!entry) return;
+      setAiAttemptId((prev) => prev + 1);
       setIsRegenerating(true);
       try {
          const result = await analyze({
@@ -411,6 +416,42 @@ export default function DisputeScreen() {
       }
    }, [analysisTriggered, hasAutoOpenedAnalysis, lastResult]);
 
+   const showAnalysis = viewMode === 'analysis';
+   const aiDataReady = Boolean(lastResult?.data || entry?.aiResponse);
+   const aiDataReadyRef = useRef(aiDataReady);
+   useEffect(() => {
+      aiDataReadyRef.current = aiDataReady;
+   }, [aiDataReady]);
+
+   useEffect(() => {
+      if (!showAnalysis) return;
+      if (!aiAttemptId) return;
+      if (aiDataReady) return;
+
+      let cancelled = false;
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      const delays = [2000, 4000, 8000, 12000, 16000];
+      let index = 0;
+
+      const tick = async () => {
+         if (cancelled) return;
+         await syncEntries();
+         if (cancelled) return;
+         if (aiDataReadyRef.current) return;
+         if (index >= delays.length) return;
+         timeoutId = setTimeout(tick, delays[index]);
+         index += 1;
+      };
+
+      timeoutId = setTimeout(tick, delays[index]);
+      index += 1;
+
+      return () => {
+         cancelled = true;
+         if (timeoutId) clearTimeout(timeoutId);
+      };
+   }, [aiAttemptId, aiDataReady, showAnalysis, syncEntries]);
+
    const stepsAnimatedStyle = useAnimatedStyle(() => ({
       opacity: stepsProgress.value,
       transform: [{ translateY: (1 - stepsProgress.value) * 12 }],
@@ -426,8 +467,6 @@ export default function DisputeScreen() {
       stepsProgress.value = withTiming(toSteps ? 1 : 0, { duration: 220 });
       analysisProgress.value = withTiming(toSteps ? 0 : 1, { duration: 220 });
    }, [analysisProgress, stepsProgress, viewMode]);
-
-   const showAnalysis = viewMode === 'analysis';
    const handleGoToSteps = useCallback(() => {
       if (entry && (entry.dispute ?? '').trim().length > 0) {
          resetForm();

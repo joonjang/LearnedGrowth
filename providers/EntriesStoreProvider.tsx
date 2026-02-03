@@ -5,15 +5,18 @@ import { createEntriesStore, EntriesStore, placeholderEntriesStore } from '@/sto
 import {
    createContext,
    ReactNode,
+   useCallback,
    useContext,
    useEffect,
    useMemo,
    useRef,
 } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { useEntriesAdapter } from './AdapterProvider';
 import { useAuth } from './AuthProvider';
 
 const EntriesStoreContext = createContext<EntriesStore | null>(null);
+const EntriesSyncContext = createContext<(() => Promise<void>) | null>(null);
 
 export function EntriesStoreProvider({ children }: { children: ReactNode }) {
    const { adapter, ready } = useEntriesAdapter();
@@ -22,6 +25,8 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
    const pendingLoginCleanupId = useRef<string | null>(null);
    const pendingLogoutCleanupId = useRef<string | null>(null);
    const lastLinkedAccountId = useRef<string | null>(null);
+   const syncInFlightRef = useRef(false);
+   const lastSyncAtRef = useRef(0);
 
    const cloud = useMemo(() => {
       if (!user?.id) return null;
@@ -104,13 +109,19 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
    }, [adapter, ready, store, user?.id]);
 
    // --- SYNC LOGIC ---
-   useEffect(() => {
-      if (!cloud || !adapter || !ready) return;
-      if (store === placeholderEntriesStore) return;
+   const syncWithCloud = useCallback(
+      async (_reason: 'mount' | 'app-active') => {
+         if (!cloud || !adapter || !ready) return;
+         if (store === placeholderEntriesStore) return;
+         if (!user?.id) return;
+         if (syncInFlightRef.current) return;
 
-      (async () => {
+         const now = Date.now();
+         if (now - lastSyncAtRef.current < 1500) return;
+         lastSyncAtRef.current = now;
+         syncInFlightRef.current = true;
+
          try {
-            
             // Pull remote changes
             const remote = await cloud.fetchAll();
             for (const entry of remote) {
@@ -136,11 +147,30 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
             await store.getState().hydrate();
          } catch (e) {
             console.warn('Failed to sync entries from Supabase', e);
+         } finally {
+            syncInFlightRef.current = false;
          }
-      })();
-      
-      // 4. DEPENDENCIES: Re-run this effect when 'isUnlocked' changes.
-   }, [adapter, cloud, ready, store, user?.id]);
+      },
+      [adapter, cloud, ready, store, user?.id],
+   );
+
+   useEffect(() => {
+      void syncWithCloud('mount');
+   }, [syncWithCloud]);
+
+   useEffect(() => {
+      if (!cloud || !adapter || !ready) return;
+      if (store === placeholderEntriesStore) return;
+
+      const handleAppState = (state: AppStateStatus) => {
+         if (state === 'active') {
+            void syncWithCloud('app-active');
+         }
+      };
+
+      const subscription = AppState.addEventListener('change', handleAppState);
+      return () => subscription.remove();
+   }, [adapter, cloud, ready, store, syncWithCloud]);
 
    // Account Linking Logic (assigning local entries to the logged-in user)
    useEffect(() => {
@@ -176,10 +206,14 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
       }
    }, [user]);
 
+   const syncNow = useCallback(() => syncWithCloud('app-active'), [syncWithCloud]);
+
    return (
-      <EntriesStoreContext.Provider value={store}>
-         {children}
-      </EntriesStoreContext.Provider>
+      <EntriesSyncContext.Provider value={syncNow}>
+         <EntriesStoreContext.Provider value={store}>
+            {children}
+         </EntriesStoreContext.Provider>
+      </EntriesSyncContext.Provider>
    );
 }
 
@@ -188,6 +222,15 @@ export function useEntriesStore() {
    if (!ctx)
       throw new Error(
          'useEntriesStore must be used within EntriesStoreProvider'
+      );
+   return ctx;
+}
+
+export function useEntriesSync() {
+   const ctx = useContext(EntriesSyncContext);
+   if (!ctx)
+      throw new Error(
+         'useEntriesSync must be used within EntriesStoreProvider'
       );
    return ctx;
 }
