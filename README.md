@@ -43,6 +43,8 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - added search function
 - type writer text size changed back to large
 - removed stack animation for android
+- fixed keyboard display jump bug on ios
+   -
 
 ### 2026-02-01
 
