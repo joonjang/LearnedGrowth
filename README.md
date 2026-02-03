@@ -47,6 +47,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
    - used keyboard context which provided a global shared value
    - replaced the per screen keyboard uppdate causing race condition issues
 - restored placeholder text for dispute
+- entry detail screen commits a flash bang when entry is deleted
 
 ### 2026-02-01
 

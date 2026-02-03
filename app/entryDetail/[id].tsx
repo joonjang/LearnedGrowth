@@ -17,9 +17,9 @@ import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
 import {
    AI_ICON_COLORS,
-   ANALYZE_WITH_AI_LABEL,
    AI_SURFACE_CLASS,
    AI_TEXT_ACCENT_CLASS,
+   ANALYZE_WITH_AI_LABEL,
    CATEGORY_COLOR_MAP,
    DEFAULT_CATEGORY_COLOR,
    ICON_COLOR_DARK,
@@ -398,8 +398,12 @@ export default function EntryDetailScreen() {
       return () => clearTimeout(timer);
    }, [justSaved]);
 
+   // blank screen if entry is deleted
+
    if (!entry) {
-      return <View />;
+      return (
+         <View className="bg-white dark:bg-slate-900 flex-1 items-center justify-center" />
+      );
    }
 
    const statusMessage = justSaved
