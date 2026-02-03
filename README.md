@@ -44,7 +44,9 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - type writer text size changed back to large
 - removed stack animation for android
 - fixed keyboard display jump bug on ios
-   -
+   - used keyboard context which provided a global shared value
+   - replaced the per screen keyboard uppdate causing race condition issues
+- restored placeholder text for dispute
 
 ### 2026-02-01
 

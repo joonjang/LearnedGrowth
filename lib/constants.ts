@@ -38,6 +38,13 @@ export const DISPUTE_STEP_CHAR_LIMITS = {
    energy: ENTRY_CHAR_LIMITS.energy,
 } as const;
 
+export const DISPUTE_STEP_PLACEHOLDERS = {
+   evidence: 'Separate facts from assumptions',
+   alternatives: 'Describe another way to see it',
+   usefulness: 'Impact on goals and actions',
+   energy: 'Note any shift in mood or energy',
+} as const;
+
 export const ENTRY_CHAR_WARN_MIN_REMAINING = 20;
 export const ENTRY_CHAR_WARN_RATIO = 0.1;
 
@@ -134,5 +141,4 @@ export const STYLE_TO_TONE_MAP: Record<string, string> = {
 };
 
 export const DEFAULT_CATEGORY_ICON = HelpCircle;
-
 

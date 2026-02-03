@@ -18,6 +18,7 @@ import TypewriterText, {
 } from '@/components/inputABCDE/TypewriterText';
 import { useSmartScroll } from '@/hooks/useSmartScroll';
 import { useSmoothKeyboard } from '@/hooks/useSmoothKeyboard';
+import { DISPUTE_STEP_PLACEHOLDERS } from '@/lib/constants';
 
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
@@ -157,7 +158,7 @@ export default function DisputeSteps({
                      ref={inputRef}
                      value={form[currKey]}
                      onChangeText={setField(currKey)}
-                     placeholder="Type here..."
+                     placeholder={DISPUTE_STEP_PLACEHOLDERS[currKey]}
                      animatedStyle={animatedInputStyle}
                      onFocus={() => {
                         reenableAutoScroll(true);
