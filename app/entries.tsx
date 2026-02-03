@@ -33,6 +33,7 @@ import {
    ActivityIndicator,
    FlatList,
    Keyboard,
+   LayoutChangeEvent,
    Pressable,
    Text,
    TextInput,
@@ -51,7 +52,7 @@ import Animated, {
    useAnimatedStyle,
    useDerivedValue,
    useSharedValue,
-   withTiming
+   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -64,6 +65,7 @@ const AnimatedScrollView = Animated.ScrollView;
 const SCROLL_THRESHOLD_FOR_FAB = 100;
 const UNANALYZED_CATEGORY_LABEL = 'Not analyzed';
 const SEARCH_BUTTON_SIZE = 44; // Matches w-11
+const FILTER_CHEVRON_GUTTER = 4;
 
 type FilterMenuType = 'category' | 'theme' | null;
 
@@ -117,10 +119,40 @@ export default function EntriesListScreen() {
    const filterScrollX = useSharedValue(0);
    const [filterContentWidth, setFilterContentWidth] = useState(0);
    const [filterLayoutWidth, setFilterLayoutWidth] = useState(0);
+   const filterScrollRef = useRef<Animated.ScrollView>(null);
+   const chipLayoutsRef = useRef<Record<string, { x: number; width: number }>>(
+      {},
+   );
 
    const filterScrollHandler = useAnimatedScrollHandler((event) => {
       filterScrollX.value = event.contentOffset.x;
    });
+
+   const registerChipLayout = useCallback(
+      (menu: FilterMenuType, label: string) => (event: LayoutChangeEvent) => {
+         if (!menu) return;
+         const { x, width } = event.nativeEvent.layout;
+         chipLayoutsRef.current[`${menu}:${label}`] = { x, width };
+      },
+      [],
+   );
+
+   const scrollChipToCenter = useCallback(
+      (menu: FilterMenuType, label: string) => {
+         if (!menu) return;
+         if (filterLayoutWidth <= 0 || filterContentWidth <= 0) return;
+         const layout = chipLayoutsRef.current[`${menu}:${label}`];
+         if (!layout) return;
+         const targetCenter = layout.x + layout.width / 2;
+         const maxScroll = Math.max(filterContentWidth - filterLayoutWidth, 0);
+         const nextX = Math.min(
+            Math.max(targetCenter - filterLayoutWidth / 2, 0),
+            maxScroll,
+         );
+         filterScrollRef.current?.scrollTo({ x: nextX, animated: true });
+      },
+      [filterContentWidth, filterLayoutWidth],
+   );
 
    const showLeftChevronStyle = useAnimatedStyle(() => {
       return {
@@ -152,6 +184,15 @@ export default function EntriesListScreen() {
    const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
    const deferredCategory = useDeferredValue(selectedCategory);
    const deferredTheme = useDeferredValue(selectedTheme);
+
+   useEffect(() => {
+      if (!activeMenu) return;
+      chipLayoutsRef.current = {};
+      filterScrollX.value = 0;
+      requestAnimationFrame(() => {
+         filterScrollRef.current?.scrollTo({ x: 0, animated: false });
+      });
+   }, [activeMenu, filterScrollX]);
 
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
    const [, setOpenMenuBounds] = useState<MenuBounds | null>(null);
@@ -641,13 +682,16 @@ export default function EntriesListScreen() {
       label,
       isActive,
       onPress,
+      onLayout,
    }: {
       label: string;
       isActive: boolean;
       onPress: () => void;
+      onLayout?: (event: LayoutChangeEvent) => void;
    }) => (
       <Pressable
          onPress={onPress}
+         onLayout={onLayout}
          className={`${chipBase} ${isActive ? chipActive : chipInactive}`}
       >
          <Text className={isActive ? chipTextActive : chipTextInactive}>
@@ -861,13 +905,14 @@ export default function EntriesListScreen() {
                                     bottom: 0,
                                     zIndex: 10,
                                     justifyContent: 'center',
+                                    width: FILTER_CHEVRON_GUTTER,
                                  },
                               ]}
                               pointerEvents="none"
                            >
-                              <View className="bg-white/80 dark:bg-slate-800/80 rounded-full p-1 shadow-sm">
+                              <View className="items-center justify-center">
                                  <ChevronLeft
-                                    size={14}
+                                    size={16}
                                     color={isDark ? '#94a3b8' : '#64748b'}
                                  />
                               </View>
@@ -878,29 +923,32 @@ export default function EntriesListScreen() {
                                  showRightChevronStyle,
                                  {
                                     position: 'absolute',
-                                    right: -8,
+                                    right: -6,
                                     top: 0,
                                     bottom: 0,
                                     zIndex: 10,
                                     justifyContent: 'center',
+                                    width: FILTER_CHEVRON_GUTTER,
                                  },
                               ]}
                               pointerEvents="none"
                            >
-                              <View className="bg-white/80 dark:bg-slate-800/80 rounded-full p-1 shadow-sm">
+                              <View className="items-center justify-center">
                                  <ChevronRight
-                                    size={14}
+                                    size={16}
                                     color={isDark ? '#94a3b8' : '#64748b'}
                                  />
                               </View>
                            </Animated.View>
 
                            <AnimatedScrollView
+                              key={`filters-${activeMenu ?? 'none'}`}
                               horizontal
                               showsHorizontalScrollIndicator={false}
                               keyboardShouldPersistTaps="always"
                               onScroll={filterScrollHandler}
                               scrollEventThrottle={16}
+                              ref={filterScrollRef}
                               onContentSizeChange={(w) =>
                                  setFilterContentWidth(w)
                               }
@@ -909,6 +957,9 @@ export default function EntriesListScreen() {
                                     e.nativeEvent.layout.width,
                                  )
                               }
+                              style={{
+                                 marginHorizontal: FILTER_CHEVRON_GUTTER,
+                              }}
                               className="flex-row"
                            >
                               {activeMenu === 'category' && (
@@ -923,9 +974,17 @@ export default function EntriesListScreen() {
                                           key={cat}
                                           label={cat}
                                           isActive={selectedCategory === cat}
-                                          onPress={() =>
-                                             handleCategorySelect(cat)
-                                          }
+                                          onPress={() => {
+                                             handleCategorySelect(cat);
+                                             scrollChipToCenter(
+                                                'category',
+                                                cat,
+                                             );
+                                          }}
+                                          onLayout={registerChipLayout(
+                                             'category',
+                                             cat,
+                                          )}
                                        />
                                     ))}
                                  </>
@@ -943,9 +1002,14 @@ export default function EntriesListScreen() {
                                           key={theme}
                                           label={theme}
                                           isActive={selectedTheme === theme}
-                                          onPress={() =>
-                                             handleThemeSelect(theme)
-                                          }
+                                          onPress={() => {
+                                             handleThemeSelect(theme);
+                                             scrollChipToCenter('theme', theme);
+                                          }}
+                                          onLayout={registerChipLayout(
+                                             'theme',
+                                             theme,
+                                          )}
                                        />
                                     ))}
                                  </>
