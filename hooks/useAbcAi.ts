@@ -73,6 +73,10 @@ export function useAbcAi() {
     }
   }
 
+  function clearError() {
+    setLastError(null);
+  }
+
   return {
     analyze,
     lastResult,
@@ -82,5 +86,6 @@ export function useAbcAi() {
     initError,
     error: lastError,
     ready: ready && !!service && !initError,
+    clearError,
   };
 }

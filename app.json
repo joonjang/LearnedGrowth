@@ -2,7 +2,7 @@
    "expo": {
       "name": "Learned Growth",
       "slug": "LearnedGrowth",
-      "version": "1.3.3",
+      "version": "1.3.4",
       "orientation": "portrait",
       "icon": "./assets/images/icon3.png",
       "scheme": "learnedgrowth",

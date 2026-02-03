@@ -126,9 +126,16 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
             const remote = await cloud.fetchAll();
             for (const entry of remote) {
                const local = await adapter.getById(entry.id);
+               const remoteAiCreatedAt = entry.aiResponse?.createdAt ?? entry.updatedAt;
+               const localAiCreatedAt = local?.aiResponse?.createdAt ?? local?.updatedAt ?? '';
+               const shouldUpdateFromAi =
+                  Boolean(entry.aiResponse) &&
+                  (!local?.aiResponse || remoteAiCreatedAt > localAiCreatedAt);
+               const shouldUpdateFromUpdatedAt =
+                  !local || entry.updatedAt > local.updatedAt;
                if (!local) {
                   await adapter.add(entry);
-               } else if (entry.updatedAt > local.updatedAt) {
+               } else if (shouldUpdateFromUpdatedAt || shouldUpdateFromAi) {
                   await adapter.update(entry.id, entry);
                }
             }

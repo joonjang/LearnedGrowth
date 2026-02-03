@@ -118,6 +118,7 @@ export default function DisputeScreen() {
    const [analysisTriggered, setAnalysisTriggered] = useState(false);
    const [isRegenerating, setIsRegenerating] = useState(shouldRegenerate);
    const [aiAttemptId, setAiAttemptId] = useState(0);
+   const [isPollingForAi, setIsPollingForAi] = useState(false);
 
    const initialViewMode: 'steps' | 'analysis' =
       viewQuery === 'analysis' ? 'analysis' : 'steps';
@@ -131,7 +132,7 @@ export default function DisputeScreen() {
       initialViewMode === 'analysis' ? 1 : 0,
    );
 
-   const { analyze, lastResult, loading, error, ready, streamText } =
+   const { analyze, lastResult, loading, error, ready, streamText, clearError } =
       useAbcAi();
 
    const isMountedRef = useRef(true);
@@ -432,13 +433,21 @@ export default function DisputeScreen() {
       let timeoutId: ReturnType<typeof setTimeout> | null = null;
       const delays = [2000, 4000, 8000, 12000, 16000];
       let index = 0;
+      setIsPollingForAi(true);
 
       const tick = async () => {
          if (cancelled) return;
          await syncEntries();
          if (cancelled) return;
-         if (aiDataReadyRef.current) return;
-         if (index >= delays.length) return;
+         if (aiDataReadyRef.current) {
+            clearError();
+            setIsPollingForAi(false);
+            return;
+         }
+         if (index >= delays.length) {
+            setIsPollingForAi(false);
+            return;
+         }
          timeoutId = setTimeout(tick, delays[index]);
          index += 1;
       };
@@ -449,8 +458,14 @@ export default function DisputeScreen() {
       return () => {
          cancelled = true;
          if (timeoutId) clearTimeout(timeoutId);
+         setIsPollingForAi(false);
       };
-   }, [aiAttemptId, aiDataReady, showAnalysis, syncEntries]);
+   }, [aiAttemptId, aiDataReady, showAnalysis, syncEntries, clearError]);
+
+   useEffect(() => {
+      if (!aiDataReady) return;
+      clearError();
+   }, [aiDataReady, clearError]);
 
    const stepsAnimatedStyle = useAnimatedStyle(() => ({
       opacity: stepsProgress.value,
@@ -581,8 +596,8 @@ export default function DisputeScreen() {
                <ABCAnalysis
                   entry={entry}
                   aiData={aiData}
-                  loading={loading}
-                  error={error}
+                  loading={loading || isRegenerating || isPollingForAi}
+                  error={isPollingForAi ? null : error}
                   streamingText={streamText}
                   contentTopPadding={topPadding}
                   onExit={handleClose}

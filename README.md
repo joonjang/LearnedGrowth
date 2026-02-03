@@ -41,6 +41,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 - fixed entry detail screen navigation double stacking
 - enabled data to be fetched even upon connection failure
+   - x2
 
 ### 2026-02-02
 
