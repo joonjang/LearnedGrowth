@@ -5,6 +5,7 @@ import StepperHeader from '@/components/inputABCDE/StepperHeader';
 import TypewriterText, {
    TypewriterHandle,
 } from '@/components/inputABCDE/TypewriterText';
+import TopFade from '@/components/utils/TopFade';
 import { useEntries } from '@/hooks/useEntries';
 import { usePrompts } from '@/hooks/usePrompts';
 import { useSmartScroll } from '@/hooks/useSmartScroll';
@@ -94,7 +95,10 @@ export default function NewEntryModal() {
    // 2. USE KEYBOARD ANIMATION HOOK
    const maxInputHeight = Math.floor(screenHeight * 0.25);
    const { animatedPromptStyle, animatedInputStyle, animatedWrapperStyle } =
-      useSmoothKeyboard({ closedHeight: maxInputHeight });
+      useSmoothKeyboard({
+         closedHeight: maxInputHeight,
+         promptHold: 0.5,
+      });
 
    const topPadding = insets.top + 12;
 
@@ -236,6 +240,9 @@ export default function NewEntryModal() {
 
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
+         <View className="absolute top-0 left-0 right-0 z-10">
+            <TopFade height={topPadding} />
+         </View>
          <Animated.View className="flex-1" style={animatedWrapperStyle}>
             <View className="flex-1">
                {/* SCROLL VIEW (Using Hook Props) */}

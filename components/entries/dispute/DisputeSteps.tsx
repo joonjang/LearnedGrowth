@@ -59,10 +59,15 @@ export default function DisputeSteps({
    const { scrollProps, reenableAutoScroll, scrollToBottom } = useSmartScroll();
 
    const { height: screenHeight } = useWindowDimensions();
+   const isSmallScreen = screenHeight < 750;
    const maxInputHeight = Math.floor(screenHeight * 0.25);
+   const closedFontSize = isSmallScreen ? 28 : 36;
+   const openFontSize = isSmallScreen ? 24 : 28;
    const { animatedPromptStyle, animatedInputStyle, animatedWrapperStyle } =
       useSmoothKeyboard({
          closedHeight: maxInputHeight,
+         closedFontSize,
+         openFontSize,
       });
 
    useEffect(() => {

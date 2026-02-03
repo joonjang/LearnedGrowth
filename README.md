@@ -41,6 +41,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 - update ABCDE input animation to be less choppy
 - added search function
+- type writer text size changed back to large
 
 ### 2026-02-01
 

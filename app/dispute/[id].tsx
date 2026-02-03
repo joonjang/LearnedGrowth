@@ -1,6 +1,7 @@
 import rawAbcde from '@/assets/data/abcde.json';
 import ABCAnalysis from '@/components/entries/dispute/ABCAnalysis';
 import DisputeSteps from '@/components/entries/dispute/DisputeSteps';
+import TopFade from '@/components/utils/TopFade';
 import { useAbcAi } from '@/hooks/useAbcAi';
 import { useEntries } from '@/hooks/useEntries';
 import { usePrompts } from '@/hooks/usePrompts';
@@ -509,6 +510,9 @@ export default function DisputeScreen() {
 
    return (
       <Animated.View className="flex-1 bg-slate-50 dark:bg-slate-900">
+         <View className="absolute top-0 left-0 right-0 z-10">
+            <TopFade height={topPadding} />
+         </View>
          <View className="flex-1 relative">
             {/* 1. Steps Layer (Dispute) */}
             <Animated.View
