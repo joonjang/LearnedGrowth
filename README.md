@@ -52,6 +52,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - fixed android navigation button covering bottom stepper buttons with inset.bottom
 - EntryWeekFilterHeader.tsx integrated with statHero
 - fixed entryCard inner container view animation lag by removing the animation altogether
+- tried to make entry to entries.tsx screen snappier
 
 ### 2026-01-31
 

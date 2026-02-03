@@ -194,9 +194,18 @@ const HomeDashboard = React.memo(
       );
       const { lock: lockNavigation } = useNavigationLock();
       const handleViewAllEntries = useCallback(() => {
-         // Adjust this route to match your journal tab or list screen
-         lockNavigation(() => router.push(ROUTE_ENTRIES));
-      }, [lockNavigation]);
+         const previewIds = entries.slice(0, 5).map((entry) => entry.id);
+         lockNavigation(() => {
+            if (previewIds.length === 0) {
+               router.push(ROUTE_ENTRIES);
+               return;
+            }
+            router.push({
+               pathname: ROUTE_ENTRIES,
+               params: { preview: previewIds.join(',') },
+            });
+         });
+      }, [entries, lockNavigation]);
 
       const { patternView } = useMemo(() => {
          const dayBuckets = new Map<string, DayBucket>();

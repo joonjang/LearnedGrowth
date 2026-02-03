@@ -5,6 +5,7 @@ import {
    bottomSheetHandleIndicatorStyle,
 } from '@/components/utils/bottomSheetStyles';
 import { ROUTE_LOGIN } from '@/lib/constants';
+import { scheduleIdle } from '@/lib/scheduleIdle';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
    BOTTOM_SHEET_BG_DARK,
@@ -36,7 +37,7 @@ import React, {
    useRef,
    useState,
 } from 'react';
-import { InteractionManager, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function FreeUserChoiceScreen() {
@@ -89,10 +90,10 @@ export default function FreeUserChoiceScreen() {
    const [hasSession, setHasSession] = useState(false);
 
    useEffect(() => {
-      const task = InteractionManager.runAfterInteractions(() => {
+      const cancelIdle = scheduleIdle(() => {
          refreshProfileIfStale();
       });
-      return () => task.cancel?.();
+      return cancelIdle;
    }, [refreshProfileIfStale]);
 
    useEffect(() => {
@@ -192,17 +193,17 @@ export default function FreeUserChoiceScreen() {
    useEffect(() => {
       let cancelled = false;
       let rafId: number | null = null;
-      const task = InteractionManager.runAfterInteractions(() => {
+      const cancelIdle = scheduleIdle(() => {
          if (cancelled) return;
          rafId = requestAnimationFrame(() => {
             if (cancelled) return;
             modalRef.current?.present();
          });
-      });
+      }, 80);
       return () => {
          cancelled = true;
          if (rafId !== null) cancelAnimationFrame(rafId);
-         task.cancel?.();
+         cancelIdle();
       };
    }, []);
 
@@ -250,7 +251,7 @@ export default function FreeUserChoiceScreen() {
    const handleChoice = useCallback(
       (requiresAuth: boolean) => {
          if (requiresAuth && isOutOfCredits) {
-            InteractionManager.runAfterInteractions(() => {
+            scheduleIdle(() => {
                setShowShop((prev) => !prev);
             });
             return;
@@ -279,21 +280,22 @@ export default function FreeUserChoiceScreen() {
       },
       [
          isOutOfCredits,
-         checkConsentAndNavigate,
          entryId,
+         isFromEntryDetail,
          effectiveSignedIn,
          proceedToPath,
+         checkConsentAndNavigate,
       ],
    );
 
    const handlePurchaseSuccess = useCallback(() => {
-      InteractionManager.runAfterInteractions(() => {
+      scheduleIdle(() => {
          setShowShop(false);
       });
    }, []);
 
    const handleShopCancel = useCallback(() => {
-      InteractionManager.runAfterInteractions(() => {
+      scheduleIdle(() => {
          setShowShop(false);
       });
    }, []);

@@ -6,12 +6,13 @@ import React, {
    useRef,
    useState,
 } from 'react';
-import { LayoutChangeEvent, ScrollView, Text, View } from 'react-native';
+import { LayoutChangeEvent, Platform, ScrollView, Text, View } from 'react-native';
 
 import NewDisputeLink from '@/components/buttons/NewDisputeLink';
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import WideButton from '@/components/buttons/WideButton';
 import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
+import { getAiInsightAnimationTimeline } from '@/components/entries/dispute/aiInsightCard/animation';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { ArrowRight } from 'lucide-react-native';
@@ -69,6 +70,15 @@ export default function ABCAnalysis({
       return aiData.createdAt ?? String(retryCount);
    }, [aiData, retryCount]);
    const hasPriorDispute = (entry.dispute ?? '').trim().length > 0;
+   const isFreshAnalysis = useMemo(() => {
+      if (!aiData?.createdAt) return false;
+      const diffMs = Date.now() - new Date(aiData.createdAt).getTime();
+      return diffMs < 20000;
+   }, [aiData?.createdAt]);
+   const animationTimeline = useMemo(
+      () => getAiInsightAnimationTimeline(isFreshAnalysis),
+      [isFreshAnalysis],
+   );
 
    const handleAnimationComplete = useCallback(() => {
       setAreAnimationsDone(true);
@@ -83,6 +93,19 @@ export default function ABCAnalysis({
          buttonOpacity.value = 0;
       }
    }, [areAnimationsDone, buttonOpacity]);
+
+   useEffect(() => {
+      if (Platform.OS !== 'android') return;
+      if (!aiData) return;
+      if (areAnimationsDone) return;
+
+      const totalDelay = animationTimeline.disclaimerStart + 700;
+      const timeout = setTimeout(() => {
+         setAreAnimationsDone(true);
+      }, totalDelay);
+
+      return () => clearTimeout(timeout);
+   }, [aiData, animationTimeline.disclaimerStart, areAnimationsDone]);
 
    const handleAiCardLayout = useCallback((event: LayoutChangeEvent) => {
       const nextY = event.nativeEvent.layout.y;

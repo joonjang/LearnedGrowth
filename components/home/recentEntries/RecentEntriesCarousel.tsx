@@ -294,19 +294,17 @@ export default function RecentEntriesCarousel({
             </View>
 
             {/* View All Button */}
-            <TouchableOpacity
+            <Pressable
                onPress={onViewAll}
                hitSlop={8}
-               activeOpacity={0.8}
-               className="flex-row items-center gap-1
-               px-3 py-1.5 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700"
+               className="flex-row items-center gap-1 px-3 py-1.5 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700 active:bg-slate-100 active:dark:bg-slate-600"
             >
                <Text className="text-[11px] font-medium text-slate-900 dark:text-slate-200">
                   View All
                </Text>
                {/* Changed icon color to match slate text colors */}
                <ArrowRight size={12} color={isDark ? '#cbd5e1' : '#64748b'} />
-            </TouchableOpacity>
+            </Pressable>
          </View>
 
          {/* CAROUSEL CONTAINER */}

@@ -244,7 +244,7 @@ export default function DeleteBinScreen() {
                style={[buttonShadow.ios, buttonShadow.android]}
                className="w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700"
             >
-               <View className="items-center justify-center pl-1">
+               <View className="items-center justify-center pl-2">
                   <LeftBackChevron isDark={isDark} />
                </View>
             </Pressable>

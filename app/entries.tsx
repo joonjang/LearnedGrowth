@@ -8,9 +8,10 @@ import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { ROUTE_ENTRY_DETAIL } from '@/lib/constants';
 import { getWeekLabel, getWeekStart } from '@/lib/date';
+import { scheduleIdle } from '@/lib/scheduleIdle';
 import { getShadow } from '@/lib/shadow';
 import type { Entry } from '@/models/entry';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
    ArrowRight,
    ChevronLeft,
@@ -41,6 +42,7 @@ import {
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
 import Animated, {
    FadeIn,
+   FadeInUp,
    FadeOut,
    FadeOutUp,
    interpolate,
@@ -49,7 +51,7 @@ import Animated, {
    useAnimatedStyle,
    useDerivedValue,
    useSharedValue,
-   withTiming,
+   withTiming
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -73,6 +75,28 @@ export default function EntriesListScreen() {
    const isDark = colorScheme === 'dark';
    const { lock: lockNavigation } = useNavigationLock();
    const { width: screenWidth } = useWindowDimensions();
+   const params = useLocalSearchParams<{ preview?: string | string[] }>();
+   const previewParam = Array.isArray(params.preview)
+      ? params.preview[0]
+      : params.preview;
+   const previewIds = useMemo(
+      () =>
+         previewParam
+            ? previewParam
+                 .split(',')
+                 .map((id) => id.trim())
+                 .filter(Boolean)
+            : [],
+      [previewParam],
+   );
+
+   const [isFullListReady, setIsFullListReady] = useState(
+      previewIds.length === 0,
+   );
+
+   useEffect(() => {
+      setIsFullListReady(previewIds.length === 0);
+   }, [previewIds.length]);
 
    const searchPanelWidth = Math.max(
       SEARCH_BUTTON_SIZE,
@@ -160,7 +184,25 @@ export default function EntriesListScreen() {
    useFocusEffect(
       useCallback(() => {
          refreshDeletedEntries();
-      }, [refreshDeletedEntries]),
+
+         if (previewIds.length === 0) {
+            setIsFullListReady(true);
+            return;
+         }
+
+         let cancelled = false;
+         const cancelIdle = scheduleIdle(() => {
+            if (cancelled) return;
+            requestAnimationFrame(() => {
+               if (!cancelled) setIsFullListReady(true);
+            });
+         });
+
+         return () => {
+            cancelled = true;
+            cancelIdle();
+         };
+      }, [previewIds.length, refreshDeletedEntries]),
    );
 
    useEffect(() => {
@@ -180,7 +222,6 @@ export default function EntriesListScreen() {
          return true;
       });
    }, []);
-
 
    const resetSearchFilters = useCallback(() => {
       setSearchQuery('');
@@ -273,21 +314,36 @@ export default function EntriesListScreen() {
    );
 
    // --- DATA PREP ---
+   const previewRows = useMemo(() => {
+      if (previewIds.length === 0) return [];
+      return previewIds
+         .map((id) => store.getEntryById(id))
+         .filter(Boolean) as Entry[];
+   }, [previewIds, store]);
+
    const sortedRows = useMemo(
       () =>
-         [...store.rows].sort(
-            (a, b) =>
-               new Date(b.createdAt).getTime() -
-               new Date(a.createdAt).getTime(),
-         ),
-      [store.rows],
+         !isFullListReady
+            ? []
+            : [...store.rows].sort(
+                 (a, b) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime(),
+              ),
+      [isFullListReady, store.rows],
    );
+
+   const baseRows = useMemo(() => {
+      if (isFullListReady) return sortedRows;
+      if (previewRows.length > 0) return previewRows;
+      return store.rows.slice(0, 5);
+   }, [isFullListReady, previewRows, sortedRows, store.rows]);
 
    const categoryOptions = useMemo(() => {
       const categories = new Set<string>();
       let hasUnanalyzed = false;
 
-      sortedRows.forEach((entry) => {
+      baseRows.forEach((entry) => {
          if (entry.isDeleted) return;
          const category = entry.aiResponse?.meta?.category?.trim();
          if (category) {
@@ -306,11 +362,11 @@ export default function EntriesListScreen() {
       }
 
       return list;
-   }, [sortedRows]);
+   }, [baseRows]);
 
    const themeOptions = useMemo(() => {
       const tags = new Set<string>();
-      sortedRows.forEach((entry) => {
+      baseRows.forEach((entry) => {
          if (entry.isDeleted) return;
          entry.aiResponse?.meta?.tags?.forEach((tag) => {
             if (tag?.trim()) tags.add(tag.trim());
@@ -319,13 +375,13 @@ export default function EntriesListScreen() {
       return Array.from(tags).sort((a, b) =>
          a.localeCompare(b, undefined, { sensitivity: 'base' }),
       );
-   }, [sortedRows]);
+   }, [baseRows]);
 
    const filteredRows = useMemo(() => {
       const q = deferredQuery.trim().toLowerCase(); // Use deferredQuery here
       const hasQuery = q.length > 0;
 
-      return sortedRows.filter((entry) => {
+      return baseRows.filter((entry) => {
          // 1. Check Category (Fastest check first)
          if (deferredCategory) {
             const category = entry.aiResponse?.meta?.category?.trim() ?? null;
@@ -359,7 +415,7 @@ export default function EntriesListScreen() {
 
          return true;
       });
-   }, [deferredQuery, deferredCategory, deferredTheme, sortedRows]);
+   }, [baseRows, deferredQuery, deferredCategory, deferredTheme]);
 
    const totalEntries = filteredRows.length;
    const hasActiveFilters =
@@ -485,10 +541,14 @@ export default function EntriesListScreen() {
                Entry History
             </Text>
             <View className="flex-row items-center gap-2">
-               <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center">
-                  {totalEntries} Entries •{' '}
-                  {hasActiveFilters ? 'Filtered' : 'All Time'}
-               </Text>
+               {isFullListReady ? (
+                  <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center">
+                     {totalEntries} Entries •{' '}
+                     {hasActiveFilters ? 'Filtered' : 'All Time'}
+                  </Text>
+               ) : (
+                  <View className="h-4 w-36 rounded-full bg-slate-200 dark:bg-slate-700" />
+               )}
                {!isSearchOpen && isUpdatingResults && (
                   <ActivityIndicator
                      size="small"
@@ -497,27 +557,32 @@ export default function EntriesListScreen() {
                )}
             </View>
             {deletedCount > 0 && (
-               <Pressable
-                  onPress={handleBinPress}
-                  className="mt-3 flex-row items-center gap-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-4 py-2 active:opacity-80"
+               <Animated.View
+                  entering={FadeInUp.duration(220)}
+                  exiting={FadeOut.duration(160)}
                >
-                  <Trash2
-                     size={14}
-                     color={isDark ? '#f87171' : '#ef4444'}
-                     strokeWidth={2.5}
-                  />
-                  <Text
-                     numberOfLines={1}
-                     className="text-xs font-semibold text-slate-700 dark:text-slate-200"
+                  <Pressable
+                     onPress={handleBinPress}
+                     className="mt-3 flex-row items-center gap-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-4 py-2 active:opacity-80"
                   >
-                     View deleted {deletedCount === 1 ? 'entry' : 'entries'}
-                  </Text>
-                  <ArrowRight
-                     size={12}
-                     color={isDark ? '#94a3b8' : '#64748b'}
-                     strokeWidth={2.5}
-                  />
-               </Pressable>
+                     <Trash2
+                        size={14}
+                        color={isDark ? '#f87171' : '#ef4444'}
+                        strokeWidth={2.5}
+                     />
+                     <Text
+                        numberOfLines={1}
+                        className="text-xs font-semibold text-slate-700 dark:text-slate-200"
+                     >
+                        View deleted {deletedCount === 1 ? 'entry' : 'entries'}
+                     </Text>
+                     <ArrowRight
+                        size={12}
+                        color={isDark ? '#94a3b8' : '#64748b'}
+                        strokeWidth={2.5}
+                     />
+                  </Pressable>
+               </Animated.View>
             )}
          </View>
       ),
@@ -526,6 +591,7 @@ export default function EntriesListScreen() {
          handleBinPress,
          hasActiveFilters,
          isDark,
+         isFullListReady,
          isSearchOpen,
          isUpdatingResults,
          totalEntries,
@@ -609,7 +675,7 @@ export default function EntriesListScreen() {
                style={[buttonShadow.ios, buttonShadow.android]}
                className="w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700"
             >
-               <View className="items-center justify-center pl-1">
+               <View className="items-center justify-center pl-2">
                   <LeftBackChevron isDark={isDark} />
                </View>
             </View>
