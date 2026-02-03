@@ -18,8 +18,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 - make ai insight respond with how the explanation style is helpful/unhelpful
 
-- add a report problem button to send a snapshot of the issue
-
 - enable user to get extra analysis if someone signs up using their referal code
 
 ---
@@ -42,6 +40,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - fixed entry detail screen navigation double stacking
 - enabled data to be fetched even upon connection failure
    - x2
+- fixed graph range
 
 ### 2026-02-02
 

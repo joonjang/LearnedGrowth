@@ -423,13 +423,7 @@ export default function ThinkingPatternSheet({
                                        hideAxesAndRules
                                        yAxisThickness={0}
                                        xAxisThickness={0}
-                                       maxValue={
-                                          Math.max(
-                                             ...chartDataStatic.map(
-                                                (d: any) => d.value || 0,
-                                             ),
-                                          ) * 1.2
-                                       }
+                                       maxValue={100}
                                        mostNegativeValue={0}
                                     />
                                  </View>
