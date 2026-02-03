@@ -16,8 +16,6 @@ An offline-first journaling app (ABCDE method from _Learned Optimism_) with clou
 
 ## Next Steps
 
-- add search function
-
 - make ai insight respond with how the explanation style is helpful/unhelpful
 
 - add a report problem button to send a snapshot of the issue
