@@ -58,10 +58,7 @@ function RootLayoutContent() {
                   initialRouteName="index"
                   screenOptions={{
                      headerShown: false,
-                     animation:
-                        __DEV__ && Platform.OS === 'android'
-                           ? 'none'
-                           : 'default',
+                     animation: Platform.OS === 'android' ? 'none' : 'default',
                   }}
                >
                   <Stack.Screen name="index" options={{ headerShown: false }} />
