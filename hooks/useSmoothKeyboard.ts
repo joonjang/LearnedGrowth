@@ -1,13 +1,10 @@
 import { useWindowDimensions } from 'react-native';
-import {
-  KeyboardController,
-  useKeyboardHandler,
-} from 'react-native-keyboard-controller';
+import { useKeyboardContext } from 'react-native-keyboard-controller';
 import {
   Extrapolation,
   interpolate,
   useAnimatedStyle,
-  useSharedValue,
+  useDerivedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -49,30 +46,12 @@ export function useSmoothKeyboard(config: Config = {}) {
     0.95
   );
 
-  const initialProgress = KeyboardController.isVisible() ? 1 : 0;
-  const progress = useSharedValue(initialProgress);
-  const keyboardHeight = useSharedValue(0);
-
-  useKeyboardHandler(
-    {
-      onStart: (e) => {
-        'worklet';
-        progress.value = e.progress;
-        keyboardHeight.value = e.height;
-      },
-      onMove: (e) => {
-        'worklet';
-        progress.value = e.progress;
-        keyboardHeight.value = e.height;
-      },
-      onEnd: (e) => {
-        'worklet';
-        progress.value = e.progress;
-        keyboardHeight.value = e.height;
-      },
-    },
-    []
-  );
+  const { reanimated } = useKeyboardContext();
+  const progress = reanimated.progress;
+  const keyboardHeight = useDerivedValue(() => {
+    const raw = reanimated.height.value;
+    return Math.max(0, Math.abs(raw));
+  });
 
   const animatedPromptStyle = useAnimatedStyle(() => {
     const fontSize = promptHold > 0
