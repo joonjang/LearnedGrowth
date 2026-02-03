@@ -82,8 +82,6 @@ export default function DisputeScreen() {
    const newDisputeQuery = Array.isArray(params.newDispute)
       ? params.newDispute[0]
       : params.newDispute;
-   const fromQuery = Array.isArray(params.from) ? params.from[0] : params.from;
-   const cameFromEntryDetail = fromQuery === 'entryDetail';
    const shouldRegenerate = refreshQuery === 'true';
    const shouldStartFresh =
       newDisputeQuery === 'true' || newDisputeQuery === '1';
@@ -363,13 +361,8 @@ export default function DisputeScreen() {
          params: { id: String(entry.id), animateInstant: '1' },
       } as const;
 
-      if (cameFromEntryDetail && router.canGoBack()) {
-         router.back();
-         return;
-      }
-      router.replace(targetRoute);
+      router.dismissTo(targetRoute);
    }, [
-      cameFromEntryDetail,
       entry,
       hapticsAvailable,
       hapticsEnabled,

@@ -43,7 +43,7 @@ import {
 import { SwipeableMethods } from 'react-native-gesture-handler/lib/typescript/components/ReanimatedSwipeable';
 import Animated, {
    FadeIn,
-   FadeInUp,
+   FadeInDown,
    FadeOut,
    FadeOutUp,
    interpolate,
@@ -52,7 +52,7 @@ import Animated, {
    useAnimatedStyle,
    useDerivedValue,
    useSharedValue,
-   withTiming,
+   withTiming
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -599,7 +599,7 @@ export default function EntriesListScreen() {
             </View>
             {deletedCount > 0 && (
                <Animated.View
-                  entering={FadeInUp.duration(220)}
+                  entering={FadeInDown.duration(220)}
                   exiting={FadeOut.duration(160)}
                >
                   <Pressable

@@ -280,7 +280,7 @@ function AiInsightStatusPulse() {
 
    return (
       <Animated.View style={iconStyle}>
-         <Sparkles size={18} color="#6366f1" />
+         <Sparkles size={18} color="#f59e0b" />
       </Animated.View>
    );
 }
