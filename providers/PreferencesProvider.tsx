@@ -11,14 +11,15 @@ import {
   useState,
 } from "react";
 
-type ThemePreference = "light" | "dark";
+type ThemePreference = "light" | "dark" | "system";
 
 type PreferencesContextShape = {
   loading: boolean;
   error: string | null;
   hapticsEnabled: boolean;
   hapticsAvailable: boolean;
-  theme: ThemePreference;
+  theme: "light" | "dark";
+  themePreference: ThemePreference;
   setHapticsEnabled: (next: boolean) => Promise<void>;
   setTheme: (next: ThemePreference) => Promise<void>;
   triggerHaptic: () => Promise<void>;
@@ -32,14 +33,17 @@ const STORAGE_KEYS = {
 
 const PreferencesContext = createContext<PreferencesContextShape | null>(null);
 
-const defaultTheme = (Appearance.getColorScheme?.() as ThemePreference | null) ?? "light";
+const defaultTheme =
+  (Appearance.getColorScheme?.() as "light" | "dark" | null) ?? "light";
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hapticsEnabled, setHapticsEnabledState] = useState(true);
   const [hapticsAvailable, setHapticsAvailable] = useState(true);
-  const [theme, setThemeState] = useState<ThemePreference>(defaultTheme);
+  const [theme, setThemeState] = useState<"light" | "dark">(defaultTheme);
+  const [themePreference, setThemePreference] =
+    useState<ThemePreference>("system");
 
   useEffect(() => {
     let mounted = true;
@@ -59,8 +63,20 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
         const storedTheme = byKey[STORAGE_KEYS.theme];
         if (storedTheme === "dark" || storedTheme === "light") {
+          setThemePreference(storedTheme);
           setThemeState(storedTheme);
           (Appearance as any)?.setColorScheme?.(storedTheme);
+        } else if (storedTheme === "system") {
+          setThemePreference("system");
+          const systemTheme =
+            (Appearance.getColorScheme?.() as "light" | "dark" | null) ??
+            "light";
+          setThemeState(systemTheme);
+          try {
+            (Appearance as any)?.setColorScheme?.(null);
+          } catch {
+            // noop
+          }
         }
       } catch (err: any) {
         if (!mounted) return;
@@ -76,6 +92,16 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (themePreference !== "system") return;
+    const subscription = Appearance.addChangeListener?.(({ colorScheme }) => {
+      if (colorScheme === "dark" || colorScheme === "light") {
+        setThemeState(colorScheme);
+      }
+    });
+    return () => subscription?.remove?.();
+  }, [themePreference]);
+
   const persistHaptics = useCallback(async (next: boolean) => {
     if (!hapticsAvailable) return;
     setHapticsEnabledState(next);
@@ -90,10 +116,22 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   }, [hapticsAvailable]);
 
   const persistTheme = useCallback(async (next: ThemePreference) => {
-    setThemeState(next);
+    setThemePreference(next);
+    if (next === "system") {
+      const systemTheme =
+        (Appearance.getColorScheme?.() as "light" | "dark" | null) ?? "light";
+      setThemeState(systemTheme);
+      try {
+        (Appearance as any)?.setColorScheme?.(null);
+      } catch {
+        // noop
+      }
+    } else {
+      setThemeState(next);
+      (Appearance as any)?.setColorScheme?.(next);
+    }
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.theme, next);
-      (Appearance as any)?.setColorScheme?.(next);
     } catch (err: any) {
       setError(err?.message ?? "Could not update theme");
     }
@@ -113,6 +151,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       hapticsEnabled,
       hapticsAvailable,
       theme,
+      themePreference,
       setHapticsEnabled: persistHaptics,
       setTheme: persistTheme,
       triggerHaptic,
@@ -128,6 +167,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       persistTheme,
       triggerHaptic,
       theme,
+      themePreference,
     ]
   );
 

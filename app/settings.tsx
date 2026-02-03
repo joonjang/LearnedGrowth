@@ -98,6 +98,7 @@ export default function SettingsScreen() {
       hapticsEnabled,
       hapticsAvailable,
       theme,
+      themePreference,
       setHapticsEnabled,
       setTheme,
    } = usePreferences();
@@ -179,6 +180,7 @@ export default function SettingsScreen() {
    const extraCredits = profile?.extraAiCredits ?? 0;
    const cycleRemaining = Math.max(freeMonthlyCredits - aiUsed, 0);
    const darkMode = theme === 'dark';
+   const followSystem = themePreference === 'system';
 
    const checkCreditsCycle = useCallback(() => {
       if (status !== 'signedIn') return;
@@ -399,6 +401,12 @@ export default function SettingsScreen() {
       if (!resetCountdown) return 'Resets soon';
       return `Resets in ${resetCountdown}`;
    }, [resetCountdown]);
+
+   const manualThemeStyle = useAnimatedStyle(() => {
+      return {
+         opacity: withTiming(followSystem ? 0.4 : 1, { duration: 300 }),
+      };
+   });
 
    useEffect(() => {
       if (!isSignedIn || isOffline || !nextResetAt) return;
@@ -652,18 +660,52 @@ export default function SettingsScreen() {
                   Preferences
                </Text>
 
-               <SettingRow
-                  title="Dark Mode"
-                  description="Switch between light and dark theme."
-               >
-                  <Switch
-                     value={darkMode}
-                     onValueChange={(val) => setTheme(val ? 'dark' : 'light')}
-                     disabled={prefsLoading}
-                     thumbColor={switchThumbColor}
-                     trackColor={{ false: '#e2e8f0', true: '#16a34a' }}
-                  />
-               </SettingRow>
+               {/* Theme Group */}
+               <View className="rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-800/50 px-3 py-3">
+                  {/* Master Switch */}
+                  <SettingRow
+                     title="Follow System"
+                     description={`Match your phone’s appearance setting.`}
+                  >
+                     <Switch
+                        value={followSystem}
+                        onValueChange={(val) =>
+                           setTheme(
+                              val ? 'system' : darkMode ? 'dark' : 'light',
+                           )
+                        }
+                        disabled={prefsLoading}
+                        thumbColor={switchThumbColor}
+                        trackColor={{ false: '#e2e8f0', true: '#16a34a' }}
+                     />
+                  </SettingRow>
+
+                  {/* Dependent Switch (Animated) */}
+                  <Animated.View style={manualThemeStyle}>
+                     <View className="h-px bg-slate-200/80 dark:bg-slate-700/70 my-3" />
+
+                     <SettingRow
+                        title="Dark Mode"
+                        // Dynamic description makes the "Link" intuitive
+                        description={
+                           followSystem
+                              ? 'Controlled by system settings.'
+                              : 'Switch between light and dark theme.'
+                        }
+                        disabled={followSystem}
+                     >
+                        <Switch
+                           value={darkMode}
+                           onValueChange={(val) =>
+                              setTheme(val ? 'dark' : 'light')
+                           }
+                           disabled={prefsLoading || followSystem}
+                           thumbColor={switchThumbColor}
+                           trackColor={{ false: '#e2e8f0', true: '#16a34a' }}
+                        />
+                     </SettingRow>
+                  </Animated.View>
+               </View>
 
                <SettingRow
                   title="Haptic Feedback"

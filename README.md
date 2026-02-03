@@ -41,6 +41,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - enabled data to be fetched even upon connection failure
    - x2
 - fixed graph range
+- dark mode toggle to follow system setting
 
 ### 2026-02-02
 
