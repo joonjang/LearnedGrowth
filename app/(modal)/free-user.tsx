@@ -221,13 +221,7 @@ export default function FreeUserChoiceScreen() {
          let target: any = path;
 
          if (requiresAuth && !effectiveSignedIn) {
-            const redirectPath = `/(modal)/free-user?id=${entryId}&autoAi=1&onlyShowAiAnalysis=${onlyShowAiAnalysisBool}${
-               isFromEntryDetail ? '&from=entryDetail' : ''
-            }`;
-            target = {
-               pathname: ROUTE_LOGIN,
-               params: { redirect: encodeURIComponent(redirectPath) },
-            };
+            target = ROUTE_LOGIN;
          }
 
          navigationTargetRef.current = target;
@@ -335,14 +329,6 @@ export default function FreeUserChoiceScreen() {
    );
 
    const autoAiRequested = (Array.isArray(autoAi) ? autoAi[0] : autoAi) === '1';
-   const hasAutoTriggeredRef = useRef(false);
-
-   useEffect(() => {
-      if (!autoAiRequested || hasAutoTriggeredRef.current) return;
-      if (!effectiveSignedIn) return;
-      hasAutoTriggeredRef.current = true;
-      handleChoice(true);
-   }, [autoAiRequested, effectiveSignedIn, handleChoice]);
 
    const handleIndicatorStyle = useMemo(
       () => bottomSheetHandleIndicatorStyle(isDark),

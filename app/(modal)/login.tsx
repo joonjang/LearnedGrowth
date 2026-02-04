@@ -3,7 +3,7 @@ import { DISPUTE_CTA_CLASS } from '@/lib/styles';
 import { useAuth } from '@/providers/AuthProvider';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -79,7 +79,6 @@ export default function AuthModal() {
 
    const isSubmitting = useRef(false);
    const hasNavigated = useRef(false);
-   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
 
    const safeBack = useCallback(() => {
       if (hasNavigated.current) return;
@@ -88,7 +87,8 @@ export default function AuthModal() {
       if (router.canGoBack()) {
          router.back();
       } else {
-         router.replace('/');
+         // Stay put if there's nowhere to go back to.
+         // Avoid forcing a home redirect after login.
       }
    }, [router]);
 
@@ -127,14 +127,8 @@ export default function AuthModal() {
          setStatus('idle');
          isSubmitting.current = false;
          handleDismiss();
-         if (redirect) {
-            const path = decodeURIComponent(
-               Array.isArray(redirect) ? redirect[0] : redirect
-            );
-            setTimeout(() => router.replace(path as any), 300);
-         }
       }
-   }, [authStatus, redirect, handleDismiss, router]);
+   }, [authStatus, handleDismiss]);
 
    // 🔵 1. REFACTORED EXECUTE ACTION (Final Robust Version)
    const executeAction = async (
