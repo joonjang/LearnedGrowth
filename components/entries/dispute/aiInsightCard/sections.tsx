@@ -12,6 +12,7 @@ import {
    TriangleAlert,
 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
    Pressable,
    Text,
@@ -32,7 +33,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { AI_ANALYSIS_LABEL, AI_SURFACE_CLASS } from '@/lib/styles';
+import { AI_SURFACE_CLASS } from '@/lib/styles';
 import { AnimatedSpectrumRow } from './AnimatedSpectrumRow';
 import type { AnimationTimeline } from './animation';
 import { InsightDimensions, InsightSafety } from './types';
@@ -71,6 +72,7 @@ export function AiInsightMinimizedState({
    previewText?: string | null;
    isDark: boolean;
 }) {
+   const { t } = useTranslation();
    const chevronColor = isDark ? '#94a3b8' : '#64748b'; // Slate 400/500
    const iconColor = isDark ? '#818cf8' : '#4f46e5'; // Indigo
 
@@ -81,7 +83,7 @@ export function AiInsightMinimizedState({
             <View className="flex-1 flex-row items-center mr-3 overflow-hidden">
                {/* Label */}
                <Text className="text-[10px] font-bold uppercase tracking-[1.5px] text-slate-400 dark:text-slate-500">
-                  {AI_ANALYSIS_LABEL}
+                  {t('analysis.ai_analysis')}
                </Text>
 
                {/* Divider */}
@@ -95,7 +97,7 @@ export function AiInsightMinimizedState({
                   numberOfLines={1}
                   ellipsizeMode="tail"
                >
-                  Alternative perspective
+                  {t('analysis.alternative_perspective')}
                </Text>
             </View>
 
@@ -138,12 +140,13 @@ export function AiInsightHeader({
    iconColor,
 }: AiInsightHeaderProps) {
    if (isMinimized) return null;
+   const { t } = useTranslation();
 
    return (
       <View className="flex-row items-center justify-between mb-1">
          <View className="flex-row items-center gap-2">
             <Text className={`text-base font-bold ${textColor}`}>
-               {AI_ANALYSIS_LABEL}
+               {t('analysis.ai_analysis')}
             </Text>
          </View>
 
@@ -158,10 +161,11 @@ export function AiInsightHeader({
 
 // --- ERROR & LOADING ---
 export function AiInsightErrorState({ error }: { error: string }) {
+   const { t } = useTranslation();
    return (
       <View className="py-2">
          <Text className="text-sm font-medium text-red-600 dark:text-red-400">
-            Unable to load analysis. {error}
+            {t('analysis.error', { error })}
          </Text>
       </View>
    );
@@ -211,26 +215,31 @@ function SkeletonItem({
    );
 }
 
-const INSIGHT_STATUS_BASE = [
-   'Reading your entry...',
-   'Identifying patterns...',
-   'Drafting insights...',
-   'Refining tone...',
-   'Finalizing response...',
-];
-
-const INSIGHT_STATUS_STREAMING = [
-   'Receiving response...',
-   'Interpreting signals...',
-   'Mapping patterns...',
-   'Drafting insights...',
-   'Finalizing response...',
-];
-
 function AiInsightStatus({ hasStream }: { hasStream: boolean }) {
+   const { t } = useTranslation();
+   const baseMessages = useMemo(
+      () => [
+         t('analysis.status.reading'),
+         t('analysis.status.identifying'),
+         t('analysis.status.drafting'),
+         t('analysis.status.refining'),
+         t('analysis.status.finalizing'),
+      ],
+      [t],
+   );
+   const streamingMessages = useMemo(
+      () => [
+         t('analysis.status.receiving'),
+         t('analysis.status.interpreting'),
+         t('analysis.status.mapping'),
+         t('analysis.status.drafting'),
+         t('analysis.status.finalizing'),
+      ],
+      [t],
+   );
    const messages = useMemo(
-      () => (hasStream ? INSIGHT_STATUS_STREAMING : INSIGHT_STATUS_BASE),
-      [hasStream],
+      () => (hasStream ? streamingMessages : baseMessages),
+      [baseMessages, hasStream, streamingMessages],
    );
    const [index, setIndex] = useState(0);
 
@@ -408,6 +417,7 @@ export function AiInsightStaleBanner({
    isDark,
 }: AiInsightStaleBannerProps) {
    if (!isStale) return null;
+   const { t } = useTranslation();
 
    const containerStyle = isCoolingDown
       ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
@@ -434,7 +444,9 @@ export function AiInsightStaleBanner({
                   )}
 
                   <Text className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-                     {isCoolingDown ? 'Analysis Paused' : 'Previous Analysis'}
+                     {isCoolingDown
+                        ? t('analysis.stale.paused_title')
+                        : t('analysis.stale.previous_title')}
                   </Text>
                </View>
             </View>
@@ -442,12 +454,12 @@ export function AiInsightStaleBanner({
             {/* Helper copy */}
             <Text className="text-[11px] text-slate-600 dark:text-slate-400 leading-4 mt-1">
                {isCoolingDown
-                  ? 'Updates paused to enable deeper thinking.'
+                  ? t('analysis.stale.paused_message')
                   : !allowRefresh
-                    ? 'To regenerate this analysis, navigate to the Entry Detail.'
+                    ? t('analysis.stale.refresh_from_entry_detail')
                     : isNudgeStep
-                      ? "You've refined this quite a bit. Consider moving on to the next phase after refreshing."
-                      : 'Entry has changed. Update analysis?'}
+                      ? t('analysis.stale.nudge_message')
+                      : t('analysis.stale.update_prompt')}
             </Text>
          </View>
 
@@ -457,7 +469,7 @@ export function AiInsightStaleBanner({
                <Pressable
                   onPress={onRefreshPress}
                   accessibilityRole="button"
-                  accessibilityLabel="Refresh analysis"
+                  accessibilityLabel={t('analysis.stale.refresh_a11y')}
                   className="p-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 items-center justify-center active:opacity-70"
                >
                   <RefreshCw size={18} color={isDark ? '#f8fafc' : '#0f172a'} />
@@ -486,13 +498,14 @@ export function AiInsightCrisisBanner({
    isDark: boolean;
 }) {
    if (!safety?.isCrisis) return null;
+   const { t } = useTranslation();
 
    return (
       <View className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 border border-red-100 dark:border-red-800">
          <View className="flex-row items-center gap-2 mb-1">
             <TriangleAlert size={16} color={isDark ? '#fecaca' : '#991b1b'} />
             <Text className="text-sm font-bold text-red-800 dark:text-red-200">
-               You deserve support
+               {t('analysis.crisis.title')}
             </Text>
          </View>
          <Text className="text-sm leading-6 text-red-700 dark:text-red-300">
@@ -537,6 +550,7 @@ export function AiInsightThinkingPatterns({
    isFreshAnalysis,
    isDark,
 }: AiInsightThinkingPatternsProps) {
+   const { t } = useTranslation();
    const headerStyle = useDelayedAppearance(animationTimeline.headerAppear);
 
    if (!dims) return null;
@@ -545,6 +559,29 @@ export function AiInsightThinkingPatterns({
    const dimensionKeys = Object.keys(
       THINKING_PATTERN_DIMENSIONS,
    ) as (keyof typeof THINKING_PATTERN_DIMENSIONS)[];
+   const labels = useMemo(
+      () => ({
+         Time: {
+            label: t('home.patterns.tab_time'),
+            highLabel: t('home.patterns.high.temporary'),
+            lowLabel: t('home.patterns.low.permanent'),
+            description: t('home.patterns.desc_time'),
+         },
+         Scope: {
+            label: t('home.patterns.tab_scope'),
+            highLabel: t('home.patterns.high.specific'),
+            lowLabel: t('home.patterns.low.everything'),
+            description: t('home.patterns.desc_scope'),
+         },
+         Blame: {
+            label: t('home.patterns.tab_blame'),
+            highLabel: t('home.patterns.high.situation'),
+            lowLabel: t('home.patterns.low.my_fault'),
+            description: t('home.patterns.desc_blame'),
+         },
+      }),
+      [t],
+   );
 
    // Map dimension keys to delay timers from animationTimeline
    const delays: Record<keyof typeof THINKING_PATTERN_DIMENSIONS, number> = {
@@ -560,7 +597,7 @@ export function AiInsightThinkingPatterns({
             <View className="flex-row items-center gap-2 mb-4">
                <Layers size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                  Thinking Patterns
+                  {t('home.thinking_patterns')}
                </Text>
             </View>
          </Animated.View>
@@ -569,16 +606,17 @@ export function AiInsightThinkingPatterns({
          <View className="gap-6">
             {dimensionKeys.map((key) => {
                const config = THINKING_PATTERN_DIMENSIONS[key];
+               const labelConfig = labels[key];
                const metricData = dims[config.dimension]; // dynamic access
 
                return (
                   <AnimatedSpectrumRow
                      key={key}
                      // Combined Label: "Time · Have you viewed setbacks as permanent?"
-                     label={key}
-                     subLabel={config.description} // Replaces the old (Permanence)
-                     leftText={config.highLabel}
-                     rightText={config.lowLabel}
+                     label={labelConfig.label}
+                     subLabel={labelConfig.description}
+                     leftText={labelConfig.highLabel}
+                     rightText={labelConfig.lowLabel}
                      score={metricData.score}
                      insight={metricData.insight}
                      detectedPhrase={metricData.detectedPhrase}
@@ -600,6 +638,7 @@ export function AiInsightSuggestion({
    counterBelief?: string | null;
    animationTimeline: AnimationTimeline;
 }) {
+   const { t } = useTranslation();
    const animStyle = useDelayedAppearance(animationTimeline.suggestionStart);
 
    if (!counterBelief) return null;
@@ -610,11 +649,11 @@ export function AiInsightSuggestion({
          className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 p-4 border border-indigo-100 dark:border-indigo-800/50 mt-2"
       >
          <View className="flex-row items-center gap-2 mb-2">
-            <Quote size={16} color="#4f46e5" />
-            <Text className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase">
-               Try this perspective
-            </Text>
-         </View>
+           <Quote size={16} color="#4f46e5" />
+           <Text className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase">
+               {t('analysis.try_perspective')}
+           </Text>
+        </View>
          <Text className="text-[15px] font-medium leading-6 text-indigo-900 dark:text-indigo-100 italic">
             &quot;{counterBelief}&quot;
          </Text>
@@ -638,6 +677,7 @@ export function AiInsightDisclaimer({
    isDark,
    onAnimationComplete,
 }: AiInsightDisclaimerProps) {
+   const { t } = useTranslation();
    const animStyle = useDelayedAppearance(
       animationTimeline.disclaimerStart,
       onAnimationComplete,
@@ -654,8 +694,7 @@ export function AiInsightDisclaimer({
             style={{ marginTop: 2 }}
          />
          <Text className="flex-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
-            This analysis is generated by AI and is for self-reflection purposes
-            only. It is not a substitute for professional mental health advice.
+            {t('analysis.disclaimer')}
          </Text>
          {allowMinimize && (
             <Pressable
@@ -663,7 +702,7 @@ export function AiInsightDisclaimer({
                className="flex-row items-center gap-1"
             >
                <Text className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                  Less
+                  {t('common.less')}
                </Text>
                <ChevronUp size={12} color={isDark ? '#94a3b8' : '#64748b'} />
             </Pressable>

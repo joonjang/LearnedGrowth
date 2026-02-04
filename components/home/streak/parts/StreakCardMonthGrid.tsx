@@ -1,4 +1,3 @@
-import { WEEKDAY_LABELS } from '@/lib/constants';
 import {
    CalendarDay,
    cx,
@@ -7,6 +6,7 @@ import {
    isFutureDate,
    toDateKey,
 } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import { StyleProp, Text, View, ViewStyle } from 'react-native';
 import { Pressable } from 'react-native-gesture-handler';
 
@@ -43,6 +43,11 @@ export function StreakCardMonthGrid({
    dayCircleStyle,
    onDatePress,
 }: StreakCardMonthGridProps) {
+   const { t } = useTranslation();
+   const weekdayLabels = t('calendar.weekdays_short', {
+      returnObjects: true,
+   }) as string[];
+
    const getSeedDotClass = (isFilled: boolean) => {
       if (isFilled) return 'bg-orange-300';
       return 'bg-orange-600 dark:bg-orange-400';
@@ -109,10 +114,10 @@ export function StreakCardMonthGrid({
    };
 
    return (
-      <View className="px-5 pb-2">
+         <View className="px-5 pb-2">
          {/* Weekday Header */}
          <View className="flex-row justify-between mb-2">
-            {WEEKDAY_LABELS.map((label, idx) => (
+            {weekdayLabels.map((label, idx) => (
                <View key={`${label}-${idx}`} className="flex-1 items-center">
                   <Text className="text-[10px] font-bold uppercase text-slate-400">
                      {label}

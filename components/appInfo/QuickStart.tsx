@@ -18,6 +18,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { router } from 'expo-router';
 import { ArrowRight, Briefcase, HeartCrack, Users } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { Trans, useTranslation } from 'react-i18next';
 import React, {
    useCallback,
    useEffect,
@@ -45,44 +46,6 @@ const getToneForKey = (key: string): FieldTone => {
 };
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
-
-const SCENARIOS = [
-   {
-      id: 'work',
-      label: 'Work Stress',
-      examples: {
-         adversity: 'I sent a report with a typo in the title.',
-         belief: 'They’ll think I’m careless.',
-         consequence: 'I felt anxious and avoided checking replies.',
-         dispute:
-            'One typo isn’t my whole track record. I can send a quick correction.',
-         energy: 'More steady. I fixed it and moved on.',
-      },
-   },
-   {
-      id: 'social',
-      label: 'Social Anxiety',
-      examples: {
-         adversity: 'I texted a friend and didn’t hear back for a few hours.',
-         belief: 'They’re annoyed with me.',
-         consequence: 'I felt tense and avoided checking replies.',
-         dispute: 'They might be busy. A late reply does not equal rejection.',
-         energy: 'Calmer. I put my phone down and did something else.',
-      },
-   },
-   {
-      id: 'internal',
-      label: 'Self Criticism',
-      examples: {
-         adversity: 'I overslept and missed the gym.',
-         belief: 'I have no discipline.',
-         consequence: 'I felt ashamed and acted like the day was “ruined.”',
-         dispute:
-            'One missed session does not erase progress. I can reset today.',
-         energy: 'Kinder to myself. I planned a simple workout for tomorrow.',
-      },
-   },
-];
 
 const SCENARIO_STYLES = {
    work: {
@@ -177,12 +140,51 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
    const insets = useSafeAreaInsets();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { t } = useTranslation();
    const { lock: lockNavigation, locked: navigationLocked } =
       useNavigationLock();
    const { status } = useAuth();
    const [activeScenarioIndex, setActiveScenarioIndex] = useState(0);
    const [reduceMotion, setReduceMotion] = useState(false);
-   const activeScenario = SCENARIOS[activeScenarioIndex];
+   const scenarios = useMemo(
+      () => [
+         {
+            id: 'work',
+            label: t('quickstart.scenarios.work.label'),
+            examples: {
+               adversity: t('quickstart.scenarios.work.adversity'),
+               belief: t('quickstart.scenarios.work.belief'),
+               consequence: t('quickstart.scenarios.work.consequence'),
+               dispute: t('quickstart.scenarios.work.dispute'),
+               energy: t('quickstart.scenarios.work.energy'),
+            },
+         },
+         {
+            id: 'social',
+            label: t('quickstart.scenarios.social.label'),
+            examples: {
+               adversity: t('quickstart.scenarios.social.adversity'),
+               belief: t('quickstart.scenarios.social.belief'),
+               consequence: t('quickstart.scenarios.social.consequence'),
+               dispute: t('quickstart.scenarios.social.dispute'),
+               energy: t('quickstart.scenarios.social.energy'),
+            },
+         },
+         {
+            id: 'internal',
+            label: t('quickstart.scenarios.internal.label'),
+            examples: {
+               adversity: t('quickstart.scenarios.internal.adversity'),
+               belief: t('quickstart.scenarios.internal.belief'),
+               consequence: t('quickstart.scenarios.internal.consequence'),
+               dispute: t('quickstart.scenarios.internal.dispute'),
+               energy: t('quickstart.scenarios.internal.energy'),
+            },
+         },
+      ],
+      [t],
+   );
+   const activeScenario = scenarios[activeScenarioIndex];
    const cardShadow = useMemo(
       () => getShadow({ isDark, preset: 'sm' }),
       [isDark],
@@ -194,15 +196,17 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
    const showLogin = !isModal && status !== 'signedIn';
 
    // Generate Timeline Steps
-   const steps: TimelineStepDef[] = useMemo(() => {
-      return ABCDE_FIELD.map((f, idx) => ({
-         key: f.key,
-         letter: LETTERS[idx] ?? '',
-         label: f.label,
-         desc: f.hint,
-         tone: getToneForKey(f.key),
-      }));
-   }, []);
+   const steps: TimelineStepDef[] = useMemo(
+      () =>
+         ABCDE_FIELD.map((f, idx) => ({
+            key: f.key,
+            letter: LETTERS[idx] ?? '',
+            label: t(f.labelKey),
+            desc: t(f.hintKey),
+            tone: getToneForKey(f.key),
+         })),
+      [t],
+   );
 
    const fade = useRef(new Animated.Value(1)).current;
 
@@ -274,7 +278,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                      className="flex-1 mr-4 text-3xl font-black tracking-tight text-slate-900 dark:text-white"
                      accessibilityRole="header"
                   >
-                     Let&apos;s untangle your thoughts.
+                     {t('quickstart.title')}
                   </Text>
 
                   <View className="mt-1.5 items-end gap-2">
@@ -284,7 +288,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                            className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 active:opacity-70"
                         >
                            <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-700 dark:text-slate-200">
-                              Log in
+                              {t('common.log_in')}
                            </Text>
                         </Pressable>
                      )}
@@ -295,11 +299,14 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                </View>
 
                <Text className="mt-3 text-base leading-7 text-slate-600 dark:text-slate-400">
-                  When things go wrong, we often tell ourselves a{' '}
-                  <Text className="font-semibold text-slate-900 dark:text-slate-100">
-                     story
-                  </Text>{' '}
-                  about why it happened.
+                  <Trans
+                     i18nKey="quickstart.story_intro"
+                     components={{
+                        bold: (
+                           <Text className="font-semibold text-slate-900 dark:text-slate-100" />
+                        ),
+                     }}
+                  />
                </Text>
 
                {/* The ABC Card - Updated colors to match Theme */}
@@ -309,52 +316,53 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                >
                   <Text className="text-base leading-7 text-slate-700 dark:text-slate-300">
                      <Text className="font-bold text-slate-900 dark:text-slate-100">
-                        The ABCs
+                        {t('quickstart.abc_title')}
                      </Text>
                      {'\n'}
-                     An{' '}
-                     <Text className="font-bold text-slate-900 dark:text-slate-100">
-                        Adversity (A)
-                     </Text>{' '}
-                     happens. You form a{' '}
-                     <Text className={`font-bold ${BELIEF_TEXT_CLASS}`}>
-                        Belief (B)
-                     </Text>{' '}
-                     about it. That belief drives the{' '}
-                     <Text className="font-bold text-slate-900 dark:text-slate-100">
-                        Consequence (C)
-                     </Text>
-                     , how you feel and act.
+                     <Trans
+                        i18nKey="quickstart.abc_body"
+                        components={{
+                           bold: (
+                              <Text className="font-bold text-slate-900 dark:text-slate-100" />
+                           ),
+                           boldBelief: (
+                              <Text className={`font-bold ${BELIEF_TEXT_CLASS}`} />
+                           ),
+                        }}
+                     />
                   </Text>
 
                   <View className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800">
                      <Text className="italic text-xs leading-5 text-slate-400 dark:text-slate-500">
-                        Seligman, M. E. P. (2011). Learned optimism: How to
-                        change your mind and your life. Knopf Doubleday
-                        Publishing Group.
+                        {t('quickstart.citation')}
                      </Text>
                   </View>
                </View>
 
                <Text className="mt-6 text-base leading-7 text-slate-600 dark:text-slate-400">
-                  We can change how you feel by looking at that{' '}
-                  <Text className="font-semibold text-slate-900 dark:text-slate-100">
-                     story
-                  </Text>{' '}
-                  again.
+                  <Trans
+                     i18nKey="quickstart.reframe_intro"
+                     components={{
+                        bold: (
+                           <Text className="font-semibold text-slate-900 dark:text-slate-100" />
+                        ),
+                     }}
+                  />
                </Text>
 
                {/* Solution Text - Updated colors to match Theme */}
                <Text className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-400">
-                  Together, we’ll use{' '}
-                  <Text className={`font-bold ${DISPUTE_TEXT_CLASS}`}>
-                     Disputation (D)
-                  </Text>{' '}
-                  to challenge negative thoughts, helping you find{' '}
-                  <Text className={`font-bold ${ENERGY_TEXT_CLASS}`}>
-                     Energy (E)
-                  </Text>{' '}
-                  and a clearer perspective.
+                  <Trans
+                     i18nKey="quickstart.solution"
+                     components={{
+                        boldDispute: (
+                           <Text className={`font-bold ${DISPUTE_TEXT_CLASS}`} />
+                        ),
+                        boldEnergy: (
+                           <Text className={`font-bold ${ENERGY_TEXT_CLASS}`} />
+                        ),
+                     }}
+                  />
                </Text>
             </View>
 
@@ -362,11 +370,11 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
             <View className="mb-6">
                <View className="px-6 mb-3 flex-row justify-between items-center">
                   <Text className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                     See it in action
+                     {t('quickstart.see_action')}
                   </Text>
                </View>
                <View className="flex-row flex-wrap justify-evenly">
-                  {SCENARIOS.map((scenario, index) => {
+                  {scenarios.map((scenario, index) => {
                      const isActive = index === activeScenarioIndex;
                      // pick palette by scenario + dark mode + active
                      const stylesForScenario =
@@ -427,59 +435,56 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                               <TimelinePivot variant="default">
                                  {/* RESTORED CONTENT - Quick Path / Guided Path */}
                                  <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                    The Pivot
+                                    {t('quickstart.pivot_title')}
                                  </Text>
 
                                  <Text className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                                    You can continue on your own, or get an
-                                    optional AI assisted analysis based on your{' '}
-                                    <Text className="font-bold text-slate-900 dark:text-slate-200">
-                                       A{'\u00A0'}+{'\u00A0'}B{'\u00A0'}+
-                                       {'\u00A0'}C
-                                    </Text>
-                                    .
+                                    <Trans
+                                       i18nKey="quickstart.pivot_desc"
+                                       components={{
+                                          bold: (
+                                             <Text className="font-bold text-slate-900 dark:text-slate-200" />
+                                          ),
+                                       }}
+                                    />
                                  </Text>
 
                                  <View className="mt-3 flex-row gap-8">
                                     <View className="flex-1">
                                        <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                                          Quick Path
+                                          {t('quickstart.quick_path_title')}
                                        </Text>
                                        <Text className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                          Continue with the{' '}
-                                          <Text className="font-bold">
-                                             standard questions
-                                          </Text>{' '}
-                                          for{' '}
-                                          <Text
-                                             className={`font-bold ${DISPUTE_TEXT_CLASS}`}
-                                          >
-                                             Dispute (D)
-                                          </Text>{' '}
-                                          and{' '}
-                                          <Text
-                                             className={`font-bold ${ENERGY_TEXT_CLASS}`}
-                                          >
-                                             Energy (E)
-                                          </Text>
-                                          .
+                                          <Trans
+                                             i18nKey="quickstart.quick_path_desc"
+                                             components={{
+                                                bold: <Text className="font-bold" />,
+                                                boldDispute: (
+                                                   <Text
+                                                      className={`font-bold ${DISPUTE_TEXT_CLASS}`}
+                                                   />
+                                                ),
+                                                boldEnergy: (
+                                                   <Text
+                                                      className={`font-bold ${ENERGY_TEXT_CLASS}`}
+                                                   />
+                                                ),
+                                             }}
+                                          />
                                        </Text>
                                     </View>
 
                                     <View className="flex-1">
                                        <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                                          Guided Path
+                                          {t('quickstart.guided_path_title')}
                                        </Text>
                                        <Text className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                          Get an{' '}
-                                          <Text className="font-bold">
-                                             analysis
-                                          </Text>{' '}
-                                          of your entry and{' '}
-                                          <Text className="font-bold">
-                                             tailored questions
-                                          </Text>{' '}
-                                          specific to your entry.
+                                          <Trans
+                                             i18nKey="quickstart.guided_path_desc"
+                                             components={{
+                                                bold: <Text className="font-bold" />,
+                                             }}
+                                          />
                                        </Text>
                                     </View>
                                  </View>
@@ -488,7 +493,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                            <TimelineItem step={step} variant="default">
                               <View className="mt-3 overflow-hidden rounded-lg bg-slate-50 dark:bg-black/20 px-3 py-2.5">
                                  <Text className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400/80">
-                                    Example
+                                    {t('common.example')}
                                  </Text>
                                  <Text className="font-medium italic text-slate-700 dark:text-slate-300">
                                     {exampleText}
@@ -514,14 +519,14 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                         className="text-lg font-bold text-center text-white"
                         numberOfLines={1}
                      >
-                        Try a 2-minute entry
+                        {t('quickstart.cta')}
                      </Text>
                      <View className="absolute right-4 opacity-50">
                         <ArrowRight size={20} color="white" />
                      </View>
                   </Pressable>
                   <Text className="mt-3 text-center text-xs font-medium text-slate-400">
-                     No perfection required. Just start.
+                     {t('quickstart.cta_sub')}
                   </Text>
                </View>
             )}

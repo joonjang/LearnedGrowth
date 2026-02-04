@@ -21,6 +21,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import { AlertCircle } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,6 +49,7 @@ export function DayDetailSheet({
    completedEntries,
    onDeleteEntry,
 }: DayDetailSheetProps) {
+   const { t } = useTranslation();
    const insets = useSafeAreaInsets();
    const snapPoints = useMemo(() => [BOTTOM_SHEET_MAX_SNAP], []);
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
@@ -121,7 +123,7 @@ export function DayDetailSheet({
          >
             <View className="mb-4">
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
-                  Daily Snapshot
+                  {t('home.streak.daily_snapshot')}
                </Text>
                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {selectedDateLabel || ' '}
@@ -140,7 +142,7 @@ export function DayDetailSheet({
                            color={isDark ? ALERT_COLOR_DARK : ALERT_COLOR_LIGHT}
                         />
                         <Text className="text-xs font-bold uppercase tracking-widest text-orange-600 dark:text-orange-400">
-                           Needs Attention
+                           {t('home.streak.needs_attention')}
                         </Text>
                      </View>
 
@@ -171,7 +173,7 @@ export function DayDetailSheet({
                {completedEntries.length > 0 && (
                   <View>
                      <Text className="text-xs font-bold uppercase tracking-widest text-emerald-500 dark:text-emerald-300 mb-2">
-                        Thoughts Reframed
+                        {t('home.streak.thoughts_reframed')}
                      </Text>
                      <View className="gap-3">
                         {completedEntries.map((entry) => (

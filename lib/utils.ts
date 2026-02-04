@@ -1,6 +1,7 @@
 import { Entry } from '@/models/entry';
 import { clsx, type ClassValue } from 'clsx';
 import { HelpCircle, Scale, Sprout, Wind } from 'lucide-react-native';
+import type { TFunction } from 'i18next';
 import { ComponentType } from 'react';
 import { twMerge } from 'tailwind-merge';
 
@@ -28,13 +29,17 @@ export function isOptimistic(score: string | null): boolean {
    );
 }
 
-export function getMoodConfig(score: number | null, isDark: boolean) {
+export function getMoodConfig(
+   score: number | null,
+   isDark: boolean,
+   t: TFunction,
+) {
    if (score === null) {
       return {
          Icon: HelpCircle,
-         label: 'No Data',
-         description: 'Add entries to see your outlook.',
-         weekDescription: 'Add entries this week to see your outlook.',
+         label: t('home.mood.no_data.title'),
+         description: t('home.mood.no_data.description'),
+         weekDescription: t('home.mood.no_data.week_description'),
          color: isDark ? '#94a3b8' : '#64748b',
          bg: isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(100, 116, 139, 0.1)',
       };
@@ -42,11 +47,9 @@ export function getMoodConfig(score: number | null, isDark: boolean) {
    if (score >= 7.0) {
       return {
          Icon: Sprout,
-         label: 'Seeing Possibilities',
-         description:
-            'You are focusing on a way forward and seeing the scope of your potential.',
-         weekDescription:
-            'This week you leaned into possibility and forward momentum.',
+         label: t('home.mood.possible.title'),
+         description: t('home.mood.possible.description'),
+         weekDescription: t('home.mood.possible.week_description'),
          color: isDark ? '#34d399' : '#059669',
          bg: isDark ? 'rgba(52, 211, 153, 0.15)' : 'rgba(5, 150, 105, 0.1)',
       };
@@ -54,21 +57,18 @@ export function getMoodConfig(score: number | null, isDark: boolean) {
    if (score >= 4.0) {
       return {
          Icon: Scale,
-         label: 'Grounded Reality',
-         description:
-            'You are seeing things as they are—a solid mix of good and bad.',
-         weekDescription:
-            'Your week balanced positives and challenges without swinging to extremes.',
+         label: t('home.mood.grounded.title'),
+         description: t('home.mood.grounded.description'),
+         weekDescription: t('home.mood.grounded.week_description'),
          color: isDark ? '#fbbf24' : '#d97706',
          bg: isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(217, 119, 6, 0.1)',
       };
    }
    return {
       Icon: Wind,
-      label: 'Turning Inward',
-      description: 'You are in a protective, introspective state right now.',
-      weekDescription:
-         'Your entries skewed towards internalizing challenges this week.',
+      label: t('home.mood.inward.title'),
+      description: t('home.mood.inward.description'),
+      weekDescription: t('home.mood.inward.week_description'),
       color: isDark ? '#a5b4fc' : '#6366f1',
       bg: isDark ? 'rgba(165, 180, 252, 0.15)' : 'rgba(99, 102, 241, 0.1)',
    };
@@ -195,17 +195,6 @@ export const findWeekRowIndex = (
    }
    return index >= 0 ? Math.floor(index / 7) : -1;
 };
-
-export const getEncouragement = (streakCount: number) => {
-   if (streakCount === 0) return 'Today is a fresh start.';
-   if (streakCount <= 2) return 'Small steps create big change.';
-   if (streakCount <= 6) return 'Keep going - consistency compounds.';
-   if (streakCount <= 14) return 'You are rewiring your mind.';
-   return 'Resilience is becoming your nature.';
-};
-
-export const getSummaryText = (completedCount: number) =>
-   `${completedCount} ${completedCount === 1 ? 'thought' : 'thoughts'} reframed`;
 
 export const isFutureDate = (date: Date) => {
    const today = new Date();

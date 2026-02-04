@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
+import * as Localization from "expo-localization";
+import i18n from "@/lib/i18n";
 import { Appearance, Platform } from "react-native";
 import {
   ReactNode,
@@ -12,6 +14,7 @@ import {
 } from "react";
 
 type ThemePreference = "light" | "dark" | "system";
+type LanguagePreference = "system" | "en" | "ko";
 
 type PreferencesContextShape = {
   loading: boolean;
@@ -20,8 +23,11 @@ type PreferencesContextShape = {
   hapticsAvailable: boolean;
   theme: "light" | "dark";
   themePreference: ThemePreference;
+  language: "en" | "ko";
+  languagePreference: LanguagePreference;
   setHapticsEnabled: (next: boolean) => Promise<void>;
   setTheme: (next: ThemePreference) => Promise<void>;
+  setLanguage: (next: LanguagePreference) => Promise<void>;
   triggerHaptic: () => Promise<void>;
   clearError: () => void;
 };
@@ -29,6 +35,7 @@ type PreferencesContextShape = {
 const STORAGE_KEYS = {
   haptics: "prefs:haptics",
   theme: "prefs:theme",
+  language: "prefs:language",
 } as const;
 
 const PreferencesContext = createContext<PreferencesContextShape | null>(null);
@@ -44,6 +51,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<"light" | "dark">(defaultTheme);
   const [themePreference, setThemePreference] =
     useState<ThemePreference>("system");
+  const [language, setLanguageState] = useState<"en" | "ko">("en");
+  const [languagePreference, setLanguagePreference] =
+    useState<LanguagePreference>("system");
 
   useEffect(() => {
     let mounted = true;
@@ -77,6 +87,19 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
           } catch {
             // noop
           }
+        }
+
+        const storedLanguage = byKey[STORAGE_KEYS.language];
+        if (storedLanguage === "en" || storedLanguage === "ko") {
+          setLanguagePreference(storedLanguage);
+          setLanguageState(storedLanguage);
+          i18n.changeLanguage(storedLanguage).catch(() => undefined);
+        } else {
+          setLanguagePreference("system");
+          const deviceLang =
+            Localization.getLocales?.()?.[0]?.languageCode === "ko" ? "ko" : "en";
+          setLanguageState(deviceLang);
+          i18n.changeLanguage(deviceLang).catch(() => undefined);
         }
       } catch (err: any) {
         if (!mounted) return;
@@ -137,6 +160,21 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const persistLanguage = useCallback(async (next: LanguagePreference) => {
+    setLanguagePreference(next);
+    const resolved =
+      next === "system"
+        ? (Localization.getLocales?.()?.[0]?.languageCode === "ko" ? "ko" : "en")
+        : next;
+    setLanguageState(resolved);
+    try {
+      await i18n.changeLanguage(resolved);
+      await AsyncStorage.setItem(STORAGE_KEYS.language, next);
+    } catch (err: any) {
+      setError(err?.message ?? "Could not update language");
+    }
+  }, []);
+
   const triggerHaptic = useCallback(async () => {
     if (!hapticsEnabled || !hapticsAvailable) return;
     await Haptics.selectionAsync().catch(() => undefined);
@@ -152,8 +190,11 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       hapticsAvailable,
       theme,
       themePreference,
+      language,
+      languagePreference,
       setHapticsEnabled: persistHaptics,
       setTheme: persistTheme,
+      setLanguage: persistLanguage,
       triggerHaptic,
       clearError,
     }),
@@ -163,7 +204,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       hapticsAvailable,
       hapticsEnabled,
       loading,
+      language,
+      languagePreference,
       persistHaptics,
+      persistLanguage,
       persistTheme,
       triggerHaptic,
       theme,

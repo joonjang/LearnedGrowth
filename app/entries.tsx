@@ -8,6 +8,7 @@ import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { ROUTE_ENTRY_DETAIL } from '@/lib/constants';
 import { getWeekLabel, getWeekStart } from '@/lib/date';
+import { getCategoryLabel } from '@/lib/labels';
 import { scheduleIdle } from '@/lib/scheduleIdle';
 import { getShadow } from '@/lib/shadow';
 import type { Entry } from '@/models/entry';
@@ -29,11 +30,13 @@ import React, {
    useRef,
    useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
    ActivityIndicator,
    FlatList,
    Keyboard,
    LayoutChangeEvent,
+   Platform,
    Pressable,
    Text,
    TextInput,
@@ -52,7 +55,7 @@ import Animated, {
    useAnimatedStyle,
    useDerivedValue,
    useSharedValue,
-   withTiming
+   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -63,11 +66,11 @@ const AnimatedScrollView = Animated.ScrollView;
 
 // --- CONSTANTS ---
 const SCROLL_THRESHOLD_FOR_FAB = 100;
-const UNANALYZED_CATEGORY_LABEL = 'Not analyzed';
 const SEARCH_BUTTON_SIZE = 44; // Matches w-11
 const FILTER_CHEVRON_GUTTER = 4;
 
 type FilterMenuType = 'category' | 'theme' | null;
+const UNANALYZED_CATEGORY_KEY = 'unanalyzed';
 
 export default function EntriesListScreen() {
    const store = useEntries();
@@ -77,6 +80,7 @@ export default function EntriesListScreen() {
    const isDark = colorScheme === 'dark';
    const { lock: lockNavigation } = useNavigationLock();
    const { width: screenWidth } = useWindowDimensions();
+   const { t, i18n } = useTranslation();
    const params = useLocalSearchParams<{ preview?: string | string[] }>();
    const previewParam = Array.isArray(params.preview)
       ? params.preview[0]
@@ -104,6 +108,7 @@ export default function EntriesListScreen() {
       SEARCH_BUTTON_SIZE,
       Math.min(screenWidth - 32, 380),
    );
+   const unanalyzedLabel = t('entries.unanalyzed');
 
    // Main List Scroll
    const scrollY = useSharedValue(0);
@@ -173,6 +178,8 @@ export default function EntriesListScreen() {
    const searchOpenProgress = useSharedValue(0);
    const [isSearchOpen, setIsSearchOpen] = useState(false);
    const [searchQuery, setSearchQuery] = useState('');
+   const [isSearchFocused, setIsSearchFocused] = useState(false);
+   const searchInputRef = useRef<TextInput>(null);
 
    const deferredQuery = useDeferredValue(searchQuery);
 
@@ -250,20 +257,6 @@ export default function EntriesListScreen() {
       refreshDeletedEntries();
    }, [refreshDeletedEntries, store.rows.length]);
 
-   const toggleSearch = useCallback(() => {
-      setIsSearchOpen((prev) => {
-         if (prev) {
-            // Closing
-            setActiveMenu(null);
-            setSelectedCategory(null);
-            setSelectedTheme(null);
-            Keyboard.dismiss();
-            return false;
-         }
-         return true;
-      });
-   }, []);
-
    const resetSearchFilters = useCallback(() => {
       setSearchQuery('');
       setSelectedCategory(null);
@@ -271,6 +264,18 @@ export default function EntriesListScreen() {
       setActiveMenu(null);
       Keyboard.dismiss();
    }, []);
+
+   const toggleSearch = useCallback(() => {
+      setIsSearchOpen((prev) => {
+         if (prev) {
+            // Closing
+            resetSearchFilters();
+            return false;
+         }
+         // Opening: We do NOT auto-focus the keyboard
+         return true;
+      });
+   }, [resetSearchFilters]);
 
    const clearSearchInput = useCallback(() => {
       setSearchQuery('');
@@ -395,15 +400,29 @@ export default function EntriesListScreen() {
       });
 
       const list = Array.from(categories).sort((a, b) =>
-         a.localeCompare(b, undefined, { sensitivity: 'base' }),
+         getCategoryLabel(a, t).localeCompare(
+            getCategoryLabel(b, t),
+            i18n.language,
+            {
+               sensitivity: 'base',
+            },
+         ),
       );
 
+      const mapped = list.map((value) => ({
+         value,
+         label: getCategoryLabel(value, t),
+      }));
+
       if (hasUnanalyzed) {
-         list.push(UNANALYZED_CATEGORY_LABEL);
+         mapped.push({
+            value: UNANALYZED_CATEGORY_KEY,
+            label: unanalyzedLabel,
+         });
       }
 
-      return list;
-   }, [baseRows]);
+      return mapped;
+   }, [baseRows, i18n.language, t, unanalyzedLabel]);
 
    const themeOptions = useMemo(() => {
       const tags = new Set<string>();
@@ -426,7 +445,7 @@ export default function EntriesListScreen() {
          // 1. Check Category (Fastest check first)
          if (deferredCategory) {
             const category = entry.aiResponse?.meta?.category?.trim() ?? null;
-            if (deferredCategory === UNANALYZED_CATEGORY_LABEL) {
+            if (deferredCategory === UNANALYZED_CATEGORY_KEY) {
                if (category) return false;
             } else if (category !== deferredCategory) {
                return false;
@@ -496,7 +515,7 @@ export default function EntriesListScreen() {
                {showDateHeader && (
                   <View className="px-6 pt-8 pb-3 items-center">
                      <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                        {getWeekLabel(weekStart, new Date())}
+                        {getWeekLabel(weekStart, new Date(), t)}
                      </Text>
                   </View>
                )}
@@ -508,7 +527,7 @@ export default function EntriesListScreen() {
                >
                   <View className="px-6 -mb-4">
                      <Text className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 opacity-80">
-                        ENTRY #{entryNumber}
+                        {t('entries.entry_number', { count: entryNumber })}
                      </Text>
                   </View>
                   <EntryRow
@@ -539,6 +558,7 @@ export default function EntriesListScreen() {
       [
          filteredRows,
          totalEntries,
+         t,
          deferredQuery,
          openMenuEntryId,
          closeMenu,
@@ -564,28 +584,30 @@ export default function EntriesListScreen() {
                   <Search size={24} color={isDark ? '#64748b' : '#94a3b8'} />
                </View>
                <Text className="text-base font-bold text-slate-700 dark:text-slate-200 text-center mb-1">
-                  No matching entries found
+                  {t('entries.empty_title')}
                </Text>
                <Text className="text-sm text-slate-500 dark:text-slate-400 text-center">
-                  Try adjusting your search terms or filters
+                  {t('entries.empty_subtitle')}
                </Text>
             </Animated.View>
          );
       }
       return null;
-   }, [hasActiveFilters, filteredRows.length, isDark]);
+   }, [hasActiveFilters, filteredRows.length, isDark, t]);
 
    const ListHeader = useMemo(
       () => (
          <View className="px-6 pt-4 items-center justify-center">
             <Text className="text-2xl font-black text-slate-900 dark:text-white mb-1 text-center">
-               Entry History
+               {t('entries.title')}
             </Text>
             <View className="flex-row items-center gap-2">
                {isFullListReady ? (
                   <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center">
-                     {totalEntries} Entries •{' '}
-                     {hasActiveFilters ? 'Filtered' : 'All Time'}
+                     {t('entries.count', { count: totalEntries })} •{' '}
+                     {hasActiveFilters
+                        ? t('entries.filtered')
+                        : t('entries.all_time')}
                   </Text>
                ) : (
                   <View className="h-4 w-36 rounded-full bg-slate-200 dark:bg-slate-700" />
@@ -615,7 +637,7 @@ export default function EntriesListScreen() {
                         numberOfLines={1}
                         className="text-xs font-semibold text-slate-700 dark:text-slate-200"
                      >
-                        View deleted {deletedCount === 1 ? 'entry' : 'entries'}
+                        {t('entries.view_deleted', { count: deletedCount })}
                      </Text>
                      <ArrowRight
                         size={12}
@@ -635,6 +657,7 @@ export default function EntriesListScreen() {
          isFullListReady,
          isSearchOpen,
          isUpdatingResults,
+         t,
          totalEntries,
       ],
    );
@@ -749,20 +772,37 @@ export default function EntriesListScreen() {
                            entering={FadeIn.duration(200)}
                            className="flex-1 flex-row items-center pl-3"
                         >
-                           {/* Text Input Container */}
+                           {/* Simplified Text Input Container */}
                            <View className="flex-1 flex-row items-center relative mr-2">
                               <TextInput
+                                 ref={searchInputRef}
                                  value={searchQuery}
                                  onChangeText={setSearchQuery}
-                                 placeholder="Search..."
+                                 placeholder={t('entries.search_placeholder')}
                                  placeholderTextColor={
                                     isDark ? '#64748b' : '#94a3b8'
                                  }
-                                 className="flex-1 h-full text-base font-medium text-slate-900 dark:text-slate-100 pr-12"
+                                 // 1. Unified Font Styling (Removed text-base)
+                                 className="flex-1 h-full font-medium text-slate-900 dark:text-slate-100 pr-12"
+                                 style={[
+                                    {
+                                       fontSize: 16,
+                                       paddingTop: 0,
+                                       paddingBottom: 0,
+                                       textAlignVertical: 'center',
+                                       lineHeight: undefined, // Crucial for iOS
+                                    },
+                                    Platform.OS === 'ios' && {
+                                       height: SEARCH_BUTTON_SIZE, // Match container height
+                                    },
+                                 ]}
                                  autoFocus={false}
                                  returnKeyType="search"
                                  onSubmitEditing={Keyboard.dismiss}
+                                 onFocus={() => setIsSearchFocused(true)}
+                                 onBlur={() => setIsSearchFocused(false)}
                               />
+
                               <View className="absolute right-0 flex-row items-center gap-2">
                                  {isUpdatingResults && (
                                     <ActivityIndicator
@@ -813,7 +853,7 @@ export default function EntriesListScreen() {
                                           : 'text-slate-500 dark:text-slate-400'
                                     }`}
                                  >
-                                    Category
+                                    {t('entries.filters.category')}
                                  </Text>
                               </Pressable>
 
@@ -835,7 +875,7 @@ export default function EntriesListScreen() {
                                           : 'text-slate-500 dark:text-slate-400'
                                     }`}
                                  >
-                                    Theme
+                                    {t('entries.filters.theme')}
                                  </Text>
                               </Pressable>
                            </View>
@@ -889,8 +929,8 @@ export default function EntriesListScreen() {
                         {/* Title for Context */}
                         <Text className="text-[10px] uppercase font-bold text-slate-400 mb-2 tracking-wider">
                            {activeMenu === 'category'
-                              ? 'Select Category'
-                              : 'Select Theme'}
+                              ? t('entries.filters.select_category')
+                              : t('entries.filters.select_theme')}
                         </Text>
 
                         {/* Scrolling Container */}
@@ -966,24 +1006,26 @@ export default function EntriesListScreen() {
                                  <>
                                     {categoryOptions.length === 0 && (
                                        <Text className="text-xs text-slate-400 italic">
-                                          No categories found
+                                          {t('entries.filters.none_category')}
                                        </Text>
                                     )}
                                     {categoryOptions.map((cat) => (
                                        <FilterChip
-                                          key={cat}
-                                          label={cat}
-                                          isActive={selectedCategory === cat}
+                                          key={cat.value}
+                                          label={cat.label}
+                                          isActive={
+                                             selectedCategory === cat.value
+                                          }
                                           onPress={() => {
-                                             handleCategorySelect(cat);
+                                             handleCategorySelect(cat.value);
                                              scrollChipToCenter(
                                                 'category',
-                                                cat,
+                                                cat.value,
                                              );
                                           }}
                                           onLayout={registerChipLayout(
                                              'category',
-                                             cat,
+                                             cat.value,
                                           )}
                                        />
                                     ))}
@@ -994,7 +1036,7 @@ export default function EntriesListScreen() {
                                  <>
                                     {themeOptions.length === 0 && (
                                        <Text className="text-xs text-slate-400 italic">
-                                          No themes found
+                                          {t('entries.filters.none_theme')}
                                        </Text>
                                     )}
                                     {themeOptions.map((theme) => (

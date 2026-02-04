@@ -1,5 +1,7 @@
 import { CATEGORY_ICON_MAP, DEFAULT_CATEGORY_ICON } from '@/lib/constants';
+import { getCategoryLabel } from '@/lib/labels';
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 // Move this helper outside or to a utility file
@@ -16,7 +18,9 @@ type InsightStripProps = {
 // 'memo' prevents re-renders when you are just typing in the form below
 export const InsightStrip = memo(
    ({ category, tags, catColor, isDark }: InsightStripProps) => {
+      const { t } = useTranslation();
       const CategoryIcon = getCategoryIcon(category);
+      const categoryLabel = getCategoryLabel(category, t);
 
       return (
          <View className="flex-row items-center mb-6 px-1">
@@ -39,10 +43,10 @@ export const InsightStrip = memo(
                      className="text-[10px] font-bold uppercase tracking-widest mb-0.5"
                      style={{ color: catColor, opacity: 0.9 }}
                   >
-                     Category
+                     {t('analysis.category')}
                   </Text>
                   <Text className="text-[20px] font-extrabold text-slate-900 dark:text-slate-100 leading-6">
-                     {category}
+                     {categoryLabel}
                   </Text>
                </View>
 
@@ -57,7 +61,7 @@ export const InsightStrip = memo(
                            className="text-[10px] font-bold uppercase tracking-widest mb-1.5"
                            style={{ color: catColor, opacity: 0.7 }}
                         >
-                           Themes
+                           {t('analysis.themes')}
                         </Text>
                         <View className="gap-1">
                            {tags.map((tag, i) => (

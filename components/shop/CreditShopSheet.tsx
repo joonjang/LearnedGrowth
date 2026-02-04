@@ -17,6 +17,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import type { RefObject } from 'react';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,6 +35,7 @@ export function AiInsightCreditShopSheet({
    isDark,
 }: Props) {
    const insets = useSafeAreaInsets();
+   const { t } = useTranslation();
    const theme = {
       bg: isDark ? BOTTOM_SHEET_BG_DARK : BOTTOM_SHEET_BG_LIGHT,
       text: isDark ? '#f8fafc' : '#0f172a',
@@ -74,18 +76,18 @@ export function AiInsightCreditShopSheet({
          >
             <View className="mb-4">
                <Text className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-1">
-                  Credits
+                  {t('creditShopSheet.credits')}
                </Text>
                <View className="flex-row items-center justify-between">
                   <Text
                      className="text-2xl font-bold"
                      style={{ color: theme.text }}
                   >
-                     Refill AI credits
+                     {t('creditShopSheet.title')}
                   </Text>
                </View>
                <Text className="text-base" style={{ color: theme.subText }}>
-                  Refill your credits to analyze more entries instantly.
+                  {t('creditShopSheet.subtitle')}
                </Text>
             </View>
             <CreditShop onSuccess={onSuccess} />

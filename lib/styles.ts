@@ -121,9 +121,6 @@ export const TONE_COLOR_MAP: Record<string, string> = {
 export const DEFAULT_CATEGORY_COLOR = '#cbd5e1';
 
 // --- AI Analysis Labels & Amber Styles ---
-export const AI_ANALYSIS_LABEL = 'AI Analysis';
-export const ANALYZE_WITH_AI_LABEL = 'Analyze with AI';
-export const SAVE_TO_ANALYZE_LABEL = 'Save to Analyze';
 // 1. ICONS
 export const AI_ICON_COLORS = {
    light: '#b45309', // amber-700

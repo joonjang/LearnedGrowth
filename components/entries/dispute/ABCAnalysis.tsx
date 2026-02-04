@@ -17,6 +17,7 @@ import { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { ArrowRight } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { useTranslation } from 'react-i18next';
 import Animated, {
    useAnimatedStyle,
    useSharedValue,
@@ -52,6 +53,7 @@ export default function ABCAnalysis({
 }: Props) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { t } = useTranslation();
    const shadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
    const shadowGutter = 6;
    const topPadding = contentTopPadding ?? 24;
@@ -168,7 +170,7 @@ export default function ABCAnalysis({
          {/* Header */}
          <View className="flex-row items-center justify-between py-2">
             <Text className="text-base px-5 font-medium text-slate-900 dark:text-slate-100">
-               AI Insight
+               {t('analysis.ai_insight')}
             </Text>
 
             {onExit && <RoundedCloseButton onPress={onExit} />}
@@ -182,7 +184,7 @@ export default function ABCAnalysis({
             >
                <View className="gap-1">
                   <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
-                     Adversity
+                     {t('abcde.adversity')}
                   </Text>
                   <Text className="text-base text-slate-900 dark:text-slate-100 leading-relaxed">
                      {entry.adversity}
@@ -193,7 +195,7 @@ export default function ABCAnalysis({
 
                <View className="gap-1">
                   <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
-                     Belief
+                     {t('abcde.belief')}
                   </Text>
                   <Text className="text-base text-slate-900 dark:text-slate-100 leading-relaxed">
                      {entry.belief}
@@ -205,7 +207,7 @@ export default function ABCAnalysis({
                      <View className="h-[1px] bg-slate-200 dark:bg-slate-700 my-0.5" />
                      <View className="gap-1">
                         <Text className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
-                           Consequence
+                           {t('abcde.consequence')}
                         </Text>
                         <Text className="text-base text-slate-900 dark:text-slate-100 leading-relaxed">
                            {entry.consequence}
@@ -246,7 +248,7 @@ export default function ABCAnalysis({
                      <NewDisputeLink onPress={onGoToSteps} />
                   ) : (
                      <WideButton
-                        label="Continue"
+                        label={t('common.continue')}
                         icon={ArrowRight}
                         onPress={onGoToSteps}
                         variant={'primary'}

@@ -10,6 +10,7 @@ import {
    ENTRY_CHAR_WARN_RATIO,
 } from '@/lib/constants';
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, TextInput, View } from 'react-native';
 
 type EntryFieldProps = {
@@ -39,7 +40,10 @@ export const EntryField = memo(
       onChangeText,
       children,
    }: EntryFieldProps) => {
-      const effectiveValue = value === 'Empty' ? '' : value;
+      const { t } = useTranslation();
+      const emptyLabel = t('entryField.empty');
+      const effectiveValue =
+         value === 'Empty' || value === emptyLabel ? '' : value;
       const charLimit =
          ENTRY_CHAR_LIMITS[step.key as keyof typeof ENTRY_CHAR_LIMITS];
       const charMeta = getCharCountMeta(effectiveValue, charLimit);
@@ -66,7 +70,9 @@ export const EntryField = memo(
                         multiline
                         value={effectiveValue}
                         onChangeText={(txt) => onChangeText(step.key, txt)}
-                        placeholder={`Write your ${step.label.toLowerCase()} here...`}
+                        placeholder={t('entryField.placeholder', {
+                           field: t(`abcde.${step.key}`),
+                        })}
                         placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
                         className={`min-h-[36px] rounded-lg px-3 py-1 text-sm leading-6 ${finalBg} text-slate-900 dark:text-slate-100`}
                         scrollEnabled={false}
@@ -92,7 +98,9 @@ export const EntryField = memo(
                         className={`text-sm leading-6 text-slate-900 dark:text-slate-100`}
                      >
                         {effectiveValue || (
-                           <Text className="italic opacity-50">Empty</Text>
+                           <Text className="italic opacity-50">
+                              {t('entryField.empty')}
+                           </Text>
                         )}
                      </Text>
                   </View>

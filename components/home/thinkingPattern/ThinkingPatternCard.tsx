@@ -5,6 +5,7 @@ import { Entry } from '@/models/entry';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Layers } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { ThinkingPatternViewModel } from '../types';
 import GradientSpectrumBar from './GradientSpectrumBar';
@@ -25,6 +26,7 @@ export default function ThinkingPatternCard({
 }: Props) {
    const sheetRef = useRef<BottomSheetModal>(null);
    const [selectedTab, setSelectedTab] = useState<PatternTab>('Time');
+   const { t } = useTranslation();
 
    // We bring back the pressed state for the card animation
    const [isPressed, setIsPressed] = useState(false);
@@ -32,6 +34,40 @@ export default function ThinkingPatternCard({
    const analyzedCount = useMemo(
       () => getAiAnalyzedEntryCount(entries ?? []),
       [entries],
+   );
+   const tabLabels = useMemo(
+      () => ({
+         Time: t('home.patterns.tab_time'),
+         Scope: t('home.patterns.tab_scope'),
+         Blame: t('home.patterns.tab_blame'),
+      }),
+      [t],
+   );
+   const dimensionConfig = useMemo(
+      () => ({
+         Time: {
+            ...THINKING_PATTERN_DIMENSIONS.Time,
+            label: tabLabels.Time,
+            description: t('home.patterns.desc_time'),
+            highLabel: t('home.patterns.high.temporary'),
+            lowLabel: t('home.patterns.low.permanent'),
+         },
+         Scope: {
+            ...THINKING_PATTERN_DIMENSIONS.Scope,
+            label: tabLabels.Scope,
+            description: t('home.patterns.desc_scope'),
+            highLabel: t('home.patterns.high.specific'),
+            lowLabel: t('home.patterns.low.everything'),
+         },
+         Blame: {
+            ...THINKING_PATTERN_DIMENSIONS.Blame,
+            label: tabLabels.Blame,
+            description: t('home.patterns.desc_blame'),
+            highLabel: t('home.patterns.high.situation'),
+            lowLabel: t('home.patterns.low.my_fault'),
+         },
+      }),
+      [t, tabLabels],
    );
 
    const handleOpenSheet = useCallback((tab: PatternTab = 'Time') => {
@@ -75,22 +111,21 @@ export default function ThinkingPatternCard({
                   <View className="flex-row items-center gap-2">
                      <Layers size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
                      <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                        Thinking Patterns
+                        {t('home.thinking_patterns')}
                      </Text>
                   </View>
                   <Text
                      className="text-[9px] font-medium text-slate-400 dark:text-slate-500 text-right leading-4 max-w-[160px]"
                      style={{ fontVariant: ['tabular-nums'] }}
                   >
-                     Based on {analyzedCount} analyzed{' '}
-                     {analyzedCount === 1 ? 'entry' : 'entries'}
+                     {t('home.patterns.based_on', { count: analyzedCount })}
                   </Text>
                </View>
 
                {/* Metric Blocks */}
                <View className="gap-4 mb-2">
                   {dimensionKeys.map((key) => {
-                     const config = THINKING_PATTERN_DIMENSIONS[key];
+                     const config = dimensionConfig[key];
                      const score = data.threePs[config.dimension].score;
 
                      return (
@@ -111,7 +146,7 @@ export default function ThinkingPatternCard({
                            <View className="bg-slate-50 dark:bg-slate-900/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/50">
                               <View className="flex-row justify-between mb-1.5">
                                  <Text className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-                                    {key}
+                                    {config.label}
                                  </Text>
                               </View>
                               <Text className="text-xs text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
@@ -130,9 +165,9 @@ export default function ThinkingPatternCard({
                </View>
 
                {/* HINT TEXT */}
-               <View className="mt-2 mb-1">
+              <View className="mt-2 mb-1">
                   <Text className="text-[10px] text-center font-medium text-slate-400 dark:text-slate-500">
-                     Tap a pattern above to view details
+                     {t('home.patterns.tap_to_view')}
                   </Text>
                </View>
             </View>

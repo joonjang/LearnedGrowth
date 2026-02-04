@@ -1,6 +1,7 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { MessageCircleMore } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import {
@@ -8,6 +9,7 @@ import {
    DEFAULT_CATEGORY_ICON,
    STYLE_TO_TONE_MAP,
 } from '@/lib/constants';
+import { getCategoryLabel } from '@/lib/labels';
 import { getAiAnalyzedEntryCount } from '@/lib/mentalFocus';
 import { CARD_PRESS_STYLE } from '@/lib/styles';
 import { Entry } from '@/models/entry';
@@ -23,20 +25,23 @@ type Props = {
    onDeleteEntry: (entry: Entry) => void;
 };
 
-function getObservedMoodLabel(styleLabel: string | null | undefined) {
+function getObservedMoodLabel(
+   styleLabel: string | null | undefined,
+   t: (key: string) => string,
+) {
    const lower = (styleLabel ?? '').toLowerCase();
 
-   if (lower.includes('balanced')) return 'Balanced';
+   if (lower.includes('balanced')) return t('home.mental_focus.balanced');
 
    if (lower.includes('mixed') || lower.includes('varied')) {
-      return 'Up & down';
+      return t('home.mental_focus.up_down');
    }
 
    const tone = STYLE_TO_TONE_MAP[styleLabel ?? ''] ?? 'Mixed';
-   if (tone === 'Optimistic') return 'Optimistic';
-   if (tone === 'Pessimistic') return 'Pessimistic';
+   if (tone === 'Optimistic') return t('home.mental_focus.optimistic');
+   if (tone === 'Pessimistic') return t('home.mental_focus.pessimistic');
 
-   return 'Up & down';
+   return t('home.mental_focus.up_down');
 }
 
 export default function MentalFocusCard({
@@ -48,6 +53,7 @@ export default function MentalFocusCard({
 }: Props) {
    const sheetRef = useRef<BottomSheetModal>(null);
    const [isPressed, setIsPressed] = useState(false);
+   const { t } = useTranslation();
 
    const handlePresentModal = useCallback(
       () => sheetRef.current?.present(),
@@ -67,14 +73,20 @@ export default function MentalFocusCard({
    );
 
    const observedMood = useMemo(
-      () => getObservedMoodLabel(narrative?.styleLabel),
-      [narrative?.styleLabel],
+      () => getObservedMoodLabel(narrative?.styleLabel, t),
+      [narrative?.styleLabel, t],
    );
 
-   const topTheme = narrative?.topCatLabel ?? '—';
-   const recurringIdea = narrative?.topTagLabel?.trim() || 'No repeat yet';
+   const topThemeKey = narrative?.topCatLabel ?? null;
+   const topTheme = topThemeKey
+      ? getCategoryLabel(topThemeKey, t)
+      : t('common.none');
+   const recurringIdea =
+      narrative?.topTagLabel?.trim() || t('home.mental_focus.no_repeat');
 
-   const TopIcon = CATEGORY_ICON_MAP[topTheme] || DEFAULT_CATEGORY_ICON;
+   const TopIcon =
+      (topThemeKey ? CATEGORY_ICON_MAP[topThemeKey] : null) ||
+      DEFAULT_CATEGORY_ICON;
 
    const sortedStats = useMemo(() => {
       if (!categoryStats?.length) return [];
@@ -106,7 +118,7 @@ export default function MentalFocusCard({
                         color={isDark ? '#cbd5e1' : '#64748b'}
                      />
                      <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                        Mental Focus
+                        {t('home.mental_focus.title')}
                      </Text>
                   </View>
 
@@ -114,8 +126,9 @@ export default function MentalFocusCard({
                      className="text-[9px] font-medium text-slate-400 dark:text-slate-500 text-right leading-4 max-w-[160px]"
                      style={{ fontVariant: ['tabular-nums'] }}
                   >
-                     Based on {analyzedCount} analyzed{' '}
-                     {analyzedCount === 1 ? 'entry' : 'entries'}
+                     {t('home.mental_focus.based_on', {
+                        count: analyzedCount,
+                     })}
                   </Text>
                </View>
 
@@ -131,7 +144,7 @@ export default function MentalFocusCard({
 
                   <View className="flex-1 min-w-0">
                      <Text className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">
-                        Top theme
+                        {t('home.mental_focus.top_theme')}
                      </Text>
                      <Text
                         className="text-xl font-extrabold text-slate-900 dark:text-white leading-7"
@@ -147,7 +160,7 @@ export default function MentalFocusCard({
                   {/* Row 1: Observed mood */}
                   <View className="flex-row items-start justify-between gap-3">
                      <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                        Observed mood
+                        {t('home.mental_focus.observed_mood')}
                      </Text>
                      <Text
                         className="flex-1 text-sm font-extrabold text-slate-900 dark:text-slate-100 text-right"
@@ -162,7 +175,7 @@ export default function MentalFocusCard({
                   {/* Row 2: Recurring idea (shorter label) */}
                   <View className="flex-row items-start justify-between gap-3">
                      <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                        Recurring idea
+                        {t('home.mental_focus.recurring_idea')}
                      </Text>
                      <Text
                         className="flex-1 text-sm font-extrabold text-slate-900 dark:text-slate-100 text-right"
@@ -208,7 +221,7 @@ export default function MentalFocusCard({
                               ■{' '}
                            </Text>
                            <Text className="text-[10px] font-bold tracking-tight text-slate-500 dark:text-slate-400">
-                              {stat.label}{' '}
+                              {getCategoryLabel(stat.label, t)}{' '}
                               <Text
                                  className="text-xs font-bold text-slate-900 dark:text-white"
                                  style={{ fontVariant: ['tabular-nums'] }}

@@ -23,7 +23,7 @@ export default function LeftBackChevron({ isDark, onPress }: Props) {
       <Pressable
          onPress={handlePress}
          hitSlop={12}
-         className="p-3 -ml-2 rounded-full active:bg-slate-200/50 dark:active:bg-slate-800/50 self-start"
+         className="p-3 -ml-3 rounded-full active:bg-slate-200/50 dark:active:bg-slate-800/50 self-start"
       >
          <ChevronLeft size={24} strokeWidth={2.5} color={iconColor} />
       </Pressable>

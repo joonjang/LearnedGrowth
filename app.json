@@ -1,81 +1,84 @@
 {
-   "expo": {
-      "name": "Learned Growth",
-      "slug": "LearnedGrowth",
-      "version": "1.3.6",
-      "orientation": "portrait",
-      "icon": "./assets/images/icon3.png",
-      "scheme": "learnedgrowth",
-      "userInterfaceStyle": "automatic",
-      "newArchEnabled": true,
-      "ios": {
-         "supportsTablet": true,
-         "bundleIdentifier": "com.joonjang.LearnedGrowth",
-         "infoPlist": {
-            "ITSAppUsesNonExemptEncryption": false
-         },
-         "usesAppleSignIn": true
+  "expo": {
+    "name": "Learned Growth",
+    "slug": "LearnedGrowth",
+    "version": "1.4.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon3.png",
+    "scheme": "learnedgrowth",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.joonjang.LearnedGrowth",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       },
-      "android": {
-         "adaptiveIcon": {
-            "backgroundColor": "#E6F4FE",
-            "foregroundImage": "./assets/images/android-icon-foreground5.png",
-            "backgroundImage": "./assets/images/android-icon-background2.png",
-            "monochromeImage": "./assets/images/android-icon-monochrome5.png"
-         },
-         "edgeToEdgeEnabled": true,
-         "predictiveBackGestureEnabled": false,
-         "softwareKeyboardLayoutMode": "resize",
-         "package": "com.joonjang.LearnedGrowth",
-         "googleServicesFile": "./google-services.json"
+      "usesAppleSignIn": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/android-icon-foreground5.png",
+        "backgroundImage": "./assets/images/android-icon-background2.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome5.png"
       },
-      "plugins": [
-         "expo-router",
-         [
-            "expo-build-properties",
-            {
-               "android": {
-                  "extraMavenRepos": ["https://www.jitpack.io"]
-               },
-               "ios": {
-                  "useFrameworks": "static"
-               }
-            }
-         ],
-         [
-            "expo-splash-screen",
-            {
-               "image": "./assets/images/splash-icon4.png",
-               "imageWidth": 200,
-               "resizeMode": "contain",
-               "backgroundColor": "#ffffff",
-               "dark": {
-                  "backgroundColor": "#000000"
-               }
-            }
-         ],
-         "expo-sqlite",
-         "expo-web-browser",
-         "expo-apple-authentication",
-         [
-            "@react-native-google-signin/google-signin/app.plugin.js",
-            {
-               "iosUrlScheme": "com.googleusercontent.apps.954502195698-qeb31c3ppql4k75bhn5ktc092hf93d6d"
-            }
-         ],
-         "react-native-edge-to-edge",
-         "expo-secure-store"
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "resize",
+      "package": "com.joonjang.LearnedGrowth",
+      "googleServicesFile": "./google-services.json"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraMavenRepos": [
+              "https://www.jitpack.io"
+            ]
+          },
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
       ],
-      "experiments": {
-         "typedRoutes": true,
-         "reactCompiler": false
-      },
-      "extra": {
-         "router": {},
-         "eas": {
-            "projectId": "dd02daeb-fafb-4699-8914-52231f5f8839"
-         }
-      },
-      "owner": "joonjang"
-   }
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon4.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "backgroundColor": "#000000"
+          }
+        }
+      ],
+      "expo-sqlite",
+      "expo-web-browser",
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin/app.plugin.js",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.954502195698-qeb31c3ppql4k75bhn5ktc092hf93d6d"
+        }
+      ],
+      "react-native-edge-to-edge",
+      "expo-secure-store",
+      "expo-localization"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": false
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "dd02daeb-fafb-4699-8914-52231f5f8839"
+      }
+    },
+    "owner": "joonjang"
+  }
 }

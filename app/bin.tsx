@@ -13,6 +13,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { RotateCcw, Trash2 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
    ActivityIndicator,
    Alert,
@@ -43,6 +44,7 @@ export default function DeleteBinScreen() {
    const insets = useSafeAreaInsets();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { t, i18n } = useTranslation();
 
    // --- STATE ---
    const [isOffline, setIsOffline] = useState(false);
@@ -112,32 +114,32 @@ export default function DeleteBinScreen() {
             await refresh();
             await refreshEntriesStore();
          } catch (e: any) {
-            Alert.alert(
-               'Delete failed',
-               e?.message ?? 'Unable to delete this entry right now.',
-            );
+           Alert.alert(
+               t('bin.delete_failed_title'),
+               e?.message ?? t('bin.delete_failed_message'),
+           );
          } finally {
             setDeletingId((current) => (current === entry.id ? null : current));
          }
       },
-      [adapter, canUseCloud, cloud, ready, refresh, refreshEntriesStore],
+      [adapter, canUseCloud, cloud, ready, refresh, refreshEntriesStore, t],
    );
 
    const confirmDelete = useCallback(
       (entry: Entry) => {
          const detail = canUseCloud
-            ? 'This will remove the entry from this device and the cloud.'
-            : 'This will remove the entry from this device.';
-         Alert.alert('Delete permanently?', detail, [
-            { text: 'Cancel', style: 'cancel' },
+            ? t('bin.delete_detail_cloud')
+            : t('bin.delete_detail_local');
+         Alert.alert(t('bin.delete_confirm_title'), detail, [
+            { text: t('common.cancel'), style: 'cancel' },
             {
-               text: 'Delete',
+               text: t('common.delete'),
                style: 'destructive',
                onPress: () => deleteEntry(entry),
             },
          ]);
       },
-      [canUseCloud, deleteEntry],
+      [canUseCloud, deleteEntry, t],
    );
 
    const restoreEntry = useCallback(
@@ -154,17 +156,17 @@ export default function DeleteBinScreen() {
             await refresh();
             await refreshEntriesStore();
          } catch (e: any) {
-            Alert.alert(
-               'Restore failed',
-               e?.message ?? 'Unable to restore this entry right now.',
-            );
+           Alert.alert(
+               t('bin.restore_failed_title'),
+               e?.message ?? t('bin.restore_failed_message'),
+           );
          } finally {
             setRestoringId((current) =>
                current === entry.id ? null : current,
             );
          }
       },
-      [adapter, canUseCloud, cloud, ready, refresh, refreshEntriesStore],
+      [adapter, canUseCloud, cloud, ready, refresh, refreshEntriesStore, t],
    );
 
    const deleteAll = useCallback(async () => {
@@ -181,8 +183,8 @@ export default function DeleteBinScreen() {
          await refreshEntriesStore();
       } catch (e: any) {
          Alert.alert(
-            'Delete failed',
-            e?.message ?? 'Unable to delete all entries right now.',
+            t('bin.delete_failed_title'),
+            e?.message ?? t('bin.delete_all_failed_message'),
          );
       } finally {
          setDeletingAll(false);
@@ -195,29 +197,30 @@ export default function DeleteBinScreen() {
       ready,
       refresh,
       refreshEntriesStore,
+      t,
    ]);
 
    const confirmDeleteAll = useCallback(() => {
       const detail = canUseCloud
-         ? 'This will remove all deleted entries from this device and the cloud.'
-         : 'This will remove all deleted entries from this device.';
-      Alert.alert('Empty Bin?', detail, [
-         { text: 'Cancel', style: 'cancel' },
-         { text: 'Empty Bin', style: 'destructive', onPress: deleteAll },
+         ? t('bin.empty_detail_cloud')
+         : t('bin.empty_detail_local');
+      Alert.alert(t('bin.empty_confirm_title'), detail, [
+         { text: t('common.cancel'), style: 'cancel' },
+         { text: t('bin.empty_action'), style: 'destructive', onPress: deleteAll },
       ]);
-   }, [canUseCloud, deleteAll]);
+   }, [canUseCloud, deleteAll, t]);
 
    // --- RENDER HELPERS ---
    const ListHeader = useMemo(
       () => (
          <View className="px-6 pb-6 items-center justify-center">
             <Text className="text-3xl font-black text-slate-900 dark:text-white mb-1 text-center">
-               Delete Bin
+               {t('bin.title')}
             </Text>
             <Text className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center">
                {deletedCount > 0
-                  ? `${deletedCount} deleted ${deletedCount === 1 ? 'entry' : 'entries'}`
-                  : 'No deleted entries'}
+                  ? t('bin.deleted_count', { count: deletedCount })
+                  : t('bin.none_deleted')}
             </Text>
             {error && (
                <Text className="text-sm text-rose-600 dark:text-rose-400 mt-2 text-center">
@@ -226,7 +229,7 @@ export default function DeleteBinScreen() {
             )}
          </View>
       ),
-      [deletedCount, error],
+      [deletedCount, error, t],
    );
 
    return (
@@ -268,7 +271,7 @@ export default function DeleteBinScreen() {
                      <ActivityIndicator size="small" color={deleteColor} />
                   ) : (
                      <Text className="text-xs font-bold text-rose-500 dark:text-rose-400 uppercase tracking-wider">
-                        Delete All
+                        {t('bin.delete_all')}
                      </Text>
                   )}
                </Pressable>
@@ -296,7 +299,7 @@ export default function DeleteBinScreen() {
                ListEmptyComponent={
                   <View className="items-center justify-center py-8">
                      <Text className="text-sm text-slate-400 dark:text-slate-500">
-                        Bin is empty
+                        {t('bin.empty_state')}
                      </Text>
                   </View>
                }
@@ -310,21 +313,24 @@ export default function DeleteBinScreen() {
                      {/* Card Header: Date */}
                      <View className="flex-row items-center justify-between mb-2">
                         <Text className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                           Deleted
+                           {t('bin.deleted_label')}
                         </Text>
                         <Text className="text-xs text-slate-400 dark:text-slate-500">
-                           {formatDateTimeWithWeekday(item.updatedAt)}
+                           {formatDateTimeWithWeekday(
+                              item.updatedAt,
+                              i18n.language === 'ko' ? 'ko-KR' : 'en-US',
+                           )}
                         </Text>
                      </View>
 
                      {/* Card Body: Content Preview */}
                      <View className="gap-2">
                         {[
-                           { label: 'Adversity', value: item.adversity },
-                           { label: 'Belief', value: item.belief },
-                           { label: 'Consequence', value: item.consequence },
-                           { label: 'Dispute', value: item.dispute },
-                           { label: 'Energy', value: item.energy },
+                           { label: t('abcde.adversity'), value: item.adversity },
+                           { label: t('abcde.belief'), value: item.belief },
+                           { label: t('abcde.consequence'), value: item.consequence },
+                           { label: t('abcde.dispute'), value: item.dispute },
+                           { label: t('abcde.energy'), value: item.energy },
                         ]
                            .filter(
                               (field) => (field.value ?? '').trim().length > 0,
@@ -362,7 +368,7 @@ export default function DeleteBinScreen() {
                               <RotateCcw size={16} color={restoreColor} />
                            )}
                            <Text className="text-sm font-semibold text-emerald-700 dark:text-emerald-200">
-                              Restore
+                              {t('bin.restore')}
                            </Text>
                         </Pressable>
 
@@ -385,7 +391,7 @@ export default function DeleteBinScreen() {
                               <Trash2 size={16} color={deleteColor} />
                            )}
                            <Text className="text-sm font-semibold text-rose-600 dark:text-rose-300">
-                              Delete
+                              {t('common.delete')}
                            </Text>
                         </Pressable>
                      </View>

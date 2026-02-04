@@ -9,6 +9,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import { Pencil } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 type Props = {
@@ -21,13 +22,14 @@ type Props = {
 
 export default function NewDisputeLink({
    onPress,
-   label = 'New Dispute',
+   label,
    className,
    textClassName,
    icon,
 }: Props) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { t } = useTranslation();
    const shadow = useMemo(
       () => getShadow({ isDark, preset: 'button' }),
       [isDark],
@@ -53,9 +55,9 @@ export default function NewDisputeLink({
          style={[shadow.ios, shadow.android]}
       >
          <Text
-            className={`text-[15px] font-bold text-center w-full ${DISPUTE_TEXT_CLASS} ${textClassName ?? ''}`}
+         className={`text-[15px] font-bold text-center w-full ${DISPUTE_TEXT_CLASS} ${textClassName ?? ''}`}
          >
-            {label}
+            {label ?? t('dispute.new_dispute')}
          </Text>
          <View className="absolute right-5">
             <Icon size={18} color={iconColor} />

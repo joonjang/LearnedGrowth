@@ -1,5 +1,6 @@
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import React, { Dispatch, SetStateAction, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
    Alert,
    Keyboard,
@@ -43,11 +44,12 @@ export default function StepperButton({
 }: Props) {
    const isKeyboardVisible = useKeyboardVisible();
    const insets = useSafeAreaInsets();
+   const { t } = useTranslation();
    // Logic
    const isLast = useMemo(() => idx === totalSteps - 1, [idx, totalSteps]);
    const canGoBack = useMemo(() => idx > 0, [idx]);
-   const backLabel = !canGoBack ? 'Close' : 'Back';
-   const nextLabel = isLast ? 'Finish' : 'Next';
+   const backLabel = !canGoBack ? t('common.close') : t('common.back');
+   const nextLabel = isLast ? t('common.finish') : t('common.next');
    const baseTextClass = 'text-base font-semibold text-slate-900 dark:text-slate-100';
    const backTextClass = !canGoBack ? 'text-rose-600 dark:text-rose-400' : '';
    const nextTextClass = disableNext
@@ -56,8 +58,8 @@ export default function StepperButton({
         ? 'text-rose-600 dark:text-rose-400'
         : '';
 
-   const confirmExitTitle = 'Discard changes?';
-   const confirmExitMessage = 'You have unsaved changes. Close without saving?';
+   const confirmExitTitle = t('common.discard_title');
+   const confirmExitMessage = t('common.discard_message');
 
    const handleExit = useCallback(() => {
       if (!hasUnsavedChanges) {
@@ -66,10 +68,10 @@ export default function StepperButton({
       }
       Keyboard.dismiss();
       Alert.alert(confirmExitTitle, confirmExitMessage, [
-         { text: 'Cancel', style: 'cancel' },
-         { text: 'Discard', style: 'destructive', onPress: () => onExit() },
+         { text: t('common.cancel'), style: 'cancel' },
+         { text: t('common.discard'), style: 'destructive', onPress: () => onExit() },
       ]);
-   }, [confirmExitMessage, confirmExitTitle, hasUnsavedChanges, onExit]);
+   }, [confirmExitMessage, confirmExitTitle, hasUnsavedChanges, onExit, t]);
 
    const handleBack = useCallback(() => {
       const wasFocused = inputRef?.current?.isFocused?.() ?? false;

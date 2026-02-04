@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
    ScrollView,
    Text,
@@ -19,6 +19,7 @@ import TypewriterText, {
 import { useSmartScroll } from '@/hooks/useSmartScroll';
 import { useSmoothKeyboard } from '@/hooks/useSmoothKeyboard';
 import { DISPUTE_STEP_PLACEHOLDERS } from '@/lib/constants';
+import { useTranslation } from 'react-i18next';
 
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
@@ -56,6 +57,7 @@ export default function DisputeSteps({
 }: Props) {
    const inputRef = useRef<TextInput>(null);
    const typewriterRef = useRef<TypewriterHandle>(null);
+   const { t } = useTranslation();
 
    const { scrollProps, reenableAutoScroll, scrollToBottom } = useSmartScroll();
 
@@ -75,6 +77,25 @@ export default function DisputeSteps({
       reenableAutoScroll();
       requestAnimationFrame(() => scrollToBottom(false));
    }, [idx, reenableAutoScroll, scrollToBottom]);
+
+   const stepLabels = useMemo(
+      () => ({
+         evidence: t('dispute.steps.evidence'),
+         alternatives: t('dispute.steps.alternatives'),
+         usefulness: t('dispute.steps.usefulness'),
+         energy: t('dispute.steps.energy'),
+      }),
+      [t],
+   );
+   const stepPlaceholders = useMemo(
+      () => ({
+         evidence: t(DISPUTE_STEP_PLACEHOLDERS.evidence),
+         alternatives: t(DISPUTE_STEP_PLACEHOLDERS.alternatives),
+         usefulness: t(DISPUTE_STEP_PLACEHOLDERS.usefulness),
+         energy: t(DISPUTE_STEP_PLACEHOLDERS.energy),
+      }),
+      [t],
+   );
 
    const handleNext = () => {
       if (disableNext) return;
@@ -115,9 +136,7 @@ export default function DisputeSteps({
                      <StepperHeader
                         step={idx + 1}
                         total={4}
-                        label={
-                           currKey.charAt(0).toUpperCase() + currKey.slice(1)
-                        }
+                        label={stepLabels[currKey]}
                      />
                   </View>
                   <RoundedCloseButton onPress={onExit} />
@@ -158,7 +177,7 @@ export default function DisputeSteps({
                      ref={inputRef}
                      value={form[currKey]}
                      onChangeText={setField(currKey)}
-                     placeholder={DISPUTE_STEP_PLACEHOLDERS[currKey]}
+                     placeholder={stepPlaceholders[currKey]}
                      animatedStyle={animatedInputStyle}
                      onFocus={() => {
                         reenableAutoScroll(true);
@@ -180,7 +199,7 @@ export default function DisputeSteps({
                               : 'text-slate-900 dark:text-slate-100'
                         }`}
                      >
-                        {idx === 0 ? 'Close' : 'Back'}
+                        {idx === 0 ? t('common.close') : t('common.back')}
                      </Text>
                   </TouchableOpacity>
 
@@ -202,7 +221,7 @@ export default function DisputeSteps({
                               : 'text-slate-900 dark:text-slate-100'
                         }`}
                      >
-                        {idx === 3 ? 'Finish' : 'Next'}
+                        {idx === 3 ? t('common.finish') : t('common.next')}
                      </Text>
                   </TouchableOpacity>
                </View>

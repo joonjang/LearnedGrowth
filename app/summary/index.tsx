@@ -1,8 +1,10 @@
-import { ScrollView, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ScrollView, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SummaryScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <ScrollView
@@ -17,11 +19,10 @@ export default function SummaryScreen() {
     >
       <View className="rounded-2xl bg-white dark:bg-slate-800 p-5 border border-slate-200 dark:border-slate-700">
         <Text className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-          Summary
+          {t('summary.title')}
         </Text>
         <Text className="mt-2 text-base text-slate-600 dark:text-slate-300">
-          Your insights and progress will appear here. Scroll to explore
-          highlights, trends, and quick actions.
+          {t('summary.subtitle')}
         </Text>
       </View>
     </ScrollView>

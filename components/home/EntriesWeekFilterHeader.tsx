@@ -12,6 +12,7 @@ import {
    Settings,
 } from 'lucide-react-native';
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
@@ -47,6 +48,7 @@ export default function EntriesWeekFilterHeader({
    onShowHelp,
    deletedCount,
 }: EntriesWeekFilterHeaderProps) {
+   const { t } = useTranslation();
    const hasCountOptions = useMemo(
       () => filterOptions.some((option) => option.key !== 'all'),
       [filterOptions],
@@ -180,9 +182,11 @@ export default function EntriesWeekFilterHeader({
                                                          : '#64748b'
                                                    }
                                                 />
-                                                <Text className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                                                   {`${option.label} (${totalCount})`}
-                                                </Text>
+                                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                                                   {t('home.filters.all_count', {
+                                                      count: totalCount,
+                                                   })}
+                                            </Text>
                                              </View>
                                           ) : (
                                              <Text

@@ -5,12 +5,12 @@ import {
    DEFAULT_CATEGORY_ICON,
    ROUTE_ENTRY_DETAIL,
 } from '@/lib/constants';
+import { getCategoryLabel } from '@/lib/labels';
 import { getShadow } from '@/lib/shadow';
 import {
    AI_ICON_COLORS,
    AI_SURFACE_CLASS,
    AI_TEXT_ACCENT_CLASS,
-   ANALYZE_WITH_AI_LABEL,
    CATEGORY_COLOR_MAP,
    DEFAULT_CATEGORY_COLOR,
    DISPUTE_BG_CLASS,
@@ -33,6 +33,7 @@ import {
    Trash2,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { useTranslation } from 'react-i18next';
 import {
    memo,
    useCallback,
@@ -112,7 +113,7 @@ const FlowBreadcrumb = ({
                   className={`text-[11px] font-bold uppercase tracking-wider ${
                      isResolved &&
                      activeMode === 'reframed' &&
-                     step !== 'Adversity'
+                     index > 0
                         ? `${DISPUTE_TEXT_CLASS} opacity-80`
                         : 'text-slate-400 dark:text-slate-500'
                   }`}
@@ -221,6 +222,7 @@ export default function EntryCard({
 }: Prop) {
    // --- Auth & Subscription ---
    const { canGenerate } = useAiCredits();
+   const { t, i18n } = useTranslation();
 
    const menuRef = useRef<View | null>(null);
    const swipeClosedRecently = useRef(false);
@@ -233,6 +235,16 @@ export default function EntryCard({
    const isAnalyzed = !!entry.aiResponse;
    const [viewMode, setViewMode] = useState<'reframed' | 'original'>(
       initialViewMode,
+   );
+   const stepLabels = useMemo(
+      () => ({
+         adversity: t('abcde.adversity'),
+         belief: t('abcde.belief'),
+         consequence: t('abcde.consequence'),
+         dispute: t('abcde.dispute'),
+         energy: t('abcde.energy'),
+      }),
+      [t],
    );
 
    // <--- 3. ADDED LOGIC FOR SEARCH VIEW SWITCHING --->
@@ -267,6 +279,7 @@ export default function EntryCard({
 
    // --- AI Visuals Setup ---
    const category = entry.aiResponse?.meta?.category || 'Uncategorized';
+   const categoryLabel = getCategoryLabel(category, t);
    const CategoryIcon = CATEGORY_ICON_MAP[category] || DEFAULT_CATEGORY_ICON;
    const catColor = CATEGORY_COLOR_MAP[category] || DEFAULT_CATEGORY_COLOR;
    const tags = entry.aiResponse?.meta?.tags || [];
@@ -274,11 +287,12 @@ export default function EntryCard({
    const createdLabel = useMemo(() => {
       try {
          const d = new Date(entry.createdAt);
-         const date = d.toLocaleDateString('en-US', {
+         const locale = i18n.language === 'ko' ? 'ko-KR' : 'en-US';
+         const date = d.toLocaleDateString(locale, {
             month: 'short',
             day: 'numeric',
          });
-         const time = d.toLocaleTimeString('en-US', {
+         const time = d.toLocaleTimeString(locale, {
             hour: 'numeric',
             minute: '2-digit',
          });
@@ -286,7 +300,7 @@ export default function EntryCard({
       } catch {
          return '';
       }
-   }, [entry.createdAt]);
+   }, [entry.createdAt, i18n.language]);
 
    const colors = {
       hint: isDark ? '#94a3b8' : '#64748b',
@@ -512,7 +526,7 @@ export default function EntryCard({
                      <Text
                         className={`text-[9px] font-bold uppercase tracking-wide ${DISPUTE_TEXT_CLASS}`}
                      >
-                        Reframed
+                        {t('analysis.reframed')}
                      </Text>
                   </View>
                )}
@@ -551,7 +565,7 @@ export default function EntryCard({
                            color={isDark ? '#f8fafc' : '#334155'}
                         />
                         <Text className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
-                           Edit Entry
+                           {t('entries.edit_entry')}
                         </Text>
                      </Pressable>
                      <View className="h-[1px] bg-slate-100 dark:bg-slate-700 mx-2" />
@@ -564,7 +578,7 @@ export default function EntryCard({
                      >
                         <Trash2 size={18} color={colors.delete} />
                         <Text className="text-[15px] font-medium text-rose-600 dark:text-rose-400">
-                           Delete
+                           {t('common.delete')}
                         </Text>
                      </Pressable>
                   </Animated.View>
@@ -589,7 +603,7 @@ export default function EntryCard({
                      className="text-[10px] font-bold uppercase tracking-wide"
                      style={{ color: catColor }}
                   >
-                     {category}
+                     {categoryLabel}
                   </Text>
                </View>
 
@@ -613,8 +627,16 @@ export default function EntryCard({
                <FlowBreadcrumb
                   steps={
                      viewMode === 'reframed'
-                        ? ['Adversity', 'Dispute', 'Energy']
-                        : ['Adversity', 'Belief', 'Consequence']
+                        ? [
+                             stepLabels.adversity,
+                             stepLabels.dispute,
+                             stepLabels.energy,
+                          ]
+                        : [
+                             stepLabels.adversity,
+                             stepLabels.belief,
+                             stepLabels.consequence,
+                          ]
                   }
                   isResolved={true}
                   activeMode={viewMode}
@@ -689,8 +711,8 @@ export default function EntryCard({
                                  />
                                  <Text
                                     className={`text-[11px] font-bold ${AI_TEXT_ACCENT_CLASS}`}
-                                 >
-                                    {ANALYZE_WITH_AI_LABEL}
+                                >
+                                    {t('analysis.analyze_with_ai')}
                                  </Text>
                               </TouchableOpacity>
                            </View>
@@ -720,7 +742,7 @@ export default function EntryCard({
                                  color={isDark ? '#94a3b8' : '#64748b'}
                               />
                               <Text className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                 View Original
+                                 {t('analysis.view_original')}
                               </Text>
                            </>
                         ) : (
@@ -732,7 +754,7 @@ export default function EntryCard({
                               <Text
                                  className={`text-[11px] font-bold uppercase tracking-wide ${DISPUTE_TEXT_CLASS}`}
                               >
-                                 View Reframed
+                                 {t('analysis.view_reframed')}
                               </Text>
                            </>
                         )}
@@ -745,7 +767,11 @@ export default function EntryCard({
             <>
                <View className="bg-slate-50/80 dark:bg-slate-800/40 p-3 pb-5 rounded-2xl mb-1">
                   <FlowBreadcrumb
-                     steps={['Adversity', 'Belief', 'Consequence']}
+                     steps={[
+                        stepLabels.adversity,
+                        stepLabels.belief,
+                        stepLabels.consequence,
+                     ]}
                   />
 
                   <View className="gap-0.5">

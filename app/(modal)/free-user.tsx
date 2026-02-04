@@ -30,6 +30,7 @@ import {
    Sparkles,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { useTranslation } from 'react-i18next';
 import React, {
    useCallback,
    useEffect,
@@ -59,6 +60,7 @@ export default function FreeUserChoiceScreen() {
       useAuth();
    const { aiConfig } = useAppConfig();
    const { freeMonthlyCredits, aiCreditCost } = aiConfig;
+   const { t } = useTranslation();
 
    const { id, autoAi, onlyShowAiAnalysis, from } = useLocalSearchParams<{
       id?: string | string[];
@@ -134,12 +136,11 @@ export default function FreeUserChoiceScreen() {
       availableCredits !== null && availableCredits < aiCreditCost;
 
    const creditAvailability = useMemo(() => {
-      if (!isSignedIn) return 'Sign in to see your credits.';
-      if (loadingProfile) return 'Checking credits...';
-      if (availableCredits === null) return 'Credits unavailable right now.';
-      const suffix = availableCredits === 1 ? '' : 's';
-      return `${availableCredits} credit${suffix} available.`;
-   }, [isSignedIn, loadingProfile, availableCredits]);
+      if (!isSignedIn) return t('freeUser.credit_sign_in');
+      if (loadingProfile) return t('freeUser.credit_checking');
+      if (availableCredits === null) return t('freeUser.credit_unavailable');
+      return t('freeUser.credit_available', { count: availableCredits });
+   }, [availableCredits, isSignedIn, loadingProfile, t]);
 
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
@@ -340,16 +341,16 @@ export default function FreeUserChoiceScreen() {
    );
 
    const titleText = showShop
-      ? 'Refill your credits'
+      ? t('freeUser.title_refill')
       : onlyShowAiAnalysisBool
-        ? 'Deepen your insight'
-        : 'How do you want to dispute?';
+        ? t('freeUser.title_deepen')
+        : t('freeUser.title_choose');
 
    const subText = showShop
-      ? 'Refill your credits to analyze more entries instantly.'
+      ? t('freeUser.sub_refill')
       : onlyShowAiAnalysisBool
-        ? 'Unlock AI analysis to detect thinking patterns.'
-        : 'Choose AI analysis or jump into the guided steps.';
+        ? t('freeUser.sub_deepen')
+        : t('freeUser.sub_choose');
 
    return (
       <>
@@ -370,7 +371,9 @@ export default function FreeUserChoiceScreen() {
                      className="text-sm font-semibold mb-1"
                      style={{ color: theme.amberText }}
                   >
-                     {isOutOfCredits ? 'Out of credits' : 'Free plan'}
+                     {isOutOfCredits
+                        ? t('freeUser.badge_out_of_credits')
+                        : t('freeUser.badge_free_plan')}
                   </Text>
                   <Text
                      className="text-2xl font-bold mb-1"
@@ -391,7 +394,9 @@ export default function FreeUserChoiceScreen() {
                         onPress={handleShopCancel}
                         className="mt-4 py-3 items-center"
                      >
-                        <Text style={{ color: theme.subText }}>Cancel</Text>
+                        <Text style={{ color: theme.subText }}>
+                           {t('freeUser.action_cancel')}
+                        </Text>
                      </Pressable>
                   </View>
                ) : (
@@ -407,8 +412,8 @@ export default function FreeUserChoiceScreen() {
                               style={{ color: theme.primaryText }}
                            >
                               {isOutOfCredits
-                                 ? 'Get more AI Credits'
-                                 : 'Let AI analyze this'}
+                                 ? t('freeUser.cta_more_credits')
+                                 : t('freeUser.cta_ai_analyze')}
                            </Text>
 
                            <View className="flex-row items-center mt-2 gap-1">
@@ -425,10 +430,11 @@ export default function FreeUserChoiceScreen() {
                                  style={{ color: theme.primaryText }}
                               >
                                  {isOutOfCredits
-                                    ? 'Not enough credits for AI analysis.'
-                                    : `Costs ${aiCreditCost} credit${
-                                         aiCreditCost === 1 ? '' : 's'
-                                      }. ${creditAvailability}`}
+                                    ? t('freeUser.not_enough_credits')
+                                    : t('freeUser.costs_credit', {
+                                         count: aiCreditCost,
+                                         availability: creditAvailability,
+                                      })}
                               </Text>
                            </View>
                         </View>
@@ -451,13 +457,13 @@ export default function FreeUserChoiceScreen() {
                                  className="text-lg font-semibold"
                                  style={{ color: theme.text }}
                               >
-                                 Go to dispute steps
+                                 {t('freeUser.manual_title')}
                               </Text>
                               <Text
                                  className="text-sm mt-1"
                                  style={{ color: theme.subText }}
                               >
-                                 Work through the guided prompts without AI.
+                                 {t('freeUser.manual_desc')}
                               </Text>
                            </View>
                            <ArrowRight size={20} color={theme.text} />

@@ -9,14 +9,11 @@ import {
    View,
 } from 'react-native';
 
-import { MONTHS } from '@/lib/constants';
 import { CARD_PRESS_STYLE } from '@/lib/styles';
 import {
    buildMonthDays,
    buildMonthRows,
    findWeekRowIndex,
-   getEncouragement,
-   getSummaryText,
    parseDateKey,
    toDateKey,
 } from '@/lib/utils';
@@ -28,6 +25,7 @@ import { StreakCardFooter } from './parts/StreakCardFooter';
 import { StreakCardHeader } from './parts/StreakCardHeader';
 import { StreakCardMonthGrid } from './parts/StreakCardMonthGrid';
 import { StreakCardWeekStrip } from './parts/StreakCardWeekStrip';
+import { useTranslation } from 'react-i18next';
 
 const styles = StyleSheet.create({
    dayCircle: {
@@ -60,6 +58,7 @@ export default function StreakCard({
    onDeleteEntry,
    isLoading = false,
 }: Props) {
+   const { t, i18n } = useTranslation();
    const {
       streakCount,
       days,
@@ -83,12 +82,14 @@ export default function StreakCard({
       () => (anchorDate ? new Date(anchorDate) : new Date()),
       [anchorDate],
    );
+   const locale = i18n.language === 'ko' ? 'ko-KR' : 'en-US';
 
    const realToday = useMemo(() => new Date(), []);
    const realTodayKey = toDateKey(realToday);
 
    const monthIndex = referenceDate.getMonth();
-   const monthName = MONTHS[monthIndex];
+   const monthLabels = t('calendar.months', { returnObjects: true }) as string[];
+   const monthName = monthLabels[monthIndex] ?? '';
    const currentYear = referenceDate.getFullYear();
    const referenceKey = toDateKey(referenceDate);
 
@@ -114,20 +115,20 @@ export default function StreakCard({
    const selectedDateLabel = useMemo(
       () =>
          selectedDate
-            ? selectedDate.toLocaleDateString('en-US', {
+            ? selectedDate.toLocaleDateString(locale, {
                  weekday: 'long',
                  month: 'short',
                  day: 'numeric',
               })
             : '',
-      [selectedDate],
+      [locale, selectedDate],
    );
 
    const completedEntries = selectedBucket?.completed ?? [];
    const incompleteEntries = selectedBucket?.incomplete ?? [];
    const summaryText = useMemo(
-      () => getSummaryText(completedEntries.length),
-      [completedEntries.length],
+      () => t('home.streak.summary', { count: completedEntries.length }),
+      [completedEntries.length, t],
    );
 
    const toggleExpanded = useCallback(() => {
@@ -155,10 +156,15 @@ export default function StreakCard({
 
    const handleSheetDismiss = useCallback(() => {}, []);
 
-   const encouragement = useMemo(
-      () => (isCurrentWeek ? getEncouragement(streakCount) : null),
-      [isCurrentWeek, streakCount],
-   );
+   const encouragement = useMemo(() => {
+      if (!isCurrentWeek) return null;
+      if (streakCount === 0) return t('home.streak.encouragement.start');
+      if (streakCount <= 2) return t('home.streak.encouragement.small_steps');
+      if (streakCount <= 6)
+         return t('home.streak.encouragement.consistency');
+      if (streakCount <= 14) return t('home.streak.encouragement.rewiring');
+      return t('home.streak.encouragement.resilience');
+   }, [isCurrentWeek, streakCount, t]);
 
    const dayCircleStyle = styles.dayCircle;
 

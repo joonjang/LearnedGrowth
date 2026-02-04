@@ -6,13 +6,14 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { router } from 'expo-router';
 import { Layers } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
    FadeInDown,
    FadeOutUp,
    LinearTransition,
 } from 'react-native-reanimated';
-import { ROUTE_ENTRIES, WEEKDAY_LABELS } from '../../lib/constants';
+import { ROUTE_ENTRIES } from '../../lib/constants';
 import NoAiEntrySheet from './NoAiEntrySheet';
 import RecentEntriesCarousel from './recentEntries/RecentEntriesCarousel';
 import NeedsAttentionSheet from './statHero/NeedsAttentionSheet';
@@ -35,21 +36,15 @@ function getScoreWeight(score: string | null | undefined): number {
    return isOptimistic(score) ? 1.0 : 0.0;
 }
 
-const PATTERN_TAB_CONFIG = {
+const PATTERN_DIMENSIONS = {
    Time: {
       dimension: 'permanence',
-      highLabel: 'Temporary',
-      lowLabel: 'Permanent',
    },
    Scope: {
       dimension: 'pervasiveness',
-      highLabel: 'Specific',
-      lowLabel: 'Everything',
    },
    Blame: {
       dimension: 'personalization',
-      highLabel: 'My Fault',
-      lowLabel: 'Situation',
    },
 } as const;
 
@@ -71,6 +66,7 @@ function getPatternImpact(
 
 type AiDataEmptyCardProps = {
    title: string;
+   variant: 'thinking' | 'insight';
    Icon: React.ComponentType<{ size?: number; color?: string }>;
    shadowStyle: any;
    isDark: boolean;
@@ -78,19 +74,24 @@ type AiDataEmptyCardProps = {
 
 function AiDataEmptyCard({
    title,
+   variant,
    Icon,
    shadowStyle,
    isDark,
 }: AiDataEmptyCardProps) {
-   const t = title.toLowerCase();
-   const subtitle = t.includes('thinking')
-      ? 'Displays the patterns in how you explain setbacks from analyzed entries.'
-      : 'Unlocks insights from analyzed entries.';
-   const thinkingQuestions = [
-      'Do your entries frame setbacks as lasting, or passing?',
-      'Do your entries suggest it affects everything, or one area?',
-      'Do your entries place the cause on you, or the situation?',
-   ];
+   const { t } = useTranslation();
+   const subtitle =
+      variant === 'thinking'
+         ? t('home.ai_empty.thinking.subtitle')
+         : t('home.ai_empty.insight.subtitle');
+   const thinkingQuestions =
+      variant === 'thinking'
+         ? [
+              t('home.ai_empty.thinking.q1'),
+              t('home.ai_empty.thinking.q2'),
+              t('home.ai_empty.thinking.q3'),
+           ]
+         : [];
    return (
       <View
          className="p-5 pb-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700"
@@ -104,12 +105,12 @@ function AiDataEmptyCard({
          </View>
          <View className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700/50 px-4 py-4">
             <Text className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-               Requries entries with AI analysis
+               {t('home.ai_empty.requires_ai')}
             </Text>
             <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-5">
                {subtitle}
             </Text>
-            {t.includes('thinking') && (
+            {variant === 'thinking' && (
                <View className="mt-3 gap-2">
                   {thinkingQuestions.map((q) => (
                      <View key={q} className="flex-row items-start">
@@ -150,6 +151,7 @@ const HomeDashboard = React.memo(
       isLoading = false,
       isAllTime = false,
    }: Props) => {
+      const { t } = useTranslation();
       // 1. --- CALCULATE INSIGHT COVERAGE ---
       const { insightCoverage, entriesWithoutInsight } = useMemo(() => {
          const total = entries.length;
@@ -169,10 +171,27 @@ const HomeDashboard = React.memo(
       }, [entries]);
       const showAiEmptyCards =
          entries.length > 0 && insightCoverage?.valid === 0;
+      const patternLabels = useMemo(
+         () => ({
+            Time: {
+               highLabel: t('home.patterns.high.temporary'),
+               lowLabel: t('home.patterns.low.permanent'),
+            },
+            Scope: {
+               highLabel: t('home.patterns.high.specific'),
+               lowLabel: t('home.patterns.low.everything'),
+            },
+            Blame: {
+               highLabel: t('home.patterns.high.situation'),
+               lowLabel: t('home.patterns.low.my_fault'),
+            },
+         }),
+         [t],
+      );
 
       const resolutionStats = useMemo(
-         () => getResolutionStatus(entries, isDark),
-         [entries, isDark],
+         () => getResolutionStatus(entries, isDark, t),
+         [entries, isDark, t],
       );
       const needsAttentionEntries = useMemo(
          () =>
@@ -291,12 +310,15 @@ const HomeDashboard = React.memo(
          const today = new Date(anchorDate);
          today.setHours(0, 0, 0, 0);
          const weekStart = getWeekStart(today);
+         const weekdayLabels = t('calendar.weekdays_short', {
+            returnObjects: true,
+         }) as string[];
          const days = Array.from({ length: 7 }, (_, i) => {
             const d = new Date(weekStart);
             d.setDate(weekStart.getDate() + i);
             return {
                date: d,
-               label: WEEKDAY_LABELS[i],
+               label: weekdayLabels[i] ?? '',
                filled: filledDaysSet.has(toDateKey(d)),
             };
          });
@@ -346,9 +368,10 @@ const HomeDashboard = React.memo(
             const getDimInsight = (e: Entry, k: DimensionKey) =>
                e.aiResponse?.analysis?.dimensions?.[k]?.insight;
             const buildTabData = (
-               configKey: keyof typeof PATTERN_TAB_CONFIG,
+               configKey: keyof typeof PATTERN_DIMENSIONS,
             ) => {
-               const config = PATTERN_TAB_CONFIG[configKey];
+               const config = PATTERN_DIMENSIONS[configKey];
+               const labels = patternLabels[configKey];
                const dimKey = config.dimension;
                const chartDataRaw = sortedAsc
                   .map((item) => {
@@ -375,15 +398,16 @@ const HomeDashboard = React.memo(
                         id: `${item.entry.id}-${dimKey}`,
                         entryId: item.entry.id,
                         createdAt: item.entry.createdAt,
-                        phrase: phrase || 'No phrase detected for this entry.',
+                        phrase:
+                           phrase || t('home.patterns.no_phrase_detected'),
                         impact: getPatternImpact(score),
                         insight: insight ?? null,
                      };
                   })
                   .filter(Boolean) as any[];
                return {
-                  highLabel: config.highLabel,
-                  lowLabel: config.lowLabel,
+                  highLabel: labels.highLabel,
+                  lowLabel: labels.lowLabel,
                   description: '',
                   chartData,
                   patterns,
@@ -403,7 +427,7 @@ const HomeDashboard = React.memo(
             };
          }
          return { streakView, patternView };
-      }, [anchorDate, isAllTime, entries]);
+      }, [anchorDate, entries, isAllTime, patternLabels, t]);
 
       // --- RENDER ---
       const dateKey = anchorDate.toISOString();
@@ -427,24 +451,27 @@ const HomeDashboard = React.memo(
                   <Pressable
                      onPress={handleOpenInsightCoverage}
                      accessibilityRole="button"
-                     accessibilityLabel={`AI coverage: ${insightCoverage.valid} of ${insightCoverage.total} entries. Analyze remaining.`}
+                     accessibilityLabel={t('home.coverage.a11y', {
+                        valid: insightCoverage.valid,
+                        total: insightCoverage.total,
+                     })}
                      className="active:opacity-70"
                      hitSlop={8}
                   >
                      <Text className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                        AI coverage:{' '}
+                        {t('home.coverage.label')}{' '}
                         <Text
                            className="font-black text-slate-700 dark:text-slate-200"
                            style={{ fontVariant: ['tabular-nums'] }}
                         >
                            {insightCoverage.valid}/{insightCoverage.total}
                         </Text>{' '}
-                        entries{' '}
+                        {t('home.coverage.entries')}{' '}
                         <Text className="text-slate-400 dark:text-slate-600">
                            •
                         </Text>{' '}
                         <Text className="font-semibold text-indigo-600 dark:text-indigo-400">
-                           Analyze remaining →
+                           {t('home.coverage.analyze_remaining')}
                         </Text>
                      </Text>
                   </Pressable>
@@ -459,7 +486,8 @@ const HomeDashboard = React.memo(
                   layout={LinearTransition.springify()}
                >
                   <AiDataEmptyCard
-                     title="Thinking Patterns"
+                     title={t('home.thinking_patterns')}
+                     variant="thinking"
                      Icon={Layers}
                      shadowStyle={shadowSm}
                      isDark={isDark}

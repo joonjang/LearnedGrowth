@@ -3,6 +3,7 @@ import { getSupabaseClient } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { useTranslation } from 'react-i18next';
 import { useCallback, useMemo, useState } from 'react';
 import {
    ActivityIndicator,
@@ -17,6 +18,7 @@ export default function SendFeedback() {
    const { user } = useAuth();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { t } = useTranslation();
    const buttonShadow = useMemo(
       () => getShadow({ isDark, preset: 'button' }),
       [isDark]
@@ -27,7 +29,10 @@ export default function SendFeedback() {
 
    const [feedback, setFeedback] = useState('');
    const [loading, setLoading] = useState(false);
-   const [message, setMessage] = useState<string | null>(null);
+   const [message, setMessage] = useState<{
+      text: string;
+      tone: 'success' | 'error';
+   } | null>(null);
    const [collapsed, setCollapsed] = useState(true);
 
    const toggle = useCallback(() => {
@@ -38,7 +43,7 @@ export default function SendFeedback() {
    const handleSend = useCallback(async () => {
       const text = feedback.trim();
       if (!text) {
-         setMessage('Please add a message first.');
+         setMessage({ text: t('feedback.empty'), tone: 'error' });
          return;
       }
       setLoading(true);
@@ -53,7 +58,7 @@ export default function SendFeedback() {
         if (error) throw new Error(error.message);
         
         setFeedback('');
-        setMessage('Thanks! We read every message.');
+        setMessage({ text: t('feedback.success'), tone: 'success' });
         
         // Auto collapse after success
         setTimeout(() => {
@@ -62,11 +67,14 @@ export default function SendFeedback() {
         }, 2000);
 
       } catch (err: any) {
-        setMessage(err?.message ?? 'Unable to send feedback right now.');
+        setMessage({
+           text: err?.message ?? t('feedback.failed'),
+           tone: 'error',
+        });
       } finally {
         setLoading(false);
       }
-   }, [feedback, user?.email, user?.id, collapsed, toggle]);
+   }, [feedback, user?.email, user?.id, collapsed, t, toggle]);
 
    return (
       <View>
@@ -76,7 +84,7 @@ export default function SendFeedback() {
             onPress={toggle}
          >
             <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-               Send Feedback
+               {t('feedback.title')}
             </Text>
             {collapsed ? (
                <ChevronDown size={20} color={iconColor} />
@@ -91,7 +99,7 @@ export default function SendFeedback() {
 
                <TextInput
                   className="min-h-[100px] border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-[15px] bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 leading-5"
-                  placeholder="Tell us what is working or what could be better..."
+                  placeholder={t('feedback.placeholder')}
                   placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
                   multiline
                   value={feedback}
@@ -112,14 +120,20 @@ export default function SendFeedback() {
                       <ActivityIndicator size="small" color={isDark ? 'black' : 'white'} />
                   ) : (
                       <Text className="text-white dark:text-slate-900 font-bold text-[15px]">
-                         Send Message
+                         {t('feedback.send')}
                       </Text>
                   )}
                </Pressable>
                
                {message && (
-                  <Text className={`text-xs text-center font-medium ${message.includes('Thanks') ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
-                     {message}
+                  <Text
+                     className={`text-xs text-center font-medium ${
+                        message.tone === 'success'
+                           ? 'text-green-600 dark:text-green-400'
+                           : 'text-red-500'
+                     }`}
+                  >
+                     {message.text}
                   </Text>
                )}
             </View>

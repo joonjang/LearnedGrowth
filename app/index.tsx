@@ -22,6 +22,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { router, useFocusEffect } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Platform, Pressable, Text, View } from 'react-native';
 import Animated, {
    FadeInDown,
@@ -38,6 +39,7 @@ export default function EntriesScreen() {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const { status } = useAuth();
+   const { t } = useTranslation();
    const { lock: lockNavigation } = useNavigationLock();
    const [showHelpModal, setShowHelpModal] = useState(false);
    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -116,8 +118,14 @@ export default function EntriesScreen() {
 
    // --- Filtering (For Dashboard Stats Only) ---
    const filterOptions = useMemo(
-      () => buildEntryCountFilterOptions(totalCount),
-      [totalCount],
+      () =>
+         buildEntryCountFilterOptions(totalCount, {
+            all: t('home.filters.all'),
+            last5: t('home.filters.last_5'),
+            last10: t('home.filters.last_10'),
+            last25: t('home.filters.last_25'),
+         }),
+      [t, totalCount],
    );
    const isFilterLoading = !isHydrated && totalCount === 0;
 
@@ -162,10 +170,10 @@ export default function EntriesScreen() {
       [filterOptions, selectedFilterKey],
    );
 
-   const allEntriesLabel = `All Entries (${totalCount})`;
+   const allEntriesLabel = t('home.filters.all_count', { count: totalCount });
    const displayLabel =
       totalCount <= 5
-         ? `${totalCount} ${totalCount === 1 ? 'Entry' : 'Entries'}`
+         ? t('home.entries_count', { count: totalCount })
          : selectedFilterKey === 'all'
            ? allEntriesLabel
            : (selectedFilterOption?.label ?? allEntriesLabel);
@@ -267,7 +275,7 @@ export default function EntriesScreen() {
                         <Text
                            className={`text-lg font-bold text-center ${PRIMARY_CTA_TEXT_CLASS}`}
                         >
-                           What&apos;s on your mind?
+                           {t('home.primary_cta')}
                         </Text>
                      </Pressable>
                   </Animated.View>

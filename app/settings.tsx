@@ -38,6 +38,7 @@ import {
    useState,
    type ReactNode,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
    ActivityIndicator,
    Alert,
@@ -99,9 +100,13 @@ export default function SettingsScreen() {
       hapticsAvailable,
       theme,
       themePreference,
+      language,
+      languagePreference,
+      setLanguage,
       setHapticsEnabled,
       setTheme,
    } = usePreferences();
+   const { t } = useTranslation();
 
    const insets = useSafeAreaInsets();
 
@@ -218,7 +223,7 @@ export default function SettingsScreen() {
    // --- Handlers ---
    const handleRestore = async () => {
       if (isOffline) {
-         setBillingNote('Go online to restore purchases.');
+         setBillingNote(t('settings.billing.go_online_restore'));
          return;
       }
 
@@ -234,17 +239,20 @@ export default function SettingsScreen() {
             customerInfo.activeSubscriptions.length > 0;
 
          if (hasActiveSubscription) {
-            Alert.alert('Success', 'Your subscription has been restored.');
+            Alert.alert(
+               t('settings.billing.restore_success_title'),
+               t('settings.billing.restore_success_message'),
+            );
             setBillingNote(null);
          } else {
             Alert.alert(
-               'No Subscriptions Found',
-               "We couldn't find any active subscriptions for this account.",
+               t('settings.billing.no_subs_title'),
+               t('settings.billing.no_subs_message'),
             );
             setBillingNote(null);
          }
       } catch (err: any) {
-         setBillingNote(err?.message ?? 'Restore failed.');
+         setBillingNote(err?.message ?? t('settings.billing.restore_failed'));
       } finally {
          setBillingAction(null);
       }
@@ -255,10 +263,11 @@ export default function SettingsScreen() {
       setBillingAction('manage');
       setBillingNote(null);
       try {
-         if (!MANAGE_SUBSCRIPTION_URL) throw new Error('Not supported.');
+         if (!MANAGE_SUBSCRIPTION_URL)
+            throw new Error(t('settings.billing.not_supported'));
          await Linking.openURL(MANAGE_SUBSCRIPTION_URL);
       } catch (err: any) {
-         Alert.alert('Manage subscription', err?.message);
+         Alert.alert(t('settings.billing.manage_subscription'), err?.message);
       } finally {
          setBillingAction(null);
       }
@@ -266,7 +275,7 @@ export default function SettingsScreen() {
 
    const formatCouponMessage = (msg: string) => {
       const cleaned = msg.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
-      if (!cleaned) return 'Error.';
+      if (!cleaned) return t('settings.coupon.error');
       const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
       return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
    };
@@ -284,7 +293,9 @@ export default function SettingsScreen() {
       }
       if (!couponCode.trim()) return;
       if (isOffline) {
-         setCouponMessage(formatCouponMessage('Go online to redeem a coupon'));
+         setCouponMessage(
+            formatCouponMessage(t('settings.coupon.go_online_redeem')),
+         );
          return;
       }
       setRedeemingCoupon(true);
@@ -297,11 +308,13 @@ export default function SettingsScreen() {
             code: couponCode.trim(),
          });
          if (error) throw new Error(error.message);
-         setCouponMessage(formatCouponMessage('Coupon applied'));
+         setCouponMessage(formatCouponMessage(t('settings.coupon.applied')));
          setCouponCode('');
          await refreshProfile();
       } catch (err: any) {
-         setCouponMessage(formatCouponMessage(err?.message ?? 'Coupon failed'));
+         setCouponMessage(
+            formatCouponMessage(err?.message ?? t('settings.coupon.failed')),
+         );
       } finally {
          setRedeemingCoupon(false);
       }
@@ -348,11 +361,11 @@ export default function SettingsScreen() {
          // 4. Show Native Alert AND wait for user input
          // We ONLY navigate to login after they press "OK"
          Alert.alert(
-            'Account Deleted',
-            'Your account and data have been permanently removed from the server.',
+            t('settings.delete_account.success_title'),
+            t('settings.delete_account.success_message'),
             [
                {
-                  text: 'OK',
+                  text: t('common.ok'),
                   style: 'default',
                },
             ],
@@ -361,14 +374,20 @@ export default function SettingsScreen() {
 
          return true;
       } catch (err: any) {
-         Alert.alert('Delete account', err?.message ?? 'Delete failed.');
+         Alert.alert(
+            t('settings.delete_account.error_title'),
+            err?.message ?? t('settings.delete_account.error_message'),
+         );
          return false;
       }
    };
 
    const planLabel = useMemo(
-      () => (entitlementActive ? 'Growth Plus' : 'Free Plan'),
-      [entitlementActive],
+      () =>
+         entitlementActive
+            ? t('settings.plan.growth_plus')
+            : t('settings.plan.free'),
+      [entitlementActive, t],
    );
    const nextResetAt = useMemo(() => {
       if (!profile?.aiCycleExpiresAt) return null;
@@ -382,8 +401,7 @@ export default function SettingsScreen() {
       const totalSeconds = Math.max(0, Math.floor(diffMs / 1000));
       const days = Math.floor(totalSeconds / 86400);
       if (days >= 1) {
-         const dayLabel = days === 1 ? 'day' : 'days';
-         return `${days} ${dayLabel}`;
+         return t('settings.reset_days', { count: days });
       }
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -396,11 +414,11 @@ export default function SettingsScreen() {
       return `${minutes.toString().padStart(2, '0')}:${seconds
          .toString()
          .padStart(2, '0')}`;
-   }, [nextResetAt, nowTs]);
+   }, [nextResetAt, nowTs, t]);
    const resetSubtext = useMemo(() => {
-      if (!resetCountdown) return 'Resets soon';
-      return `Resets in ${resetCountdown}`;
-   }, [resetCountdown]);
+      if (!resetCountdown) return t('settings.resets_soon');
+      return t('settings.resets_in', { time: resetCountdown });
+   }, [resetCountdown, t]);
 
    const manualThemeStyle = useAnimatedStyle(() => {
       return {
@@ -445,13 +463,13 @@ export default function SettingsScreen() {
                <LeftBackChevron isDark={isDark} />
                <View className="flex-1">
                   <Text className="text-3xl font-extrabold text-slate-900 dark:text-slate-50">
-                     Settings
+                     {t('settings.title')}
                   </Text>
                   <Text
                      numberOfLines={1}
                      className="text-[15px] font-medium text-slate-500 dark:text-slate-400 mt-0.5"
                   >
-                     {user?.email ?? 'Not signed in'}
+                     {user?.email ?? t('settings.not_signed_in')}
                   </Text>
                </View>
             </View>
@@ -461,7 +479,7 @@ export default function SettingsScreen() {
                <View className="bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 p-3 rounded-xl flex-row items-center gap-3">
                   <View className="w-2 h-2 rounded-full bg-amber-500" />
                   <Text className="text-sm font-bold text-amber-800 dark:text-amber-200">
-                     You are offline.
+                     {t('settings.offline')}
                   </Text>
                </View>
             )}
@@ -477,11 +495,10 @@ export default function SettingsScreen() {
                      </View>
                      <View className="flex-1">
                         <Text className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                           Save your progress
+                           {t('settings.save_progress_title')}
                         </Text>
                         <Text className="text-sm text-slate-500 dark:text-slate-400 leading-5 mt-1">
-                           Sign in to back up your entries and sync across your
-                           devices.
+                           {t('settings.save_progress_body')}
                         </Text>
                      </View>
                   </View>
@@ -491,7 +508,7 @@ export default function SettingsScreen() {
                      onPress={() => router.push(ROUTE_LOGIN)}
                   >
                      <Text className="text-white font-bold text-[16px]">
-                        Sign In / Create Account
+                        {t('settings.sign_in_cta')}
                      </Text>
                   </Pressable>
 
@@ -501,7 +518,7 @@ export default function SettingsScreen() {
                         color={isDark ? '#94a3b8' : '#64748b'}
                      />
                      <Text className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Your data is private and encrypted.
+                        {t('settings.privacy_note')}
                      </Text>
                   </View>
                </View>
@@ -511,7 +528,7 @@ export default function SettingsScreen() {
             {isSignedIn && !hasGrowth && (
                <View className="flex-row gap-3">
                   <StatCard
-                     label="Cycle Credits"
+                     label={t('settings.stats.cycle_credits')}
                      value={`${cycleRemaining} / ${freeMonthlyCredits}`}
                      subtext={resetSubtext}
                      isLoading={isLoading}
@@ -519,9 +536,9 @@ export default function SettingsScreen() {
                      shadowStyle={commonShadowStyle}
                   />
                   <StatCard
-                     label="Extra Analysis"
+                     label={t('settings.stats.extra_analysis')}
                      value={String(extraCredits)}
-                     subtext="Non-expiring"
+                     subtext={t('settings.stats.non_expiring')}
                      isLoading={isLoading}
                      isHighlight
                      shadowStyle={commonShadowStyle}
@@ -540,7 +557,7 @@ export default function SettingsScreen() {
                      <View className="flex-row justify-between items-center">
                         <View>
                            <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                              Current Plan
+                              {t('settings.current_plan')}
                            </Text>
                            <View className="flex-row items-center gap-2">
                               <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
@@ -569,7 +586,7 @@ export default function SettingsScreen() {
                            <TextInput
                               value={couponCode}
                               onChangeText={setCouponCode}
-                              placeholder="Enter coupon"
+                              placeholder={t('settings.coupon.placeholder')}
                               placeholderTextColor={
                                  isDark ? '#94a3b8' : '#94a3b8'
                               }
@@ -591,7 +608,7 @@ export default function SettingsScreen() {
                                  />
                               ) : (
                                  <Text className="text-white font-semibold">
-                                    Apply
+                                    {t('settings.coupon.apply')}
                                  </Text>
                               )}
                            </Pressable>
@@ -614,7 +631,7 @@ export default function SettingsScreen() {
                            >
                               <View className="w-full items-center">
                                  <Text className="text-white font-bold text-[16px] text-center">
-                                    Get More Analysis
+                                    {t('settings.billing.get_more_analysis')}
                                  </Text>
                               </View>
                            </Pressable>
@@ -626,7 +643,7 @@ export default function SettingsScreen() {
                            className="items-center justify-center bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700"
                         >
                            <Text className="font-semibold text-slate-700 dark:text-slate-200">
-                              Manage Subscription
+                              {t('settings.billing.manage_subscription')}
                            </Text>
                         </Pressable>
                      )}
@@ -638,8 +655,8 @@ export default function SettingsScreen() {
                      >
                         <Text className="text-xs font-semibold text-slate-400 dark:text-slate-500">
                            {billingAction === 'restore'
-                              ? 'Restoring purchases...'
-                              : 'Restore Purchases'}
+                              ? t('settings.billing.restoring')
+                              : t('settings.billing.restore')}
                         </Text>
                      </Pressable>
                      {(billingNote || rcError) && (
@@ -657,15 +674,73 @@ export default function SettingsScreen() {
                style={commonShadowStyle}
             >
                <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                  Preferences
+                  {t('settings.preferences')}
                </Text>
+               <SettingRow
+                  title={t('settings.language.title')}
+                  description={t('settings.language.description')}
+               >
+                  <View className="flex-row gap-2">
+                     {[
+                        {
+                           value: 'en' as const,
+                           label: t('settings.language.english'),
+                        },
+                        {
+                           value: 'ko' as const,
+                           label: t('settings.language.korean'),
+                        },
+                     ].map((option) => {
+                        const resolvedLanguage =
+                           languagePreference === 'system'
+                              ? language
+                              : languagePreference;
+                        const isActive = resolvedLanguage === option.value;
+                        return (
+                           <Pressable
+                              key={option.value}
+                              onPress={() => setLanguage(option.value)}
+                              disabled={prefsLoading}
+                              className={`px-3 py-2 rounded-full border ${
+                                 isActive
+                                    ? 'bg-emerald-600/10 border-emerald-500'
+                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                              }`}
+                           >
+                              <Text
+                                 className={`text-[12px] font-bold ${
+                                    isActive
+                                       ? 'text-emerald-700 dark:text-emerald-300'
+                                       : 'text-slate-700 dark:text-slate-300'
+                                 }`}
+                              >
+                                 {option.label}
+                              </Text>
+                           </Pressable>
+                        );
+                     })}
+                  </View>
+               </SettingRow>
+
+               <SettingRow
+                  title={t('settings.haptics.title')}
+                  description={t('settings.haptics.description')}
+               >
+                  <Switch
+                     value={hapticsEnabled}
+                     onValueChange={setHapticsEnabled}
+                     disabled={prefsLoading || !hapticsAvailable}
+                     thumbColor={switchThumbColor}
+                     trackColor={{ false: '#e2e8f0', true: '#16a34a' }}
+                  />
+               </SettingRow>
 
                {/* Theme Group */}
                <View className="rounded-2xl border border-slate-100 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-800/50 px-3 py-3">
                   {/* Master Switch */}
                   <SettingRow
-                     title="Follow System"
-                     description={`Match your phone’s appearance setting.`}
+                     title={t('settings.theme.follow_system')}
+                     description={t('settings.theme.follow_system_desc')}
                   >
                      <Switch
                         value={followSystem}
@@ -685,12 +760,12 @@ export default function SettingsScreen() {
                      <View className="h-px bg-slate-200/80 dark:bg-slate-700/70 my-3" />
 
                      <SettingRow
-                        title="Dark Mode"
+                        title={t('settings.theme.dark_mode')}
                         // Dynamic description makes the "Link" intuitive
                         description={
                            followSystem
-                              ? 'Controlled by system settings.'
-                              : 'Switch between light and dark theme.'
+                              ? t('settings.theme.controlled_by_system')
+                              : t('settings.theme.switch_desc')
                         }
                         disabled={followSystem}
                      >
@@ -706,19 +781,6 @@ export default function SettingsScreen() {
                      </SettingRow>
                   </Animated.View>
                </View>
-
-               <SettingRow
-                  title="Haptic Feedback"
-                  description="Tactile vibrations on interaction."
-               >
-                  <Switch
-                     value={hapticsEnabled}
-                     onValueChange={setHapticsEnabled}
-                     disabled={prefsLoading || !hapticsAvailable}
-                     thumbColor={switchThumbColor}
-                     trackColor={{ false: '#e2e8f0', true: '#16a34a' }}
-                  />
-               </SettingRow>
             </View>
 
             {/* ACCOUNT ACTIONS */}
@@ -732,7 +794,7 @@ export default function SettingsScreen() {
                      onPress={() => setActionsCollapsed(!actionsCollapsed)}
                   >
                      <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                        Account Actions
+                        {t('settings.account_actions')}
                      </Text>
                      {actionsCollapsed ? (
                         <ChevronDown size={20} color={iconColor} />
@@ -745,15 +807,22 @@ export default function SettingsScreen() {
                      <View className="p-4 pt-0 gap-3">
                         <Pressable
                            onPress={() =>
-                              Alert.alert('Sign out', 'Confirm?', [
-                                 { text: 'Cancel' },
-                                 { text: 'Sign Out', onPress: signOut },
-                              ])
+                              Alert.alert(
+                                 t('settings.sign_out.title'),
+                                 t('settings.sign_out.confirm'),
+                                 [
+                                    { text: t('common.cancel') },
+                                    {
+                                       text: t('settings.sign_out.action'),
+                                       onPress: signOut,
+                                    },
+                                 ],
+                              )
                            }
                            className="py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 items-center"
                         >
                            <Text className="font-bold text-slate-700 dark:text-slate-200 text-[15px]">
-                              Sign Out
+                              {t('settings.sign_out.action')}
                            </Text>
                         </Pressable>
 
@@ -762,7 +831,7 @@ export default function SettingsScreen() {
                            className="mt-3 py-2 items-center active:opacity-60"
                         >
                            <Text className="font-semibold text-red-500 dark:text-red-400 text-[15px]">
-                              Delete Account
+                              {t('settings.delete_account.action')}
                            </Text>
                         </Pressable>
                      </View>
@@ -781,7 +850,7 @@ export default function SettingsScreen() {
             </View>
 
             <Text className="text-center text-xs text-slate-400 dark:text-slate-600 pb-4">
-               Version {APP_VERSION}
+               {t('settings.version', { version: APP_VERSION })}
             </Text>
          </KeyboardAwareScrollView>
 
@@ -808,8 +877,10 @@ function DeleteConfirmationModal({
    onConfirm: () => Promise<boolean>;
    isDark: boolean;
 }) {
+   const { t } = useTranslation();
    const [confirmText, setConfirmText] = useState('');
    const [isLoading, setIsLoading] = useState(false);
+   const confirmWord = t('settings.delete_account.confirm_word');
 
    useEffect(() => {
       if (visible) {
@@ -826,7 +897,8 @@ function DeleteConfirmationModal({
       }
    };
 
-   const isMatch = confirmText.toLowerCase() === 'delete';
+   const isMatch =
+      confirmText.trim().toLowerCase() === confirmWord.trim().toLowerCase();
 
    return (
       <Modal
@@ -855,21 +927,22 @@ function DeleteConfirmationModal({
                         <TriangleAlert size={24} color="#ef4444" />
                      </View>
                      <Text className="text-xl font-black text-slate-900 dark:text-white text-center">
-                        Delete Account?
+                        {t('settings.delete_account.title')}
                      </Text>
                      <Text className="text-sm text-slate-500 dark:text-slate-400 text-center px-2">
-                        This action is permanent. All your data will be wiped
-                        immediately.
+                        {t('settings.delete_account.message')}
                      </Text>
                   </View>
 
                   <View className="gap-2">
                      <Text className="text-xs font-bold uppercase text-slate-400 ml-1">
-                        Type &quot;delete&quot; to confirm
+                        {t('settings.delete_account.type_to_confirm', {
+                           word: confirmWord,
+                        })}
                      </Text>
                      <TextInput
                         className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center font-bold text-slate-900 dark:text-white"
-                        placeholder="delete"
+                        placeholder={t('settings.delete_account.placeholder')}
                         placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
                         autoCapitalize="none"
                         value={confirmText}
@@ -884,7 +957,7 @@ function DeleteConfirmationModal({
                         className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl items-center"
                      >
                         <Text className="font-bold text-slate-700 dark:text-slate-300">
-                           Cancel
+                           {t('common.cancel')}
                         </Text>
                      </Pressable>
                      <Pressable
@@ -898,7 +971,7 @@ function DeleteConfirmationModal({
                            <Text
                               className={`font-bold ${isMatch ? 'text-white' : 'text-slate-400'}`}
                            >
-                              Delete
+                              {t('common.delete')}
                            </Text>
                         )}
                      </Pressable>

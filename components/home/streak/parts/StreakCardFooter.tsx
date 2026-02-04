@@ -1,5 +1,6 @@
 import { CHEVRON_ICON_DARK, CHEVRON_ICON_LIGHT } from '@/lib/styles';
 import { ChevronDown, ChevronUp, Pointer } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 type StreakCardFooterProps = {
@@ -11,6 +12,7 @@ export function StreakCardFooter({
    isExpanded,
    isDark,
 }: StreakCardFooterProps) {
+   const { t } = useTranslation();
    const chevronColor = isDark ? CHEVRON_ICON_DARK : CHEVRON_ICON_LIGHT;
 
    return (
@@ -20,7 +22,7 @@ export function StreakCardFooter({
             <View className="mx-5 mb-2 flex-row items-center justify-center gap-2 opacity-80">
                <Pointer size={14} color={chevronColor} />
                <Text className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
-                  Tap a day for details
+                  {t('home.streak.tap_day')}
                </Text>
             </View>
          )}
@@ -29,9 +31,9 @@ export function StreakCardFooter({
          <View className="mx-5 mb-3 flex-row items-center justify-center gap-2 opacity-80 pt-2 border-t border-slate-100 dark:border-slate-800/50">
             <View className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
             <Text className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
-               Tracks days with a{' '}
+               {t('home.streak.tracks_prefix')}{' '}
                <Text className="font-bold text-indigo-600 dark:text-indigo-400">
-                  completed reframe
+                  {t('home.streak.tracks_emphasis')}
                </Text>
             </Text>
          </View>

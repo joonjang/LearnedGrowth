@@ -7,6 +7,7 @@ import {
    buildMentalFocusCategoryCounts,
    filterEntriesByMentalFocusCategory,
 } from '@/lib/mentalFocus';
+import { getCategoryLabel } from '@/lib/labels';
 import { getShadow } from '@/lib/shadow';
 import {
    BOTTOM_SHEET_BACKDROP_OPACITY,
@@ -21,6 +22,7 @@ import {
    BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import React, { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
    FadeIn,
@@ -50,11 +52,12 @@ function getMoodColor(kind: MoodKind, isDark: boolean) {
 function getMoodFromScores(
    sentimentScore: number | null | undefined,
    optimismScore: number | null | undefined,
+   t: (key: string) => string,
 ): { label: string; shortLabel: string; kind: MoodKind } {
    if (!isNum(sentimentScore) && !isNum(optimismScore)) {
       return {
-         label: 'Not analyzed',
-         shortLabel: 'Not analyzed',
+         label: t('home.mental_focus.not_analyzed'),
+         shortLabel: t('home.mental_focus.not_analyzed'),
          kind: 'unknown',
       };
    }
@@ -69,61 +72,81 @@ function getMoodFromScores(
    if (s !== null && o !== null) {
       if (s >= 7 && o >= 7) {
          return {
-            label: 'Optimistic',
-            shortLabel: 'Optimistic',
+            label: t('home.mental_focus.optimistic'),
+            shortLabel: t('home.mental_focus.optimistic'),
             kind: 'positive',
          };
       }
       if (s <= 4 && o <= 4) {
          return {
-            label: 'Pessimistic',
-            shortLabel: 'Pessimistic',
+            label: t('home.mental_focus.pessimistic'),
+            shortLabel: t('home.mental_focus.pessimistic'),
             kind: 'negative',
          };
       }
 
       // Balanced band
       if (s >= 4.5 && s <= 6.5 && o >= 4.5 && o <= 6.5) {
-         return { label: 'Balanced', shortLabel: 'Balanced', kind: 'balanced' };
+         return {
+            label: t('home.mental_focus.balanced'),
+            shortLabel: t('home.mental_focus.balanced'),
+            kind: 'balanced',
+         };
       }
 
       // Disagreement / volatility
       const diff = Math.abs(s - o);
       if (diff >= 3 || (s >= 7 && o <= 4) || (o >= 7 && s <= 4)) {
-         return { label: 'Up & down', shortLabel: 'Up & down', kind: 'mixed' };
+         return {
+            label: t('home.mental_focus.up_down'),
+            shortLabel: t('home.mental_focus.up_down'),
+            kind: 'mixed',
+         };
       }
    }
 
    // Single-score / fallback
    if (avg >= 6.5)
       return {
-         label: 'Optimistic',
-         shortLabel: 'Optimistic',
+         label: t('home.mental_focus.optimistic'),
+         shortLabel: t('home.mental_focus.optimistic'),
          kind: 'positive',
       };
    if (avg <= 3.5)
       return {
-         label: 'Pessimistic',
-         shortLabel: 'Pessimistic',
+         label: t('home.mental_focus.pessimistic'),
+         shortLabel: t('home.mental_focus.pessimistic'),
          kind: 'negative',
       };
    if (avg >= 4.5 && avg <= 6.5)
-      return { label: 'Balanced', shortLabel: 'Balanced', kind: 'balanced' };
+      return {
+         label: t('home.mental_focus.balanced'),
+         shortLabel: t('home.mental_focus.balanced'),
+         kind: 'balanced',
+      };
 
-   return { label: 'Up & down', shortLabel: 'Up & down', kind: 'mixed' };
+   return {
+      label: t('home.mental_focus.up_down'),
+      shortLabel: t('home.mental_focus.up_down'),
+      kind: 'mixed',
+   };
 }
 
-function getCategoryMood(entriesInCategory: Entry[], isDark: boolean) {
+function getCategoryMood(
+   entriesInCategory: Entry[],
+   isDark: boolean,
+   t: (key: string) => string,
+) {
    const scored = entriesInCategory
       .map((e) => {
          const s = e.aiResponse?.meta?.sentimentScore;
          const o = e.aiResponse?.meta?.optimismScore;
-         return getMoodFromScores(s as any, o as any);
+         return getMoodFromScores(s as any, o as any, t);
       })
       .filter((m) => m.kind !== 'unknown');
 
    if (scored.length === 0) {
-      const unknown = getMoodFromScores(null, null);
+      const unknown = getMoodFromScores(null, null, t);
       return { ...unknown, color: getMoodColor(unknown.kind, isDark) };
    }
 
@@ -131,21 +154,29 @@ function getCategoryMood(entriesInCategory: Entry[], isDark: boolean) {
    let final: { label: string; shortLabel: string; kind: MoodKind };
 
    if (kinds.has('mixed') || (kinds.has('positive') && kinds.has('negative'))) {
-      final = { label: 'Up & down', shortLabel: 'Up & down', kind: 'mixed' };
+      final = {
+         label: t('home.mental_focus.up_down'),
+         shortLabel: t('home.mental_focus.up_down'),
+         kind: 'mixed',
+      };
    } else if (kinds.has('positive')) {
       final = {
-         label: 'Optimistic',
-         shortLabel: 'Optimistic',
+         label: t('home.mental_focus.optimistic'),
+         shortLabel: t('home.mental_focus.optimistic'),
          kind: 'positive',
       };
    } else if (kinds.has('negative')) {
       final = {
-         label: 'Pessimistic',
-         shortLabel: 'Pessimistic',
+         label: t('home.mental_focus.pessimistic'),
+         shortLabel: t('home.mental_focus.pessimistic'),
          kind: 'negative',
       };
    } else {
-      final = { label: 'Balanced', shortLabel: 'Balanced', kind: 'balanced' };
+      final = {
+         label: t('home.mental_focus.balanced'),
+         shortLabel: t('home.mental_focus.balanced'),
+         kind: 'balanced',
+      };
    }
 
    return { ...final, color: getMoodColor(final.kind, isDark) };
@@ -161,10 +192,11 @@ const EntryScoreBadge = ({
    entry: Entry;
    isDark: boolean;
 }) => {
+   const { t } = useTranslation();
    const sentiment = entry.aiResponse?.meta?.sentimentScore;
    const optimism = entry.aiResponse?.meta?.optimismScore;
 
-   const mood = getMoodFromScores(sentiment as any, optimism as any);
+   const mood = getMoodFromScores(sentiment as any, optimism as any, t);
    if (mood.kind === 'unknown') return null;
 
    const dotColor = getMoodColor(mood.kind, isDark);
@@ -180,7 +212,7 @@ const EntryScoreBadge = ({
                className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider"
                numberOfLines={1}
             >
-               Observed mood:{' '}
+               {t('home.mental_focus.observed_mood')}:{' '}
                <Text style={{ color: dotColor }}>{mood.label}</Text>
             </Text>
          </View>
@@ -212,6 +244,7 @@ const TopicCard = ({
    onPress: () => void;
    isDark: boolean;
 }) => {
+   const { t } = useTranslation();
    const buttonShadow = useMemo(
       () => getShadow({ isDark, preset: 'button', disableInDark: true }),
       [isDark],
@@ -245,7 +278,7 @@ const TopicCard = ({
                      {label}
                   </Text>
                   <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
-                     {count} {count === 1 ? 'Entry' : 'Entries'}
+                     {t('home.entries_count', { count })}
                   </Text>
                </View>
             </View>
@@ -313,6 +346,7 @@ export function MentalFocusSheet({
    const { height: windowHeight } = useWindowDimensions();
    const [activeTopic, setActiveTopic] = useState<string | null>(null);
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
+   const { t } = useTranslation();
 
    const maxSheetHeight = useMemo(() => windowHeight * 0.9, [windowHeight]);
 
@@ -329,10 +363,12 @@ export function MentalFocusSheet({
                entries,
                stat.label,
             );
-            const catMood = getCategoryMood(entriesInCat, isDark);
+            const catMood = getCategoryMood(entriesInCat, isDark, t);
+            const displayLabel = getCategoryLabel(stat.label, t);
 
             return {
                ...stat,
+               displayLabel,
                dynamicCount: count,
                dynamicPercentage: total > 0 ? (count / total) * 100 : 0,
                moodLabel: catMood.shortLabel,
@@ -341,7 +377,7 @@ export function MentalFocusSheet({
          })
          .filter((stat) => stat.dynamicCount > 0)
          .sort((a, b) => b.dynamicPercentage - a.dynamicPercentage);
-   }, [entries, analysis?.categoryStats, isDark]);
+   }, [entries, analysis?.categoryStats, isDark, t]);
 
    const filteredEntries = useMemo(() => {
       if (!entries?.length || !activeTopic) return [];
@@ -350,6 +386,9 @@ export function MentalFocusSheet({
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
    }, [activeTopic, entries]);
+   const activeTopicLabel = activeTopic
+      ? getCategoryLabel(activeTopic, t)
+      : '';
 
    const handleSheetDismiss = useCallback(() => {
       setActiveTopic(null);
@@ -397,10 +436,10 @@ export function MentalFocusSheet({
             {/* --- SHEET HEADER --- */}
             <View className="px-5 mb-1">
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
-                  Mental Focus
+                  {t('home.mental_focus.title')}
                </Text>
                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-                  Observed Topics
+                  {t('home.mental_focus.observed_topics')}
                </Text>
 
                {!activeTopic && (
@@ -409,7 +448,7 @@ export function MentalFocusSheet({
                      exiting={FadeOut.duration(200)}
                      className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest "
                   >
-                     Tap a category to explore related entries
+                     {t('home.mental_focus.tap_to_explore')}
                   </Animated.Text>
                )}
             </View>
@@ -421,7 +460,7 @@ export function MentalFocusSheet({
                      key={stat.label}
                      isActive={activeTopic === stat.label}
                      color={stat.style.color}
-                     label={stat.label}
+                     label={stat.displayLabel}
                      percentage={Math.round(stat.dynamicPercentage)}
                      count={stat.dynamicCount}
                      moodLabel={stat.moodLabel}
@@ -445,8 +484,10 @@ export function MentalFocusSheet({
                >
                   <View className="mb-5">
                      <Text className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[2px]">
-                        {filteredEntries.length === 1 ? ' Entry' : 'Entries'} on{' '}
-                        {activeTopic}
+                        {t('home.mental_focus.entries_on', {
+                           count: filteredEntries.length,
+                           topic: activeTopicLabel,
+                        })}
                      </Text>
                   </View>
 

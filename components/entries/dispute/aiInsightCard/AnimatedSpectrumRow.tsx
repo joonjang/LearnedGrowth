@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import Animated, {
    cancelAnimation,
@@ -56,6 +57,7 @@ export function AnimatedSpectrumRow({
 }) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { t } = useTranslation();
    const spectrum = AI_INSIGHT_ANIMATION.spectrum;
 
    const lowerScore = score?.toLowerCase() || '';
@@ -360,7 +362,7 @@ export function AnimatedSpectrumRow({
                   className={overlayBase}
                />
                <Animated.Text className={baseText} style={mixed.textStyle}>
-                  Mixed
+                  {t('analysis.mixed')}
                </Animated.Text>
             </Animated.View>
 
@@ -380,7 +382,7 @@ export function AnimatedSpectrumRow({
 
          <Animated.View className="pl-1 gap-1" style={insightAnimStyle}>
             <Text className="text-sm leading-6 text-slate-700 dark:text-slate-300">
-               {insight || 'No clear pattern detected.'}
+               {insight || t('analysis.no_clear_pattern')}
             </Text>
          </Animated.View>
       </Animated.View>

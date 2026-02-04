@@ -1,15 +1,17 @@
 import { AdapterGuard } from '@/components/utils/AdapterGuard';
 import { AuthGate } from '@/components/utils/AuthGate';
 import TopFade from '@/components/utils/TopFade';
+import '@/lib/i18n';
 import { AppProviders } from '@/providers/AppProviders';
 import { useAuth } from '@/providers/AuthProvider';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Platform, useColorScheme, View } from 'react-native';
+import { Platform, Text, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import '../global.css';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -41,6 +43,7 @@ function EdgeToEdge({ children }: { children: React.ReactNode }) {
 
 function RootLayoutContent() {
    const { status, isConfigured } = useAuth();
+   const { i18n } = useTranslation();
 
    useEffect(() => {
       if (!isConfigured || status !== 'checking') {
@@ -49,6 +52,18 @@ function RootLayoutContent() {
          });
       }
    }, [isConfigured, status]);
+
+   useEffect(() => {
+      const isKorean = i18n.language?.startsWith('ko');
+      const existing = Text.defaultProps ?? {};
+      const textProps =
+         Platform.OS === 'ios'
+            ? { lineBreakStrategyIOS: isKorean ? 'hangul-word' : 'standard' }
+            : Platform.OS === 'android'
+              ? { textBreakStrategy: isKorean ? 'simple' : 'highQuality' }
+              : {};
+      Text.defaultProps = { ...existing, ...textProps };
+   }, [i18n.language]);
 
    return (
       <AuthGate>

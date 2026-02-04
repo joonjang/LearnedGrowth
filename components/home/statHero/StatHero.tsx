@@ -2,6 +2,7 @@ import { getShadow } from '@/lib/shadow';
 import { CARD_PRESS_STYLE, DISPUTE_CTA_CLASS } from '@/lib/styles';
 import { Entry } from '@/models/entry';
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
    FadeIn,
@@ -28,6 +29,7 @@ export type ResolutionStats = {
 export function getResolutionStatus(
    entries: Entry[],
    isDark: boolean,
+   t: (key: string) => string,
 ): ResolutionStats {
    const total = entries.length;
    const resolvedCount = entries.filter(
@@ -36,8 +38,8 @@ export function getResolutionStatus(
 
    if (total === 0) {
       return {
-         label: 'Ready to Start',
-         subtext: 'Your journal is waiting for your first thought.',
+         label: t('home.stat_hero.ready_title'),
+         subtext: t('home.stat_hero.ready_subtext'),
          colorClass: 'text-slate-500 dark:text-slate-400',
          barColor: isDark ? '#334155' : '#cbd5e1',
          percent: 0,
@@ -51,8 +53,8 @@ export function getResolutionStatus(
 
    if (ratio >= 0.8) {
       return {
-         label: 'Resilience Built',
-         subtext: 'You’re consistently finishing the full loop.',
+         label: t('home.stat_hero.resilience_title'),
+         subtext: t('home.stat_hero.resilience_subtext'),
          colorClass: 'text-indigo-600 dark:text-indigo-400',
          barColor: isDark ? '#818cf8' : '#4f46e5',
          percent,
@@ -63,8 +65,8 @@ export function getResolutionStatus(
 
    if (ratio >= 0.5) {
       return {
-         label: 'Steady Growth',
-         subtext: 'You’re building the habit, one reframe at a time.',
+         label: t('home.stat_hero.steady_title'),
+         subtext: t('home.stat_hero.steady_subtext'),
          colorClass: 'text-slate-600 dark:text-slate-300',
          barColor: isDark ? '#94a3b8' : '#64748b',
          percent,
@@ -74,8 +76,8 @@ export function getResolutionStatus(
    }
 
    return {
-      label: 'Capturing Thoughts',
-      subtext: `Capture first. Reframe when you feel ready.`,
+      label: t('home.stat_hero.capturing_title'),
+      subtext: t('home.stat_hero.capturing_subtext'),
       colorClass: 'text-amber-600 dark:text-amber-500',
       barColor: isDark ? '#fbbf24' : '#d97706',
       percent,
@@ -165,6 +167,7 @@ export default function StatHero({
    isDark,
    isLoading = false,
 }: StatHeroProps) {
+   const { t } = useTranslation();
    const labelColor = 'text-slate-400 dark:text-slate-500';
    const [isPressed, setIsPressed] = useState(false);
 
@@ -196,7 +199,7 @@ export default function StatHero({
                   <Text
                      className={`text-[10px] font-bold uppercase tracking-[3px] ${labelColor} mr-1`}
                   >
-                     Reframed
+                     {t('home.stat_hero.reframed_label')}
                   </Text>
                </View>
 
@@ -240,11 +243,9 @@ export default function StatHero({
                      ]}
                   >
                      <Text className="text-[11px] font-bold uppercase tracking-wider text-white">
-                        {needsAttentionCount}{' '}
-                        {needsAttentionCount === 1
-                           ? 'Entry needs'
-                           : 'Entries need'}{' '}
-                        reframe
+                        {t('home.stat_hero.needs_reframe', {
+                           count: needsAttentionCount,
+                        })}
                      </Text>
                   </Pressable>
                )}

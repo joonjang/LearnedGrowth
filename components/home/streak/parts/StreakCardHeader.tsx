@@ -7,6 +7,7 @@ import {
    Sprout
 } from 'lucide-react-native';
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import Animated, {
    FadeIn,
@@ -68,6 +69,7 @@ export function StreakCardHeader({
    isDark,
    isLoading = false,
 }: StreakCardHeaderProps) {
+   const { t } = useTranslation();
    const hasStreak = streakCount > 0;
    const iconColor = isDark ? HOME_ICON_DARK : HOME_ICON_LIGHT;
 
@@ -104,7 +106,9 @@ export function StreakCardHeader({
                   />
                )}
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                  {isCurrentWeek ? 'Days of Growth' : 'Weekly Activity'}
+                  {isCurrentWeek
+                     ? t('home.streak.days_of_growth')
+                     : t('home.streak.weekly_activity')}
                </Text>
             </View>
 
@@ -130,8 +134,10 @@ export function StreakCardHeader({
                   )}
                   <Text className={badgeTextClassName} numberOfLines={1}>
                      {isCurrentWeek
-                        ? `${streakCount} Day Streak`
-                        : `${activeCount}/7 Days Reframed`}
+                        ? t('home.streak.day_streak', { count: streakCount })
+                        : t('home.streak.days_reframed', {
+                             count: activeCount,
+                          })}
                   </Text>
                </Animated.View>
             )}

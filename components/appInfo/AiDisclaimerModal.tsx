@@ -1,6 +1,7 @@
 import { getShadow } from '@/lib/shadow';
 import { AlertTriangle, Bot, FileText, ShieldCheck } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, Text, View } from 'react-native';
 
 type Props = {
@@ -11,6 +12,7 @@ type Props = {
 
 export default function AiDisclaimerModal({ visible, onCancel, onConfirm }: Props) {
   const { colorScheme } = useColorScheme();
+  const { t } = useTranslation();
   const isDark = colorScheme === 'dark';
   const shadow = getShadow({ isDark, preset: '2xl' });
 
@@ -26,20 +28,32 @@ export default function AiDisclaimerModal({ visible, onCancel, onConfirm }: Prop
                     <Bot size={24} color={isDark ? '#818cf8' : '#4f46e5'} />
                  </View>
                  <Text className="text-center text-xl font-bold text-slate-900 dark:text-white">
-                    Before we analyze
+                    {t('aiDisclaimer.title')}
                  </Text>
               </View>
               <View className="gap-4 mb-8">
-                 <InfoRow icon={<ShieldCheck size={20} color={isDark ? '#94a3b8' : '#64748b'} />} title="Not Medical Advice" description="This AI is a tool for self-reflection, not a doctor. It cannot diagnose mental health conditions." />
-                 <InfoRow icon={<AlertTriangle size={20} color={isDark ? '#94a3b8' : '#64748b'} />} title="Check for Accuracy" description="AI can make mistakes. Please use your own judgment when reading the insights." />
-                 <InfoRow icon={<FileText size={20} color={isDark ? '#94a3b8' : '#64748b'} />} title="Data Processing" description="Your entry text will be sent to our secure AI provider solely to generate this response." />
+                 <InfoRow
+                    icon={<ShieldCheck size={20} color={isDark ? '#94a3b8' : '#64748b'} />}
+                    title={t('aiDisclaimer.not_medical_title')}
+                    description={t('aiDisclaimer.not_medical_desc')}
+                 />
+                 <InfoRow
+                    icon={<AlertTriangle size={20} color={isDark ? '#94a3b8' : '#64748b'} />}
+                    title={t('aiDisclaimer.accuracy_title')}
+                    description={t('aiDisclaimer.accuracy_desc')}
+                 />
+                 <InfoRow
+                    icon={<FileText size={20} color={isDark ? '#94a3b8' : '#64748b'} />}
+                    title={t('aiDisclaimer.data_title')}
+                    description={t('aiDisclaimer.data_desc')}
+                 />
               </View>
               <View className="gap-3">
                  <Pressable onPress={onConfirm} className="h-12 w-full items-center justify-center rounded-xl bg-indigo-600 dark:bg-indigo-500 active:bg-indigo-700 dark:active:bg-indigo-600">
-                    <Text className="font-bold text-white text-base">I Understand</Text>
+                    <Text className="font-bold text-white text-base">{t('aiDisclaimer.confirm')}</Text>
                  </Pressable>
                  <Pressable onPress={onCancel} className="h-12 w-full items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700">
-                    <Text className="font-bold text-slate-600 dark:text-slate-300 text-base">Cancel</Text>
+                    <Text className="font-bold text-slate-600 dark:text-slate-300 text-base">{t('aiDisclaimer.cancel')}</Text>
                  </Pressable>
               </View>
            </View>

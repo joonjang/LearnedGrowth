@@ -1,8 +1,10 @@
 import { useEntriesAdapter } from '@/providers/AdapterProvider';
+import { useTranslation } from 'react-i18next';
 import { Button, StyleSheet, Text, View } from 'react-native';
 
 export function AdapterGuard({ children }: { children: React.ReactNode }) {
    const { ready, error, reload } = useEntriesAdapter();
+   const { t } = useTranslation();
 
 
    return (
@@ -12,15 +14,15 @@ export function AdapterGuard({ children }: { children: React.ReactNode }) {
 
          {!ready && !error && (
             <Overlay>
-               <Text>Loading…</Text>
+               <Text>{t('common.loading')}</Text>
             </Overlay>
          )}
 
          {!!error && (
             <Overlay>
-               <Text>Error</Text>
+               <Text>{t('common.error')}</Text>
                <Text>{error}</Text>
-               <Button title="Reload" onPress={reload} />
+               <Button title={t('common.reload')} onPress={reload} />
             </Overlay>
          )}
       </View>

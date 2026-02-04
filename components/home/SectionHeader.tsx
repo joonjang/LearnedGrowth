@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import { WeekSummary } from './types';
 
@@ -17,8 +18,9 @@ export default function SectionHeader({
    isDark,
    paddingTop = 0,
 }: Props) {
+   const { t } = useTranslation();
    const count = summary?.entryCount ?? 0;
-   const countLabel = count === 1 ? 'Entry' : 'Entries';
+   const countLabel = t('entries.count_label', { count });
 
    return (
       <View

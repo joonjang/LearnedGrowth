@@ -1,13 +1,18 @@
 import { Entry } from "@/models/entry";
 
-const fmtDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
-const fmtTime = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
-const fmtDateParts = new Intl.DateTimeFormat('en-US', {
-   weekday: 'short',
-   month: 'short',
-   day: 'numeric',
-   year: 'numeric',
-});
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+const getDateFormatter = (locale: string) =>
+   new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' });
+const getTimeFormatter = (locale: string) =>
+   new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
+const getDatePartsFormatter = (locale: string) =>
+   new Intl.DateTimeFormat(locale, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+   });
 
 function toKey(d: Date): string {
    const y = d.getFullYear();
@@ -16,12 +21,16 @@ function toKey(d: Date): string {
    return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-export function formatDate(input: Date | string) {
+export function formatDate(input: Date | string, locale = 'en-US') {
   const d = input instanceof Date ? input : new Date(input);
-  return Number.isNaN(d.getTime()) ? '' : fmtDate.format(d);
+  return Number.isNaN(d.getTime()) ? '' : getDateFormatter(locale).format(d);
 }
 
-export function getDateParts(entry: Entry) {
+export function getDateParts(
+  entry: Entry,
+  t: Translate,
+  locale = 'en-US',
+) {
   const d = new Date(entry.createdAt);
   if (Number.isNaN(d.getTime())) return { dateKey: 'invalid', dateLabel: '' };
 
@@ -31,27 +40,75 @@ export function getDateParts(entry: Entry) {
   const yesterdayKey = toKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
 
   const dateLabel =
-    dateKey === todayKey ? 'Today' :
-    dateKey === yesterdayKey ? 'Yesterday' :
-    fmtDate.format(d);
+    dateKey === todayKey
+      ? t('date.today')
+      : dateKey === yesterdayKey
+        ? t('date.yesterday')
+        : getDateFormatter(locale).format(d);
 
   return { dateKey, dateLabel };
 }
 
-export function getTimeLabel(entry: Entry) {
+export function getTimeLabel(entry: Entry, locale = 'en-US') {
   const d = new Date(entry.createdAt);
-  return Number.isNaN(d.getTime()) ? '' : fmtTime.format(d);
+  return Number.isNaN(d.getTime()) ? '' : getTimeFormatter(locale).format(d);
 }
 
-export function formatDateTimeWithWeekday(input: Date | string) {
+export function formatDateTimeWithWeekday(input: Date | string, locale = 'en-US') {
    const d = input instanceof Date ? input : new Date(input);
    if (Number.isNaN(d.getTime())) return '';
 
-   const parts = fmtDateParts.formatToParts(d);
+   if (locale.startsWith('ko')) {
+      const currentYear = String(new Date().getFullYear());
+      const year = String(d.getFullYear());
+      const dateFormatter =
+         year !== currentYear
+            ? new Intl.DateTimeFormat(locale, {
+                 year: 'numeric',
+                 month: 'long',
+                 day: 'numeric',
+                 weekday: 'short',
+              })
+            : new Intl.DateTimeFormat(locale, {
+                 month: 'long',
+                 day: 'numeric',
+                 weekday: 'short',
+              });
+      const timeFormatter = new Intl.DateTimeFormat(locale, {
+         hour: 'numeric',
+         minute: '2-digit',
+      });
+      return `${dateFormatter.format(d)} ${timeFormatter.format(d)}`;
+   }
+
+   if (locale.startsWith('en')) {
+      const currentYear = String(new Date().getFullYear());
+      const year = String(d.getFullYear());
+      const dateFormatter =
+         year !== currentYear
+            ? new Intl.DateTimeFormat(locale, {
+                 weekday: 'short',
+                 month: 'short',
+                 day: 'numeric',
+                 year: 'numeric',
+              })
+            : new Intl.DateTimeFormat(locale, {
+                 weekday: 'short',
+                 month: 'short',
+                 day: 'numeric',
+              });
+      const timeFormatter = new Intl.DateTimeFormat(locale, {
+         hour: 'numeric',
+         minute: '2-digit',
+      });
+      return `${dateFormatter.format(d)} · ${timeFormatter.format(d)}`;
+   }
+
+   const parts = getDatePartsFormatter(locale).formatToParts(d);
    const findPart = (type: string) =>
       parts.find((p) => p.type === type)?.value ?? '';
 
-   const time = fmtTime.format(d);
+   const time = getTimeFormatter(locale).format(d);
    const weekday = findPart('weekday');
    const month = findPart('month');
    const day = findPart('day');
@@ -60,7 +117,7 @@ export function formatDateTimeWithWeekday(input: Date | string) {
    const currentYear = String(new Date().getFullYear());
    const yearSuffix = year && year !== currentYear ? ` ${year}` : '';
 
-   return `${time}, ${weekday}, ${month} ${day}${yearSuffix}`;
+   return `${weekday}, ${month} ${day}${yearSuffix} · ${time}`;
 }
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -90,10 +147,10 @@ export function getWeekKey(start: Date) {
   return formatIsoDate(start);
 }
 
-export function getWeekRangeLabel(start: Date) {
+export function getWeekRangeLabel(start: Date, locale = 'en-US') {
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
-  return `${formatDate(start)} - ${formatDate(end)}`;
+  return `${formatDate(start, locale)} - ${formatDate(end, locale)}`;
 }
 
 export function parseLocalIsoDate(isoDateString: string): Date | null {
@@ -103,25 +160,33 @@ export function parseLocalIsoDate(isoDateString: string): Date | null {
   return new Date(year, month - 1, day);
 }
 
-export function getWeekLabel(start: Date, now: Date) {
+export function getWeekLabel(start: Date, now: Date, t: Translate) {
   const currentStart = getWeekStart(now);
   const diffTime = currentStart.getTime() - start.getTime();
   const diffWeeks = Math.round(diffTime / WEEK_MS);
-  if (start.getTime() === currentStart.getTime()) return 'This Week';
+  if (start.getTime() === currentStart.getTime())
+    return t('date.this_week');
   const lastStart = new Date(currentStart);
   lastStart.setDate(lastStart.getDate() - 7);
-  if (start.getTime() === lastStart.getTime()) return 'Last Week';
-  return `${Math.max(2, diffWeeks)} Weeks Ago`;
+  if (start.getTime() === lastStart.getTime())
+    return t('date.last_week');
+  const weeksAgo = Math.max(2, diffWeeks);
+  return t('date.weeks_ago', { count: weeksAgo });
 }
 
-export function buildWeekOptions(entries: Entry[], now: Date): WeekOption[] {
+export function buildWeekOptions(
+  entries: Entry[],
+  now: Date,
+  t: Translate,
+  locale = 'en-US',
+): WeekOption[] {
   const weeks = new Map<string, WeekOption>();
   const currentStart = getWeekStart(now);
   const currentKey = getWeekKey(currentStart);
   weeks.set(currentKey, {
     key: currentKey,
-    label: 'This Week',
-    rangeLabel: getWeekRangeLabel(currentStart),
+    label: t('date.this_week'),
+    rangeLabel: getWeekRangeLabel(currentStart, locale),
     start: currentStart,
     end: new Date(
       currentStart.getTime() + 6 * 24 * 60 * 60 * 1000 + 86399999,
@@ -140,8 +205,8 @@ export function buildWeekOptions(entries: Entry[], now: Date): WeekOption[] {
       end.setHours(23, 59, 59, 999);
       week = {
         key,
-        label: getWeekLabel(weekStart, now),
-        rangeLabel: getWeekRangeLabel(weekStart),
+        label: getWeekLabel(weekStart, now, t),
+        rangeLabel: getWeekRangeLabel(weekStart, locale),
         start: weekStart,
         end,
         count: 0,

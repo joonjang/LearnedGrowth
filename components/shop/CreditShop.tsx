@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Check, Crown, Infinity, Sprout } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    ActivityIndicator,
@@ -32,6 +33,7 @@ const CreditPackCard = ({
    onBuy: () => void;
    isDark: boolean;
 }) => {
+   const { t } = useTranslation();
    return (
       <Pressable
          onPress={onBuy}
@@ -48,7 +50,7 @@ const CreditPackCard = ({
                {count}
             </Text>
             <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-               Credits
+               {t('creditShop.credits_label')}
             </Text>
          </View>
 
@@ -87,6 +89,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
    const { refreshProfile, status, profile } = useAuth();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { t } = useTranslation();
    const isSignedIn = status === 'signedIn';
    const continueShadow = useMemo(
       () => getShadow({ isDark, preset: 'button', colorLight: '#064e3b' }),
@@ -114,11 +117,11 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
          }
       } catch (err: any) {
          Alert.alert(
-            'Unable to open paywall',
-            err?.message ?? 'Please try again.',
+            t('creditShop.paywall_failed_title'),
+            err?.message ?? t('creditShop.paywall_failed_message'),
          );
       }
-   }, [onSuccess, onUpgrade, refreshProfile, showPaywall]);
+   }, [onSuccess, onUpgrade, refreshProfile, showPaywall, t]);
 
    const handleRestore = async () => {
       try {
@@ -126,15 +129,18 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
          await refreshProfile();
 
          if (customerInfo.activeSubscriptions.length > 0) {
-            Alert.alert('Success', 'Your subscription has been restored.');
+            Alert.alert(
+               t('creditShop.restore_success_title'),
+               t('creditShop.restore_success_message'),
+            );
          } else {
             Alert.alert(
-               'No Subscriptions',
-               "We couldn't find any active subscriptions to restore.",
+               t('creditShop.restore_none_title'),
+               t('creditShop.restore_none_message'),
             );
          }
       } catch (e: any) {
-         Alert.alert('Restore Failed', e.message);
+         Alert.alert(t('creditShop.restore_failed_title'), e.message);
       }
    };
 
@@ -160,12 +166,12 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
    const handleBuy = async (pkg: PurchasesPackage) => {
       if (status !== 'signedIn') {
          Alert.alert(
-            'Account Required',
-            'You need to be logged in to save your credits.',
+            t('creditShop.account_required_title'),
+            t('creditShop.account_required_message'),
             [
-               { text: 'Cancel', style: 'cancel' },
+               { text: t('common.cancel'), style: 'cancel' },
                {
-                  text: 'Log In / Sign Up',
+                  text: t('creditShop.sign_in_cta'),
                   onPress: () => router.push(ROUTE_LOGIN),
                },
             ],
@@ -193,7 +199,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
          if (onSuccess) onSuccess();
       } catch (e: any) {
          if (!e.userCancelled) {
-            Alert.alert('Purchase Failed', e.message);
+            Alert.alert(t('creditShop.purchase_failed'), e.message);
          }
       } finally {
          setBuyingPackage(null);
@@ -220,13 +226,15 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
       return (
          <View className="p-6 items-center gap-3">
             <Text className="text-base font-semibold text-slate-900 dark:text-slate-100 text-center">
-               Sign in to purchase credits or subscribe.
+               {t('creditShop.sign_in_prompt')}
             </Text>
             <Pressable
                onPress={() => router.push(ROUTE_LOGIN)}
                className="px-4 py-2 rounded-full bg-emerald-600 dark:bg-emerald-500 active:bg-emerald-700 dark:active:bg-emerald-600"
             >
-               <Text className="text-white font-bold">Log In / Sign Up</Text>
+               <Text className="text-white font-bold">
+                  {t('creditShop.sign_in_cta')}
+               </Text>
             </Pressable>
          </View>
       );
@@ -248,7 +256,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                <View className="flex-row items-center gap-2">
                   <Crown size={16} color={isDark ? '#fbbf24' : '#d97706'} />
                   <Text className="text-xs font-bold uppercase text-amber-600 dark:text-amber-400 tracking-wider">
-                     Recommended
+                     {t('creditShop.recommended')}
                   </Text>
                </View>
             </View>
@@ -267,10 +275,10 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                      </View>
                      <View className="flex-1">
                         <Text className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                           Growth Plus
+                           {t('settings.plan.growth_plus')}
                         </Text>
                         <Text className="text-sm text-slate-500 dark:text-slate-400">
-                           Remove monthly limits
+                           {t('creditShop.remove_limits')}
                         </Text>
                      </View>
                      <View className="items-end">
@@ -278,7 +286,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                            {monthlyPrice}
                         </Text>
                         <Text className="text-[10px] text-slate-400 font-medium uppercase">
-                           per month
+                           {t('creditShop.per_month')}
                         </Text>
                      </View>
                   </View>
@@ -287,11 +295,11 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                      <View className="flex-row items-center gap-2">
                         <Infinity size={14} color="#10b981" />
                         <Text className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                           Unlimited AI Analysis
+                           {t('creditShop.unlimited_ai')}
                         </Text>
                      </View>
-                     <FeatureRow text="Explore Alternative Views" />
-                     <FeatureRow text="Advanced Pattern Recognition" />
+                     <FeatureRow text={t('creditShop.feature_alternatives')} />
+                     <FeatureRow text={t('creditShop.feature_patterns')} />
                   </View>
 
                   <View
@@ -299,12 +307,12 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                      style={[continueShadow.ios, continueShadow.android]}
                   >
                      <Text className="text-white font-bold text-lg tracking-wide">
-                        Continue
+                        {t('common.continue')}
                      </Text>
                   </View>
 
                   <Text className="text-center text-[10px] text-slate-400 mt-2">
-                     Cancel anytime in your settings.
+                     {t('creditShop.cancel_anytime')}
                   </Text>
                </View>
             </Pressable>
@@ -315,10 +323,10 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
             {/* UPDATED HEADER with "One-time purchase" */}
             <View className="flex-row items-center justify-between mb-3 px-1">
                <Text className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">
-                  Get more analysis
+                  {t('creditShop.get_more_analysis')}
                </Text>
                <Text className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
-                  One-time purchase
+                  {t('creditShop.one_time_purchase')}
                </Text>
             </View>
 
@@ -345,7 +353,7 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
          <View className="mt-2 items-center">
             <Pressable onPress={handleRestore}>
                <Text className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  Restore Purchases
+                  {t('creditShop.restore_purchases')}
                </Text>
             </Pressable>
 
@@ -354,14 +362,14 @@ export default function CreditShop({ onUpgrade, onSuccess }: Props) {
                   onPress={() => openLink('https://learnedgrowth.com/terms')}
                >
                   <Text className="text-xs text-slate-400 dark:text-slate-500 text-center">
-                     Terms of Service
+                     {t('creditShop.terms')}
                   </Text>
                </Pressable>
                <Pressable
                   onPress={() => openLink('https://learnedgrowth.com/privacy')}
                >
                   <Text className="text-xs text-slate-400 dark:text-slate-500 text-center">
-                     Privacy Policy
+                     {t('creditShop.privacy')}
                   </Text>
                </Pressable>
             </View>

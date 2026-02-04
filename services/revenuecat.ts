@@ -47,7 +47,10 @@ function getRevenueCatApiKey() {
   return key;
 }
 
-export async function configureRevenueCat(appUserId: string | null) {
+export async function configureRevenueCat(
+  appUserId: string | null,
+  preferredLocale?: string | null,
+) {
   Purchases.setLogHandler((level, message) => {
     if (shouldIgnoreRevenueCatLog(message)) return;
     switch (level) {
@@ -76,8 +79,19 @@ export async function configureRevenueCat(appUserId: string | null) {
     appUserID: appUserId ?? null,
     entitlementVerificationMode:
       Purchases.ENTITLEMENT_VERIFICATION_MODE.INFORMATIONAL,
+    preferredUILocaleOverride: preferredLocale ?? undefined,
   });
   return fetchCustomerInfo();
+}
+
+export function setRevenueCatPreferredLocale(preferredLocale?: string | null) {
+  const rc = Purchases as unknown as {
+    overridePreferredLocale?: (locale: string | null) => void;
+  };
+
+  if (typeof rc.overridePreferredLocale === "function") {
+    rc.overridePreferredLocale(preferredLocale ?? null);
+  }
 }
 
 export async function logInRevenueCat(appUserId: string) {

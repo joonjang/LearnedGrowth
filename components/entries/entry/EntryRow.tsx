@@ -2,6 +2,7 @@ import { Entry } from '@/models/entry';
 import { RefObject } from '@testing-library/react-native/build/types';
 import { Pencil, Trash2 } from 'lucide-react-native';
 import { memo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
    Pressable,
    Text,
@@ -45,6 +46,7 @@ function EntryRow({
    swipeGestureRef,
    searchQuery, // <--- 2. Destructured Prop
 }: EntryRowProps) {
+   const { t } = useTranslation();
    const swipeableRef = useRef<SwipeableMethods | null>(null);
 
    const handleEdit = () => {
@@ -97,7 +99,7 @@ function EntryRow({
                         <Pencil size={24} color="#ffffff" />
                      </Pressable>
                      <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                        Edit
+                        {t('common.edit')}
                      </Text>
                   </View>
 
@@ -111,7 +113,7 @@ function EntryRow({
                         <Trash2 size={24} color="#ffffff" />
                      </Pressable>
                      <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                        Delete
+                        {t('common.delete')}
                      </Text>
                   </View>
                </View>

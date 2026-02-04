@@ -26,6 +26,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
+import { useTranslation } from 'react-i18next';
 import React, {
    useCallback,
    useEffect,
@@ -78,6 +79,7 @@ export default function DisputeScreen() {
 
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { t } = useTranslation();
 
    const entryId = Array.isArray(params.id) ? params.id[0] : params.id;
    const viewQuery = Array.isArray(params.view) ? params.view[0] : params.view;
@@ -510,7 +512,7 @@ export default function DisputeScreen() {
             setIsPollingForAi(false);
             if (entryId) clearAiPending(entryId);
             setAiTimeoutError(
-               'AI analysis is taking longer than expected. Please try again.',
+               t('dispute.timeout_message'),
             );
          }
       }, 60000);
@@ -588,24 +590,24 @@ export default function DisputeScreen() {
 
       Keyboard.dismiss();
       Alert.alert(
-         'Discard changes?',
-         'You have unsaved changes. Close without saving?',
+         t('dispute.discard_title'),
+         t('dispute.discard_message'),
          [
             {
-               text: 'Cancel',
+               text: t('common.cancel'),
                style: 'cancel',
                onPress: () => {
                   isClosingRef.current = false;
                },
             },
             {
-               text: 'Discard',
+               text: t('dispute.discard_action'),
                style: 'destructive',
                onPress: safeGoBack,
             },
          ],
       );
-   }, [entryId, hasUnsavedChanges]);
+   }, [entryId, hasUnsavedChanges, t]);
 
    if (!entry) {
       return (
@@ -619,7 +621,7 @@ export default function DisputeScreen() {
                style={isDark ? 'light' : 'dark'}
             />
             <Text className="text-slate-900 dark:text-slate-100">
-               Entry not found.
+               {t('dispute.entry_not_found')}
             </Text>
          </View>
       );

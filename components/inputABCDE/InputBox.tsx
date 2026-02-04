@@ -10,6 +10,7 @@ import {
 } from '@/lib/styles';
 import { useColorScheme } from 'nativewind';
 import { forwardRef, useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
    Pressable,
    Text,
@@ -45,7 +46,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
       dims,
       containerStyle,
       animatedStyle,
-      placeholder = 'Enter here',
+      placeholder,
       scrollEnabled = true,
       compact = false,
       autoCorrect = true,
@@ -57,6 +58,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
 ) {
    const [focused, setFocused] = useState(false);
    const inputRef = useRef<TextInput | null>(null);
+   const { t } = useTranslation();
 
    // Hook for placeholder color
    const { colorScheme } = useColorScheme();
@@ -115,7 +117,7 @@ const InputBox = forwardRef<TextInput, Props>(function InputBox(
          <TextInput
             ref={setRefs}
             testID="entry-input"
-            placeholder={placeholder}
+            placeholder={placeholder ?? t('common.enter_here')}
             value={value}
             onChangeText={onChangeText}
             autoCorrect={autoCorrect}

@@ -1,12 +1,19 @@
 // features/hooks/useAbcAi.ts
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { createAbcAiService } from "@/services/ai/createAbcAiService";
-import { AbcAiService, LearnedGrowthResult, AbcInput } from "@/models/aiService";
+import {
+  AbcAiService,
+  LearnedGrowthResult,
+  AbcInput,
+  AiError,
+} from "@/models/aiService";
 import { useAuth } from "@/providers/AuthProvider";
 
 export function useAbcAi() {
   const { status: authStatus, refreshProfile } = useAuth();
+  const { t } = useTranslation();
   const [service, setService] = useState<AbcAiService | null>(null);
   const [initError, setInitError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,7 +32,7 @@ export function useAbcAi() {
         const isReady = await svc.ready();
         if (cancelled) return;
         if (!isReady) {
-          setInitError("AI helper is not ready.");
+          setInitError(t("ai.init_not_ready"));
           return;
         }
         setService(svc);
@@ -33,7 +40,8 @@ export function useAbcAi() {
       } catch (e) {
         console.error(e);
         if (!cancelled) {
-          const message = e instanceof Error ? e.message : "Unable to initialize AI helper.";
+          const message =
+            e instanceof Error ? e.message : t("ai.init_failed");
           setInitError(message);
         }
       }
@@ -45,7 +53,7 @@ export function useAbcAi() {
   }, []);
 
   async function analyze(input: AbcInput) {
-    if (!service) throw new Error("AI service not ready");
+    if (!service) throw new Error(t("ai.service_not_ready"));
     setLoading(true);
     setStreaming(true);
     setInitError(null);
@@ -64,7 +72,12 @@ export function useAbcAi() {
       }
       return result;
     } catch (e) {
-      const message = e instanceof Error ? e.message : "AI request failed";
+      const message =
+        e instanceof AiError
+          ? t(`aiErrors.${e.code}`, { defaultValue: e.message })
+          : e instanceof Error
+            ? e.message
+            : t("ai.request_failed");
       setLastError(message);
       throw e;
     } finally {

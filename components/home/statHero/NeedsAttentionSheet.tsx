@@ -20,6 +20,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import { AlertCircle } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, useWindowDimensions, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -39,6 +40,7 @@ export default function NeedsAttentionSheet({
    isDark,
    onDeleteEntry,
 }: ResolutionNeedsAttentionSheetProps) {
+   const { t } = useTranslation();
    const insets = useSafeAreaInsets();
    const { height: windowHeight } = useWindowDimensions();
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
@@ -51,13 +53,16 @@ export default function NeedsAttentionSheet({
 
    const summaryText = useMemo(() => {
       if (totalCount === 0) {
-         return 'Add entries to start tracking reframes.';
+         return t('home.needs_attention.summary_empty');
       }
       if (entries.length === 0) {
-         return 'All caught up. Every recent entry has a reframe.';
+         return t('home.needs_attention.summary_all_caught_up');
       }
-      return `${entries.length} of your last ${totalCount} entries need a reframe.`;
-   }, [entries.length, totalCount]);
+      return t('home.needs_attention.summary_count', {
+         count: entries.length,
+         total: totalCount,
+      });
+   }, [entries.length, t, totalCount]);
 
    const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -129,11 +134,11 @@ export default function NeedsAttentionSheet({
                      color={isDark ? ALERT_COLOR_DARK : ALERT_COLOR_LIGHT}
                   />
                   <Text className="text-xs font-bold uppercase tracking-widest text-orange-600 dark:text-orange-400">
-                     Needs Attention
+                     {t('home.needs_attention.title')}
                   </Text>
                </View>
                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  Entries Without Reframes
+                  {t('home.needs_attention.subtitle')}
                </Text>
                <Text className="text-sm text-slate-500 dark:text-slate-400">
                   {summaryText}
@@ -165,7 +170,7 @@ export default function NeedsAttentionSheet({
             ) : (
                <View className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4">
                   <Text className="text-sm text-slate-500 dark:text-slate-400">
-                     No entries need a reframe right now.
+                     {t('home.needs_attention.none')}
                   </Text>
                </View>
             )}

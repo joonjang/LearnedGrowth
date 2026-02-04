@@ -5,6 +5,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
+import { Trans, useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
    ActivityIndicator,
@@ -43,6 +44,7 @@ export default function AuthModal() {
 
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { t } = useTranslation();
 
    const theme = useMemo(
       () => ({
@@ -155,7 +157,7 @@ export default function AuthModal() {
          // Otherwise, stay in 'targetStatus' (spinning) and wait for
          // authStatus to change to 'signedIn' -> triggers useEffect close.
       } catch (e: any) {
-         setError(e.message || 'An error occurred');
+         setError(e.message || t('login.error_generic'));
          setStatus('idle');
       } finally {
          // ✅ LOCK RELEASE: Always unlock, even if we stay visually busy.
@@ -166,7 +168,7 @@ export default function AuthModal() {
    const onContinue = () => {
       if (step === 'email') {
          const normalizedEmail = email.trim().toLowerCase();
-         if (!normalizedEmail) return setError('Please enter your email.');
+         if (!normalizedEmail) return setError(t('login.error_email_required'));
 
          executeAction(
             'sending',
@@ -181,8 +183,8 @@ export default function AuthModal() {
          const cleanCode = code.trim().replace(/\s+/g, '');
 
          // ✅ FIX: Added missing email check here
-         if (!normalizedEmail) return setError('Please enter your email.');
-         if (!cleanCode) return setError('Please enter the code.');
+         if (!normalizedEmail) return setError(t('login.error_email_required'));
+         if (!cleanCode) return setError(t('login.error_code_required'));
 
          executeAction(
             'verifying',
@@ -257,15 +259,17 @@ export default function AuthModal() {
                            className="text-3xl font-bold mb-2 pr-10"
                            style={{ color: theme.text }}
                         >
-                           {step === 'email' ? 'Welcome' : 'Check your Email'}
+                           {step === 'email'
+                              ? t('login.title_email')
+                              : t('login.title_code')}
                         </Text>
                         <Text
                            className="text-base"
                            style={{ color: theme.subText }}
                         >
                            {step === 'email'
-                              ? 'Sign in to sync your journal.'
-                              : `We sent a code to ${email}.`}
+                              ? t('login.subtitle_email')
+                              : t('login.subtitle_code', { email })}
                         </Text>
                      </View>
 
@@ -322,7 +326,7 @@ export default function AuthModal() {
                                        className="font-semibold text-[16px]"
                                        style={{ color: theme.text }}
                                     >
-                                       Continue with Google
+                                       {t('login.continue_google')}
                                     </Text>
                                  </View>
                               )}
@@ -337,7 +341,7 @@ export default function AuthModal() {
                                  className="text-xs font-bold uppercase"
                                  style={{ color: theme.subText }}
                               >
-                                 OR
+                                 {t('common.or')}
                               </Text>
                               <View
                                  className="flex-1 h-[1px]"
@@ -350,7 +354,7 @@ export default function AuthModal() {
                      <View className="gap-4">
                         {step === 'email' ? (
                            <TextInput
-                              placeholder="Email address"
+                              placeholder={t('login.placeholder_email')}
                               placeholderTextColor={theme.placeholder}
                               value={email}
                               onFocus={handleInputFocus}
@@ -385,14 +389,16 @@ export default function AuthModal() {
                                     className="mb-3 text-sm text-center"
                                     style={{ color: theme.subText }}
                                  >
-                                    Wrong email?{' '}
-                                    <Text className="underline">
-                                       Change it.
-                                    </Text>
+                                    <Trans
+                                       i18nKey="login.wrong_email"
+                                       components={{
+                                          underline: <Text className="underline" />,
+                                       }}
+                                    />
                                  </Text>
                               </Pressable>
                               <TextInput
-                                 placeholder="Enter code"
+                                 placeholder={t('login.placeholder_code')}
                                  placeholderTextColor={theme.placeholder}
                                  value={code}
                                  onFocus={handleInputFocus}
@@ -436,7 +442,9 @@ export default function AuthModal() {
                            <ActivityIndicator color="#FFF" />
                         ) : (
                            <Text className="text-white text-[17px] font-bold">
-                              {step === 'email' ? 'Continue' : 'Verify Code'}
+                              {step === 'email'
+                                 ? t('login.button_continue')
+                                 : t('login.button_verify')}
                            </Text>
                         )}
                      </Pressable>
@@ -447,7 +455,7 @@ export default function AuthModal() {
                            onPress={() => {
                               const normalized = email.trim();
                               if (!normalized)
-                                 return setError('Enter email first.');
+                                 return setError(t('login.error_enter_email_first'));
                               setStep('code');
                            }}
                         >
@@ -455,8 +463,12 @@ export default function AuthModal() {
                               className="text-sm"
                               style={{ color: theme.subText }}
                            >
-                              Have a code?{' '}
-                              <Text className="font-bold">Enter it here</Text>
+                              <Trans
+                                 i18nKey="login.have_code"
+                                 components={{
+                                    bold: <Text className="font-bold" />,
+                                 }}
+                              />
                            </Text>
                         </Pressable>
                      )}

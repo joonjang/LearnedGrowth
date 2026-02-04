@@ -8,24 +8,37 @@ export type EntryCountFilterOption = {
    count?: number;
 };
 
-const COUNT_OPTIONS: EntryCountFilterOption[] = [
-   { key: 'last-5', label: 'Last 5 Entries', count: 5 },
-   { key: 'last-10', label: 'Last 10 Entries', count: 10 },
-   { key: 'last-25', label: 'Last 25 Entries', count: 25 },
+const COUNT_OPTIONS: {
+   key: EntryCountFilterKey;
+   count: number;
+   labelKey: 'last5' | 'last10' | 'last25';
+}[] = [
+   { key: 'last-5', labelKey: 'last5', count: 5 },
+   { key: 'last-10', labelKey: 'last10', count: 10 },
+   { key: 'last-25', labelKey: 'last25', count: 25 },
 ];
 
-const ALL_OPTION: EntryCountFilterOption = {
-   key: 'all',
-   label: 'All Entries',
+export type EntryCountFilterLabels = {
+   all: string;
+   last5: string;
+   last10: string;
+   last25: string;
 };
 
 export function buildEntryCountFilterOptions(
    totalCount: number,
+   labels: EntryCountFilterLabels,
 ): EntryCountFilterOption[] {
-   const options: EntryCountFilterOption[] = [ALL_OPTION];
+   const options: EntryCountFilterOption[] = [
+      { key: 'all', label: labels.all },
+   ];
    COUNT_OPTIONS.forEach((option) => {
       if ((option.count ?? 0) <= totalCount) {
-         options.push(option);
+         options.push({
+            key: option.key,
+            label: labels[option.labelKey],
+            count: option.count,
+         });
       }
    });
    return options;

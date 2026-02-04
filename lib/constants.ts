@@ -39,10 +39,10 @@ export const DISPUTE_STEP_CHAR_LIMITS = {
 } as const;
 
 export const DISPUTE_STEP_PLACEHOLDERS = {
-   evidence: 'Separate facts from assumptions',
-   alternatives: 'Describe another way to see it',
-   usefulness: 'Impact on goals and actions',
-   energy: 'Note any shift in mood or energy',
+   evidence: 'dispute.placeholders.evidence',
+   alternatives: 'dispute.placeholders.alternatives',
+   usefulness: 'dispute.placeholders.usefulness',
+   energy: 'dispute.placeholders.energy',
 } as const;
 
 export const ENTRY_CHAR_WARN_MIN_REMAINING = 20;
@@ -51,73 +51,47 @@ export const ENTRY_CHAR_WARN_RATIO = 0.1;
 export const ABCDE_FIELD = [
    {
       key: 'adversity',
-      label: 'Adversity',
-      hint: 'What happened?',
-      placeholder: 'Describe the situation briefly',
+      labelKey: 'abcde.labels.adversity',
+      hintKey: 'abcde.hints.adversity',
+      placeholderKey: 'newEntry.placeholders.adversity',
    },
    {
       key: 'belief',
-      label: 'Belief',
-      hint: 'What were you telling yourself?',
-      placeholder: 'Capture the core thought',
+      labelKey: 'abcde.labels.belief',
+      hintKey: 'abcde.hints.belief',
+      placeholderKey: 'newEntry.placeholders.belief',
    },
    {
       key: 'consequence',
-      label: 'Consequence',
-      hint: 'How did you feel and act?',
-      placeholder: 'Feelings, reactions, and behaviors',
+      labelKey: 'abcde.labels.consequence',
+      hintKey: 'abcde.hints.consequence',
+      placeholderKey: 'newEntry.placeholders.consequence',
    },
    {
       key: 'dispute',
-      label: 'Dispute',
-      hint: 'Your response to the belief.',
-      placeholder: 'Collect the key sentences you used to dispute',
+      labelKey: 'abcde.labels.dispute',
+      hintKey: 'abcde.hints.dispute',
+      placeholderKey: 'dispute.placeholders.evidence',
    },
    {
       key: 'energy',
-      label: 'Energy',
-      hint: 'The emotional shift.',
-      placeholder: 'Note any shift in mood or energy',
+      labelKey: 'abcde.labels.energy',
+      hintKey: 'abcde.hints.energy',
+      placeholderKey: 'dispute.placeholders.energy',
    },
 ] as const;
 
 export const THINKING_PATTERN_DIMENSIONS = {
    Time: {
       dimension: 'permanence',
-      highLabel: 'Temporary',
-      lowLabel: 'Permanent',
-      description: 'Have you viewed setbacks as permanent?',
    },
    Scope: {
       dimension: 'pervasiveness',
-      highLabel: 'Specific',
-      lowLabel: 'Everything',
-      description: 'Have you let one thing affect everything?',
    },
    Blame: {
       dimension: 'personalization',
-      highLabel: 'Situation',
-      lowLabel: 'My Fault',
-      description: 'Have you blamed yourself entirely?',
    },
 } as const;
-
-export const MONTHS = [
-   'January',
-   'February',
-   'March',
-   'April',
-   'May',
-   'June',
-   'July',
-   'August',
-   'September',
-   'October',
-   'November',
-   'December',
-];
-
-export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // 2. NEW: Icon Map (Source of Truth)
 export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
@@ -141,4 +115,3 @@ export const STYLE_TO_TONE_MAP: Record<string, string> = {
 };
 
 export const DEFAULT_CATEGORY_ICON = HelpCircle;
-

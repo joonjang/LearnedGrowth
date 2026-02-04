@@ -20,6 +20,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import { CheckCircle2, Sparkles } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -41,6 +42,7 @@ function CoverageMeter({
    total: number;
    isDark: boolean;
 }) {
+   const { t } = useTranslation();
    const analyzed = Math.max(0, total - missing);
    const percentage = total > 0 ? (analyzed / total) * 100 : 100;
 
@@ -48,10 +50,12 @@ function CoverageMeter({
       <View className="mb-6">
          <View className="flex-row justify-between mb-2">
             <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-               Insight Coverage
+               {t('home.no_ai.coverage_label')}
             </Text>
             <Text className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-               {Math.round(percentage)}% Analyzed
+               {t('home.no_ai.coverage_percent', {
+                  percent: Math.round(percentage),
+               })}
             </Text>
          </View>
 
@@ -63,7 +67,10 @@ function CoverageMeter({
          </View>
 
          <Text className="mt-2 text-[10px] text-slate-400 dark:text-slate-500 text-right">
-            {analyzed}/{total} entries included
+            {t('home.no_ai.entries_included', {
+               count: analyzed,
+               total,
+            })}
          </Text>
       </View>
    );
@@ -79,6 +86,7 @@ export default function NoAiEntrySheet({
    const insets = useSafeAreaInsets();
    const { height: windowHeight } = useWindowDimensions();
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
+   const { t } = useTranslation();
    const dismissResolverRef = useRef<(() => void) | null>(null);
 
    const maxSheetHeight = useMemo(() => windowHeight * 0.9, [windowHeight]);
@@ -172,20 +180,20 @@ export default function NoAiEntrySheet({
                   <Text
                      className={`text-xs font-bold uppercase tracking-widest ${AI_TEXT_ACCENT_CLASS}`}
                   >
-                     Unlock Insights
+                     {t('home.no_ai.title')}
                   </Text>
                </View>
 
                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1">
                   {hasMissingEntries
-                     ? 'Include in Analysis'
-                     : 'Trends Complete'}
+                     ? t('home.no_ai.heading_missing')
+                     : t('home.no_ai.heading_complete')}
                </Text>
 
                <Text className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-5">
                   {hasMissingEntries
-                     ? 'See how these specific moments shape your overall trends.'
-                     : 'All your recent entries are analyzed and included in your trends.'}
+                     ? t('home.no_ai.body_missing')
+                     : t('home.no_ai.body_complete')}
                </Text>
 
                <CoverageMeter
@@ -199,7 +207,9 @@ export default function NoAiEntrySheet({
                <View className="gap-4">
                   <View className="flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2 mb-2">
                      <Text className="text-xs font-bold text-slate-400 uppercase">
-                        {entries.length} Ready for Analysis
+                        {t('home.no_ai.ready_count', {
+                           count: entries.length,
+                        })}
                      </Text>
                   </View>
 
@@ -228,7 +238,7 @@ export default function NoAiEntrySheet({
                      color={isDark ? '#818cf8' : '#6366f1'}
                   />
                   <Text className="mt-3 text-sm font-bold text-indigo-900 dark:text-indigo-200">
-                     You are all caught up!
+                     {t('home.no_ai.all_caught_up')}
                   </Text>
                </View>
             )}

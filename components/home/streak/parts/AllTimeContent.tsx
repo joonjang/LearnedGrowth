@@ -1,4 +1,5 @@
 import { Infinity } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 export const AllTimeContent = ({
@@ -12,6 +13,7 @@ export const AllTimeContent = ({
    isDark: boolean;
    isLoading: boolean;
 }) => {
+   const { t } = useTranslation();
    const textColor = isDark ? 'text-slate-100' : 'text-slate-900';
    const labelColor = 'text-slate-400 dark:text-slate-500';
 
@@ -32,11 +34,11 @@ export const AllTimeContent = ({
                <View className="flex-row items-center gap-2 mb-1">
                   <Infinity size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
                   <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                     All Time
+                     {t('home.streak.all_time')}
                   </Text>
                </View>
                <Text className={`text-[10px] font-medium ${labelColor}`}>
-                  Rewiring the way you perceive challenges
+                  {t('home.streak.rewiring')}
                </Text>
             </View>
 
@@ -65,7 +67,7 @@ export const AllTimeContent = ({
                   <Text
                      className={`text-[9px] font-bold uppercase tracking-tighter ${labelColor}`}
                   >
-                     Month Streak
+                     {t('home.streak.month_streak')}
                   </Text>
                </View>
             </View>
@@ -82,7 +84,7 @@ export const AllTimeContent = ({
             <Text
                className={`text-[10px] font-bold uppercase tracking-[4px] ${labelColor} mr-1`}
             >
-               Entries
+               {t('home.streak.entries')}
             </Text>
          </View>
       </View>

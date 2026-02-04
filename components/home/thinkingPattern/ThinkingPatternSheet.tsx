@@ -9,7 +9,6 @@ import {
 import {
    ROUTE_ENTRY_DETAIL,
    THINKING_PATTERN_DIMENSIONS,
-   WEEKDAY_LABELS,
 } from '@/lib/constants';
 import { getShadow } from '@/lib/shadow';
 import {
@@ -34,6 +33,7 @@ import {
    TrendingUp,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { useTranslation } from 'react-i18next';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -59,25 +59,25 @@ export type PatternTab = (typeof TAB_KEYS)[number];
 
 const CHART_TOTAL_HEIGHT = 200;
 
-function formatShortDate(date: Date) {
-   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+function formatShortDate(date: Date, locale: string) {
+   return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }
 
-function formatTime(date: Date) {
-   return date.toLocaleTimeString('en-US', {
+function formatTime(date: Date, locale: string) {
+   return date.toLocaleTimeString(locale, {
       hour: 'numeric',
       minute: '2-digit',
    });
 }
 
-function getPatternDateParts(value: string | null | undefined) {
+function getPatternDateParts(value: string | null | undefined, locale: string) {
    if (!value) return null;
    const parsed = new Date(value);
    if (Number.isNaN(parsed.getTime())) return null;
    return {
-      weekday: WEEKDAY_LABELS[parsed.getDay()] ?? '',
-      fullDate: formatShortDate(parsed),
-      time: formatTime(parsed),
+      weekday: parsed.toLocaleDateString(locale, { weekday: 'short' }),
+      fullDate: formatShortDate(parsed, locale),
+      time: formatTime(parsed, locale),
    };
 }
 
@@ -106,9 +106,19 @@ export default function ThinkingPatternSheet({
    const { width, height } = useWindowDimensions();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { t, i18n } = useTranslation();
+   const locale = i18n.language === 'ko' ? 'ko-KR' : 'en-US';
 
    const [activeTab, setActiveTab] = useState<PatternTab>(initialTab);
    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+   const tabLabels = useMemo(
+      () => ({
+         Time: t('home.patterns.tab_time'),
+         Scope: t('home.patterns.tab_scope'),
+         Blame: t('home.patterns.tab_blame'),
+      }),
+      [t],
+   );
 
    // --- STANDARD SCROLL & SHADOW LOGIC (NO REANIMATED) ---
    const [showShadow, setShowShadow] = useState(false);
@@ -142,7 +152,32 @@ export default function ThinkingPatternSheet({
    }, [initialTab]);
 
    const tabData = data?.[activeTab] ?? EMPTY_TAB;
-   const tabConfig = THINKING_PATTERN_DIMENSIONS[activeTab];
+   const tabConfig = useMemo(
+      () => ({
+         Time: {
+            ...THINKING_PATTERN_DIMENSIONS.Time,
+            label: t('home.patterns.tab_time'),
+            description: t('home.patterns.desc_time'),
+            highLabel: t('home.patterns.high.temporary'),
+            lowLabel: t('home.patterns.low.permanent'),
+         },
+         Scope: {
+            ...THINKING_PATTERN_DIMENSIONS.Scope,
+            label: t('home.patterns.tab_scope'),
+            description: t('home.patterns.desc_scope'),
+            highLabel: t('home.patterns.high.specific'),
+            lowLabel: t('home.patterns.low.everything'),
+         },
+         Blame: {
+            ...THINKING_PATTERN_DIMENSIONS.Blame,
+            label: t('home.patterns.tab_blame'),
+            description: t('home.patterns.desc_blame'),
+            highLabel: t('home.patterns.high.situation'),
+            lowLabel: t('home.patterns.low.my_fault'),
+         },
+      }),
+      [t],
+   )[activeTab];
 
    const lineGradientStartColor = isDark ? '#059669' : '#34d399';
    const lineGradientEndColor = isDark ? '#5b21b6' : '#ddd6fe';
@@ -311,10 +346,10 @@ export default function ThinkingPatternSheet({
                style={{ paddingHorizontal: BOTTOM_SHEET_CONTENT_PADDING }}
             >
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
-                  Thinking Patterns
+                  {t('home.thinking_patterns')}
                </Text>
                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  Phrase Impact
+                  {t('home.patterns.phrase_impact')}
                </Text>
             </View>
 
@@ -368,7 +403,7 @@ export default function ThinkingPatternSheet({
                                  <Text
                                     className={`text-[10px] font-bold tracking-widest ${textClasses}`}
                                  >
-                                    {String(tab).toUpperCase()}
+                                    {tabLabels[tab]}
                                  </Text>
                               </View>
                            </Pressable>
@@ -448,7 +483,7 @@ export default function ThinkingPatternSheet({
                                  style={{ height: CHART_TOTAL_HEIGHT }}
                               >
                                  <Text className="text-xs text-slate-500 dark:text-slate-400">
-                                    No trend data yet.
+                                    {t('home.patterns.no_trend')}
                                  </Text>
                               </View>
                            )}
@@ -466,21 +501,24 @@ export default function ThinkingPatternSheet({
                }}
             >
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
-                  Detected Phrases
+                  {t('home.patterns.detected_phrases')}
                </Text>
 
                <View className="gap-3">
                   {sortedPatterns.length === 0 && (
                      <View className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-4">
                         <Text className="text-xs text-slate-500 dark:text-slate-400">
-                           No detected phrases yet.
+                           {t('home.patterns.no_phrases')}
                         </Text>
                      </View>
                   )}
 
                   {sortedPatterns.map((pattern) => {
                      const isExpanded = expandedItemId === pattern.id;
-                     const dateParts = getPatternDateParts(pattern.createdAt);
+                     const dateParts = getPatternDateParts(
+                        pattern.createdAt,
+                        locale,
+                     );
 
                      let ImpactIcon = Minus;
                      let iconColor = isDark ? '#94a3b8' : '#64748b';
@@ -578,7 +616,7 @@ export default function ThinkingPatternSheet({
                                           className="bg-white dark:bg-blue-900 border border-slate-200 dark:border-blue-800 flex-row items-center px-2 py-1.5 rounded-md"
                                        >
                                           <Text className="text-[10px] font-bold text-blue-700 dark:text-blue-200 mr-1">
-                                             View
+                                             {t('common.view')}
                                           </Text>
                                           <FileText
                                              size={10}
@@ -592,7 +630,7 @@ export default function ThinkingPatternSheet({
                                     <View className="flex-1 pt-0.5">
                                        <Text className="text-sm text-slate-600 dark:text-slate-300 leading-5">
                                           {pattern.insight ||
-                                             'Reframing this pattern can help shift your perspective.'}
+                                             t('home.patterns.reframe_tip')}
                                        </Text>
                                     </View>
                                  </View>

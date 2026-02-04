@@ -9,6 +9,7 @@ import {
   presentCustomerCenter,
   presentGrowthPlusPaywall,
   purchaseConsumable,
+  setRevenueCatPreferredLocale,
   restoreRevenueCatPurchases
 } from "@/services/revenuecat";
 import {
@@ -29,6 +30,7 @@ import Purchases, {
 } from "react-native-purchases";
 
 import { useAuth } from "./AuthProvider";
+import { usePreferences } from "./PreferencesProvider";
 import { supabase } from "@/lib/supabase";
 
 type RevenueCatContextShape = {
@@ -50,6 +52,7 @@ const RevenueCatContext = createContext<RevenueCatContextShape | null>(null);
 
 export function RevenueCatProvider({ children }: { children: ReactNode }) {
   const { user, profile, refreshProfile } = useAuth();
+  const { language } = usePreferences();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
@@ -57,6 +60,10 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
   const configured = useRef(false);
   const lastUserId = useRef<string | null>(null);
   const planSyncing = useRef(false);
+  const preferredLocale = useMemo(
+    () => (language === "ko" ? "ko-KR" : "en-US"),
+    [language]
+  );
 
   const handleCustomerInfoUpdate = useCallback((info: CustomerInfo) => {
     setCustomerInfo(info);
@@ -71,7 +78,7 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
       try {
         if (!configured.current) {
           // Initial Configuration
-          await configureRevenueCat(user?.id ?? null);
+          await configureRevenueCat(user?.id ?? null, preferredLocale);
           configured.current = true;
           lastUserId.current = user?.id ?? null;
         } else if (user?.id !== lastUserId.current) {
@@ -115,7 +122,12 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
       mounted = false;
       Purchases.removeCustomerInfoUpdateListener(handleCustomerInfoUpdate);
     };
-  }, [handleCustomerInfoUpdate, user?.id]);
+  }, [handleCustomerInfoUpdate, user?.id, preferredLocale]);
+
+  useEffect(() => {
+    if (!configured.current) return;
+    setRevenueCatPreferredLocale(preferredLocale);
+  }, [preferredLocale]);
 
   const refreshCustomerInfo = useCallback(async () => {
     const info = await fetchCustomerInfo();

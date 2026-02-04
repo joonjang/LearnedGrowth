@@ -5,7 +5,6 @@ import { ROUTE_ENTRY_DETAIL } from '@/lib/constants';
 import {
    AI_BUTTON_CLASS,
    AI_TEXT_PRIMARY_CLASS,
-   ANALYZE_WITH_AI_LABEL,
    DISPUTE_CTA_CLASS,
 } from '@/lib/styles';
 import { supabase } from '@/lib/supabase';
@@ -20,6 +19,7 @@ import {
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import WideButton from './WideButton';
 
 type ButtonConfig = {
@@ -46,6 +46,7 @@ export default function CardNextButton({
    const { lock: lockNavigation } = useNavigationLock();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { t } = useTranslation();
 
    const entriesStore = useEntriesStore();
    const hasCachedAnalysis = entriesStore((state) =>
@@ -120,7 +121,7 @@ export default function CardNextButton({
    const config = useMemo<ButtonConfig>(() => {
       if (hasCachedAnalysis) {
          return {
-            label: 'View Analysis',
+            label: t('analysis.view_analysis'),
             icon: FileText,
             bgColor: 'bg-blue-500 dark:bg-blue-700/50',
             textColor: 'text-white',
@@ -128,7 +129,7 @@ export default function CardNextButton({
       }
       if (canGenerate) {
          return {
-            label: ANALYZE_WITH_AI_LABEL,
+            label: t('analysis.analyze_with_ai'),
             icon: Sparkles,
             bgColor: AI_BUTTON_CLASS,
             textColor: AI_TEXT_PRIMARY_CLASS,
@@ -136,12 +137,12 @@ export default function CardNextButton({
          };
       }
       return {
-         label: 'Continue',
+         label: t('common.continue'),
          icon: ArrowRight,
          bgColor: DISPUTE_CTA_CLASS,
          textColor: 'text-white',
       };
-   }, [hasCachedAnalysis, isDark, canGenerate]);
+   }, [canGenerate, hasCachedAnalysis, isDark, t]);
 
    const onConfirmDisclaimer = async () => {
       try {

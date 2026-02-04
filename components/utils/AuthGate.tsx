@@ -1,10 +1,12 @@
 import { useAuth } from '@/providers/AuthProvider';
 import { useColorScheme } from 'nativewind';
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Text, View } from 'react-native';
 
 export function AuthGate({ children }: { children: ReactNode }) {
    const { status, isConfigured } = useAuth();
+   const { t } = useTranslation();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
 
@@ -25,7 +27,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
                   color={isDark ? '#ffffff' : '#000000'}
                />
                <Text className="text-base font-medium text-slate-900 dark:text-slate-100">
-                  Checking session…
+                  {t('auth.checking_session')}
                </Text>
             </View>
          </View>

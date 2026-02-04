@@ -15,6 +15,7 @@ import { ROUTE_ENTRY_DETAIL } from '@/lib/constants';
 import { NewInputEntryType } from '@/models/newInputEntryType';
 import { router, useRootNavigationState } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
    Alert,
    Keyboard,
@@ -34,16 +35,6 @@ import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STEP_ORDER = ['adversity', 'belief', 'consequence'] as const;
-const STEP_LABEL: Record<NewInputEntryType, string> = {
-   adversity: 'Adversity',
-   belief: 'Belief',
-   consequence: 'Consequence',
-};
-const STEP_PLACEHOLDER: Record<NewInputEntryType, string> = {
-   adversity: 'Describe the situation briefly',
-   belief: 'Capture the core thought',
-   consequence: 'Feelings, reactions, and behaviors',
-};
 
 const routeTreeHasEntryDetail = (state: any, entryId: string | number) => {
    if (!state?.routes?.length) return false;
@@ -84,6 +75,7 @@ export default function NewEntryModal() {
    const insets = useSafeAreaInsets();
    const rootNavigationState = useRootNavigationState();
    const { height: screenHeight } = useWindowDimensions();
+   const { t } = useTranslation();
 
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
@@ -115,6 +107,22 @@ export default function NewEntryModal() {
    const prompts = usePrompts(STEP_ORDER, promptListGetter);
    const [idx, setIdx] = useState(0);
    const currKey = STEP_ORDER[idx] as NewInputEntryType;
+   const stepLabels = useMemo(
+      () => ({
+         adversity: t('newEntry.steps.adversity'),
+         belief: t('newEntry.steps.belief'),
+         consequence: t('newEntry.steps.consequence'),
+      }),
+      [t],
+   );
+   const stepPlaceholders = useMemo(
+      () => ({
+         adversity: t('newEntry.placeholders.adversity'),
+         belief: t('newEntry.placeholders.belief'),
+         consequence: t('newEntry.placeholders.consequence'),
+      }),
+      [t],
+   );
 
    const setField = useCallback(
       (k: NewInputEntryType) => (v: string) =>
@@ -151,8 +159,8 @@ export default function NewEntryModal() {
 
       if (!adversity || !belief || !consequence) {
          Alert.alert(
-            'Add required text',
-            'Please fill in all fields before saving.',
+            t('newEntry.required_title'),
+            t('newEntry.required_message'),
          );
          return;
       }
@@ -184,13 +192,13 @@ export default function NewEntryModal() {
       } catch (e) {
          console.error('Failed to create entry', e);
          Alert.alert(
-            'Save failed',
-            'Could not save the entry. Please try again.',
+            t('newEntry.save_failed_title'),
+            t('newEntry.save_failed_message'),
          );
          submittingRef.current = false;
          setIsSubmitting(false);
       }
-   }, [rootNavigationState, store, trimmedForm]);
+   }, [rootNavigationState, store, t, trimmedForm]);
 
    const handleClose = useCallback(() => {
       if (!hasAnyContent) {
@@ -199,18 +207,18 @@ export default function NewEntryModal() {
       }
       Keyboard.dismiss();
       Alert.alert(
-         'Discard changes?',
-         'You have unsaved changes. Close without saving?',
+         t('newEntry.discard_title'),
+         t('newEntry.discard_message'),
          [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('common.cancel'), style: 'cancel' },
             {
-               text: 'Discard',
+               text: t('newEntry.discard_action'),
                style: 'destructive',
                onPress: () => router.back(),
             },
          ],
       );
-   }, [hasAnyContent]);
+   }, [hasAnyContent, t]);
 
    const handleStepChange = useCallback(
       (direction: 'next' | 'back') => {
@@ -261,7 +269,7 @@ export default function NewEntryModal() {
                         <StepperHeader
                            step={idx + 1}
                            total={STEP_ORDER.length}
-                           label={STEP_LABEL[currKey]}
+                           label={stepLabels[currKey]}
                         />
                      </View>
                      <RoundedCloseButton onPress={handleClose} />
@@ -289,7 +297,7 @@ export default function NewEntryModal() {
                         ref={inputRef}
                         value={form[currKey]}
                         onChangeText={setField(currKey)}
-                        placeholder={STEP_PLACEHOLDER[currKey]}
+                        placeholder={stepPlaceholders[currKey]}
                         // Dynamic height from hook
                         animatedStyle={animatedInputStyle}
                         onFocus={() => {
@@ -311,7 +319,7 @@ export default function NewEntryModal() {
                                  : 'text-slate-900 dark:text-slate-100'
                            }`}
                         >
-                           {idx === 0 ? 'Close' : 'Back'}
+                           {idx === 0 ? t('common.close') : t('common.back')}
                         </Text>
                      </TouchableOpacity>
 
@@ -337,7 +345,9 @@ export default function NewEntryModal() {
                                  : 'text-slate-900 dark:text-slate-100'
                            }`}
                         >
-                           {idx === STEP_ORDER.length - 1 ? 'Finish' : 'Next'}
+                           {idx === STEP_ORDER.length - 1
+                              ? t('common.finish')
+                              : t('common.next')}
                         </Text>
                      </TouchableOpacity>
                   </View>

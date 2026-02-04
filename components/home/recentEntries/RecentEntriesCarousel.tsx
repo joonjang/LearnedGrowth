@@ -9,6 +9,7 @@ import {
    FileText,
 } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
    FlatList,
    Pressable,
@@ -101,6 +102,7 @@ export default function RecentEntriesCarousel({
 }: Props) {
    // --- HOOKS ---
    const { width } = useWindowDimensions();
+   const { t } = useTranslation();
    const flatListRef = useRef<FlatList>(null);
    const [activeIndex, setActiveIndex] = useState(0);
    const [openMenuEntryId, setOpenMenuEntryId] = useState<string | null>(null);
@@ -215,10 +217,10 @@ export default function RecentEntriesCarousel({
                         />
                      </View>
                      <Text className="text-base font-bold text-slate-700 dark:text-slate-200">
-                        View All Entries
+                        {t('home.recent_entries.view_all_entries')}
                      </Text>
                      <Text className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        See your full history
+                        {t('home.recent_entries.view_all_subtitle')}
                      </Text>
                   </TouchableOpacity>
                </View>
@@ -255,6 +257,7 @@ export default function RecentEntriesCarousel({
          handleDeleteWrapper,
          isDark,
          onViewAll,
+         t,
       ],
    );
 
@@ -289,7 +292,7 @@ export default function RecentEntriesCarousel({
                   color={isDark ? HOME_ICON_DARK : HOME_ICON_LIGHT}
                />
                <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                  Recent Entries
+                  {t('home.recent_entries.title')}
                </Text>
             </View>
 
@@ -300,7 +303,7 @@ export default function RecentEntriesCarousel({
                className="flex-row items-center gap-1 px-3 py-1.5 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700 active:bg-slate-100 active:dark:bg-slate-600"
             >
                <Text className="text-[11px] font-medium text-slate-900 dark:text-slate-200">
-                  View All
+                  {t('home.recent_entries.view_all')}
                </Text>
                {/* Changed icon color to match slate text colors */}
                <ArrowRight size={12} color={isDark ? '#cbd5e1' : '#64748b'} />

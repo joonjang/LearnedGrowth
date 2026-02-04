@@ -19,12 +19,10 @@ import {
    AI_ICON_COLORS,
    AI_SURFACE_CLASS,
    AI_TEXT_ACCENT_CLASS,
-   ANALYZE_WITH_AI_LABEL,
    CATEGORY_COLOR_MAP,
    DEFAULT_CATEGORY_COLOR,
    ICON_COLOR_DARK,
    ICON_COLOR_LIGHT,
-   SAVE_TO_ANALYZE_LABEL,
 } from '@/lib/styles';
 import { FieldTone } from '@/lib/theme';
 import type { Entry } from '@/models/entry';
@@ -34,6 +32,7 @@ import { usePreferences } from '@/providers/PreferencesProvider';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight, ChevronDown, Sparkles, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, LayoutAnimation, Pressable, Text, View } from 'react-native';
 import {
@@ -100,6 +99,7 @@ export default function EntryDetailScreen() {
 
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
+   const { t, i18n } = useTranslation();
    const iconColor = isDark ? ICON_COLOR_DARK : ICON_COLOR_LIGHT;
 
    // --- Form State ---
@@ -122,15 +122,16 @@ export default function EntryDetailScreen() {
 
    // --- AI Visuals Data ---
    const isAnalyzed = !!entry?.aiResponse;
-   const category = entry?.aiResponse?.meta?.category || 'Uncategorized';
-   const catColor = CATEGORY_COLOR_MAP[category] || DEFAULT_CATEGORY_COLOR;
+   const categoryKey = entry?.aiResponse?.meta?.category || 'Uncategorized';
+   const catColor = CATEGORY_COLOR_MAP[categoryKey] || DEFAULT_CATEGORY_COLOR;
    const tags = entry?.aiResponse?.meta?.tags || [];
 
    // --- Derived Memoized Values ---
-   const formattedTimestamp = useMemo(
-      () => (entry ? formatDateTimeWithWeekday(entry.createdAt) : ''),
-      [entry],
-   );
+   const formattedTimestamp = useMemo(() => {
+      if (!entry) return '';
+      const locale = i18n.language === 'ko' ? 'ko-KR' : 'en-US';
+      return formatDateTimeWithWeekday(entry.createdAt, locale);
+   }, [entry, i18n.language]);
 
    const trimmed = useMemo(
       () => buildFieldRecord((key) => form[key].trim()),
@@ -195,13 +196,14 @@ export default function EntryDetailScreen() {
    );
 
    const timelineSteps = useMemo(() => {
+      const isKorean = i18n.language?.startsWith('ko');
       return ABCDE_FIELD.map(
          (f, idx) =>
             ({
                key: f.key,
                letter: LETTERS[idx],
-               label: f.label,
-               desc: f.hint,
+               label: isKorean ? `${t(f.labelKey)} (${LETTERS[idx]})` : t(f.labelKey),
+               desc: t(f.hintKey),
                tone: getToneForKey(f.key),
             }) as TimelineStepDef,
       ).filter((step) => {
@@ -209,7 +211,7 @@ export default function EntryDetailScreen() {
             return showDispute;
          return true;
       });
-   }, [showDispute]);
+   }, [i18n.language, showDispute, t]);
 
    // --- Callbacks ---
 
@@ -274,7 +276,7 @@ export default function EntryDetailScreen() {
          let newValue = trimmed[key];
          const previousValue = baseline[key];
          if (key === 'dispute' && newValue === '' && !!previousValue) {
-            newValue = 'Empty';
+            newValue = t('entryDetail.empty');
          }
          if (newValue !== previousValue) {
             acc[key] = newValue;
@@ -321,17 +323,21 @@ export default function EntryDetailScreen() {
    const handleCloseAttempt = useCallback(() => {
       if (hasChanges) {
          Alert.alert(
-            'Discard Changes?',
-            'You have unsaved changes. Are you sure you want to discard them?',
+            t('entryDetail.discard_title'),
+            t('entryDetail.discard_message'),
             [
-               { text: 'Keep Editing', style: 'cancel' },
-               { text: 'Discard', style: 'destructive', onPress: handleCancel },
+               { text: t('entryDetail.keep_editing'), style: 'cancel' },
+               {
+                  text: t('entryDetail.discard_action'),
+                  style: 'destructive',
+                  onPress: handleCancel,
+               },
             ],
          );
       } else {
          handleCancel();
       }
-   }, [hasChanges, handleCancel]);
+   }, [hasChanges, handleCancel, t]);
 
    const navigateToEntries = useCallback(() => {
       if (router.canGoBack()) {
@@ -345,12 +351,12 @@ export default function EntryDetailScreen() {
       if (!entry) return;
 
       Alert.alert(
-         'Delete Entry',
-         'Are you sure you want to delete this entry?',
+         t('entryDetail.delete_title'),
+         t('entryDetail.delete_message'),
          [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('common.cancel'), style: 'cancel' },
             {
-               text: 'Delete',
+               text: t('common.delete'),
                style: 'destructive',
                onPress: async () => {
                   try {
@@ -371,6 +377,7 @@ export default function EntryDetailScreen() {
       hapticsAvailable,
       triggerHaptic,
       navigateToEntries,
+      t,
    ]);
 
    const handleOpenDisputeAndUpdate = useCallback(() => {
@@ -458,9 +465,9 @@ export default function EntryDetailScreen() {
    }
 
    const statusMessage = justSaved
-      ? 'Saved'
+      ? t('entryDetail.saved')
       : hasChanges
-        ? 'Unsaved changes'
+        ? t('entryDetail.unsaved')
         : '';
 
    const disputeHistory = entry.disputeHistory ?? [];
@@ -505,7 +512,7 @@ export default function EntryDetailScreen() {
                      hitSlop={10}
                   >
                      <Text className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                        Edit
+                        {t('common.edit')}
                      </Text>
                   </Pressable>
                </View>
@@ -515,7 +522,7 @@ export default function EntryDetailScreen() {
                {/* Insight Strip */}
                {isAnalyzed && (
                   <InsightStrip
-                     category={category}
+                     category={categoryKey}
                      tags={tags}
                      catColor={catColor}
                      isDark={isDark}
@@ -583,8 +590,8 @@ export default function EntryDetailScreen() {
                                           className={`text-[12px] font-bold ${AI_TEXT_ACCENT_CLASS}`}
                                        >
                                           {isEditing
-                                             ? SAVE_TO_ANALYZE_LABEL
-                                             : ANALYZE_WITH_AI_LABEL}
+                                             ? t('analysis.save_to_analyze')
+                                             : t('analysis.analyze_with_ai')}
                                        </Text>
                                     </Pressable>
                                  </TimelinePivot>
@@ -594,7 +601,7 @@ export default function EntryDetailScreen() {
                                  <View className="mt-4 mb-2">
                                     {aiDisplayData ? (
                                        <WideButton
-                                          label="Continue"
+                                          label={t('entryDetail.continue')}
                                           icon={ArrowRight}
                                           onPress={handleContinueToDispute}
                                        />
@@ -617,8 +624,9 @@ export default function EntryDetailScreen() {
                                     className="flex-row items-center justify-between px-4 py-3 active:bg-slate-100 dark:active:bg-slate-800/80"
                                  >
                                     <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                       Previous Disputes (
-                                       {disputeHistory.length})
+                                       {t('entryDetail.previous_disputes', {
+                                          count: disputeHistory.length,
+                                       })}
                                     </Text>
                                     <View
                                        style={{
@@ -653,6 +661,9 @@ export default function EntryDetailScreen() {
                                                    <Text className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
                                                       {formatDateTimeWithWeekday(
                                                          item.createdAt,
+                                                         i18n.language === 'ko'
+                                                            ? 'ko-KR'
+                                                            : 'en-US',
                                                       )}
                                                    </Text>
                                                    <Text className="text-sm leading-5 text-slate-700 dark:text-slate-200">
@@ -660,7 +671,9 @@ export default function EntryDetailScreen() {
                                                    </Text>
                                                    {energyText ? (
                                                       <Text className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                                                         Energy: {energyText}
+                                                         {t('entryDetail.energy', {
+                                                            energy: energyText,
+                                                         })}
                                                       </Text>
                                                    ) : null}
                                                 </View>
@@ -691,7 +704,7 @@ export default function EntryDetailScreen() {
                         className="active:opacity-60"
                      >
                         <Text className="text-xs font-bold uppercase tracking-widest text-rose-500 dark:text-rose-400">
-                           Delete Entry
+                           {t('entryDetail.delete_entry')}
                         </Text>
                      </Pressable>
                   </View>
@@ -725,7 +738,7 @@ export default function EntryDetailScreen() {
                <View className="absolute left-0 right-0 bottom-0 h-[56px] items-center justify-center pointer-events-none z-0">
                   <View className="items-center justify-center pt-3">
                      <Text className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 leading-5">
-                        Editing
+                        {t('entryDetail.editing')}
                      </Text>
                      <Text
                         className={`text-[11px] pt-1 text-amber-600 dark:text-amber-500 font-medium leading-3 ${statusMessage ? 'opacity-100' : 'opacity-0'}`}
@@ -743,7 +756,9 @@ export default function EntryDetailScreen() {
                      className={`px-3 py-1.5 rounded-full bg-slate-700 dark:bg-slate-500/50 ${hasChanges ? '' : 'opacity-50'}`}
                      hitSlop={10}
                   >
-                     <Text className="text-sm font-bold text-white">Save</Text>
+                     <Text className="text-sm font-bold text-white">
+                        {t('common.save')}
+                     </Text>
                   </Pressable>
                </View>
             </View>
