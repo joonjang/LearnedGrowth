@@ -11,6 +11,7 @@ import {
    useEffect,
    useMemo,
    useRef,
+   useState,
 } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { useEntriesAdapter } from './AdapterProvider';
@@ -21,6 +22,14 @@ const EntriesSyncContext = createContext<(() => Promise<void>) | null>(null);
 const EntriesRealtimeContext = createContext<
    ((entryId: string, onAiReady?: () => void) => () => void) | null
 >(null);
+type EntriesAiPendingContextValue = {
+   isAiPending: (entryId: string) => boolean;
+   markAiPending: (entryId: string) => void;
+   clearAiPending: (entryId: string) => void;
+};
+const EntriesAiPendingContext = createContext<EntriesAiPendingContextValue | null>(
+   null,
+);
 
 export function EntriesStoreProvider({ children }: { children: ReactNode }) {
    const { adapter, ready } = useEntriesAdapter();
@@ -31,6 +40,34 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
    const lastLinkedAccountId = useRef<string | null>(null);
    const syncInFlightRef = useRef(false);
    const lastSyncAtRef = useRef(0);
+   const [aiPendingIds, setAiPendingIds] = useState<Set<string>>(
+      () => new Set(),
+   );
+
+   const markAiPending = useCallback((entryId: string) => {
+      if (!entryId) return;
+      setAiPendingIds((prev) => {
+         if (prev.has(entryId)) return prev;
+         const next = new Set(prev);
+         next.add(entryId);
+         return next;
+      });
+   }, []);
+
+   const clearAiPending = useCallback((entryId: string) => {
+      if (!entryId) return;
+      setAiPendingIds((prev) => {
+         if (!prev.has(entryId)) return prev;
+         const next = new Set(prev);
+         next.delete(entryId);
+         return next;
+      });
+   }, []);
+
+   const isAiPending = useCallback(
+      (entryId: string) => aiPendingIds.has(entryId),
+      [aiPendingIds],
+   );
 
    const cloud = useMemo(() => {
       if (!user?.id) return null;
@@ -238,6 +275,7 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
                   if (!active) return;
                   const next = payload?.new as Record<string, unknown> | null;
                   if (!next?.ai_response) return;
+                  clearAiPending(entryId);
                   if (onAiReady) {
                      try {
                         onAiReady();
@@ -256,15 +294,19 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
             supabase.removeChannel(channel);
          };
       },
-      [syncWithCloud],
+      [clearAiPending, syncWithCloud],
    );
 
    return (
       <EntriesSyncContext.Provider value={syncNow}>
          <EntriesRealtimeContext.Provider value={subscribeToEntryAi}>
-            <EntriesStoreContext.Provider value={store}>
-               {children}
-            </EntriesStoreContext.Provider>
+            <EntriesAiPendingContext.Provider
+               value={{ isAiPending, markAiPending, clearAiPending }}
+            >
+               <EntriesStoreContext.Provider value={store}>
+                  {children}
+               </EntriesStoreContext.Provider>
+            </EntriesAiPendingContext.Provider>
          </EntriesRealtimeContext.Provider>
       </EntriesSyncContext.Provider>
    );
@@ -293,6 +335,15 @@ export function useEntriesRealtime() {
    if (!ctx)
       throw new Error(
          'useEntriesRealtime must be used within EntriesStoreProvider'
+      );
+   return ctx;
+}
+
+export function useEntriesAiPending() {
+   const ctx = useContext(EntriesAiPendingContext);
+   if (!ctx)
+      throw new Error(
+         'useEntriesAiPending must be used within EntriesStoreProvider'
       );
    return ctx;
 }

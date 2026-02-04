@@ -39,9 +39,12 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 - fixed entry detail screen navigation double stacking
 - enabled data to be fetched even upon connection failure
-   - x2
+   - x3
 - fixed graph range
 - dark mode toggle to follow system setting
+- dispute/[id].tsx goes to entryDetail/[id].tsx upon close
+   - displays the ai analysis if user called it and closed it mid retrieval
+- dispute screen does not display deletion alert if text input is filled with default ai text
 
 ### 2026-02-02
 

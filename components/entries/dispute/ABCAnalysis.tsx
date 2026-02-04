@@ -223,6 +223,7 @@ export default function ABCAnalysis({
                streamingText={streamingText}
                loading={loading}
                error={error}
+               allowRefresh={false}
                onRefresh={() => {
                   setAreAnimationsDone(false);
                   onRefresh();

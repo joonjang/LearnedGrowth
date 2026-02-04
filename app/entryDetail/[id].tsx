@@ -29,6 +29,7 @@ import {
 import { FieldTone } from '@/lib/theme';
 import type { Entry } from '@/models/entry';
 import { useAuth } from '@/providers/AuthProvider';
+import { useEntriesAiPending, useEntriesRealtime } from '@/providers/EntriesStoreProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -72,18 +73,25 @@ const getToneForKey = (key: FieldKey): FieldTone => {
 };
 
 export default function EntryDetailScreen() {
-   const { id, mode } = useLocalSearchParams();
+   const { id, mode, openDispute, refresh } = useLocalSearchParams();
    useResizeMode();
    const entryId = Array.isArray(id) ? id[0] : id;
    const modeParam = Array.isArray(mode) ? mode[0] : mode;
+   const openDisputeParam = Array.isArray(openDispute)
+      ? openDispute[0]
+      : openDispute;
+   const refreshParam = Array.isArray(refresh) ? refresh[0] : refresh;
    const startInEdit = modeParam === 'edit';
    const initialEditApplied = useRef(false);
+   const autoDisputeOpenedRef = useRef(false);
 
    const store = useEntries();
    const entry = entryId ? store.getEntryById(entryId) : undefined;
 
    const { lock: lockNavigation } = useNavigationLock();
    const { hapticsEnabled, hapticsAvailable, triggerHaptic } = usePreferences();
+   const { isAiPending, clearAiPending } = useEntriesAiPending();
+   const subscribeToEntryAi = useEntriesRealtime();
 
    // --- Auth & Subscription ---
    const { status } = useAuth();
@@ -136,6 +144,52 @@ export default function EntryDetailScreen() {
       [entry],
    );
    const aiDisplayData = entry?.aiResponse ?? null;
+   const isAiPendingForEntry = entryId ? isAiPending(entryId) : false;
+
+   useEffect(() => {
+      if (!entryId || !isAiPendingForEntry) return;
+      const unsubscribe = subscribeToEntryAi(entryId);
+      return () => unsubscribe();
+   }, [entryId, isAiPendingForEntry, subscribeToEntryAi]);
+
+   useEffect(() => {
+      if (!entryId || !openDisputeParam) return;
+      if (autoDisputeOpenedRef.current) return;
+      autoDisputeOpenedRef.current = true;
+      const view = openDisputeParam === 'analysis' ? 'analysis' : 'steps';
+      const params: {
+         id: string;
+         from: 'entryDetail';
+         view?: 'analysis';
+         refresh?: 'true';
+      } = {
+         id: entryId,
+         from: 'entryDetail',
+      };
+      if (view === 'analysis') params.view = 'analysis';
+      if (refreshParam === 'true') params.refresh = 'true';
+      const timeoutId = setTimeout(() => {
+         router.push({ pathname: '/dispute/[id]', params });
+         router.setParams({ openDispute: undefined, refresh: undefined });
+      }, 80);
+      return () => clearTimeout(timeoutId);
+   }, [entryId, openDisputeParam, refreshParam]);
+
+   useEffect(() => {
+      if (!entryId || !entry?.aiResponse) return;
+      if (!isAiPendingForEntry) return;
+      clearAiPending(entryId);
+   }, [clearAiPending, entry?.aiResponse, entryId, isAiPendingForEntry]);
+
+   useEffect(() => {
+      if (!entryId || !isAiPendingForEntry) return;
+      const timeoutId = setTimeout(() => {
+         if (isAiPending(entryId)) {
+            clearAiPending(entryId);
+         }
+      }, 60000);
+      return () => clearTimeout(timeoutId);
+   }, [clearAiPending, entryId, isAiPending, isAiPendingForEntry]);
    const showDispute = Boolean(baseline.dispute || trimmed.dispute);
 
    const hasChanges = useMemo(
@@ -486,11 +540,12 @@ export default function EntryDetailScreen() {
                      >
                         {step.key === 'consequence' && (
                            <View>
-                              {aiDisplayData && (
+                              {(aiDisplayData || isAiPendingForEntry) && (
                                  <TimelinePivot variant="full">
                                     <AiInsightCard
                                        entryId={entry.id}
                                        data={aiDisplayData}
+                                       fromEntryDetail
                                        onRefresh={
                                           isEditing
                                              ? undefined
@@ -505,7 +560,9 @@ export default function EntryDetailScreen() {
                                  </TimelinePivot>
                               )}
 
-                              {!aiDisplayData && entry?.dispute && (
+                              {!aiDisplayData &&
+                                 !isAiPendingForEntry &&
+                                 entry?.dispute && (
                                  <TimelinePivot
                                     variant="full"
                                     bgClassName={`${AI_SURFACE_CLASS} ${isEditing ? 'opacity-50' : ''}`}

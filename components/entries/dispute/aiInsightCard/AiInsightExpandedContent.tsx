@@ -24,6 +24,7 @@ type Props = {
    isNudgeStep: boolean;
    onRefresh?: () => void;
    onRefreshPress: () => void;
+   allowRefresh: boolean;
    cooldownAnchorMs: number;
    isDark: boolean;
    animationTimeline: AnimationTimeline;
@@ -46,6 +47,7 @@ export default function AiInsightExpandedContent({
    isNudgeStep,
    onRefresh,
    onRefreshPress,
+   allowRefresh,
    cooldownAnchorMs,
    isDark,
    animationTimeline,
@@ -73,6 +75,7 @@ export default function AiInsightExpandedContent({
             isCoolingDown={isCoolingDown}
             isNudgeStep={isNudgeStep}
             onRefreshPress={onRefreshPress}
+            allowRefresh={allowRefresh}
             timeLabel={timeLabel}
             isDark={isDark}
          />

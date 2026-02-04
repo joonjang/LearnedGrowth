@@ -393,6 +393,7 @@ export type AiInsightStaleBannerProps = {
    isCoolingDown: boolean;
    isNudgeStep: boolean;
    onRefreshPress: () => void;
+   allowRefresh: boolean;
    timeLabel: string;
    isDark: boolean;
 };
@@ -402,6 +403,7 @@ export function AiInsightStaleBanner({
    isCoolingDown,
    isNudgeStep,
    onRefreshPress,
+   allowRefresh,
    timeLabel,
    isDark,
 }: AiInsightStaleBannerProps) {
@@ -441,15 +443,17 @@ export function AiInsightStaleBanner({
             <Text className="text-[11px] text-slate-600 dark:text-slate-400 leading-4 mt-1">
                {isCoolingDown
                   ? 'Updates paused to enable deeper thinking.'
-                  : isNudgeStep
-                    ? "You've refined this quite a bit. Consider moving on to the next phase after refreshing."
-                    : 'Entry has changed. Update analysis?'}
+                  : !allowRefresh
+                    ? 'To regenerate this analysis, navigate to the Entry Detail.'
+                    : isNudgeStep
+                      ? "You've refined this quite a bit. Consider moving on to the next phase after refreshing."
+                      : 'Entry has changed. Update analysis?'}
             </Text>
          </View>
 
          {/* Right action: vertically centered */}
          <View className="pl-1 self-stretch justify-center">
-            {!isCoolingDown ? (
+            {!isCoolingDown && allowRefresh ? (
                <Pressable
                   onPress={onRefreshPress}
                   accessibilityRole="button"

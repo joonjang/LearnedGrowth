@@ -259,12 +259,13 @@ export default function FreeUserChoiceScreen() {
 
          if (!entryId) return modalRef.current?.dismiss();
 
-         const fromParam = isFromEntryDetail ? '&from=entryDetail' : '';
          const path = requiresAuth
-            ? `/dispute/${entryId}?view=analysis&refresh=true${fromParam}`
+            ? isFromEntryDetail
+               ? `/dispute/${entryId}?view=analysis&refresh=true&from=entryDetail`
+               : `/entryDetail/${entryId}?openDispute=analysis&refresh=true`
             : isFromEntryDetail
               ? `/dispute/${entryId}?from=entryDetail`
-              : `/dispute/${entryId}`;
+              : `/entryDetail/${entryId}?openDispute=steps`;
 
          if (requiresAuth && !effectiveSignedIn) {
             proceedToPath(path, requiresAuth);

@@ -29,26 +29,31 @@ type Props = {
    loading?: boolean;
    error?: string | null;
    onRefresh?: () => void;
+   allowRefresh?: boolean;
    retryCount?: number;
    maxRetries?: number;
    updatedAt?: string;
    allowMinimize?: boolean;
    initiallyMinimized?: boolean;
    onAnimationComplete?: () => void;
+   fromEntryDetail?: boolean;
 };
 
 export function AiInsightCard({
    entryId,
    data,
    streamingText,
+   loading,
    error,
    onRefresh,
+   allowRefresh = true,
    retryCount = 0,
    maxRetries = 3,
    updatedAt,
    allowMinimize = false,
    initiallyMinimized = false,
    onAnimationComplete,
+   fromEntryDetail = false,
 }: Props) {
    const refreshWindowKey = entryId ?? 'ai-insight-default';
    const { colorScheme } = useColorScheme();
@@ -56,6 +61,7 @@ export function AiInsightCard({
    const { status, refreshProfile, refreshProfileIfStale } = useAuth();
    const { isGrowthPlusActive } = useRevenueCat();
    const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
+   const isRefreshing = Boolean(loading);
 
    // --- STATE ---
    const [showDefinitions, setShowDefinitions] = useState(false);
@@ -171,11 +177,17 @@ export function AiInsightCard({
    const isLoading = !data && !error;
 
    const handleRefreshPress = useCallback(async () => {
+      if (!allowRefresh) return;
+      if (isRefreshing) return;
       if (!isSubscribed) {
          if (entryId) {
             router.push({
                pathname: '/(modal)/free-user',
-               params: { id: entryId, onlyShowAiAnalysis: 'true' },
+               params: {
+                  id: entryId,
+                  onlyShowAiAnalysis: 'true',
+                  ...(fromEntryDetail ? { from: 'entryDetail' } : {}),
+               },
             });
          }
          return;
@@ -190,6 +202,9 @@ export function AiInsightCard({
       }
    }, [
       entryId,
+      fromEntryDetail,
+      allowRefresh,
+      isRefreshing,
       isSubscribed,
       onRefresh,
       refreshProfile,
@@ -268,6 +283,7 @@ export function AiInsightCard({
                isNudgeStep={isNudgeStep}
                onRefresh={onRefresh}
                onRefreshPress={handleRefreshPress}
+               allowRefresh={allowRefresh}
                cooldownAnchorMs={cooldownAnchor.getTime()} // Pass time as number
                isDark={isDark}
                animationTimeline={animationTimeline}

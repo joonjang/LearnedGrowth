@@ -88,8 +88,11 @@ export class DevAiService implements AbcAiService {
          },
          suggestions: {
             evidenceQuestion: `Evidence question for ${category}?`,
+            evidenceStarter: null,
             alternativesQuestion: `Alternatives for score ${optimismScore}?`,
+            alternativesStarter: null,
             usefulnessQuestion: `Usefulness check at ${timestamp}?`,
+            usefulnessStarter: null,
             counterBelief: `Counter belief for ${category} scenario.`,
          },
       };

@@ -6,6 +6,7 @@ import {
    ANALYZE_WITH_AI_LABEL,
    DISPUTE_CTA_CLASS,
 } from '@/lib/styles';
+import { ROUTE_ENTRY_DETAIL } from '@/lib/constants';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEntriesStore } from '@/providers/EntriesStoreProvider';
@@ -64,13 +65,31 @@ export default function CardNextButton({
       [fromEntryDetail],
    );
 
+   const openDispute = useCallback(
+      (refresh: boolean) => {
+         onNavigate?.();
+         if (fromEntryDetail) {
+            router.push({
+               pathname: '/dispute/[id]',
+               params: { id, view: 'analysis', ...(refresh ? { refresh: 'true' } : {}), ...pathParam },
+            });
+            return;
+         }
+         router.push({
+            pathname: ROUTE_ENTRY_DETAIL,
+            params: {
+               id,
+               openDispute: 'analysis',
+               ...(refresh ? { refresh: 'true' } : {}),
+            },
+         });
+      },
+      [fromEntryDetail, id, onNavigate, pathParam],
+   );
+
    const navigateToAnalysis = useCallback(() => {
-      onNavigate?.();
-      router.push({
-         pathname: '/dispute/[id]',
-         params: { id, view: 'analysis', refresh: 'true', ...pathParam },
-      });
-   }, [pathParam, id, onNavigate]);
+      openDispute(true);
+   }, [openDispute]);
 
    const checkConsentAndNavigate = useCallback(() => {
       if (hasConsent) {
@@ -138,10 +157,14 @@ export default function CardNextButton({
    const handlePress = useCallback(() => {
       lockNavigation(() => {
          if (hasCachedAnalysis) {
+            if (fromEntryDetail) {
+               openDispute(false);
+               return;
+            }
             onNavigate?.();
             router.push({
                pathname: '/dispute/[id]',
-               params: { id, view: 'analysis', ...pathParam },
+               params: { id, view: 'analysis' },
             });
             return;
          }

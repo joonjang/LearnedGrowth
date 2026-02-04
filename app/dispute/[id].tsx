@@ -16,7 +16,11 @@ import type { AbcdeJson } from '@/models/abcdeJson';
 import type { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
-import { useEntriesRealtime, useEntriesSync } from '@/providers/EntriesStoreProvider';
+import {
+   useEntriesAiPending,
+   useEntriesRealtime,
+   useEntriesSync,
+} from '@/providers/EntriesStoreProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -91,6 +95,7 @@ export default function DisputeScreen() {
    const { getEntryById, updateEntry } = useEntries();
    const syncEntries = useEntriesSync();
    const subscribeToEntryAi = useEntriesRealtime();
+   const { markAiPending, clearAiPending } = useEntriesAiPending();
    const entry = entryId ? getEntryById(entryId) : undefined;
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
    const insets = useSafeAreaInsets();
@@ -103,6 +108,12 @@ export default function DisputeScreen() {
       alternatives: '',
       usefulness: '',
       energy: entry?.energy ?? '',
+   });
+   const autoFilledRef = useRef<Record<NewInputDisputeType, string | null>>({
+      evidence: null,
+      alternatives: null,
+      usefulness: null,
+      energy: null,
    });
    const [isNewDisputeFlow, setIsNewDisputeFlow] = useState(false);
    const resetForm = useCallback(() => {
@@ -160,6 +171,7 @@ export default function DisputeScreen() {
 
       setAnalysisTriggered(true);
       setIsRegenerating(true);
+      markAiPending(entry.id);
 
       (async () => {
          try {
@@ -177,6 +189,7 @@ export default function DisputeScreen() {
                aiResponse: result.data,
                aiRetryCount: nextRetryCount,
             });
+            clearAiPending(entry.id);
 
             if (isMountedRef.current && hapticsEnabled && hapticsAvailable) {
                triggerHaptic();
@@ -184,6 +197,7 @@ export default function DisputeScreen() {
          } catch (e) {
             console.log(e);
             if (isMountedRef.current) setIsRegenerating(false);
+            clearAiPending(entry.id);
          }
       })();
    }, [
@@ -197,6 +211,8 @@ export default function DisputeScreen() {
       hapticsEnabled,
       hapticsAvailable,
       triggerHaptic,
+      markAiPending,
+      clearAiPending,
    ]);
 
    const data = rawAbcde as AbcdeJson;
@@ -221,16 +237,38 @@ export default function DisputeScreen() {
       [form],
    );
 
+   const effectiveForm = useMemo(() => {
+      return {
+         evidence:
+            autoFilledRef.current.evidence &&
+            trimmedForm.evidence === autoFilledRef.current.evidence.trim()
+               ? ''
+               : trimmedForm.evidence,
+         alternatives:
+            autoFilledRef.current.alternatives &&
+            trimmedForm.alternatives ===
+               autoFilledRef.current.alternatives.trim()
+               ? ''
+               : trimmedForm.alternatives,
+         usefulness:
+            autoFilledRef.current.usefulness &&
+            trimmedForm.usefulness === autoFilledRef.current.usefulness.trim()
+               ? ''
+               : trimmedForm.usefulness,
+         energy: trimmedForm.energy,
+      };
+   }, [trimmedForm]);
+
    const isBlankNewDispute = useMemo(
-      () => Object.values(trimmedForm).every((value) => !value),
-      [trimmedForm],
+      () => Object.values(effectiveForm).every((value) => !value),
+      [effectiveForm],
    );
 
    const hasUnsavedChanges = useMemo(() => {
       if (isNewDisputeFlow) {
          return !isBlankNewDispute;
       }
-      const composedDispute = buildDisputeText(trimmedForm);
+      const composedDispute = buildDisputeText(effectiveForm);
       const entryDispute = (entry?.dispute ?? '').trim();
       const entryEnergy = (entry?.energy ?? '').trim();
       return (
@@ -241,7 +279,8 @@ export default function DisputeScreen() {
       entry?.energy,
       isBlankNewDispute,
       isNewDisputeFlow,
-      trimmedForm,
+      effectiveForm,
+      trimmedForm.energy,
    ]);
 
    const suggestionPrompts = useMemo(() => {
@@ -308,6 +347,15 @@ export default function DisputeScreen() {
                ? prev.usefulness
                : suggestionStarters.usefulness,
       }));
+      if (suggestionStarters.evidence) {
+         autoFilledRef.current.evidence = suggestionStarters.evidence;
+      }
+      if (suggestionStarters.alternatives) {
+         autoFilledRef.current.alternatives = suggestionStarters.alternatives;
+      }
+      if (suggestionStarters.usefulness) {
+         autoFilledRef.current.usefulness = suggestionStarters.usefulness;
+      }
    }, [
       entryId,
       suggestionStarters.alternatives,
@@ -378,6 +426,8 @@ export default function DisputeScreen() {
 
    const handleRefreshAnalysis = useCallback(async () => {
       if (!entry) return;
+      if (loading || isRegenerating) return;
+      markAiPending(entry.id);
       setIsRegenerating(true);
       try {
          const result = await analyze({
@@ -394,19 +444,25 @@ export default function DisputeScreen() {
             aiResponse: result.data,
             aiRetryCount: nextRetryCount,
          });
+         clearAiPending(entry.id);
 
          if (hapticsEnabled && hapticsAvailable) triggerHaptic();
       } catch (e) {
          setIsRegenerating(false);
+         clearAiPending(entry.id);
          console.error('Refresh failed', e);
       }
    }, [
       entry,
+      loading,
       analyze,
       updateEntry,
       hapticsEnabled,
       hapticsAvailable,
       triggerHaptic,
+      markAiPending,
+      clearAiPending,
+      isRegenerating,
    ]);
 
    useEffect(() => {
@@ -452,6 +508,7 @@ export default function DisputeScreen() {
          if (cancelled) return;
          if (!aiDataReadyRef.current) {
             setIsPollingForAi(false);
+            if (entryId) clearAiPending(entryId);
             setAiTimeoutError(
                'AI analysis is taking longer than expected. Please try again.',
             );
@@ -465,7 +522,7 @@ export default function DisputeScreen() {
          unsubscribe();
          setIsPollingForAi(false);
       };
-   }, [entryId, isAwaitingAi, subscribeToEntryAi, syncEntries]);
+   }, [entryId, isAwaitingAi, subscribeToEntryAi, syncEntries, clearAiPending]);
 
    useEffect(() => {
       if (!aiDataReady) return;
@@ -512,9 +569,16 @@ export default function DisputeScreen() {
       const safeGoBack = () => {
          if (router.canGoBack()) {
             router.back();
-         } else {
-            router.replace(ROUTE_HOME);
+            return;
          }
+         if (entryId) {
+            router.replace({
+               pathname: ROUTE_ENTRY_DETAIL,
+               params: { id: String(entryId), animateInstant: '1' },
+            });
+            return;
+         }
+         router.replace(ROUTE_HOME);
       };
 
       if (!hasUnsavedChanges) {
@@ -541,7 +605,7 @@ export default function DisputeScreen() {
             },
          ],
       );
-   }, [hasUnsavedChanges]);
+   }, [entryId, hasUnsavedChanges]);
 
    if (!entry) {
       return (

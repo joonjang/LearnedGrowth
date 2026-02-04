@@ -455,10 +455,10 @@ export default function EntryCard({
          }
          if (isSubscribed) {
             router.push({
-               pathname: '/dispute/[id]',
+               pathname: ROUTE_ENTRY_DETAIL,
                params: {
                   id: entry.id,
-                  view: 'analysis',
+                  openDispute: 'analysis',
                   refresh: 'true',
                },
             });
