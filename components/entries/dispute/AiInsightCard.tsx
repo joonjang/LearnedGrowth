@@ -1,6 +1,6 @@
+import { useAiCredits } from '@/hooks/useAiCredits';
 import { LearnedGrowthResponse } from '@/models/aiService';
 import { useAuth } from '@/providers/AuthProvider';
-import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -59,8 +59,7 @@ export function AiInsightCard({
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
    const { status, refreshProfile, refreshProfileIfStale } = useAuth();
-   const { isGrowthPlusActive } = useRevenueCat();
-   const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
+   const { canGenerate, isSignedIn } = useAiCredits();
    const isRefreshing = Boolean(loading);
 
    // --- STATE ---
@@ -179,7 +178,7 @@ export function AiInsightCard({
    const handleRefreshPress = useCallback(async () => {
       if (!allowRefresh) return;
       if (isRefreshing) return;
-      if (!isSubscribed) {
+      if (!canGenerate) {
          if (entryId) {
             router.push({
                pathname: '/(modal)/free-user',
@@ -196,7 +195,7 @@ export function AiInsightCard({
       try {
          await onRefresh?.();
       } finally {
-         if (status === 'signedIn') {
+         if (isSignedIn) {
             void refreshProfile();
          }
       }
@@ -205,10 +204,10 @@ export function AiInsightCard({
       fromEntryDetail,
       allowRefresh,
       isRefreshing,
-      isSubscribed,
+      canGenerate,
+      isSignedIn,
       onRefresh,
       refreshProfile,
-      status,
    ]);
 
    // --- ANIMATION TIMINGS ---
@@ -295,7 +294,6 @@ export function AiInsightCard({
                onAnimationComplete={onAnimationComplete} // Pass the signal down
             />
          )}
-
       </View>
    );
 }

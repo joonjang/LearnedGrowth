@@ -28,10 +28,9 @@ import {
 } from '@/lib/styles';
 import { FieldTone } from '@/lib/theme';
 import type { Entry } from '@/models/entry';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAiCredits } from '@/hooks/useAiCredits';
 import { useEntriesAiPending, useEntriesRealtime } from '@/providers/EntriesStoreProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
-import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight, ChevronDown, Sparkles, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
@@ -94,9 +93,7 @@ export default function EntryDetailScreen() {
    const subscribeToEntryAi = useEntriesRealtime();
 
    // --- Auth & Subscription ---
-   const { status } = useAuth();
-   const { isGrowthPlusActive } = useRevenueCat();
-   const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
+   const { canGenerate } = useAiCredits();
 
    const insets = useSafeAreaInsets();
    const keyboardOffset = insets.bottom + 32;
@@ -224,7 +221,7 @@ export default function EntryDetailScreen() {
    const handleAnalyze = useCallback(() => {
       if (!entry) return;
       lockNavigation(() => {
-         if (isSubscribed) {
+         if (canGenerate) {
             router.push({
                pathname: '/dispute/[id]',
                params: {
@@ -245,7 +242,7 @@ export default function EntryDetailScreen() {
             },
          });
       });
-   }, [isSubscribed, entry, lockNavigation]);
+   }, [canGenerate, entry, lockNavigation]);
 
    // OPTIMIZATION: Memoized field updater to prevent full re-renders on typing
    const handleFieldChange = useCallback((key: string, value: string) => {

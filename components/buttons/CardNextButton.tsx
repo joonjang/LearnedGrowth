@@ -1,16 +1,16 @@
 import AiDisclaimerModal from '@/components/appInfo/AiDisclaimerModal';
+import { useAiCredits } from '@/hooks/useAiCredits';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
+import { ROUTE_ENTRY_DETAIL } from '@/lib/constants';
 import {
    AI_BUTTON_CLASS,
    AI_TEXT_PRIMARY_CLASS,
    ANALYZE_WITH_AI_LABEL,
    DISPUTE_CTA_CLASS,
 } from '@/lib/styles';
-import { ROUTE_ENTRY_DETAIL } from '@/lib/constants';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEntriesStore } from '@/providers/EntriesStoreProvider';
-import { useRevenueCat } from '@/providers/RevenueCatProvider';
 import { router } from 'expo-router';
 import {
    ArrowRight,
@@ -41,9 +41,8 @@ export default function CardNextButton({
    onNavigate,
    fromEntryDetail = false,
 }: Prop) {
-   const { status, user } = useAuth();
-   const { isGrowthPlusActive } = useRevenueCat();
-   const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
+   const { canGenerate } = useAiCredits();
+   const { user } = useAuth();
    const { lock: lockNavigation } = useNavigationLock();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
@@ -71,7 +70,12 @@ export default function CardNextButton({
          if (fromEntryDetail) {
             router.push({
                pathname: '/dispute/[id]',
-               params: { id, view: 'analysis', ...(refresh ? { refresh: 'true' } : {}), ...pathParam },
+               params: {
+                  id,
+                  view: 'analysis',
+                  ...(refresh ? { refresh: 'true' } : {}),
+                  ...pathParam,
+               },
             });
             return;
          }
@@ -104,14 +108,14 @@ export default function CardNextButton({
    }, [hasAccountConsent]);
 
    useEffect(() => {
-      if (pendingAnalysis && isSubscribed) {
+      if (pendingAnalysis && canGenerate) {
          setPendingAnalysis(false);
          const t = setTimeout(() => {
             checkConsentAndNavigate();
          }, 500);
          return () => clearTimeout(t);
       }
-   }, [pendingAnalysis, isSubscribed, checkConsentAndNavigate]);
+   }, [pendingAnalysis, canGenerate, checkConsentAndNavigate]);
 
    const config = useMemo<ButtonConfig>(() => {
       if (hasCachedAnalysis) {
@@ -122,7 +126,7 @@ export default function CardNextButton({
             textColor: 'text-white',
          };
       }
-      if (isSubscribed) {
+      if (canGenerate) {
          return {
             label: ANALYZE_WITH_AI_LABEL,
             icon: Sparkles,
@@ -137,7 +141,7 @@ export default function CardNextButton({
          bgColor: DISPUTE_CTA_CLASS,
          textColor: 'text-white',
       };
-   }, [hasCachedAnalysis, isDark, isSubscribed]);
+   }, [hasCachedAnalysis, isDark, canGenerate]);
 
    const onConfirmDisclaimer = async () => {
       try {
@@ -168,7 +172,7 @@ export default function CardNextButton({
             });
             return;
          }
-         if (isSubscribed) {
+         if (canGenerate) {
             checkConsentAndNavigate();
             return;
          }
@@ -181,13 +185,15 @@ export default function CardNextButton({
          } as any);
       });
    }, [
-      checkConsentAndNavigate,
-      pathParam,
-      hasCachedAnalysis,
-      id,
-      isSubscribed,
       lockNavigation,
+      hasCachedAnalysis,
+      canGenerate,
       onNavigate,
+      id,
+      pathParam,
+      fromEntryDetail,
+      openDispute,
+      checkConsentAndNavigate,
    ]);
 
    return (

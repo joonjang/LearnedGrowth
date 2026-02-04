@@ -46,6 +46,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
    - displays the ai analysis if user called it and closed it mid retrieval
 - dispute screen does not display deletion alert if text input is filled with default ai text
 - removed login redirect
+- abstracted credit and subscriber guard
 
 ### 2026-02-02
 

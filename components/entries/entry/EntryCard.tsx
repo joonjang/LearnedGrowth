@@ -19,8 +19,7 @@ import {
 } from '@/lib/styles';
 import { FieldTone, getFieldStyles } from '@/lib/theme';
 import { Entry } from '@/models/entry';
-import { useAuth } from '@/providers/AuthProvider';
-import { useRevenueCat } from '@/providers/RevenueCatProvider';
+import { useAiCredits } from '@/hooks/useAiCredits';
 import { RefObject } from '@testing-library/react-native/build/types';
 import { router } from 'expo-router';
 import {
@@ -221,9 +220,7 @@ export default function EntryCard({
    searchQuery, // <--- 2. Destructure new prop
 }: Prop) {
    // --- Auth & Subscription ---
-   const { status } = useAuth();
-   const { isGrowthPlusActive } = useRevenueCat();
-   const isSubscribed = status === 'signedIn' && isGrowthPlusActive;
+   const { canGenerate } = useAiCredits();
 
    const menuRef = useRef<View | null>(null);
    const swipeClosedRecently = useRef(false);
@@ -453,7 +450,7 @@ export default function EntryCard({
          if (maybe && typeof (maybe as Promise<void>).then === 'function') {
             await maybe;
          }
-         if (isSubscribed) {
+         if (canGenerate) {
             router.push({
                pathname: ROUTE_ENTRY_DETAIL,
                params: {
@@ -469,7 +466,7 @@ export default function EntryCard({
             params: { id: entry.id, onlyShowAiAnalysis: 'true' },
          });
       });
-   }, [entry, isSubscribed, lockNavigation, onAnalyze]);
+   }, [entry, canGenerate, lockNavigation, onAnalyze]);
 
    const toggleViewMode = (e: any) => {
       e.stopPropagation();
