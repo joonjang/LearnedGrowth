@@ -16,7 +16,7 @@ import type { AbcdeJson } from '@/models/abcdeJson';
 import type { LearnedGrowthResponse } from '@/models/aiService';
 import { Entry } from '@/models/entry';
 import { NewInputDisputeType } from '@/models/newInputEntryType';
-import { useEntriesSync } from '@/providers/EntriesStoreProvider';
+import { useEntriesRealtime, useEntriesSync } from '@/providers/EntriesStoreProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -90,6 +90,7 @@ export default function DisputeScreen() {
 
    const { getEntryById, updateEntry } = useEntries();
    const syncEntries = useEntriesSync();
+   const subscribeToEntryAi = useEntriesRealtime();
    const entry = entryId ? getEntryById(entryId) : undefined;
    const { hasVisited, markVisited } = useVisitedSet<NewInputDisputeType>();
    const insets = useSafeAreaInsets();
@@ -117,8 +118,8 @@ export default function DisputeScreen() {
 
    const [analysisTriggered, setAnalysisTriggered] = useState(false);
    const [isRegenerating, setIsRegenerating] = useState(shouldRegenerate);
-   const [aiAttemptId, setAiAttemptId] = useState(0);
    const [isPollingForAi, setIsPollingForAi] = useState(false);
+   const [aiTimeoutError, setAiTimeoutError] = useState<string | null>(null);
 
    const initialViewMode: 'steps' | 'analysis' =
       viewQuery === 'analysis' ? 'analysis' : 'steps';
@@ -157,7 +158,6 @@ export default function DisputeScreen() {
       if (!entry || !ready) return;
       if (!shouldRegenerate || analysisTriggered || lastResult) return;
 
-      setAiAttemptId((prev) => prev + 1);
       setAnalysisTriggered(true);
       setIsRegenerating(true);
 
@@ -378,7 +378,6 @@ export default function DisputeScreen() {
 
    const handleRefreshAnalysis = useCallback(async () => {
       if (!entry) return;
-      setAiAttemptId((prev) => prev + 1);
       setIsRegenerating(true);
       try {
          const result = await analyze({
@@ -424,47 +423,54 @@ export default function DisputeScreen() {
       aiDataReadyRef.current = aiDataReady;
    }, [aiDataReady]);
 
+   const isAwaitingAi =
+      showAnalysis && !aiDataReady && (analysisTriggered || isRegenerating || loading);
+
    useEffect(() => {
-      if (!showAnalysis) return;
-      if (!aiAttemptId) return;
-      if (aiDataReady) return;
+      if (!isAwaitingAi || !entryId) {
+         setIsPollingForAi(false);
+         return;
+      }
 
       let cancelled = false;
-      let timeoutId: ReturnType<typeof setTimeout> | null = null;
-      const delays = [2000, 4000, 8000, 12000, 16000];
-      let index = 0;
+      setAiTimeoutError(null);
       setIsPollingForAi(true);
 
-      const tick = async () => {
+      const unsubscribe = subscribeToEntryAi(entryId, () => {
          if (cancelled) return;
-         await syncEntries();
-         if (cancelled) return;
-         if (aiDataReadyRef.current) {
-            clearError();
-            setIsPollingForAi(false);
-            return;
-         }
-         if (index >= delays.length) {
-            setIsPollingForAi(false);
-            return;
-         }
-         timeoutId = setTimeout(tick, delays[index]);
-         index += 1;
-      };
+         void syncEntries();
+      });
 
-      timeoutId = setTimeout(tick, delays[index]);
-      index += 1;
+      const safetyInterval = setInterval(() => {
+         if (cancelled) return;
+         if (!aiDataReadyRef.current) {
+            void syncEntries();
+         }
+      }, 10000);
+
+      const timeoutId = setTimeout(() => {
+         if (cancelled) return;
+         if (!aiDataReadyRef.current) {
+            setIsPollingForAi(false);
+            setAiTimeoutError(
+               'AI analysis is taking longer than expected. Please try again.',
+            );
+         }
+      }, 60000);
 
       return () => {
          cancelled = true;
-         if (timeoutId) clearTimeout(timeoutId);
+         clearInterval(safetyInterval);
+         clearTimeout(timeoutId);
+         unsubscribe();
          setIsPollingForAi(false);
       };
-   }, [aiAttemptId, aiDataReady, showAnalysis, syncEntries, clearError]);
+   }, [entryId, isAwaitingAi, subscribeToEntryAi, syncEntries]);
 
    useEffect(() => {
       if (!aiDataReady) return;
       clearError();
+      setAiTimeoutError(null);
    }, [aiDataReady, clearError]);
 
    const stepsAnimatedStyle = useAnimatedStyle(() => ({
@@ -597,7 +603,7 @@ export default function DisputeScreen() {
                   entry={entry}
                   aiData={aiData}
                   loading={loading || isRegenerating || isPollingForAi}
-                  error={isPollingForAi ? null : error}
+                  error={aiTimeoutError ?? (isPollingForAi ? null : error)}
                   streamingText={streamText}
                   contentTopPadding={topPadding}
                   onExit={handleClose}

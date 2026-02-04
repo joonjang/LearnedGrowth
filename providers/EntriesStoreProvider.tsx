@@ -1,4 +1,5 @@
 import { systemClock } from '@/lib/clock';
+import { supabase } from '@/lib/supabase';
 import { makeEntriesService } from '@/services/makeEntriesService';
 import { createSupabaseEntriesClient } from '@/services/supabaseEntries';
 import { createEntriesStore, EntriesStore, placeholderEntriesStore } from '@/store/useEntriesStore';
@@ -17,6 +18,9 @@ import { useAuth } from './AuthProvider';
 
 const EntriesStoreContext = createContext<EntriesStore | null>(null);
 const EntriesSyncContext = createContext<(() => Promise<void>) | null>(null);
+const EntriesRealtimeContext = createContext<
+   ((entryId: string, onAiReady?: () => void) => () => void) | null
+>(null);
 
 export function EntriesStoreProvider({ children }: { children: ReactNode }) {
    const { adapter, ready } = useEntriesAdapter();
@@ -215,11 +219,53 @@ export function EntriesStoreProvider({ children }: { children: ReactNode }) {
 
    const syncNow = useCallback(() => syncWithCloud('app-active'), [syncWithCloud]);
 
+   const subscribeToEntryAi = useCallback(
+      (entryId: string, onAiReady?: () => void) => {
+         if (!supabase || !entryId) return () => {};
+
+         let active = true;
+         const channel = supabase
+            .channel(`entry-ai-${entryId}`)
+            .on(
+               'postgres_changes',
+               {
+                  event: 'UPDATE',
+                  schema: 'public',
+                  table: 'entries',
+                  filter: `id=eq.${entryId}`,
+               },
+               (payload) => {
+                  if (!active) return;
+                  const next = payload?.new as Record<string, unknown> | null;
+                  if (!next?.ai_response) return;
+                  if (onAiReady) {
+                     try {
+                        onAiReady();
+                     } catch (e) {
+                        console.warn('AI realtime callback failed', e);
+                     }
+                     return;
+                  }
+                  void syncWithCloud('app-active');
+               },
+            )
+            .subscribe();
+
+         return () => {
+            active = false;
+            supabase.removeChannel(channel);
+         };
+      },
+      [syncWithCloud],
+   );
+
    return (
       <EntriesSyncContext.Provider value={syncNow}>
-         <EntriesStoreContext.Provider value={store}>
-            {children}
-         </EntriesStoreContext.Provider>
+         <EntriesRealtimeContext.Provider value={subscribeToEntryAi}>
+            <EntriesStoreContext.Provider value={store}>
+               {children}
+            </EntriesStoreContext.Provider>
+         </EntriesRealtimeContext.Provider>
       </EntriesSyncContext.Provider>
    );
 }
@@ -238,6 +284,15 @@ export function useEntriesSync() {
    if (!ctx)
       throw new Error(
          'useEntriesSync must be used within EntriesStoreProvider'
+      );
+   return ctx;
+}
+
+export function useEntriesRealtime() {
+   const ctx = useContext(EntriesRealtimeContext);
+   if (!ctx)
+      throw new Error(
+         'useEntriesRealtime must be used within EntriesStoreProvider'
       );
    return ctx;
 }
