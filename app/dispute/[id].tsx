@@ -11,6 +11,7 @@ import {
    MAX_AI_RETRIES,
    ROUTE_ENTRY_DETAIL,
    ROUTE_HOME,
+   TIMEOUT_MS,
 } from '@/lib/constants';
 import { buildDisputeText } from '@/lib/textUtils';
 import type { AbcdeJson } from '@/models/abcdeJson';
@@ -27,7 +28,6 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
-import { useTranslation } from 'react-i18next';
 import React, {
    useCallback,
    useEffect,
@@ -35,6 +35,7 @@ import React, {
    useRef,
    useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Keyboard, Platform, Text, View } from 'react-native';
 import {
    AndroidSoftInputModes,
@@ -148,8 +149,15 @@ export default function DisputeScreen() {
       initialViewMode === 'analysis' ? 1 : 0,
    );
 
-   const { analyze, lastResult, loading, error, ready, streamText, clearError } =
-      useAbcAi();
+   const {
+      analyze,
+      lastResult,
+      loading,
+      error,
+      ready,
+      streamText,
+      clearError,
+   } = useAbcAi();
 
    const isMountedRef = useRef(true);
    const isClosingRef = useRef(false);
@@ -487,7 +495,9 @@ export default function DisputeScreen() {
    }, [aiDataReady]);
 
    const isAwaitingAi =
-      showAnalysis && !aiDataReady && (analysisTriggered || isRegenerating || loading);
+      showAnalysis &&
+      !aiDataReady &&
+      (analysisTriggered || isRegenerating || loading);
 
    useEffect(() => {
       if (!isAwaitingAi || !entryId) {
@@ -516,11 +526,9 @@ export default function DisputeScreen() {
          if (!aiDataReadyRef.current) {
             setIsPollingForAi(false);
             if (entryId) clearAiPending(entryId);
-            setAiTimeoutError(
-               t('dispute.timeout_message'),
-            );
+            setAiTimeoutError(t('dispute.timeout_message'));
          }
-      }, 60000);
+      }, TIMEOUT_MS);
 
       return () => {
          cancelled = true;
@@ -529,7 +537,14 @@ export default function DisputeScreen() {
          unsubscribe();
          setIsPollingForAi(false);
       };
-   }, [entryId, isAwaitingAi, subscribeToEntryAi, syncEntries, clearAiPending]);
+   }, [
+      entryId,
+      isAwaitingAi,
+      subscribeToEntryAi,
+      syncEntries,
+      clearAiPending,
+      t,
+   ]);
 
    useEffect(() => {
       if (!aiDataReady) return;
@@ -594,24 +609,20 @@ export default function DisputeScreen() {
       }
 
       Keyboard.dismiss();
-      Alert.alert(
-         t('dispute.discard_title'),
-         t('dispute.discard_message'),
-         [
-            {
-               text: t('common.cancel'),
-               style: 'cancel',
-               onPress: () => {
-                  isClosingRef.current = false;
-               },
+      Alert.alert(t('dispute.discard_title'), t('dispute.discard_message'), [
+         {
+            text: t('common.cancel'),
+            style: 'cancel',
+            onPress: () => {
+               isClosingRef.current = false;
             },
-            {
-               text: t('dispute.discard_action'),
-               style: 'destructive',
-               onPress: safeGoBack,
-            },
-         ],
-      );
+         },
+         {
+            text: t('dispute.discard_action'),
+            style: 'destructive',
+            onPress: safeGoBack,
+         },
+      ]);
    }, [entryId, hasUnsavedChanges, t]);
 
    if (!entry) {

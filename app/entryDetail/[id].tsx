@@ -2,7 +2,12 @@ import CardNextButton from '@/components/buttons/CardNextButton';
 import LeftBackChevron from '@/components/buttons/LeftBackChevron';
 import NewDisputeLink from '@/components/buttons/NewDisputeLink';
 import WideButton from '@/components/buttons/WideButton';
-import { ABCDE_FIELD, MAX_AI_RETRIES, ROUTE_HOME } from '@/lib/constants';
+import {
+   ABCDE_FIELD,
+   MAX_AI_RETRIES,
+   ROUTE_HOME,
+   TIMEOUT_MS,
+} from '@/lib/constants';
 
 import { EntryField } from '@/components/entries/details/EntryField';
 import { InsightStrip } from '@/components/entries/details/InsightStrip';
@@ -12,6 +17,7 @@ import {
 } from '@/components/entries/details/Timeline';
 import { AiInsightCard } from '@/components/entries/dispute/AiInsightCard';
 import BottomFade from '@/components/utils/BottomFade';
+import { useAiCredits } from '@/hooks/useAiCredits';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
@@ -26,14 +32,16 @@ import {
 } from '@/lib/styles';
 import { FieldTone } from '@/lib/theme';
 import type { Entry } from '@/models/entry';
-import { useAiCredits } from '@/hooks/useAiCredits';
-import { useEntriesAiPending, useEntriesRealtime } from '@/providers/EntriesStoreProvider';
+import {
+   useEntriesAiPending,
+   useEntriesRealtime,
+} from '@/providers/EntriesStoreProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight, ChevronDown, Sparkles, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, LayoutAnimation, Pressable, Text, View } from 'react-native';
 import {
    KeyboardAwareScrollView,
@@ -185,7 +193,7 @@ export default function EntryDetailScreen() {
          if (isAiPending(entryId)) {
             clearAiPending(entryId);
          }
-      }, 60000);
+      }, TIMEOUT_MS);
       return () => clearTimeout(timeoutId);
    }, [clearAiPending, entryId, isAiPending, isAiPendingForEntry]);
    const showDispute = Boolean(baseline.dispute || trimmed.dispute);
@@ -202,7 +210,9 @@ export default function EntryDetailScreen() {
             ({
                key: f.key,
                letter: LETTERS[idx],
-               label: isKorean ? `${t(f.labelKey)} (${LETTERS[idx]})` : t(f.labelKey),
+               label: isKorean
+                  ? `${t(f.labelKey)} (${LETTERS[idx]})`
+                  : t(f.labelKey),
                desc: t(f.hintKey),
                tone: getToneForKey(f.key),
             }) as TimelineStepDef,
@@ -299,15 +309,16 @@ export default function EntryDetailScreen() {
       KeyboardController.dismiss();
       headerTranslateY.value = withTiming(-150);
    }, [
-      baseline,
       entry,
-      hapticsAvailable,
-      hapticsEnabled,
       hasChanges,
       store,
+      hapticsEnabled,
+      hapticsAvailable,
       triggerHaptic,
-      trimmed,
       headerTranslateY,
+      trimmed,
+      baseline,
+      t,
    ]);
 
    const handleCancel = useCallback(() => {
@@ -567,35 +578,35 @@ export default function EntryDetailScreen() {
                               {!aiDisplayData &&
                                  !isAiPendingForEntry &&
                                  entry?.dispute && (
-                                 <TimelinePivot
-                                    variant="full"
-                                    bgClassName={`${AI_SURFACE_CLASS} ${isEditing ? 'opacity-50' : ''}`}
-                                    borderClassName={`border-amber-200 dark:border-amber-800 ${isEditing ? 'opacity-50' : ''}`}
-                                 >
-                                    <Pressable
-                                       onPress={handleAnalyze}
-                                       disabled={isEditing}
-                                       className={`flex-row items-center justify-center gap-2 py-1 ${isEditing ? 'opacity-40' : 'active:opacity-50'}`}
+                                    <TimelinePivot
+                                       variant="full"
+                                       bgClassName={`${AI_SURFACE_CLASS} ${isEditing ? 'opacity-50' : ''}`}
+                                       borderClassName={`border-amber-200 dark:border-amber-800 ${isEditing ? 'opacity-50' : ''}`}
                                     >
-                                       <Sparkles
-                                          size={18}
-                                          color={
-                                             isDark
-                                                ? AI_ICON_COLORS.dark
-                                                : AI_ICON_COLORS.light
-                                          }
-                                          strokeWidth={2.5}
-                                       />
-                                       <Text
-                                          className={`text-[12px] font-bold ${AI_TEXT_ACCENT_CLASS}`}
+                                       <Pressable
+                                          onPress={handleAnalyze}
+                                          disabled={isEditing}
+                                          className={`flex-row items-center justify-center gap-2 py-1 ${isEditing ? 'opacity-40' : 'active:opacity-50'}`}
                                        >
-                                          {isEditing
-                                             ? t('analysis.save_to_analyze')
-                                             : t('analysis.analyze_with_ai')}
-                                       </Text>
-                                    </Pressable>
-                                 </TimelinePivot>
-                              )}
+                                          <Sparkles
+                                             size={18}
+                                             color={
+                                                isDark
+                                                   ? AI_ICON_COLORS.dark
+                                                   : AI_ICON_COLORS.light
+                                             }
+                                             strokeWidth={2.5}
+                                          />
+                                          <Text
+                                             className={`text-[12px] font-bold ${AI_TEXT_ACCENT_CLASS}`}
+                                          >
+                                             {isEditing
+                                                ? t('analysis.save_to_analyze')
+                                                : t('analysis.analyze_with_ai')}
+                                          </Text>
+                                       </Pressable>
+                                    </TimelinePivot>
+                                 )}
 
                               {!entry.dispute && !isEditing && (
                                  <View className="mt-4 mb-2">
@@ -671,9 +682,13 @@ export default function EntryDetailScreen() {
                                                    </Text>
                                                    {energyText ? (
                                                       <Text className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                                                         {t('entryDetail.energy', {
-                                                            energy: energyText,
-                                                         })}
+                                                         {t(
+                                                            'entryDetail.energy',
+                                                            {
+                                                               energy:
+                                                                  energyText,
+                                                            },
+                                                         )}
                                                       </Text>
                                                    ) : null}
                                                 </View>

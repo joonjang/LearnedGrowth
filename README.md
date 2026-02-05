@@ -40,6 +40,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - migrated code to enable i18 for korean
 - made abcde.json prompts english and korean
 - changed language selector to a sheet
+- timeout time expanded
 
 ### 2026-02-03
 

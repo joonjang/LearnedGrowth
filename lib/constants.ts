@@ -12,6 +12,8 @@ import {
    Zap
 } from 'lucide-react-native';
 
+export const TIMEOUT_MS = 90000;
+
 export const TYPING_SPEED = 35
 
 export const FREE_MONTHLY_CREDITS = 5;
