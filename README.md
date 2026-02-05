@@ -41,6 +41,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 - made abcde.json prompts english and korean
 - changed language selector to a sheet
 - timeout time expanded
+- fixed typewriter text from line jumping
 
 ### 2026-02-03
 
