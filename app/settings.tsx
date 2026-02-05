@@ -23,6 +23,7 @@ import {
    ChevronDown,
    ChevronUp,
    Cloud,
+   Check,
    ShieldCheck,
    Sprout,
    TicketPlus,
@@ -156,6 +157,7 @@ export default function SettingsScreen() {
    const [couponCode, setCouponCode] = useState('');
    const [redeemingCoupon, setRedeemingCoupon] = useState(false);
    const [couponMessage, setCouponMessage] = useState<string | null>(null);
+   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
    const profileRef = useRef(profile);
    const creditShopSheetRef = useRef<BottomSheetModal | null>(null);
    const [nowTs, setNowTs] = useState(() => Date.now());
@@ -668,11 +670,11 @@ export default function SettingsScreen() {
                </View>
             )}
 
-            {/* PREFERENCES */}
-            <View
-               className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 gap-5"
-               style={commonShadowStyle}
-            >
+           {/* PREFERENCES */}
+           <View
+              className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 gap-5"
+              style={commonShadowStyle}
+           >
                <Text className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
                   {t('settings.preferences')}
                </Text>
@@ -680,45 +682,23 @@ export default function SettingsScreen() {
                   title={t('settings.language.title')}
                   description={t('settings.language.description')}
                >
-                  <View className="flex-row gap-2">
-                     {[
-                        {
-                           value: 'en' as const,
-                           label: t('settings.language.english'),
-                        },
-                        {
-                           value: 'ko' as const,
-                           label: t('settings.language.korean'),
-                        },
-                     ].map((option) => {
-                        const resolvedLanguage =
-                           languagePreference === 'system'
-                              ? language
-                              : languagePreference;
-                        const isActive = resolvedLanguage === option.value;
-                        return (
-                           <Pressable
-                              key={option.value}
-                              onPress={() => setLanguage(option.value)}
-                              disabled={prefsLoading}
-                              className={`px-3 py-2 rounded-full border ${
-                                 isActive
-                                    ? 'bg-emerald-600/10 border-emerald-500'
-                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-                              }`}
-                           >
-                              <Text
-                                 className={`text-[12px] font-bold ${
-                                    isActive
-                                       ? 'text-emerald-700 dark:text-emerald-300'
-                                       : 'text-slate-700 dark:text-slate-300'
-                                 }`}
-                              >
-                                 {option.label}
-                              </Text>
-                           </Pressable>
-                        );
-                     })}
+                  <View>
+                     <Pressable
+                        onPress={() => setLanguageMenuOpen(true)}
+                        disabled={prefsLoading}
+                        className="flex-row items-center justify-between px-3 py-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                     >
+                        <Text className="text-[12px] font-bold text-slate-700 dark:text-slate-300">
+                           {languagePreference === 'system'
+                              ? language === 'ko'
+                                 ? t('settings.language.korean')
+                                 : t('settings.language.english')
+                              : languagePreference === 'ko'
+                                 ? t('settings.language.korean')
+                                 : t('settings.language.english')}
+                        </Text>
+                        <ChevronDown size={14} color={iconColor} />
+                     </Pressable>
                   </View>
                </SettingRow>
 
@@ -780,7 +760,74 @@ export default function SettingsScreen() {
                         />
                      </SettingRow>
                   </Animated.View>
-               </View>
+           </View>
+
+            <Modal
+               visible={languageMenuOpen}
+               transparent
+               animationType="fade"
+               onRequestClose={() => setLanguageMenuOpen(false)}
+            >
+               <TouchableWithoutFeedback
+                  onPress={() => setLanguageMenuOpen(false)}
+               >
+                  <View className="flex-1 bg-black/40 justify-end">
+                     <TouchableWithoutFeedback>
+                        <View className="bg-white dark:bg-slate-900 rounded-t-2xl px-5 pt-4 pb-8 border border-slate-200 dark:border-slate-700">
+                           <View className="items-center mb-3">
+                              <View className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                           </View>
+                           <Text className="text-base font-extrabold text-slate-900 dark:text-slate-100 mb-3">
+                              {t('settings.language.title')}
+                           </Text>
+                           {[
+                              {
+                                 value: 'en' as const,
+                                 label: t('settings.language.english'),
+                              },
+                              {
+                                 value: 'ko' as const,
+                                 label: t('settings.language.korean'),
+                              },
+                           ].map((option) => {
+                              const resolvedLanguage =
+                                 languagePreference === 'system'
+                                    ? language
+                                    : languagePreference;
+                              const isActive = resolvedLanguage === option.value;
+                              return (
+                                 <Pressable
+                                    key={option.value}
+                                    onPress={() => {
+                                       setLanguage(option.value);
+                                       setLanguageMenuOpen(false);
+                                    }}
+                                    className={`flex-row items-center justify-between px-4 py-3 rounded-xl border mb-2 ${
+                                       isActive
+                                          ? 'bg-emerald-600/10 border-emerald-500'
+                                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                                    }`}
+                                 >
+                                    <Text
+                                       className={`text-sm font-bold ${
+                                          isActive
+                                             ? 'text-emerald-700 dark:text-emerald-300'
+                                             : 'text-slate-700 dark:text-slate-300'
+                                       }`}
+                                    >
+                                       {option.label}
+                                    </Text>
+                                    {isActive ? (
+                                       <Check size={16} color={iconColor} />
+                                    ) : null}
+                                 </Pressable>
+                              );
+                           })}
+                        </View>
+                     </TouchableWithoutFeedback>
+                  </View>
+               </TouchableWithoutFeedback>
+            </Modal>
             </View>
 
             {/* ACCOUNT ACTIONS */}

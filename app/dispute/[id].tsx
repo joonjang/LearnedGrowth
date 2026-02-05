@@ -1,4 +1,5 @@
-import rawAbcde from '@/assets/data/abcde.json';
+import abcdeEn from '@/assets/data/abcde_en.json';
+import abcdeKo from '@/assets/data/abcde_ko.json';
 import ABCAnalysis from '@/components/entries/dispute/ABCAnalysis';
 import DisputeSteps from '@/components/entries/dispute/DisputeSteps';
 import TopFade from '@/components/utils/TopFade';
@@ -92,7 +93,8 @@ export default function DisputeScreen() {
    const shouldRegenerate = refreshQuery === 'true';
    const shouldStartFresh =
       newDisputeQuery === 'true' || newDisputeQuery === '1';
-   const { hapticsEnabled, hapticsAvailable, triggerHaptic } = usePreferences();
+   const { hapticsEnabled, hapticsAvailable, triggerHaptic, language } =
+      usePreferences();
 
    const { getEntryById, updateEntry } = useEntries();
    const syncEntries = useEntriesSync();
@@ -217,7 +219,10 @@ export default function DisputeScreen() {
       clearAiPending,
    ]);
 
-   const data = rawAbcde as AbcdeJson;
+   const data = useMemo<AbcdeJson>(
+      () => (language === 'ko' ? abcdeKo : abcdeEn) as AbcdeJson,
+      [language],
+   );
    const promptListGetter = useCallback(
       (key: NewInputDisputeType) => {
          if (key === 'energy') return data.energy;

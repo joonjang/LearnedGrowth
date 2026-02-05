@@ -9,7 +9,6 @@ import {
    ENERGY_BORDER_CLASS,
    ENERGY_TEXT_CLASS,
 } from '@/lib/styles';
-import { getShadow } from '@/lib/shadow';
 import { FieldTone, getFieldStyles } from '@/lib/theme';
 import {
    Camera,
@@ -20,7 +19,7 @@ import {
    Zap,
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Text, View } from 'react-native';
 
 // --- Types ---
@@ -71,7 +70,6 @@ export function TimelineItem({
 }) {
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const shadow = useMemo(() => getShadow({ isDark, preset: 'sm' }), [isDark]);
    const styles = getFieldStyles(step.tone, false);
    const Icon = step.icon || ICON_MAP[step.key] || Camera;
    const iconColor = getIconColor(step.tone, isDark);
@@ -89,10 +87,7 @@ export function TimelineItem({
    if (isFull) {
       return (
          <View className="mb-4">
-            <View
-               className={`rounded-2xl border px-5 py-4 ${cardBgClass}`}
-               // style={[shadow.ios, shadow.android]}
-            >
+            <View className={`rounded-2xl border px-5 py-4 ${cardBgClass}`}>
                <View className="flex-row items-center justify-between mb-3">
                   <View className="flex-1 flex-row items-center mr-3 overflow-hidden">
                      {/* Label */}
@@ -164,10 +159,7 @@ export function TimelineItem({
          </View>
 
          <View className={`ml-4 flex-1 pt-1 ${!isLast ? 'pb-8' : ''}`}>
-            <View
-               className={`rounded-2xl border p-4 ${cardBgClass}`}
-               style={[shadow.ios, shadow.android]}
-            >
+            <View className={`rounded-2xl border p-4 ${cardBgClass}`}>
                <View className="flex-row items-start justify-between mb-3">
                   {/* Text Container (Stacked) */}
                   <View className="flex-1 mr-3">

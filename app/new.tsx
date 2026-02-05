@@ -1,4 +1,5 @@
-import rawAbcde from '@/assets/data/abcde.json';
+import abcdeEn from '@/assets/data/abcde_en.json';
+import abcdeKo from '@/assets/data/abcde_ko.json';
 import RoundedCloseButton from '@/components/buttons/RoundedCloseButton';
 import SmartInput from '@/components/inputABCDE/SmartInput';
 import StepperHeader from '@/components/inputABCDE/StepperHeader';
@@ -12,7 +13,9 @@ import { useSmartScroll } from '@/hooks/useSmartScroll';
 import { useSmoothKeyboard } from '@/hooks/useSmoothKeyboard';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
 import { ROUTE_ENTRY_DETAIL } from '@/lib/constants';
+import type { AbcdeJson } from '@/models/abcdeJson';
 import { NewInputEntryType } from '@/models/newInputEntryType';
+import { usePreferences } from '@/providers/PreferencesProvider';
 import { router, useRootNavigationState } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -76,6 +79,7 @@ export default function NewEntryModal() {
    const rootNavigationState = useRootNavigationState();
    const { height: screenHeight } = useWindowDimensions();
    const { t } = useTranslation();
+   const { language } = usePreferences();
 
    const { hasVisited, markVisited } = useVisitedSet<NewInputEntryType>();
    const inputRef = useRef<TextInput>(null);
@@ -100,9 +104,13 @@ export default function NewEntryModal() {
       consequence: '',
    });
 
+   const data = useMemo<AbcdeJson>(
+      () => (language === 'ko' ? abcdeKo : abcdeEn) as AbcdeJson,
+      [language],
+   );
    const promptListGetter = useCallback(
-      (key: NewInputEntryType) => rawAbcde[key],
-      [],
+      (key: NewInputEntryType) => data[key],
+      [data],
    );
    const prompts = usePrompts(STEP_ORDER, promptListGetter);
    const [idx, setIdx] = useState(0);

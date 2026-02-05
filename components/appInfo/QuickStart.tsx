@@ -18,7 +18,6 @@ import { useAuth } from '@/providers/AuthProvider';
 import { router } from 'expo-router';
 import { ArrowRight, Briefcase, HeartCrack, Users } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { Trans, useTranslation } from 'react-i18next';
 import React, {
    useCallback,
    useEffect,
@@ -26,6 +25,7 @@ import React, {
    useRef,
    useState,
 } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import {
    AccessibilityInfo,
    Animated,
@@ -209,6 +209,8 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
    );
 
    const fade = useRef(new Animated.Value(1)).current;
+   const ctaPulse = useRef(new Animated.Value(1)).current;
+   const ctaArrowNudge = useRef(new Animated.Value(0)).current;
 
    useEffect(() => {
       let mounted = true;
@@ -219,6 +221,51 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
          mounted = false;
       };
    }, []);
+
+   useEffect(() => {
+      if (reduceMotion) return;
+      const loop = Animated.loop(
+         Animated.sequence([
+            Animated.timing(ctaPulse, {
+               toValue: 1.02,
+               duration: 1100,
+               useNativeDriver: true,
+            }),
+            Animated.timing(ctaPulse, {
+               toValue: 1,
+               duration: 1100,
+               useNativeDriver: true,
+            }),
+         ]),
+      );
+      loop.start();
+      return () => loop.stop();
+   }, [ctaPulse, reduceMotion]);
+
+   useEffect(() => {
+      if (reduceMotion) return;
+      const loop = Animated.loop(
+         Animated.sequence([
+            Animated.timing(ctaArrowNudge, {
+               toValue: -10,
+               duration: 600,
+               useNativeDriver: true,
+            }),
+            Animated.timing(ctaArrowNudge, {
+               toValue: 4,
+               duration: 600,
+               useNativeDriver: true,
+            }),
+            Animated.timing(ctaArrowNudge, {
+               toValue: 0,
+               duration: 600,
+               useNativeDriver: true,
+            }),
+         ]),
+      );
+      loop.start();
+      return () => loop.stop();
+   }, [ctaArrowNudge, reduceMotion]);
 
    const handleScenarioChange = (index: number) => {
       if (index === activeScenarioIndex) return;
@@ -326,7 +373,9 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                               <Text className="font-bold text-slate-900 dark:text-slate-100" />
                            ),
                            boldBelief: (
-                              <Text className={`font-bold ${BELIEF_TEXT_CLASS}`} />
+                              <Text
+                                 className={`font-bold ${BELIEF_TEXT_CLASS}`}
+                              />
                            ),
                         }}
                      />
@@ -356,7 +405,9 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                      i18nKey="quickstart.solution"
                      components={{
                         boldDispute: (
-                           <Text className={`font-bold ${DISPUTE_TEXT_CLASS}`} />
+                           <Text
+                              className={`font-bold ${DISPUTE_TEXT_CLASS}`}
+                           />
                         ),
                         boldEnergy: (
                            <Text className={`font-bold ${ENERGY_TEXT_CLASS}`} />
@@ -458,7 +509,9 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                                           <Trans
                                              i18nKey="quickstart.quick_path_desc"
                                              components={{
-                                                bold: <Text className="font-bold" />,
+                                                bold: (
+                                                   <Text className="font-bold" />
+                                                ),
                                                 boldDispute: (
                                                    <Text
                                                       className={`font-bold ${DISPUTE_TEXT_CLASS}`}
@@ -482,7 +535,9 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                                           <Trans
                                              i18nKey="quickstart.guided_path_desc"
                                              components={{
-                                                bold: <Text className="font-bold" />,
+                                                bold: (
+                                                   <Text className="font-bold" />
+                                                ),
                                              }}
                                           />
                                        </Text>
@@ -509,22 +564,34 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
             {/* Footer CTA */}
             {!isModal && (
                <View className="px-6 pt-8">
-                  <Pressable
-                     className={`relative flex-row items-center justify-center rounded-2xl px-6 py-4 ${PRIMARY_CTA_CLASS} ${buttonShadow.className}`}
-                     style={[buttonShadow.ios, buttonShadow.android]}
-                     onPress={handleCtaPress}
-                     disabled={navigationLocked}
+                  <Animated.View
+                     style={[
+                        { transform: [{ scale: ctaPulse }] },
+                        [cardShadow.ios, cardShadow.android],
+                     ]}
                   >
-                     <Text
-                        className="text-lg font-bold text-center text-white"
-                        numberOfLines={1}
+                     <Pressable
+                        className={`relative flex-row items-center justify-center rounded-2xl px-6 py-4 ${PRIMARY_CTA_CLASS} ${buttonShadow.className}`}
+                        style={[buttonShadow.ios, buttonShadow.android]}
+                        onPress={handleCtaPress}
+                        disabled={navigationLocked}
                      >
-                        {t('quickstart.cta')}
-                     </Text>
-                     <View className="absolute right-4 opacity-50">
-                        <ArrowRight size={20} color="white" />
-                     </View>
-                  </Pressable>
+                        <Text
+                           className="text-lg font-bold text-center text-white"
+                           numberOfLines={1}
+                        >
+                           {t('quickstart.cta')}
+                        </Text>
+                        <Animated.View
+                           className="absolute right-4 opacity-50"
+                           style={{
+                              transform: [{ translateX: ctaArrowNudge }],
+                           }}
+                        >
+                           <ArrowRight size={20} color="white" />
+                        </Animated.View>
+                     </Pressable>
+                  </Animated.View>
                   <Text className="mt-3 text-center text-xs font-medium text-slate-400">
                      {t('quickstart.cta_sub')}
                   </Text>
