@@ -7,7 +7,7 @@ import React, {
    useRef,
    useState,
 } from 'react';
-import { StyleProp, TextStyle, View } from 'react-native';
+import { StyleProp, Text, TextStyle, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 type TypewriterProps = {
@@ -112,22 +112,21 @@ const TypewriterText = forwardRef<TypewriterHandle, TypewriterProps>(
          };
       }, [text, visited, animate, cancelAnimation]);
 
+      const visibleLength = Math.min(displayedText.length, text.length);
+      const visibleText = displayedText.slice(0, visibleLength);
+      const hiddenText = text.slice(visibleLength);
+
       return (
          <View className="relative min-h-[60px]">
-            {/* Ghost Text (Invisible, holds layout) */}
-            <Animated.Text className="opacity-0 text-transparent" style={style}>
-               {text}
+            <Animated.Text
+               className="text-slate-900 dark:text-slate-100"
+               style={style}
+            >
+               {visibleText}
+               {hiddenText.length > 0 ? (
+                  <Text style={{ color: 'transparent' }}>{hiddenText}</Text>
+               ) : null}
             </Animated.Text>
-
-            {/* Visible Text (Animated overlay) */}
-            <View className="absolute inset-0">
-               <Animated.Text
-                  className="text-slate-900 dark:text-slate-100"
-                  style={style}
-               >
-                  {displayedText}
-               </Animated.Text>
-            </View>
          </View>
       );
    },
