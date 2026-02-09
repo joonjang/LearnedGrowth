@@ -38,6 +38,7 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 ### 2026-02-09
 
 - max length enforeced in smartinput.tsx
+- added bottom blur to quickstart.tsx
 
 ### 2026-02-04
 

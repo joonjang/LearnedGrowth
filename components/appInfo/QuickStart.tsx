@@ -36,6 +36,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RoundedCloseButton from '../buttons/RoundedCloseButton';
+import BottomFade from '@/components/utils/BottomFade';
 
 // Helper to map keys to tones
 const getToneForKey = (key: string): FieldTone => {
@@ -598,6 +599,7 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
                </View>
             )}
          </ScrollView>
+         <BottomFade height={insets.bottom + 12} />
       </View>
    );
 }
