@@ -18,7 +18,7 @@ import TypewriterText, {
 } from '@/components/inputABCDE/TypewriterText';
 import { useSmartScroll } from '@/hooks/useSmartScroll';
 import { useSmoothKeyboard } from '@/hooks/useSmoothKeyboard';
-import { DISPUTE_STEP_PLACEHOLDERS } from '@/lib/constants';
+import { DISPUTE_STEP_CHAR_LIMITS, DISPUTE_STEP_PLACEHOLDERS } from '@/lib/constants';
 import { useTranslation } from 'react-i18next';
 
 import { Entry } from '@/models/entry';
@@ -178,6 +178,8 @@ export default function DisputeSteps({
                      value={form[currKey]}
                      onChangeText={setField(currKey)}
                      placeholder={stepPlaceholders[currKey]}
+                     maxLength={DISPUTE_STEP_CHAR_LIMITS[currKey]}
+                     showCounter
                      animatedStyle={animatedInputStyle}
                      onFocus={() => {
                         reenableAutoScroll(true);

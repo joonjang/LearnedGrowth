@@ -35,6 +35,10 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-02-09
+
+- max length enforeced in smartinput.tsx
+
 ### 2026-02-04
 
 - migrated code to enable i18 for korean

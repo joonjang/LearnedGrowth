@@ -12,7 +12,7 @@ import { usePrompts } from '@/hooks/usePrompts';
 import { useSmartScroll } from '@/hooks/useSmartScroll';
 import { useSmoothKeyboard } from '@/hooks/useSmoothKeyboard';
 import { useVisitedSet } from '@/hooks/useVisitedSet';
-import { ROUTE_ENTRY_DETAIL } from '@/lib/constants';
+import { ENTRY_CHAR_LIMITS, ROUTE_ENTRY_DETAIL } from '@/lib/constants';
 import type { AbcdeJson } from '@/models/abcdeJson';
 import { NewInputEntryType } from '@/models/newInputEntryType';
 import { usePreferences } from '@/providers/PreferencesProvider';
@@ -306,6 +306,8 @@ export default function NewEntryModal() {
                         value={form[currKey]}
                         onChangeText={setField(currKey)}
                         placeholder={stepPlaceholders[currKey]}
+                        maxLength={ENTRY_CHAR_LIMITS[currKey]}
+                        showCounter
                         // Dynamic height from hook
                         animatedStyle={animatedInputStyle}
                         onFocus={() => {
