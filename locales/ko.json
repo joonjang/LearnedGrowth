@@ -647,7 +647,7 @@
       "keep_editing": "계속 편집",
       "discard_action": "작성 취소",
       "delete_title": "항목을 삭제할까요?",
-      "delete_message": "이 항목이 영구적으로 삭제됩니다.",
+      "delete_message": "이 항목은 삭제된 보관함으로 이동하며 언제든 복원할 수 있어요.",
       "saved": "저장됨",
       "unsaved": "저장되지 않은 변경 사항",
       "continue": "계속",

@@ -647,7 +647,7 @@
       "keep_editing": "Keep editing",
       "discard_action": "Discard",
       "delete_title": "Delete entry?",
-      "delete_message": "This will permanently delete the entry.",
+      "delete_message": "This will move the entry to the Deleted Bin. You can restore it anytime.",
       "saved": "Saved",
       "unsaved": "Unsaved changes",
       "continue": "Continue",

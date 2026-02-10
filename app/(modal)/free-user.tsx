@@ -21,7 +21,7 @@ import {
    BottomSheetModal,
    BottomSheetView,
 } from '@gorhom/bottom-sheet';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
    AlertCircle,
    ArrowRight,
@@ -191,31 +191,47 @@ export default function FreeUserChoiceScreen() {
       [],
    );
 
-   useEffect(() => {
-      let cancelled = false;
-      let rafId: number | null = null;
-      const cancelIdle = scheduleIdle(() => {
-         if (cancelled) return;
-         rafId = requestAnimationFrame(() => {
+   useFocusEffect(
+      useCallback(() => {
+         let cancelled = false;
+         let rafId: number | null = null;
+         const cancelIdle = scheduleIdle(() => {
             if (cancelled) return;
-            modalRef.current?.present();
-         });
-      }, 80);
-      return () => {
-         cancelled = true;
-         if (rafId !== null) cancelAnimationFrame(rafId);
-         cancelIdle();
-      };
+            rafId = requestAnimationFrame(() => {
+               if (cancelled) return;
+               modalRef.current?.present();
+            });
+         }, 80);
+         return () => {
+            cancelled = true;
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            cancelIdle();
+         };
+      }, []),
+   );
+
+   const isLoginTarget = useCallback((target: any) => {
+      if (!target) return false;
+      if (typeof target === 'string') return target === ROUTE_LOGIN;
+      if (typeof target === 'object' && 'pathname' in target) {
+         return target.pathname === ROUTE_LOGIN;
+      }
+      return false;
    }, []);
 
    const handleDismiss = useCallback(() => {
       if (navigationTargetRef.current) {
-         router.replace(navigationTargetRef.current);
+         const target = navigationTargetRef.current;
          navigationTargetRef.current = null;
+         if (isLoginTarget(target)) {
+            router.push(target);
+         } else {
+            router.replace(target);
+         }
       } else {
          router.back();
       }
-   }, [router]);
+   }, [isLoginTarget, router]);
 
    const proceedToPath = useCallback(
       (path: string, requiresAuth: boolean) => {
