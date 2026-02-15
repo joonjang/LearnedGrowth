@@ -35,6 +35,13 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-02-15
+
+- quickstart.tsx made to be less overwhelming on startup
+- ui changes to entry detail screen
+- wording change for entries deleted in entries.tsx
+- updated question prompts for better synthesis
+
 ### 2026-02-09
 
 - max length enforeced in smartinput.tsx

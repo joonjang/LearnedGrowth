@@ -4,6 +4,7 @@ import {
    TimelinePivot,
    TimelineStepDef,
 } from '@/components/entries/details/Timeline';
+import BottomFade from '@/components/utils/BottomFade';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { ABCDE_FIELD, ROUTE_LOGIN } from '@/lib/constants';
 import { getShadow } from '@/lib/shadow';
@@ -36,7 +37,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RoundedCloseButton from '../buttons/RoundedCloseButton';
-import BottomFade from '@/components/utils/BottomFade';
 
 // Helper to map keys to tones
 const getToneForKey = (key: string): FieldTone => {
@@ -419,148 +419,159 @@ export default function QuickStartScreen({ isModal, onClose }: Props) {
             </View>
 
             {/* Scenario Selector */}
-            <View className="mb-6">
-               <View className="px-6 mb-3 flex-row justify-between items-center">
-                  <Text className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                     {t('quickstart.see_action')}
-                  </Text>
-               </View>
-               <View className="flex-row flex-wrap justify-evenly">
-                  {scenarios.map((scenario, index) => {
-                     const isActive = index === activeScenarioIndex;
-                     // pick palette by scenario + dark mode + active
-                     const stylesForScenario =
-                        SCENARIO_STYLES[
-                           scenario.id as keyof typeof SCENARIO_STYLES
-                        ];
-                     const palette = isActive
-                        ? isDark
-                           ? stylesForScenario.activeDark
-                           : stylesForScenario.activeLight
-                        : isDark
-                          ? stylesForScenario.dark
-                          : stylesForScenario.light;
+            {isModal && (
+               <>
+                  <View className="mb-6">
+                     <View className="px-6 mb-3 flex-row justify-between items-center">
+                        <Text className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                           {t('quickstart.see_action')}
+                        </Text>
+                     </View>
+                     <View className="flex-row flex-wrap justify-evenly">
+                        {scenarios.map((scenario, index) => {
+                           const isActive = index === activeScenarioIndex;
+                           // pick palette by scenario + dark mode + active
+                           const stylesForScenario =
+                              SCENARIO_STYLES[
+                                 scenario.id as keyof typeof SCENARIO_STYLES
+                              ];
+                           const palette = isActive
+                              ? isDark
+                                 ? stylesForScenario.activeDark
+                                 : stylesForScenario.activeLight
+                              : isDark
+                                ? stylesForScenario.dark
+                                : stylesForScenario.light;
 
-                     const Icon = stylesForScenario.Icon;
-                     return (
-                        <Pressable
-                           key={scenario.id}
-                           onPress={() => handleScenarioChange(index)}
-                           className="flex-row items-center justify-center rounded-full px-2 py-2 border"
-                           style={{
-                              backgroundColor: palette.bg,
-                              borderColor: palette.border,
-                           }}
-                        >
-                           <Icon
-                              size={14}
-                              color={palette.icon}
-                              style={{ marginRight: 8 }}
-                           />
-                           <Text
-                              className="text-xs font-bold text-center"
-                              style={{ color: palette.text }}
-                              numberOfLines={1}
-                           >
-                              {scenario.label}
-                           </Text>
-                        </Pressable>
-                     );
-                  })}
-               </View>
-            </View>
-
-            {/* Timeline */}
-            <View className="relative px-6 mt-2">
-               {/* Vertical Line */}
-               <TimelineLine />
-
-               <Animated.View style={{ opacity: fade }} className="z-10 gap-2">
-                  {steps.map((step) => {
-                     // @ts-ignore
-                     const exampleText = activeScenario.examples[step.key];
-                     const isPivotPoint = step.key === 'dispute';
-
-                     return (
-                        <View key={step.key}>
-                           {isPivotPoint && (
-                              <TimelinePivot variant="default">
-                                 {/* RESTORED CONTENT - Quick Path / Guided Path */}
-                                 <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                    {t('quickstart.pivot_title')}
+                           const Icon = stylesForScenario.Icon;
+                           return (
+                              <Pressable
+                                 key={scenario.id}
+                                 onPress={() => handleScenarioChange(index)}
+                                 className="flex-row items-center justify-center rounded-full px-2 py-2 border"
+                                 style={{
+                                    backgroundColor: palette.bg,
+                                    borderColor: palette.border,
+                                 }}
+                              >
+                                 <Icon
+                                    size={14}
+                                    color={palette.icon}
+                                    style={{ marginRight: 8 }}
+                                 />
+                                 <Text
+                                    className="text-xs font-bold text-center"
+                                    style={{ color: palette.text }}
+                                    numberOfLines={1}
+                                 >
+                                    {scenario.label}
                                  </Text>
+                              </Pressable>
+                           );
+                        })}
+                     </View>
+                  </View>
 
-                                 <Text className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                                    <Trans
-                                       i18nKey="quickstart.pivot_desc"
-                                       components={{
-                                          bold: (
-                                             <Text className="font-bold text-slate-900 dark:text-slate-200" />
-                                          ),
-                                       }}
-                                    />
-                                 </Text>
+                  {/* Timeline */}
+                  <View className="relative px-6 mt-2">
+                     {/* Vertical Line */}
+                     <TimelineLine />
 
-                                 <View className="mt-3 flex-row gap-8">
-                                    <View className="flex-1">
-                                       <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                                          {t('quickstart.quick_path_title')}
+                     <Animated.View
+                        style={{ opacity: fade }}
+                        className="z-10 gap-2"
+                     >
+                        {steps.map((step) => {
+                           const exampleText =
+                              activeScenario.examples[step.key as keyof typeof activeScenario.examples];
+                           const isPivotPoint = step.key === 'dispute';
+
+                           return (
+                              <View key={step.key}>
+                                 {isPivotPoint && (
+                                    <TimelinePivot variant="default">
+                                       {/* RESTORED CONTENT - Quick Path / Guided Path */}
+                                       <Text className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                          {t('quickstart.pivot_title')}
                                        </Text>
-                                       <Text className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+
+                                       <Text className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
                                           <Trans
-                                             i18nKey="quickstart.quick_path_desc"
+                                             i18nKey="quickstart.pivot_desc"
                                              components={{
                                                 bold: (
-                                                   <Text className="font-bold" />
-                                                ),
-                                                boldDispute: (
-                                                   <Text
-                                                      className={`font-bold ${DISPUTE_TEXT_CLASS}`}
-                                                   />
-                                                ),
-                                                boldEnergy: (
-                                                   <Text
-                                                      className={`font-bold ${ENERGY_TEXT_CLASS}`}
-                                                   />
+                                                   <Text className="font-bold text-slate-900 dark:text-slate-200" />
                                                 ),
                                              }}
                                           />
                                        </Text>
-                                    </View>
 
-                                    <View className="flex-1">
-                                       <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                                          {t('quickstart.guided_path_title')}
+                                       <View className="mt-3 flex-row gap-8">
+                                          <View className="flex-1">
+                                             <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                                                {t(
+                                                   'quickstart.quick_path_title',
+                                                )}
+                                             </Text>
+                                             <Text className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                                <Trans
+                                                   i18nKey="quickstart.quick_path_desc"
+                                                   components={{
+                                                      bold: (
+                                                         <Text className="font-bold" />
+                                                      ),
+                                                      boldDispute: (
+                                                         <Text
+                                                            className={`font-bold ${DISPUTE_TEXT_CLASS}`}
+                                                         />
+                                                      ),
+                                                      boldEnergy: (
+                                                         <Text
+                                                            className={`font-bold ${ENERGY_TEXT_CLASS}`}
+                                                         />
+                                                      ),
+                                                   }}
+                                                />
+                                             </Text>
+                                          </View>
+
+                                          <View className="flex-1">
+                                             <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                                                {t(
+                                                   'quickstart.guided_path_title',
+                                                )}
+                                             </Text>
+                                             <Text className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                                <Trans
+                                                   i18nKey="quickstart.guided_path_desc"
+                                                   components={{
+                                                      bold: (
+                                                         <Text className="font-bold" />
+                                                      ),
+                                                   }}
+                                                />
+                                             </Text>
+                                          </View>
+                                       </View>
+                                    </TimelinePivot>
+                                 )}
+                                 <TimelineItem step={step} variant="default">
+                                    <View className="mt-3 overflow-hidden rounded-lg bg-slate-50 dark:bg-black/20 px-3 py-2.5">
+                                       <Text className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400/80">
+                                          {t('common.example')}
                                        </Text>
-                                       <Text className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                          <Trans
-                                             i18nKey="quickstart.guided_path_desc"
-                                             components={{
-                                                bold: (
-                                                   <Text className="font-bold" />
-                                                ),
-                                             }}
-                                          />
+                                       <Text className="font-medium italic text-slate-700 dark:text-slate-300">
+                                          {exampleText}
                                        </Text>
                                     </View>
-                                 </View>
-                              </TimelinePivot>
-                           )}
-                           <TimelineItem step={step} variant="default">
-                              <View className="mt-3 overflow-hidden rounded-lg bg-slate-50 dark:bg-black/20 px-3 py-2.5">
-                                 <Text className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400/80">
-                                    {t('common.example')}
-                                 </Text>
-                                 <Text className="font-medium italic text-slate-700 dark:text-slate-300">
-                                    {exampleText}
-                                 </Text>
+                                 </TimelineItem>
                               </View>
-                           </TimelineItem>
-                        </View>
-                     );
-                  })}
-               </Animated.View>
-            </View>
+                           );
+                        })}
+                     </Animated.View>
+                  </View>
+               </>
+            )}
 
             {/* Footer CTA */}
             {!isModal && (

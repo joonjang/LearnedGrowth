@@ -1,63 +1,60 @@
 {
-  "adversity": [
-    "Describe a specific situation recently where things didn't go your way.",
-    "What is a recent challenge or problem you had to deal with?",
-    "Describe a moment from your day that felt difficult.",
-    "What is a specific event that bothered you recently?",
-    "Describe a conversation or event that didn't go as planned.",
-    "What is a situation you faced recently that was frustrating?",
-    "Think of a recent obstacle you encountered. What happened?"
-  ],
-  "belief": [
-    "In that exact moment, what was the first thing you told yourself?",
-    "When that happened, what reason did you give yourself for why it occurred?",
-    "At that time, what did you assume this situation meant about you?",
-    "What was the immediate story you told yourself when things went wrong?",
-    "In the heat of the moment, whom or what did you blame?",
-    "What did you think this situation meant for your future?",
-    "If you could hear your thoughts at that moment, what were they saying?"
-  ],
-  "consequence": [
-    "Because you thought that, how did you react?",
-    "How did that specific thought make your body feel at the time?",
-    "What did thinking that make you want to do (or stop doing)?",
-    "Did that thought make you want to fix the problem or hide from it?",
-    "How did your mood change immediately after you had that thought?",
-    "What actions did you take because you were viewing the situation that way?",
-    "How did thinking that way affect your energy for the rest of the day?"
-  ],
-  "dispute": {
-    "evidence": [
-      "If you look only at the facts, what actually happened?",
-      "What is one piece of evidence that suggests your initial thought wasn't 100% true?",
-      "If a camera had recorded the event, what would it show that is different from your story?",
-      "What are the plain facts, separate from your opinion about what happened?",
-      "Is there any proof that the situation isn't as permanent as it felt?",
-      "What specific details contradict the story you told yourself?"
-    ],
-    "alternatives": [
-      "What is another possible reason this happened?",
-      "How would a supportive friend explain why this occurred?",
-      "What factors completely outside your control might have contributed to this?",
-      "Could this have simply been bad timing or bad luck? How so?",
-      "What is a less personal explanation for what went wrong?",
-      "Is there a simpler, less dramatic explanation for this event?"
-    ],
-    "usefulness": [
-      "How does seeing it this new way change how you feel?",
-      "What does this new perspective free you to do next?",
-      "If you accept this new explanation, how does your mood shift?",
-      "What becomes possible if you move forward with this new understanding?",
-      "How does focusing on this alternative view help you handle the situation?",
-      "What is the most helpful step you can take now that you see it differently?"
-    ]
-  },
-  "energy": [
-    "How would you describe your mood right now compared to when you started?",
-    "What is one small, positive step you feel ready to take?",
-    "What mental weight feels like it has been lifted?",
-    "How do you feel about the situation now that you have looked at it closely?",
-    "What are you willing to try next?",
-    "Describe your current mindset in one word."
-  ]
+   "adversity": [
+      "Describe a specific personal challenge you faced recently.",
+      "What is a recent event that didn't go as planned?",
+      "Describe a situation where you encountered a personal obstacle.",
+      "What specific event triggered a negative reaction in you?",
+      "Describe a recent conflict or problem you faced."
+   ],
+   "belief": [
+      "What was the very first thought that crossed your mind?",
+      "How did you explain the cause of this event to yourself?",
+      "At that moment, what did you assume this situation meant about you?",
+      "What immediate story did you tell yourself about why this happened?",
+      "In that moment, whom or what did you hold responsible?",
+      "What did you predict would be the result of this situation?",
+      "If you could play back your internal thoughts, what were they saying?"
+   ],
+   "consequence": [
+      "As a result of that thought, what specific emotion did you feel?",
+      "How did that belief physically feel in your body?",
+      "What did thinking that make you want to do immediately?",
+      "How did that perspective affect your willingness to face the situation?",
+      "How did your mood shift the moment you accepted that thought?",
+      "What action did you take because you were viewing it that way?",
+      "How did holding that belief affect your energy for the rest of the day?"
+   ],
+   "dispute": {
+      "evidence": [
+         "If you looked at this situation like a neutral detective, what extra details would you capture?",
+         "What specific details suggest the situation isn't as extreme as it felt in the moment?",
+         "What facts might be missing from that initial quick judgment?",
+         "If a camera recorded this, what would it show that softens your initial version of the story?",
+         "What specific details might a supportive friend point out that you missed?",
+         "What are the plain facts that don't fit into your first impression?"
+      ],
+      "alternatives": [
+         "Looking at these facts, what is a completely different explanation for what happened?",
+         "What factors completely outside of your control might have contributed to this outcome?",
+         "In what ways could this be a case of bad timing or circumstances?",
+         "What is a less personal explanation for why this happened?",
+         "What specific circumstances make this a problem for 'right now' rather than 'forever'?"
+      ],
+      "usefulness": [
+         "Comparing your old and new explanations, what is the specific downside of staying with the old one?",
+         "How does the new explanation change your readiness to act compared to the old one?",
+         "In what specific way does the new perspective serve your goals better than the old one?",
+         "What acts of self-care or problem-solving become possible with the new view that weren't possible before?",
+         "How does your mindset shift when you replace the old thought with the new one?",
+         "What specific difference does the new explanation make for your energy or peace of mind?"
+      ]
+   },
+   "energy": [
+      "How would you describe your mood right now compared to when you started this exercise?",
+      "What is one small, positive step you feel ready to take based on this new perspective?",
+      "What shift do you notice in your physical tension or mental weight?",
+      "How do you view the situation differently now that you have challenged your first thought?",
+      "What specific action are you willing to try next?",
+      "How would you characterize your current mindset as you move forward?"
+   ]
 }

@@ -1,6 +1,5 @@
 import CardNextButton from '@/components/buttons/CardNextButton';
 import LeftBackChevron from '@/components/buttons/LeftBackChevron';
-import NewDisputeLink from '@/components/buttons/NewDisputeLink';
 import WideButton from '@/components/buttons/WideButton';
 import {
    ABCDE_FIELD,
@@ -21,6 +20,7 @@ import { useAiCredits } from '@/hooks/useAiCredits';
 import { useEntries } from '@/hooks/useEntries';
 import { useNavigationLock } from '@/hooks/useNavigationLock';
 import { formatDateTimeWithWeekday } from '@/lib/date';
+import { getShadow } from '@/lib/shadow';
 import {
    AI_ICON_COLORS,
    AI_SURFACE_CLASS,
@@ -109,6 +109,14 @@ export default function EntryDetailScreen() {
    const isDark = colorScheme === 'dark';
    const { t, i18n } = useTranslation();
    const iconColor = isDark ? ICON_COLOR_DARK : ICON_COLOR_LIGHT;
+   const floatingButtonShadow = useMemo(
+      () =>
+         getShadow({
+            isDark,
+            preset: 'sm',
+         }),
+      [isDark],
+   );
 
    // --- Form State ---
    const [form, setForm] = useState<Record<FieldKey, string>>(() =>
@@ -484,9 +492,32 @@ export default function EntryDetailScreen() {
    const disputeHistory = entry.disputeHistory ?? [];
    const hasDisputeHistory = disputeHistory.length > 0;
    const hasDispute = (entry.dispute ?? '').trim().length > 0;
+   const showFloatingBackButton = hasScrolled && !isEditing;
 
    return (
       <View className="flex-1 bg-white dark:bg-slate-900">
+         {showFloatingBackButton && (
+            <View
+               className="absolute left-6 z-40"
+               style={{ top: insets.top + 10 }}
+            >
+               <View
+                  style={[
+                     floatingButtonShadow.ios,
+                     floatingButtonShadow.android,
+                  ]}
+                  className="w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700"
+               >
+                  <View className="items-center justify-center pl-2">
+                     <LeftBackChevron
+                        isDark={isDark}
+                        onPress={navigateToEntries}
+                     />
+                  </View>
+               </View>
+            </View>
+         )}
+
          {/* 1. MAIN CONTENT (Bottom Layer) */}
          <KeyboardAwareScrollView
             className="flex-1"
@@ -502,10 +533,14 @@ export default function EntryDetailScreen() {
             {/* === DEFAULT HEADER (Scrollable) === */}
             <View className="h-14 flex-row items-center justify-between px-4 mb-2">
                <View className="flex-1 items-start justify-center">
-                  <LeftBackChevron
-                     isDark={isDark}
-                     onPress={navigateToEntries}
-                  />
+                  {!showFloatingBackButton && (
+                     <View className="ml-4">
+                        <LeftBackChevron
+                           isDark={isDark}
+                           onPress={navigateToEntries}
+                        />
+                     </View>
+                  )}
                </View>
 
                <View className="absolute left-0 right-0 top-0 bottom-0 items-center justify-center pointer-events-none z-0">
@@ -704,11 +739,11 @@ export default function EntryDetailScreen() {
                   );
                })}
 
-               {hasDispute && !isEditing && (
+               {/* {hasDispute && !isEditing && (
                   <View className="pt-8">
                      <NewDisputeLink onPress={handleStartNewDispute} />
                   </View>
-               )}
+               )} */}
 
                {/* DELETE ENTRY BUTTON */}
                {isEditing && (

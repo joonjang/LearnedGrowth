@@ -416,8 +416,7 @@
       "filtered": "Filtered",
       "all_time": "All Time",
       "entry_number": "Entry #{{count}}",
-      "view_deleted_one": "View deleted {{count}} entry",
-      "view_deleted_other": "View deleted {{count}} entries",
+      "view_deleted": "View deleted ({{count}})",
       "search_placeholder": "Search...",
       "filters": {
          "category": "Category",

@@ -18,7 +18,6 @@ import {
 import { getShadow } from '@/lib/shadow';
 import { PRIMARY_CTA_CLASS, PRIMARY_CTA_TEXT_CLASS } from '@/lib/styles';
 import type { Entry } from '@/models/entry';
-import { useAuth } from '@/providers/AuthProvider';
 import { router, useFocusEffect } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -38,7 +37,6 @@ export default function EntriesScreen() {
    const insets = useSafeAreaInsets();
    const { colorScheme } = useColorScheme();
    const isDark = colorScheme === 'dark';
-   const { status } = useAuth();
    const { t } = useTranslation();
    const { lock: lockNavigation } = useNavigationLock();
    const [showHelpModal, setShowHelpModal] = useState(false);
@@ -205,8 +203,7 @@ export default function EntriesScreen() {
    const showQuickStart =
       store.lastHydratedAt !== null &&
       !store.isHydrating &&
-      !hasEntries &&
-      status !== 'signedIn';
+      !hasEntries;
 
    if (showQuickStart) {
       return (
