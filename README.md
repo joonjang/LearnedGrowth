@@ -35,6 +35,10 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-02-23
+
+- collapsed belief and dispute for entry detail screen
+
 ### 2026-02-15
 
 - quickstart.tsx made to be less overwhelming on startup

@@ -70,7 +70,7 @@
          "adversity": "무슨 일이 있었나요?",
          "belief": "스스로에게 어떤 말을 했나요?",
          "consequence": "어떻게 느끼고 행동했나요?",
-         "dispute": "그 신념에 어떻게 응답했나요?",
+         "dispute": "대안적 관점",
          "energy": "감정의 변화가 있었나요?"
       }
    },
@@ -94,7 +94,7 @@
       "view_reframed": "재해석 보기",
       "ai_insight": "AI 인사이트",
       "ai_analysis": "AI 분석",
-      "alternative_perspective": "대안적 관점",
+      "alternative_perspective": "서사 재구성",
       "error": "분석을 불러올 수 없습니다. {{error}}",
       "mixed": "혼합",
       "no_clear_pattern": "명확한 패턴이 감지되지 않았습니다.",

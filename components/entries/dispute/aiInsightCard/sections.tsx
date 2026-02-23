@@ -139,8 +139,8 @@ export function AiInsightHeader({
    textColor,
    iconColor,
 }: AiInsightHeaderProps) {
-   if (isMinimized) return null;
    const { t } = useTranslation();
+   if (isMinimized) return null;
 
    return (
       <View className="flex-row items-center justify-between mb-1">
@@ -416,8 +416,8 @@ export function AiInsightStaleBanner({
    timeLabel,
    isDark,
 }: AiInsightStaleBannerProps) {
-   if (!isStale) return null;
    const { t } = useTranslation();
+   if (!isStale) return null;
 
    const containerStyle = isCoolingDown
       ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
@@ -497,8 +497,8 @@ export function AiInsightCrisisBanner({
    safety?: InsightSafety | null;
    isDark: boolean;
 }) {
-   if (!safety?.isCrisis) return null;
    const { t } = useTranslation();
+   if (!safety?.isCrisis) return null;
 
    return (
       <View className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 border border-red-100 dark:border-red-800">
@@ -552,13 +552,6 @@ export function AiInsightThinkingPatterns({
 }: AiInsightThinkingPatternsProps) {
    const { t } = useTranslation();
    const headerStyle = useDelayedAppearance(animationTimeline.headerAppear);
-
-   if (!dims) return null;
-
-   // Helper to loop over keys safely
-   const dimensionKeys = Object.keys(
-      THINKING_PATTERN_DIMENSIONS,
-   ) as (keyof typeof THINKING_PATTERN_DIMENSIONS)[];
    const labels = useMemo(
       () => ({
          Time: {
@@ -582,6 +575,13 @@ export function AiInsightThinkingPatterns({
       }),
       [t],
    );
+
+   if (!dims) return null;
+
+   // Helper to loop over keys safely
+   const dimensionKeys = Object.keys(
+      THINKING_PATTERN_DIMENSIONS,
+   ) as (keyof typeof THINKING_PATTERN_DIMENSIONS)[];
 
    // Map dimension keys to delay timers from animationTimeline
    const delays: Record<keyof typeof THINKING_PATTERN_DIMENSIONS, number> = {
