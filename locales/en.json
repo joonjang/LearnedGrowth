@@ -70,7 +70,7 @@
          "adversity": "What happened?",
          "belief": "What were you telling yourself?",
          "consequence": "How did you feel and act?",
-         "dispute": "Alternative perspective",
+         "dispute": "Alternative perspective.",
          "energy": "The emotional shift."
       }
    },
@@ -94,7 +94,7 @@
       "view_reframed": "View Reframed",
       "ai_insight": "AI Insight",
       "ai_analysis": "AI Analysis",
-      "alternative_perspective": "Reframing the narrative",
+      "alternative_perspective": "Reframing the narrative.",
       "error": "Unable to load analysis. {{error}}",
       "mixed": "Mixed",
       "no_clear_pattern": "No clear pattern detected.",
@@ -650,6 +650,8 @@
       "saved": "Saved",
       "unsaved": "Unsaved changes",
       "continue": "Continue",
+      "show_belief_consequence": "Show Belief & Consequence",
+      "hide_belief_consequence": "Hide Belief & Consequence",
       "previous_disputes": "Previous Disputes ({{count}})",
       "energy": "Energy: {{energy}}",
       "delete_entry": "Delete Entry",

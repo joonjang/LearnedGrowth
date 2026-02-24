@@ -117,6 +117,10 @@ export default function DisputeSteps({
       }
    };
 
+   const handleInputSubmit = () => {
+      handleNext();
+   };
+
    return (
       <Animated.View className="flex-1" style={animatedWrapperStyle}>
          <View className="flex-1">
@@ -180,6 +184,9 @@ export default function DisputeSteps({
                      placeholder={stepPlaceholders[currKey]}
                      maxLength={DISPUTE_STEP_CHAR_LIMITS[currKey]}
                      showCounter
+                     returnKeyType={idx === 3 ? 'done' : 'next'}
+                     submitBehavior="submit"
+                     onSubmitEditing={handleInputSubmit}
                      animatedStyle={animatedInputStyle}
                      onFocus={() => {
                         reenableAutoScroll(true);

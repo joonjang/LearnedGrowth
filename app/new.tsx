@@ -90,9 +90,14 @@ export default function NewEntryModal() {
 
    // 2. USE KEYBOARD ANIMATION HOOK
    const maxInputHeight = Math.floor(screenHeight * 0.25);
+   const isSmallScreen = screenHeight < 750;
+   const closedPromptFontSize = isSmallScreen ? 32 : 44;
+   const openPromptFontSize = isSmallScreen ? 22 : 36;
    const { animatedPromptStyle, animatedInputStyle, animatedWrapperStyle } =
       useSmoothKeyboard({
          closedHeight: maxInputHeight,
+         closedFontSize: closedPromptFontSize,
+         openFontSize: openPromptFontSize,
          promptHold: 0.5,
       });
 
@@ -254,6 +259,15 @@ export default function NewEntryModal() {
       [form, idx, currKey, markVisited, handleClose, reenableAutoScroll],
    );
 
+   const handleInputSubmit = useCallback(() => {
+      if (currentEmpty || isSubmitting) return;
+      if (idx === STEP_ORDER.length - 1) {
+         submit();
+         return;
+      }
+      handleStepChange('next');
+   }, [currentEmpty, handleStepChange, idx, isSubmitting, submit]);
+
    return (
       <View className="flex-1 bg-slate-50 dark:bg-slate-900">
          <View className="absolute top-0 left-0 right-0 z-10">
@@ -308,6 +322,11 @@ export default function NewEntryModal() {
                         placeholder={stepPlaceholders[currKey]}
                         maxLength={ENTRY_CHAR_LIMITS[currKey]}
                         showCounter
+                        returnKeyType={
+                           idx === STEP_ORDER.length - 1 ? 'done' : 'next'
+                        }
+                        submitBehavior="submit"
+                        onSubmitEditing={handleInputSubmit}
                         // Dynamic height from hook
                         animatedStyle={animatedInputStyle}
                         onFocus={() => {

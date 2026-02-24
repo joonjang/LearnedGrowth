@@ -35,6 +35,12 @@ env PATH="/opt/homebrew/bin:$PATH" npx -y eas-cli@latest build -p ios --profile 
 
 ## Development Journal
 
+### 2026-02-24
+
+- wording format changes
+- added animations to ui
+- changed text size for small screens
+
 ### 2026-02-23
 
 - collapsed belief and dispute for entry detail screen

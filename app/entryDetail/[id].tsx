@@ -50,6 +50,9 @@ import {
 } from 'react-native-keyboard-controller';
 import Animated, {
    Easing,
+   FadeInDown,
+   FadeOutUp,
+   LinearTransition,
    useAnimatedStyle,
    useSharedValue,
    withTiming,
@@ -59,6 +62,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 type FieldKey = (typeof ABCDE_FIELD)[number]['key'];
 const FIELD_KEYS: FieldKey[] = ABCDE_FIELD.map((f) => f.key);
 const LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
+const BACK_BUTTON_SWAP_ANIM_MS = 220;
+const BC_SECTION_ANIM_MS = 220;
 
 // --- Helpers for Form Logic ---
 function buildFieldRecord(getValue: (key: FieldKey) => string) {
@@ -132,6 +137,8 @@ export default function EntryDetailScreen() {
 
    // --- Animations ---
    const headerTranslateY = useSharedValue(-150); // Start hidden above screen
+   const floatingBackProgress = useSharedValue(0);
+   const bcChevronProgress = useSharedValue(0);
 
    // --- Collapse State for Disputes ---
    const [historyExpanded, setHistoryExpanded] = useState(false);
@@ -448,8 +455,33 @@ export default function EntryDetailScreen() {
       [hasScrolled],
    );
 
+   const showFloatingBackButton = hasScrolled && !isEditing;
+
    const stickyHeaderStyle = useAnimatedStyle(() => ({
       transform: [{ translateY: headerTranslateY.value }],
+   }));
+
+   const floatingBackButtonStyle = useAnimatedStyle(() => {
+      const progress = floatingBackProgress.value;
+      return {
+         opacity: progress,
+         transform: [
+            { translateY: (1 - progress) * -8 },
+            { scale: 0.96 + progress * 0.04 },
+         ],
+      };
+   });
+
+   const inlineBackButtonStyle = useAnimatedStyle(() => {
+      const progress = floatingBackProgress.value;
+      return {
+         opacity: 1 - progress,
+         transform: [{ translateX: -8 * progress }],
+      };
+   });
+
+   const bcChevronStyle = useAnimatedStyle(() => ({
+      transform: [{ rotate: `${bcChevronProgress.value * 180}deg` }],
    }));
 
    useEffect(() => {
@@ -481,6 +513,20 @@ export default function EntryDetailScreen() {
       return () => clearTimeout(timer);
    }, [justSaved]);
 
+   useEffect(() => {
+      floatingBackProgress.value = withTiming(showFloatingBackButton ? 1 : 0, {
+         duration: BACK_BUTTON_SWAP_ANIM_MS,
+         easing: Easing.out(Easing.cubic),
+      });
+   }, [floatingBackProgress, showFloatingBackButton]);
+
+   useEffect(() => {
+      bcChevronProgress.value = withTiming(isBCExpanded ? 1 : 0, {
+         duration: BC_SECTION_ANIM_MS,
+         easing: Easing.out(Easing.cubic),
+      });
+   }, [bcChevronProgress, isBCExpanded]);
+
    // blank screen if entry is deleted
 
    if (!entry) {
@@ -497,31 +543,26 @@ export default function EntryDetailScreen() {
 
    const disputeHistory = entry.disputeHistory ?? [];
    const hasDisputeHistory = disputeHistory.length > 0;
-   const showFloatingBackButton = hasScrolled && !isEditing;
 
    return (
       <View className="flex-1 bg-white dark:bg-slate-900">
-         {showFloatingBackButton && (
+         <Animated.View
+            className="absolute left-6 z-40"
+            style={[{ top: insets.top + 10 }, floatingBackButtonStyle]}
+            pointerEvents={showFloatingBackButton ? 'auto' : 'none'}
+         >
             <View
-               className="absolute left-6 z-40"
-               style={{ top: insets.top + 10 }}
+               style={[
+                  floatingButtonShadow.ios,
+                  floatingButtonShadow.android,
+               ]}
+               className="w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700"
             >
-               <View
-                  style={[
-                     floatingButtonShadow.ios,
-                     floatingButtonShadow.android,
-                  ]}
-                  className="w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700"
-               >
-                  <View className="items-center justify-center pl-2">
-                     <LeftBackChevron
-                        isDark={isDark}
-                        onPress={navigateToEntries}
-                     />
-                  </View>
+               <View className="items-center justify-center pl-2">
+                  <LeftBackChevron isDark={isDark} onPress={navigateToEntries} />
                </View>
             </View>
-         )}
+         </Animated.View>
 
          {/* 1. MAIN CONTENT (Bottom Layer) */}
          <KeyboardAwareScrollView
@@ -538,14 +579,13 @@ export default function EntryDetailScreen() {
             {/* === DEFAULT HEADER (Scrollable) === */}
             <View className="h-14 flex-row items-center justify-between px-4 mb-2">
                <View className="flex-1 items-start justify-center">
-                  {!showFloatingBackButton && (
-                     <View className="ml-4">
-                        <LeftBackChevron
-                           isDark={isDark}
-                           onPress={navigateToEntries}
-                        />
-                     </View>
-                  )}
+                  <Animated.View
+                     className="ml-4"
+                     style={inlineBackButtonStyle}
+                     pointerEvents={showFloatingBackButton ? 'none' : 'auto'}
+                  >
+                     <LeftBackChevron isDark={isDark} onPress={navigateToEntries} />
+                  </Animated.View>
                </View>
 
                <View className="absolute left-0 right-0 top-0 bottom-0 items-center justify-center pointer-events-none z-0">
@@ -586,6 +626,12 @@ export default function EntryDetailScreen() {
                   const isBC =
                      step.key === 'belief' || step.key === 'consequence';
                   const isCollapsed = showDispute && !isBCExpanded && isBC;
+                  const shouldAnimateBcExit =
+                     isBC &&
+                     !(
+                        step.key === 'consequence' &&
+                        (aiDisplayData || isAiPendingForEntry)
+                     );
 
                   return (
                      <View key={step.key}>
@@ -594,9 +640,6 @@ export default function EntryDetailScreen() {
                            <View className="mb-4 items-center">
                               <Pressable
                                  onPress={() => {
-                                    LayoutAnimation.configureNext(
-                                       LayoutAnimation.Presets.easeInEaseOut,
-                                    );
                                     setIsBCExpanded((prev) => !prev);
                                  }}
                                  className="flex-row items-center gap-2 py-2 px-4 rounded-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"
@@ -604,216 +647,225 @@ export default function EntryDetailScreen() {
                                  <Text className="text-[12px] font-medium text-slate-600 dark:text-slate-300">
                                     {isBCExpanded
                                        ? t(
-                                            'common.collapse',
-                                            'Collapse Belief & Consequence',
+                                            'entryDetail.hide_belief_consequence',
+                                            'Hide Belief & Consequence',
                                          )
                                        : t(
-                                            'common.expand',
-                                            'Expand Belief & Consequence',
+                                            'entryDetail.show_belief_consequence',
+                                            'Show Belief & Consequence',
                                          )}
                                  </Text>
-                                 <View
-                                    style={{
-                                       transform: [
-                                          {
-                                             rotate: isBCExpanded
-                                                ? '180deg'
-                                                : '0deg',
-                                          },
-                                       ],
-                                    }}
-                                 >
+                                 <Animated.View style={bcChevronStyle}>
                                     <ChevronDown
                                        size={14}
                                        color={isDark ? '#cbd5e1' : '#475569'}
                                     />
-                                 </View>
+                                 </Animated.View>
                               </Pressable>
                            </View>
                         )}
 
                         {/* Standard field rendering when NOT collapsed */}
                         {!isCollapsed && (
-                           <EntryField
-                              step={step}
-                              value={rawValue}
-                              isEditing={isEditing}
-                              isDark={isDark}
-                              onChangeText={handleFieldChange}
+                           <Animated.View
+                              layout={LinearTransition.duration(
+                                 BC_SECTION_ANIM_MS,
+                              ).easing(Easing.out(Easing.cubic))}
+                              entering={
+                                 isBC
+                                    ? FadeInDown.duration(BC_SECTION_ANIM_MS)
+                                         .easing(Easing.out(Easing.cubic))
+                                    : undefined
+                              }
+                              exiting={
+                                 shouldAnimateBcExit
+                                    ? FadeOutUp.duration(
+                                         BC_SECTION_ANIM_MS - 40,
+                                      ).easing(Easing.out(Easing.cubic))
+                                    : undefined
+                              }
                            >
-                              {step.key === 'consequence' && (
-                                 <View>
-                                    {(aiDisplayData || isAiPendingForEntry) && (
-                                       <View className="-mt-2">
-                                          <TimelinePivot variant="full">
-                                             <AiInsightCard
-                                                entryId={entry.id}
-                                                data={aiDisplayData}
-                                                fromEntryDetail
-                                                onRefresh={
-                                                   isEditing
-                                                      ? undefined
-                                                      : handleOpenDisputeAndUpdate
-                                                }
-                                                retryCount={
-                                                   entry.aiRetryCount ?? 0
-                                                }
-                                                maxRetries={MAX_AI_RETRIES}
-                                                updatedAt={entry.updatedAt}
-                                                allowMinimize={!!entry.dispute}
-                                                initiallyMinimized={
-                                                   !!entry.dispute
-                                                }
-                                             />
-                                          </TimelinePivot>
-                                       </View>
-                                    )}
-
-                                    {/* The Generate Button is naturally hidden when `isCollapsed` is true because this block won't render */}
-                                    {!aiDisplayData &&
-                                       !isAiPendingForEntry &&
-                                       entry?.dispute && (
+                              <EntryField
+                                 step={step}
+                                 value={rawValue}
+                                 isEditing={isEditing}
+                                 isDark={isDark}
+                                 onChangeText={handleFieldChange}
+                              >
+                                 {step.key === 'consequence' && (
+                                    <View>
+                                       {(aiDisplayData || isAiPendingForEntry) && (
                                           <View className="-mt-2">
-                                             <TimelinePivot
-                                                variant="full"
-                                                bgClassName={`${AI_SURFACE_CLASS} ${isEditing ? 'opacity-50' : ''}`}
-                                                borderClassName={`border-amber-200 dark:border-amber-800 ${isEditing ? 'opacity-50' : ''}`}
-                                             >
-                                                <Pressable
-                                                   onPress={handleAnalyze}
-                                                   disabled={isEditing}
-                                                   className={`flex-row items-center justify-center gap-2 py-1 ${isEditing ? 'opacity-40' : 'active:opacity-50'}`}
-                                                >
-                                                   <Sparkles
-                                                      size={18}
-                                                      color={
-                                                         isDark
-                                                            ? AI_ICON_COLORS.dark
-                                                            : AI_ICON_COLORS.light
-                                                      }
-                                                      strokeWidth={2.5}
-                                                   />
-                                                   <Text
-                                                      className={`text-[12px] font-bold ${AI_TEXT_ACCENT_CLASS}`}
-                                                   >
-                                                      {isEditing
-                                                         ? t(
-                                                              'analysis.save_to_analyze',
-                                                           )
-                                                         : t(
-                                                              'analysis.analyze_with_ai',
-                                                           )}
-                                                   </Text>
-                                                </Pressable>
+                                             <TimelinePivot variant="full">
+                                                <AiInsightCard
+                                                   entryId={entry.id}
+                                                   data={aiDisplayData}
+                                                   fromEntryDetail
+                                                   onRefresh={
+                                                      isEditing
+                                                         ? undefined
+                                                         : handleOpenDisputeAndUpdate
+                                                   }
+                                                   retryCount={
+                                                      entry.aiRetryCount ?? 0
+                                                   }
+                                                   maxRetries={MAX_AI_RETRIES}
+                                                   updatedAt={entry.updatedAt}
+                                                   allowMinimize={!!entry.dispute}
+                                                   initiallyMinimized={
+                                                      !!entry.dispute
+                                                   }
+                                                />
                                              </TimelinePivot>
                                           </View>
                                        )}
 
-                                    {!entry.dispute && !isEditing && (
-                                       <View className="mt-4 mb-2">
-                                          {aiDisplayData ? (
-                                             <WideButton
-                                                label={t(
-                                                   'entryDetail.continue',
-                                                )}
-                                                icon={ArrowRight}
-                                                onPress={
-                                                   handleContinueToDispute
-                                                }
-                                             />
-                                          ) : (
-                                             <CardNextButton
-                                                id={entry.id}
-                                                fromEntryDetail
-                                             />
-                                          )}
-                                       </View>
-                                    )}
-                                 </View>
-                              )}
-
-                              {step.key === 'energy' && hasDisputeHistory && (
-                                 <View className="mb-2">
-                                    <View className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
-                                       <Pressable
-                                          onPress={toggleHistory}
-                                          className="flex-row items-center justify-between px-4 py-3 active:bg-slate-100 dark:active:bg-slate-800/80"
-                                       >
-                                          <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                             {t(
-                                                'entryDetail.previous_disputes',
-                                                {
-                                                   count: disputeHistory.length,
-                                                },
-                                             )}
-                                          </Text>
-                                          <View
-                                             style={{
-                                                transform: [
-                                                   {
-                                                      rotate: historyExpanded
-                                                         ? '180deg'
-                                                         : '0deg',
-                                                   },
-                                                ],
-                                             }}
-                                          >
-                                             <ChevronDown
-                                                size={16}
-                                                color={
-                                                   isDark
-                                                      ? '#94a3b8'
-                                                      : '#64748b'
-                                                }
-                                             />
-                                          </View>
-                                       </Pressable>
-
-                                       {historyExpanded && (
-                                          <View className="gap-3 px-4 pb-4 pt-1">
-                                             {disputeHistory.map(
-                                                (item: any, index: number) => {
-                                                   const energyText = (
-                                                      item.energy ?? ''
-                                                   ).trim();
-                                                   return (
-                                                      <View
-                                                         key={`${item.createdAt}-${index}`}
-                                                         className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+                                       {/* The Generate Button is naturally hidden when `isCollapsed` is true because this block won't render */}
+                                       {!aiDisplayData &&
+                                          !isAiPendingForEntry &&
+                                          entry?.dispute && (
+                                             <View className="-mt-2">
+                                                <TimelinePivot
+                                                   variant="full"
+                                                   bgClassName={`${AI_SURFACE_CLASS} ${isEditing ? 'opacity-50' : ''}`}
+                                                   borderClassName={`border-amber-200 dark:border-amber-800 ${isEditing ? 'opacity-50' : ''}`}
+                                                >
+                                                   <Pressable
+                                                      onPress={handleAnalyze}
+                                                      disabled={isEditing}
+                                                      className={`flex-row items-center justify-center gap-2 py-1 ${isEditing ? 'opacity-40' : 'active:opacity-50'}`}
+                                                   >
+                                                      <Sparkles
+                                                         size={18}
+                                                         color={
+                                                            isDark
+                                                               ? AI_ICON_COLORS.dark
+                                                               : AI_ICON_COLORS.light
+                                                         }
+                                                         strokeWidth={2.5}
+                                                      />
+                                                      <Text
+                                                         className={`text-[12px] font-bold ${AI_TEXT_ACCENT_CLASS}`}
                                                       >
-                                                         <Text className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                                                            {formatDateTimeWithWeekday(
-                                                               item.createdAt,
-                                                               i18n.language ===
-                                                                  'ko'
-                                                                  ? 'ko-KR'
-                                                                  : 'en-US',
-                                                            )}
-                                                         </Text>
-                                                         <Text className="text-sm leading-5 text-slate-700 dark:text-slate-200">
-                                                            {item.dispute}
-                                                         </Text>
-                                                         {energyText ? (
-                                                            <Text className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                                                               {t(
-                                                                  'entryDetail.energy',
-                                                                  {
-                                                                     energy:
-                                                                        energyText,
-                                                                  },
-                                                               )}
-                                                            </Text>
-                                                         ) : null}
-                                                      </View>
-                                                   );
-                                                },
+                                                         {isEditing
+                                                            ? t(
+                                                                 'analysis.save_to_analyze',
+                                                              )
+                                                            : t(
+                                                                 'analysis.analyze_with_ai',
+                                                              )}
+                                                      </Text>
+                                                   </Pressable>
+                                                </TimelinePivot>
+                                             </View>
+                                          )}
+
+                                       {!entry.dispute && !isEditing && (
+                                          <View className="mt-4 mb-2">
+                                             {aiDisplayData ? (
+                                                <WideButton
+                                                   label={t(
+                                                      'entryDetail.continue',
+                                                   )}
+                                                   icon={ArrowRight}
+                                                   onPress={
+                                                      handleContinueToDispute
+                                                   }
+                                                />
+                                             ) : (
+                                                <CardNextButton
+                                                   id={entry.id}
+                                                   fromEntryDetail
+                                                />
                                              )}
                                           </View>
                                        )}
                                     </View>
-                                 </View>
-                              )}
-                           </EntryField>
+                                 )}
+
+                                 {step.key === 'energy' && hasDisputeHistory && (
+                                    <View className="mb-2">
+                                       <View className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
+                                          <Pressable
+                                             onPress={toggleHistory}
+                                             className="flex-row items-center justify-between px-4 py-3 active:bg-slate-100 dark:active:bg-slate-800/80"
+                                          >
+                                             <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                                {t(
+                                                   'entryDetail.previous_disputes',
+                                                   {
+                                                      count: disputeHistory.length,
+                                                   },
+                                                )}
+                                             </Text>
+                                             <View
+                                                style={{
+                                                   transform: [
+                                                      {
+                                                         rotate: historyExpanded
+                                                            ? '180deg'
+                                                            : '0deg',
+                                                      },
+                                                   ],
+                                                }}
+                                             >
+                                                <ChevronDown
+                                                   size={16}
+                                                   color={
+                                                      isDark
+                                                         ? '#94a3b8'
+                                                         : '#64748b'
+                                                   }
+                                                />
+                                             </View>
+                                          </Pressable>
+
+                                          {historyExpanded && (
+                                             <View className="gap-3 px-4 pb-4 pt-1">
+                                                {disputeHistory.map(
+                                                   (item: any, index: number) => {
+                                                      const energyText = (
+                                                         item.energy ?? ''
+                                                      ).trim();
+                                                      return (
+                                                         <View
+                                                            key={`${item.createdAt}-${index}`}
+                                                            className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+                                                         >
+                                                            <Text className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                                                               {formatDateTimeWithWeekday(
+                                                                  item.createdAt,
+                                                                  i18n.language ===
+                                                                     'ko'
+                                                                     ? 'ko-KR'
+                                                                     : 'en-US',
+                                                               )}
+                                                            </Text>
+                                                            <Text className="text-sm leading-5 text-slate-700 dark:text-slate-200">
+                                                               {item.dispute}
+                                                            </Text>
+                                                            {energyText ? (
+                                                               <Text className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                                                  {t(
+                                                                     'entryDetail.energy',
+                                                                     {
+                                                                        energy:
+                                                                           energyText,
+                                                                     },
+                                                                  )}
+                                                               </Text>
+                                                            ) : null}
+                                                         </View>
+                                                      );
+                                                   },
+                                                )}
+                                             </View>
+                                          )}
+                                       </View>
+                                    </View>
+                                 )}
+                              </EntryField>
+                           </Animated.View>
                         )}
 
                         {/* Special case: Render AI Card even if the Consequence step itself is collapsed */}
