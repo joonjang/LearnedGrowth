@@ -1,4 +1,4 @@
-# LearnedGrowth (WIP)
+# LearnedGrowth
 
 An offline-first journaling app (ABCDE method from _Learned Optimism_) with cloud sync and AI-assisted disputation.
 
